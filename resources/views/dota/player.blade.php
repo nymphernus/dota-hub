@@ -296,11 +296,24 @@
                                     </thead>
                                     <tbody class="divide-y divide-white/[0.04]">
                                         @foreach ($player['matches'] as $match)
+                                            @php
+                                                $matchUrl = $match['match_id']
+                                                    ? route('dota.match', ['matchId' => $match['match_id'], 'player_id' => $player['account_id']])
+                                                    : null;
+                                            @endphp
                                             <tr @class([
-                                                'transition',
+                                                'cursor-pointer transition hover:ring-1 hover:ring-inset hover:ring-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-radar-400',
                                                 'bg-emerald-500/[0.055] hover:bg-emerald-500/[0.10]' => $match['win'],
                                                 'bg-rose-500/[0.055] hover:bg-rose-500/[0.10]' => ! $match['win'],
-                                            ])>
+                                            ])
+                                                @if ($matchUrl)
+                                                    data-href="{{ $matchUrl }}"
+                                                    onclick="window.location.href = this.dataset.href"
+                                                    onkeydown="if (event.key === 'Enter') { window.location.href = this.dataset.href }"
+                                                    tabindex="0"
+                                                    aria-label="Открыть матч {{ $match['match_id'] }}"
+                                                @endif
+                                            >
                                                 <td @class([
                                                     'px-4 py-2.5 sm:px-5',
                                                     'border-l-2 border-emerald-400/70' => $match['win'],
@@ -313,7 +326,13 @@
                                                             @endif
                                                         </div>
                                                         <div class="min-w-0">
-                                                            <p class="truncate text-[13px] font-semibold text-white">{{ $match['hero_name'] }}</p>
+                                                            <p class="truncate text-[13px] font-semibold text-white">
+                                                                @if ($matchUrl)
+                                                                    <a href="{{ $matchUrl }}" class="transition hover:text-radar-200 hover:underline" onclick="event.stopPropagation()">{{ $match['hero_name'] }}</a>
+                                                                @else
+                                                                    {{ $match['hero_name'] }}
+                                                                @endif
+                                                            </p>
                                                             @if ($match['match_id'])
                                                                 <p class="font-mono text-[10px] text-mist-500">#{{ $match['match_id'] }}</p>
                                                             @endif
