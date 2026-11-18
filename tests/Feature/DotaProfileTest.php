@@ -42,12 +42,20 @@ class DotaProfileTest extends TestCase
                 && $player['is_private'] === false
                 && $player['has_public_matches'] === true
                 && count($player['matches']) === 2
+                && $player['matches'][0]['level'] === 27
+                && $player['matches'][0]['net_worth'] === 31200
+                && $player['matches'][0]['gpm'] === 640
+                && $player['matches'][0]['item_0']['name'] === 'Blink Dagger'
+                && count($player['matches'][0]['items']) === 6
+                && $player['matches'][0]['items'][5] === null
+                && $player['matches'][1]['level'] === 18
+                && $player['matches'][1]['net_worth'] === 14500
                 && count($player['match_history']) === 6
                 && count($player['heroes']) === 2;
         });
 
-        Http::assertSentCount(7);
-        $this->assertTrue(Cache::has('opendota:player:v2:'.self::ACCOUNT_ID));
+        Http::assertSentCount(10);
+        $this->assertTrue(Cache::has('opendota:player:v3:'.self::ACCOUNT_ID));
         $response->assertSee(
             route('dota.match', ['matchId' => 9000000001, 'player_id' => self::ACCOUNT_ID]),
             false
@@ -55,7 +63,11 @@ class DotaProfileTest extends TestCase
         $response->assertSee('id="winrateChart"', false);
         $response->assertSee('id="heroUsageChart"', false);
         $response->assertSee('data-count=', false);
+        $response->assertSee('Blink Dagger');
+        $response->assertSee('Нетворс');
         $response->assertDontSee('id="recentMatchesChart"', false);
+        $response->assertDontSee('id="tab-matches"', false);
+        $response->assertDontSee('panel-matches', false);
         $response->assertDontSee('Частые тиммейты');
         $response->assertDontSee('Окружение');
         $response->assertSee('Steam API недоступна');
@@ -104,7 +116,7 @@ class DotaProfileTest extends TestCase
             ->assertRedirect(route('dota.player', ['accountId' => self::ACCOUNT_ID]))
             ->assertSessionHas('status');
 
-        $this->assertFalse(Cache::has('opendota:player:v2:'.self::ACCOUNT_ID));
+        $this->assertFalse(Cache::has('opendota:player:v3:'.self::ACCOUNT_ID));
 
         $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]))->assertOk();
 
@@ -330,6 +342,50 @@ class DotaProfileTest extends TestCase
                 ['match_id' => 9000000004, 'hero_id' => 4, 'player_slot' => 128, 'radiant_win' => true, 'start_time' => now()->subDays(4)->timestamp],
                 ['match_id' => 9000000005, 'hero_id' => 5, 'player_slot' => 128, 'radiant_win' => false, 'start_time' => now()->subDays(5)->timestamp],
                 ['match_id' => 9000000006, 'hero_id' => 6, 'player_slot' => 128, 'radiant_win' => true, 'start_time' => now()->subDays(6)->timestamp],
+            ]),
+            'api.opendota.com/api/constants/items*' => Http::response([
+                'blink' => ['id' => 1, 'dname' => 'Blink Dagger', 'img' => '/apps/dota2/images/dota_react/items/blink.png', 'cost' => 2250],
+                'black_king_bar' => ['id' => 2, 'dname' => 'Black King Bar', 'img' => '/apps/dota2/images/dota_react/items/black_king_bar.png', 'cost' => 4050],
+                'power_treads' => ['id' => 3, 'dname' => 'Power Treads', 'img' => '/apps/dota2/images/dota_react/items/power_treads.png', 'cost' => 1400],
+            ]),
+            'api.opendota.com/api/matches/9000000001*' => Http::response([
+                'match_id' => 9000000001,
+                'players' => [
+                    ['account_id' => 123456789, 'hero_id' => 2],
+                    [
+                        'account_id' => self::ACCOUNT_ID,
+                        'hero_id' => 1,
+                        'level' => 27,
+                        'net_worth' => 31200,
+                        'gold_per_min' => 640,
+                        'xp_per_min' => 720,
+                        'item_0' => 1,
+                        'item_1' => 2,
+                        'item_2' => 3,
+                        'item_3' => 0,
+                        'item_4' => 0,
+                        'item_5' => 0,
+                    ],
+                ],
+            ]),
+            'api.opendota.com/api/matches/9000000002*' => Http::response([
+                'match_id' => 9000000002,
+                'players' => [
+                    [
+                        'account_id' => self::ACCOUNT_ID,
+                        'hero_id' => 2,
+                        'level' => 18,
+                        'net_worth' => 14500,
+                        'gold_per_min' => 350,
+                        'xp_per_min' => 430,
+                        'item_0' => 3,
+                        'item_1' => 1,
+                        'item_2' => 0,
+                        'item_3' => 0,
+                        'item_4' => 0,
+                        'item_5' => 0,
+                    ],
+                ],
             ]),
             'api.opendota.com/api/players/'.self::ACCOUNT_ID.'*' => Http::response([
                 'profile' => [

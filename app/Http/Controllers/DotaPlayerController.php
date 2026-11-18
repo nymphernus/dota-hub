@@ -67,7 +67,7 @@ class DotaPlayerController extends Controller
         return view('dota.player', [
             'player' => $player,
             'winrate' => $player['winrate'],
-            'recentMatches' => array_slice($player['matches'], 0, 20),
+            'recentMatches' => array_slice($player['matches'], 0, 10),
             'activityHeatmap' => $this->activityHeatmap($history),
             'heroUsage' => $this->heroUsage(array_slice($history, 0, 25)),
             'steamProfile' => $steam->summary($steamId),

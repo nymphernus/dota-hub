@@ -22,9 +22,11 @@ class OpenDotaService
 {
     private const HERO_STATS_CACHE_KEY = 'opendota:hero-stats:v1';
 
-    private const ITEM_STATS_CACHE_KEY = 'opendota:item-stats:v1';
+    private const ITEM_STATS_CACHE_KEY = 'opendota:item-stats:v2';
 
     private const HISTORY_DAYS = 182;
+
+    private const RECENT_MATCH_DETAILS = 10;
 
     private const TEAM_CHART_COLORS = [
         '#34d399',
@@ -135,6 +137,7 @@ class OpenDotaService
 
         $heroes = $this->heroStats();
         $matches = $this->transformMatches($recentMatches, $heroes);
+        $matches = $this->enrichMatches($matches, $accountId, self::RECENT_MATCH_DETAILS);
         $history = $this->transformHistory($matchHistory, $heroes);
 
         // The history endpoint can be unavailable even when recent matches are
@@ -268,7 +271,7 @@ class OpenDotaService
 
     private function cacheKey(int $accountId): string
     {
-        return "opendota:player:v2:{$accountId}";
+        return "opendota:player:v3:{$accountId}";
     }
 
     /**
@@ -347,7 +350,7 @@ class OpenDotaService
     /**
      * Global item metadata (localized names, images and costs), cached for a day.
      *
-     * @return array<string, array{name: string, image: string, cost: int}>
+     * @return array<string, array{id: int, name: string, image: string, cost: int}>
      */
     public function itemStats(): array
     {
@@ -375,6 +378,7 @@ class OpenDotaService
             }
 
             $map[(string) $key] = [
+                'id' => (int) ($item['id'] ?? 0),
                 'name' => (string) $item['dname'],
                 'image' => isset($item['img'])
                     ? 'https://cdn.cloudflare.steamstatic.com'.$item['img']
@@ -795,10 +799,162 @@ class OpenDotaService
                 'started_at' => $startTime > 0
                     ? CarbonImmutable::createFromTimestampUTC($startTime)->toIso8601String()
                     : null,
+                'level' => null,
+                'net_worth' => null,
+                'item_0' => null,
+                'item_1' => null,
+                'item_2' => null,
+                'item_3' => null,
+                'item_4' => null,
+                'item_5' => null,
+                'items' => array_fill(0, 6, null),
             ];
         }
 
         return $transformed;
+    }
+
+    /**
+     * The recent-matches feed does not include level, net worth or inventory.
+     * Fetch a bounded number of match details and cache a slim per-player row.
+     *
+     * @param  array<int, array<string, mixed>>  $matches
+     * @return array<int, array<string, mixed>>
+     */
+    private function enrichMatches(array $matches, int $accountId, int $limit): array
+    {
+        $limit = min($limit, count($matches));
+
+        if ($limit === 0) {
+            return $matches;
+        }
+
+        $itemsById = [];
+        $itemStats = [];
+
+        try {
+            $itemStats = $this->itemStats();
+        } catch (ExternalApiException $exception) {
+            Log::info('OpenDota item metadata failed for profile', [
+                'message' => $exception->getMessage(),
+            ]);
+        }
+
+        foreach ($itemStats as $item) {
+            $itemId = (int) ($item['id'] ?? 0);
+
+            if ($itemId > 0) {
+                $itemsById[$itemId] = $item;
+            }
+        }
+
+        $ttl = (int) config('stats.cache.dota_match', 3600);
+
+        for ($index = 0; $index < $limit; $index++) {
+            $matchId = (int) ($matches[$index]['match_id'] ?? 0);
+            $details = $this->matchPlayerSummary($matchId, $accountId, $ttl);
+
+            if ($details === null) {
+                continue;
+            }
+
+            if ($details['level'] > 0) {
+                $matches[$index]['level'] = $details['level'];
+            }
+
+            if ($details['net_worth'] > 0) {
+                $matches[$index]['net_worth'] = $details['net_worth'];
+            }
+
+            if ($details['gold_per_min'] > 0) {
+                $matches[$index]['gpm'] = $details['gold_per_min'];
+            }
+
+            if ($details['xp_per_min'] > 0) {
+                $matches[$index]['xpm'] = $details['xp_per_min'];
+            }
+
+            $slots = [];
+
+            for ($slot = 0; $slot < 6; $slot++) {
+                $itemId = (int) ($details['item_'.$slot] ?? 0);
+                $item = null;
+
+                if ($itemId > 0) {
+                    $meta = $itemsById[$itemId] ?? null;
+                    $item = [
+                        'id' => $itemId,
+                        'name' => $meta['name'] ?? 'Item #'.$itemId,
+                        'image' => $meta['image'] ?? null,
+                    ];
+                }
+
+                $matches[$index]['item_'.$slot] = $item;
+                $slots[] = $item;
+            }
+
+            $matches[$index]['items'] = $slots;
+        }
+
+        return $matches;
+    }
+
+    /**
+     * @return array{level: int, net_worth: int, gold_per_min: int, xp_per_min: int, item_0: int, item_1: int, item_2: int, item_3: int, item_4: int, item_5: int}|null
+     */
+    private function matchPlayerSummary(int $matchId, int $accountId, int $ttl): ?array
+    {
+        if ($matchId <= 0) {
+            return null;
+        }
+
+        $cacheKey = "opendota:match-player:v1:{$matchId}:{$accountId}";
+        $cached = Cache::get($cacheKey);
+
+        if (is_array($cached)) {
+            return $cached;
+        }
+
+        try {
+            $match = $this->client->get("matches/{$matchId}");
+        } catch (ApiUnavailableException|ExternalApiException|PlayerNotFoundException $exception) {
+            Log::warning('OpenDota match details are unavailable', [
+                'match_id' => $matchId,
+                'message' => $exception->getMessage(),
+            ]);
+
+            return null;
+        }
+
+        $player = null;
+
+        foreach (($match['players'] ?? []) as $candidate) {
+            if (is_array($candidate) && (int) ($candidate['account_id'] ?? 0) === $accountId) {
+                $player = $candidate;
+                break;
+            }
+        }
+
+        if (! is_array($player)) {
+            return null;
+        }
+
+        $summary = [
+            'level' => (int) ($player['level'] ?? 0),
+            'net_worth' => (int) ($player['net_worth'] ?? 0),
+            'gold_per_min' => (int) ($player['gold_per_min'] ?? 0),
+            'xp_per_min' => (int) ($player['xp_per_min'] ?? 0),
+            'item_0' => (int) ($player['item_0'] ?? 0),
+            'item_1' => (int) ($player['item_1'] ?? 0),
+            'item_2' => (int) ($player['item_2'] ?? 0),
+            'item_3' => (int) ($player['item_3'] ?? 0),
+            'item_4' => (int) ($player['item_4'] ?? 0),
+            'item_5' => (int) ($player['item_5'] ?? 0),
+        ];
+
+        Cache::put($cacheKey, $summary, $ttl);
+
+        return $summary;
     }
 
     /**

@@ -9,9 +9,9 @@
     $activityTotal = array_sum(array_column($activityHeatmap, 'count'));
     $heatmapTones = [
         'empty' => 'bg-white/[0.04] ring-1 ring-inset ring-white/[0.03]',
-        'low' => 'bg-emerald-900/80 ring-1 ring-inset ring-emerald-700/30',
-        'mid' => 'bg-emerald-600 ring-1 ring-inset ring-emerald-500/30',
-        'high' => 'bg-emerald-400 ring-1 ring-inset ring-emerald-300/30',
+        'low' => 'bg-emerald-300 ring-1 ring-inset ring-emerald-200/30',
+        'mid' => 'bg-emerald-500 ring-1 ring-inset ring-emerald-400/30',
+        'high' => 'bg-emerald-800 ring-1 ring-inset ring-emerald-700/40',
     ];
 
     $chartData = [
@@ -187,8 +187,8 @@
         <div
             class="mt-6"
             x-data="{
-                tabs: ['overview', 'heroes', 'matches', 'steam'],
-                tab: ['overview', 'heroes', 'matches', 'steam'].includes(window.location.hash.slice(1))
+                tabs: ['overview', 'heroes', 'steam'],
+                tab: ['overview', 'heroes', 'steam'].includes(window.location.hash.slice(1))
                     ? window.location.hash.slice(1)
                     : 'overview',
                 setTab(value) {
@@ -216,11 +216,6 @@
                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.5 9.2l5.9-.9L12 3z" stroke-linejoin="round" /></svg>
                     Герои
                     <span class="rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-bold text-mist-400">{{ count($player['heroes']) }}</span>
-                </button>
-                <button type="button" id="tab-matches" aria-controls="panel-matches" @click="setTab('matches')" :class="{ 'tab-button-active': tab === 'matches' }" class="tab-button" role="tab" :aria-selected="(tab === 'matches').toString()" :tabindex="tab === 'matches' ? 0 : -1">
-                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h9" stroke-linecap="round" /></svg>
-                    Последние матчи
-                    <span class="rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-bold text-mist-400">{{ count($player['matches']) }}</span>
                 </button>
                 <button type="button" id="tab-steam" aria-controls="panel-steam" @click="setTab('steam')" :class="{ 'tab-button-active': tab === 'steam' }" class="tab-button" role="tab" :aria-selected="(tab === 'steam').toString()" :tabindex="tab === 'steam' ? 0 : -1">
                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="3" /><path d="M12 3v6M12 15v6M3 12h6M15 12h6" stroke-linecap="round" /></svg>
@@ -320,9 +315,9 @@
                             <div class="flex flex-wrap items-center gap-3 text-[10px] text-mist-500">
                                 <span class="font-semibold text-mist-300">{{ number_format($activityTotal, 0, '.', ' ') }} матчей за 6 месяцев</span>
                                 <span class="inline-flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-[2px] bg-white/[0.04] ring-1 ring-inset ring-white/[0.03]"></span>0</span>
-                                <span class="inline-flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-[2px] bg-emerald-900/80"></span>1–2</span>
-                                <span class="inline-flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-[2px] bg-emerald-600"></span>3–4</span>
-                                <span class="inline-flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-[2px] bg-emerald-400"></span>5+</span>
+                                <span class="inline-flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-[2px] bg-emerald-300"></span>1–2</span>
+                                <span class="inline-flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-[2px] bg-emerald-500"></span>3–4</span>
+                                <span class="inline-flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-[2px] bg-emerald-800"></span>5+</span>
                             </div>
                         </div>
 
@@ -346,49 +341,181 @@
                         </div>
                     </div>
 
-                    <div class="mt-4">
-                        <div class="card p-4 sm:p-5">
-                            <div class="flex items-center justify-between gap-3">
-                                <div>
-                                    <p class="label">Любимые герои</p>
-                                    <h2 class="mt-1 text-lg font-bold text-white">Топ-5 по количеству игр</h2>
-                                </div>
-                                <span class="text-[11px] text-mist-500">Винрейт по герою</span>
+                    <div class="mt-4 card overflow-hidden">
+                        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] px-4 py-4 sm:px-5">
+                            <div>
+                                <p class="label">Любимые герои</p>
+                                <h2 class="mt-1 text-lg font-bold text-white">Топ-5 по количеству игр</h2>
                             </div>
-
-                            @if ($topHeroes === [])
-                                <div class="mt-5 rounded-xl border border-dashed border-white/10 p-8 text-center">
-                                    <p class="text-sm text-mist-400">OpenDota ещё не проиндексировала матчи этого игрока.</p>
-                                </div>
-                            @else
-                                <div class="mt-4 space-y-2">
-                                    @foreach ($topHeroes as $index => $hero)
-                                        <div class="group flex items-center gap-3 rounded-xl border border-transparent bg-white/[0.02] p-2 transition hover:border-white/[0.06] hover:bg-white/[0.04]">
-                                            <span class="w-4 shrink-0 text-center text-[10px] font-bold text-mist-500">{{ $index + 1 }}</span>
-                                            <div class="h-10 w-16 shrink-0 overflow-hidden rounded-lg bg-ink-800 ring-1 ring-white/10">
-                                                @if ($hero['image'])
-                                                    <img src="{{ $hero['image'] }}" alt="{{ $hero['name'] }}" class="h-full w-full object-cover transition duration-300 group-hover:scale-105" loading="lazy">
-                                                @endif
-                                            </div>
-                                            <div class="min-w-0 flex-1">
-                                                <div class="flex items-center justify-between gap-3">
-                                                    <p class="truncate text-sm font-semibold text-white">{{ $hero['name'] }}</p>
-                                                    <span class="shrink-0 text-xs font-bold {{ ($hero['winrate'] ?? 0) >= 50 ? 'text-emerald-300' : 'text-rose-300' }}">
-                                                        {{ $hero['winrate'] !== null ? number_format($hero['winrate'], 1, '.', '') : '—' }}%
-                                                    </span>
-                                                </div>
-                                                <div class="mt-1.5 flex items-center gap-3">
-                                                    <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
-                                                        <div class="h-full rounded-full {{ ($hero['winrate'] ?? 0) >= 50 ? 'bg-emerald-400' : 'bg-rose-400' }}" style="width: {{ min(100, max(2, $hero['winrate'] ?? 0)) }}%"></div>
-                                                    </div>
-                                                    <span class="w-16 shrink-0 text-right text-[10px] text-mist-500">{{ $hero['games'] }} игр</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            @endif
+                            <span class="badge border-white/10 bg-white/5 text-mist-400">За всё время</span>
                         </div>
+
+                        @if ($topHeroes === [])
+                            <div class="p-8 text-center">
+                                <p class="text-sm text-mist-400">OpenDota ещё не проиндексировала матчи этого игрока.</p>
+                            </div>
+                        @else
+                            <table class="w-full text-xs">
+                                <thead class="table-head">
+                                    <tr>
+                                        <th class="w-9 px-3 py-2 text-left font-semibold sm:px-5">#</th>
+                                        <th class="px-2 py-2 text-left font-semibold">Герой</th>
+                                        <th class="px-3 py-2 text-right font-semibold">Игры</th>
+                                        <th class="px-3 py-2 text-right font-semibold sm:px-5">Винрейт</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-white/[0.04]">
+                                    @foreach ($topHeroes as $index => $hero)
+                                        <tr class="transition hover:bg-white/[0.03]">
+                                            <td class="px-3 py-2 text-center font-mono text-[10px] text-mist-500 sm:px-5">{{ $index + 1 }}</td>
+                                            <td class="px-2 py-2">
+                                                <div class="flex items-center gap-2.5">
+                                                    <div class="h-7 w-12 shrink-0 overflow-hidden rounded-md bg-ink-800 ring-1 ring-white/10">
+                                                        @if ($hero['image'])
+                                                            <img src="{{ $hero['image'] }}" alt="{{ $hero['name'] }}" class="h-full w-full object-cover" loading="lazy">
+                                                        @endif
+                                                    </div>
+                                                    <span class="truncate text-[12px] font-semibold text-white">{{ $hero['name'] }}</span>
+                                                </div>
+                                            </td>
+                                            <td class="px-3 py-2 text-right font-mono font-semibold text-mist-200">{{ $hero['games'] }}</td>
+                                            <td class="px-3 py-2 text-right font-mono font-bold {{ ($hero['winrate'] ?? 0) >= 50 ? 'text-emerald-300' : 'text-rose-300' }} sm:px-5">
+                                                {{ $hero['winrate'] !== null ? number_format($hero['winrate'], 1, '.', '') : '—' }}%
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        @endif
+                    </div>
+
+                    <div class="mt-4 card overflow-hidden">
+                        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] px-4 py-4 sm:px-5">
+                            <div>
+                                <p class="label">Матчи</p>
+                                <h2 class="mt-1 text-lg font-bold text-white">Последние матчи</h2>
+                            </div>
+                            <div class="flex items-center gap-3 text-[11px]">
+                                <span class="inline-flex items-center gap-1.5 text-emerald-300"><span class="h-2 w-2 rounded-full bg-emerald-400"></span> Победа</span>
+                                <span class="inline-flex items-center gap-1.5 text-rose-300"><span class="h-2 w-2 rounded-full bg-rose-400"></span> Поражение</span>
+                            </div>
+                        </div>
+
+                        @if ($recentMatches === [])
+                            <div class="p-10 text-center">
+                                <p class="text-sm text-mist-400">Матчи не найдены. OpenDota индексирует только открытые профили.</p>
+                            </div>
+                        @else
+                            <div class="overflow-x-auto">
+                                <table class="w-full min-w-[940px] text-sm">
+                                    <thead class="table-head">
+                                        <tr>
+                                            <th class="px-4 py-2.5 text-left font-semibold sm:px-5">Герой</th>
+                                            <th class="px-3 py-2.5 text-left font-semibold">Результат</th>
+                                            <th class="px-3 py-2.5 text-left font-semibold">K / D / A</th>
+                                            <th class="px-3 py-2.5 text-left font-semibold">GPM / XPM</th>
+                                            <th class="px-3 py-2.5 text-right font-semibold">Нетворс</th>
+                                            <th class="px-3 py-2.5 text-left font-semibold">Предметы</th>
+                                            <th class="px-4 py-2.5 text-right font-semibold sm:px-5">Дата</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-white/[0.04]">
+                                        @foreach ($recentMatches as $match)
+                                            @php
+                                                $matchUrl = $match['match_id']
+                                                    ? route('dota.match', ['matchId' => $match['match_id'], 'player_id' => $player['account_id']])
+                                                    : null;
+                                            @endphp
+                                            <tr @class([
+                                                'cursor-pointer transition hover:ring-1 hover:ring-inset hover:ring-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-radar-400',
+                                                'bg-emerald-500/[0.055] hover:bg-emerald-500/[0.10]' => $match['win'],
+                                                'bg-rose-500/[0.055] hover:bg-rose-500/[0.10]' => ! $match['win'],
+                                            ])
+                                                @if ($matchUrl)
+                                                    data-href="{{ $matchUrl }}"
+                                                    onclick="window.location.href = this.dataset.href"
+                                                    onkeydown="if (event.key === 'Enter') { window.location.href = this.dataset.href }"
+                                                    tabindex="0"
+                                                    aria-label="Открыть матч {{ $match['match_id'] }}"
+                                                @endif
+                                            >
+                                                <td @class([
+                                                    'px-4 py-2 sm:px-5',
+                                                    'border-l-2 border-emerald-400/70' => $match['win'],
+                                                    'border-l-2 border-rose-400/70' => ! $match['win'],
+                                                ])>
+                                                    <div class="flex items-center gap-2.5">
+                                                        <div class="relative h-9 w-14 shrink-0 overflow-hidden rounded-md bg-ink-800 ring-1 ring-white/10">
+                                                            @if ($match['hero_image'])
+                                                                <img src="{{ $match['hero_image'] }}" alt="{{ $match['hero_name'] }}" class="h-full w-full object-cover" loading="lazy">
+                                                            @endif
+                                                            <span class="absolute bottom-0 right-0 rounded-tl bg-ink-950/90 px-1 font-mono text-[8px] font-bold leading-4 text-mist-200" title="Уровень героя">{{ $match['level'] ?? '—' }}</span>
+                                                        </div>
+                                                        <div class="min-w-0">
+                                                            <p class="truncate text-[12px] font-semibold text-white">
+                                                                @if ($matchUrl)
+                                                                    <a href="{{ $matchUrl }}" class="transition hover:text-radar-200 hover:underline" onclick="event.stopPropagation()">{{ $match['hero_name'] }}</a>
+                                                                @else
+                                                                    {{ $match['hero_name'] }}
+                                                                @endif
+                                                            </p>
+                                                            <p class="font-mono text-[9px] text-mist-500">{{ $match['duration_label'] }}</p>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td class="px-3 py-2">
+                                                    <span @class([
+                                                        'badge !px-2 !py-0.5 !text-[9px]',
+                                                        'border-emerald-500/25 bg-emerald-500/10 text-emerald-300' => $match['win'],
+                                                        'border-rose-500/25 bg-rose-500/10 text-rose-300' => ! $match['win'],
+                                                    ])>
+                                                        {{ $match['win'] ? 'WIN' : 'LOSS' }}
+                                                    </span>
+                                                </td>
+                                                <td class="px-3 py-2 font-mono text-[12px] tabular-nums">
+                                                    <span class="text-emerald-300">{{ $match['kills'] }}</span>
+                                                    <span class="text-mist-500/60">/</span>
+                                                    <span class="text-rose-300">{{ $match['deaths'] }}</span>
+                                                    <span class="text-mist-500/60">/</span>
+                                                    <span class="text-sky-300">{{ $match['assists'] }}</span>
+                                                </td>
+                                                <td class="px-3 py-2 font-mono text-[12px] tabular-nums text-mist-300">
+                                                    {{ $match['gpm'] ?: '—' }} <span class="text-mist-500/60">/</span> {{ $match['xpm'] ?: '—' }}
+                                                </td>
+                                                <td class="px-3 py-2 text-right font-mono text-[12px] tabular-nums text-mist-200">
+                                                    {{ $match['net_worth'] !== null ? number_format($match['net_worth'], 0, '.', ' ') : '—' }}
+                                                </td>
+                                                <td class="px-3 py-2">
+                                                    <div class="flex items-center gap-0.5">
+                                                        @for ($slot = 0; $slot < 6; $slot++)
+                                                            @php $item = $match['items'][$slot] ?? null; @endphp
+                                                            @if ($item && $item['image'])
+                                                                <span class="block h-6 w-6 overflow-hidden rounded bg-ink-800 ring-1 ring-white/10" title="{{ $item['name'] }}">
+                                                                    <img src="{{ $item['image'] }}" alt="{{ $item['name'] }}" class="h-full w-full object-cover" loading="lazy">
+                                                                </span>
+                                                            @elseif ($item)
+                                                                <span class="grid h-6 w-6 place-items-center rounded bg-ink-800 text-[8px] font-bold text-mist-400 ring-1 ring-white/10" title="{{ $item['name'] }}">?</span>
+                                                            @else
+                                                                <span class="block h-6 w-6 rounded border border-dashed border-white/[0.08] bg-white/[0.015]"></span>
+                                                            @endif
+                                                        @endfor
+                                                    </div>
+                                                </td>
+                                                <td class="px-4 py-2 text-right text-[10px] text-mist-400 sm:px-5">
+                                                    @if ($match['started_at'])
+                                                        <time datetime="{{ $match['started_at'] }}" title="{{ \Carbon\CarbonImmutable::parse($match['started_at'])->format('d.m.Y H:i') }}">
+                                                            {{ \Carbon\CarbonImmutable::parse($match['started_at'])->format('d.m.y') }}
+                                                        </time>
+                                                    @else
+                                                        —
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @endif
                     </div>
                 </div>
 
@@ -533,119 +660,6 @@
                             </div>
                         </div>
                     @endif
-                </div>
-
-                <div id="panel-matches" aria-labelledby="tab-matches" x-show="tab === 'matches'" x-cloak x-transition.opacity.duration.200ms role="tabpanel" tabindex="0" aria-label="Последние матчи">
-                    <div class="card overflow-hidden">
-                        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] px-4 py-4 sm:px-5">
-                            <div>
-                                <p class="label">Match history</p>
-                                <h2 class="mt-1 text-lg font-bold text-white">Последние матчи</h2>
-                            </div>
-                            <div class="flex items-center gap-3 text-[11px]">
-                                <span class="inline-flex items-center gap-1.5 text-emerald-300"><span class="h-2 w-2 rounded-full bg-emerald-400"></span> Победа</span>
-                                <span class="inline-flex items-center gap-1.5 text-rose-300"><span class="h-2 w-2 rounded-full bg-rose-400"></span> Поражение</span>
-                            </div>
-                        </div>
-
-                        @if ($player['matches'] === [])
-                            <div class="p-10 text-center">
-                                <p class="text-sm text-mist-400">Матчи не найдены. OpenDota индексирует только открытые профили.</p>
-                            </div>
-                        @else
-                            <div class="overflow-x-auto">
-                                <table class="w-full min-w-[760px] text-sm">
-                                    <thead class="table-head">
-                                        <tr>
-                                            <th class="px-4 py-3 font-semibold sm:px-5">Герой</th>
-                                            <th class="px-4 py-3 font-semibold">Результат</th>
-                                            <th class="px-4 py-3 font-semibold">K / D / A</th>
-                                            <th class="px-4 py-3 font-semibold">GPM / XPM</th>
-                                            <th class="px-4 py-3 font-semibold">Длительность</th>
-                                            <th class="px-4 py-3 text-right font-semibold sm:px-5">Дата</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-white/[0.04]">
-                                        @foreach ($player['matches'] as $match)
-                                            @php
-                                                $matchUrl = $match['match_id']
-                                                    ? route('dota.match', ['matchId' => $match['match_id'], 'player_id' => $player['account_id']])
-                                                    : null;
-                                            @endphp
-                                            <tr @class([
-                                                'cursor-pointer transition hover:ring-1 hover:ring-inset hover:ring-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-radar-400',
-                                                'bg-emerald-500/[0.055] hover:bg-emerald-500/[0.10]' => $match['win'],
-                                                'bg-rose-500/[0.055] hover:bg-rose-500/[0.10]' => ! $match['win'],
-                                            ])
-                                                @if ($matchUrl)
-                                                    data-href="{{ $matchUrl }}"
-                                                    onclick="window.location.href = this.dataset.href"
-                                                    onkeydown="if (event.key === 'Enter') { window.location.href = this.dataset.href }"
-                                                    tabindex="0"
-                                                    aria-label="Открыть матч {{ $match['match_id'] }}"
-                                                @endif
-                                            >
-                                                <td @class([
-                                                    'px-4 py-2.5 sm:px-5',
-                                                    'border-l-2 border-emerald-400/70' => $match['win'],
-                                                    'border-l-2 border-rose-400/70' => ! $match['win'],
-                                                ])>
-                                                    <div class="flex items-center gap-3">
-                                                        <div class="h-9 w-16 shrink-0 overflow-hidden rounded-md bg-ink-800 ring-1 ring-white/10">
-                                                            @if ($match['hero_image'])
-                                                                <img src="{{ $match['hero_image'] }}" alt="{{ $match['hero_name'] }}" class="h-full w-full object-cover" loading="lazy">
-                                                            @endif
-                                                        </div>
-                                                        <div class="min-w-0">
-                                                            <p class="truncate text-[13px] font-semibold text-white">
-                                                                @if ($matchUrl)
-                                                                    <a href="{{ $matchUrl }}" class="transition hover:text-radar-200 hover:underline" onclick="event.stopPropagation()">{{ $match['hero_name'] }}</a>
-                                                                @else
-                                                                    {{ $match['hero_name'] }}
-                                                                @endif
-                                                            </p>
-                                                            @if ($match['match_id'])
-                                                                <p class="font-mono text-[10px] text-mist-500">#{{ $match['match_id'] }}</p>
-                                                            @endif
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td class="px-4 py-2.5">
-                                                    <span @class([
-                                                        'badge !px-2.5 !py-1 !text-[10px]',
-                                                        'border-emerald-500/25 bg-emerald-500/10 text-emerald-300' => $match['win'],
-                                                        'border-rose-500/25 bg-rose-500/10 text-rose-300' => ! $match['win'],
-                                                    ])>
-                                                        {{ $match['win'] ? 'WIN' : 'LOSS' }}
-                                                    </span>
-                                                </td>
-                                                <td class="px-4 py-2.5 font-mono text-[13px] tabular-nums">
-                                                    <span class="text-emerald-300">{{ $match['kills'] }}</span>
-                                                    <span class="text-mist-500/60">/</span>
-                                                    <span class="text-rose-300">{{ $match['deaths'] }}</span>
-                                                    <span class="text-mist-500/60">/</span>
-                                                    <span class="text-sky-300">{{ $match['assists'] }}</span>
-                                                </td>
-                                                <td class="px-4 py-2.5 font-mono text-[13px] tabular-nums text-mist-300">
-                                                    {{ $match['gpm'] }} <span class="text-mist-500/60">/</span> {{ $match['xpm'] }}
-                                                </td>
-                                                <td class="px-4 py-2.5 font-mono text-[13px] tabular-nums text-mist-300">{{ $match['duration_label'] }}</td>
-                                                <td class="px-4 py-2.5 text-right text-[11px] text-mist-400 sm:px-5">
-                                                    @if ($match['started_at'])
-                                                        <time datetime="{{ $match['started_at'] }}" title="{{ \Carbon\CarbonImmutable::parse($match['started_at'])->format('d.m.Y H:i') }}">
-                                                            {{ \Carbon\CarbonImmutable::parse($match['started_at'])->diffForHumans(short: true) }}
-                                                        </time>
-                                                    @else
-                                                        —
-                                                    @endif
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        @endif
-                    </div>
                 </div>
 
                 <div id="panel-steam" aria-labelledby="tab-steam" x-show="tab === 'steam'" x-cloak x-transition.opacity.duration.200ms role="tabpanel" tabindex="0" aria-label="Steam">
