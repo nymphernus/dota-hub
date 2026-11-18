@@ -44,14 +44,34 @@ class MatchTest extends TestCase
         $response->assertSee('Radiant');
         $response->assertSee('Dire');
         $response->assertSee('Вы');
+        $response->assertSee('Ranked');
+        $response->assertSee('Ranked All Pick');
+        $response->assertSee('Safe');
+        $response->assertSee('Mid');
+        $response->assertSee('Hard');
+        $response->assertSee('Blink Dagger');
+        $response->assertSee('Black King Bar');
+        $response->assertSee('id="radiantNetWorthChart"', false);
+        $response->assertSee('id="direNetWorthChart"', false);
         $response->assertViewHas('highlightPlayerId', self::ACCOUNT_ID);
         $response->assertViewHas('match', function (array $match) {
+            $radiantCarry = $match['players']['radiant'][0];
+            $radiantSupport = $match['players']['radiant'][1];
+
             return $match['match_id'] === self::MATCH_ID
                 && $match['radiant_win'] === true
                 && $match['radiant_score'] === 32
                 && $match['dire_score'] === 18
+                && $match['lobby_type'] === 7
+                && $match['is_ranked'] === true
+                && $match['net_worth_chart']['has_data'] === true
+                && count($match['net_worth_chart']['radiant']['datasets']) === 2
                 && count($match['players']['radiant']) === 2
-                && count($match['players']['dire']) === 2;
+                && count($match['players']['dire']) === 2
+                && $radiantCarry['role']['label'] === 'Safe'
+                && $radiantCarry['purchases'][0]['name'] === 'Blink Dagger'
+                && $radiantCarry['net_worth_history'] === [600, 1200, 2100, 3000]
+                && $radiantSupport['role']['label'] === 'Mid';
         });
     }
 
@@ -64,9 +84,9 @@ class MatchTest extends TestCase
         $service->getMatch(self::MATCH_ID);
         $service->getMatch(self::MATCH_ID);
 
-        // One match request + one hero metadata request.
-        Http::assertSentCount(2);
-        $this->assertTrue(Cache::has('opendota:match:'.self::MATCH_ID));
+        // One match request + hero metadata + item metadata.
+        Http::assertSentCount(3);
+        $this->assertTrue(Cache::has('opendota:match:v2:'.self::MATCH_ID));
     }
 
     public function test_unknown_match_redirects_back_with_an_error(): void
@@ -127,6 +147,7 @@ class MatchTest extends TestCase
                 'radiant_win' => true,
                 'duration' => 2456,
                 'start_time' => 1700000000,
+                'lobby_type' => 7,
                 'game_mode' => 22,
                 'radiant_score' => 32,
                 'dire_score' => 18,
@@ -137,12 +158,21 @@ class MatchTest extends TestCase
                         'hero_id' => 1,
                         'personaname' => 'Dendi',
                         'level' => 25,
+                        'lane_role' => 1,
+                        'position_est' => 1,
                         'kills' => 10,
                         'deaths' => 2,
                         'assists' => 15,
                         'gold_per_min' => 620,
                         'xp_per_min' => 710,
                         'hero_damage' => 25000,
+                        'networth_t' => [600, 1200, 2100, 3000],
+                        'xp_t' => [0, 400, 900, 1600],
+                        'purchase_log' => [
+                            ['time' => -89, 'key' => 'tango'],
+                            ['time' => 410, 'key' => 'blink'],
+                            ['time' => 1260, 'key' => 'black_king_bar'],
+                        ],
                     ],
                     [
                         'account_id' => 123456789,
@@ -150,12 +180,17 @@ class MatchTest extends TestCase
                         'hero_id' => 2,
                         'personaname' => 'Teammate',
                         'level' => 22,
+                        'lane_role' => 2,
                         'kills' => 4,
                         'deaths' => 7,
                         'assists' => 19,
                         'gold_per_min' => 410,
                         'xp_per_min' => 520,
                         'hero_damage' => 12000,
+                        'networth_t' => [600, 900, 1400, 1900],
+                        'purchase_log' => [
+                            ['time' => 620, 'key' => 'blink'],
+                        ],
                     ],
                     [
                         'account_id' => 987654321,
@@ -163,18 +198,21 @@ class MatchTest extends TestCase
                         'hero_id' => 2,
                         'personaname' => 'Enemy',
                         'level' => 20,
+                        'position_est' => 5,
                         'kills' => 6,
                         'deaths' => 9,
                         'assists' => 8,
                         'gold_per_min' => 380,
                         'xp_per_min' => 460,
                         'hero_damage' => 16000,
+                        'networth_t' => [600, 750, 1100, 1500],
                     ],
                     [
                         'account_id' => 0,
                         'player_slot' => 129,
                         'hero_id' => 1,
                         'level' => 18,
+                        'lane_role' => 3,
                         'kills' => 2,
                         'deaths' => 11,
                         'assists' => 5,
@@ -187,6 +225,23 @@ class MatchTest extends TestCase
             'api.opendota.com/api/heroStats*' => Http::response([
                 ['id' => 1, 'localized_name' => 'Anti-Mage', 'img' => '/apps/dota2/images/heroes/antimage_full.png'],
                 ['id' => 2, 'localized_name' => 'Axe', 'img' => '/apps/dota2/images/heroes/axe_full.png'],
+            ]),
+            'api.opendota.com/api/constants/items*' => Http::response([
+                'blink' => [
+                    'dname' => 'Blink Dagger',
+                    'cost' => 2250,
+                    'img' => '/apps/dota2/images/dota_react/items/blink.png',
+                ],
+                'black_king_bar' => [
+                    'dname' => 'Black King Bar',
+                    'cost' => 4050,
+                    'img' => '/apps/dota2/images/dota_react/items/black_king_bar.png',
+                ],
+                'tango' => [
+                    'dname' => 'Tango',
+                    'cost' => 90,
+                    'img' => '/apps/dota2/images/dota_react/items/tango.png',
+                ],
             ]),
         ]);
     }

@@ -1,12 +1,13 @@
 @extends('layouts.app')
 
 @section('title', 'Матч #'.$match['match_id'].' — Dota 2 — Stats Radar')
-@section('description', 'Детальная статистика матча Dota 2 #'.$match['match_id'].': счёт, длительность, герои, K/D/A, GPM, XPM и урон игроков Radiant и Dire.')
+@section('description', 'Детальная статистика матча Dota 2 #'.$match['match_id'].': счёт, роли, график нетворса, закуп, длительность, герои, K/D/A, GPM, XPM и урон игроков Radiant и Dire.')
 
 @php
     $radiantWin = $match['radiant_win'];
     $winner = $radiantWin ? 'Radiant' : 'Dire';
     $startedAt = $match['started_at'] ? \Carbon\CarbonImmutable::parse($match['started_at']) : null;
+    $hasNetWorth = $match['net_worth_chart']['has_data'] ?? false;
     $teams = [
         'radiant' => [
             'label' => 'Radiant',
@@ -53,6 +54,14 @@
                             ])>
                                 Победа {{ $winner }}
                             </span>
+                            @if ($match['is_ranked'])
+                                <span class="badge border-amber-500/25 bg-amber-500/10 text-amber-300">
+                                    <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.5 9.2l5.9-.9L12 3z" stroke-linejoin="round" /></svg>
+                                    Ranked
+                                </span>
+                            @elseif ($match['lobby_type_label'])
+                                <span class="badge border-white/10 bg-white/5 text-mist-300">{{ $match['lobby_type_label'] }}</span>
+                            @endif
                             @if ($match['game_mode_label'])
                                 <span class="badge border-white/10 bg-white/5 text-mist-300">{{ $match['game_mode_label'] }}</span>
                             @endif
@@ -91,6 +100,50 @@
             </div>
         </section>
 
+        <section class="mt-4" aria-label="График нетворса">
+            <div class="mb-3 flex flex-wrap items-end justify-between gap-2">
+                <div>
+                    <p class="label">Economy</p>
+                    <h2 class="mt-1 text-lg font-bold text-white">Нетворс по минутам</h2>
+                </div>
+                <span class="text-[11px] text-mist-500">
+                    @if ($hasNetWorth)
+                        OpenDota parsed data · Radiant и Dire
+                    @else
+                        График появится после парсинга матча
+                    @endif
+                </span>
+            </div>
+
+            @if ($hasNetWorth)
+                <div class="grid gap-4 lg:grid-cols-2">
+                    <div class="card p-4 sm:p-5">
+                        <div class="flex items-center justify-between gap-2">
+                            <h3 class="text-sm font-bold text-emerald-300">Radiant</h3>
+                            <span class="badge border-emerald-500/20 bg-emerald-500/10 text-[10px] text-emerald-300">Золото</span>
+                        </div>
+                        <div class="relative mt-4 h-64">
+                            <canvas id="radiantNetWorthChart" role="img" aria-label="График нетворса игроков Radiant по минутам"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="card p-4 sm:p-5">
+                        <div class="flex items-center justify-between gap-2">
+                            <h3 class="text-sm font-bold text-rose-300">Dire</h3>
+                            <span class="badge border-rose-500/20 bg-rose-500/10 text-[10px] text-rose-300">Золото</span>
+                        </div>
+                        <div class="relative mt-4 h-64">
+                            <canvas id="direNetWorthChart" role="img" aria-label="График нетворса игроков Dire по минутам"></canvas>
+                        </div>
+                    </div>
+                </div>
+            @else
+                <div class="card p-6 text-center text-sm text-mist-400">
+                    OpenDota ещё не распарсила историю нетворса этого матча. Роли и закуп могут быть доступны частично.
+                </div>
+            @endif
+        </section>
+
         @foreach ($teams as $teamKey => $team)
             <section class="card mt-4 overflow-hidden" aria-label="Состав {{ $team['label'] }}">
                 <div class="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] px-4 py-4 sm:px-5">
@@ -117,22 +170,35 @@
                 </div>
 
                 <div class="overflow-x-auto">
-                    <table class="w-full min-w-[680px] text-sm">
+                    <table class="w-full min-w-[920px] text-sm">
                         <thead class="table-head">
                             <tr>
                                 <th class="px-4 py-3 font-semibold sm:px-5">Герой</th>
+                                <th class="px-4 py-3 font-semibold">Роль</th>
                                 <th class="px-4 py-3 font-semibold">K / D / A</th>
                                 <th class="px-4 py-3 font-semibold">GPM</th>
                                 <th class="px-4 py-3 font-semibold">XPM</th>
-                                <th class="px-4 py-3 text-right font-semibold sm:px-5">Урон</th>
+                                <th class="px-4 py-3 font-semibold">Урон</th>
+                                <th class="px-4 py-3 text-right font-semibold sm:px-5">Закуп</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-white/[0.04]">
+                        <tbody class="divide-y divide-white/[0.04]" x-data="{ openPlayer: null }">
                             @foreach ($team['players'] as $player)
                                 @php
                                     $isHighlighted = $highlightPlayerId !== null
                                         && $player['account_id'] !== null
                                         && $player['account_id'] === $highlightPlayerId;
+                                    $roleLabel = $player['role']['label'] ?? null;
+                                    $roleName = $player['role']['name'] ?? null;
+                                    $roleSource = $player['role']['source'] ?? null;
+                                    $roleClasses = match ($roleLabel) {
+                                        'Safe' => 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300',
+                                        'Mid' => 'border-sky-500/25 bg-sky-500/10 text-sky-300',
+                                        'Off' => 'border-amber-500/25 bg-amber-500/10 text-amber-300',
+                                        'Soft' => 'border-violet-500/25 bg-violet-500/10 text-violet-300',
+                                        'Hard' => 'border-rose-500/25 bg-rose-500/10 text-rose-300',
+                                        default => 'border-white/10 bg-white/5 text-mist-400',
+                                    };
                                 @endphp
                                 <tr @class([
                                     'transition',
@@ -174,6 +240,16 @@
                                             </div>
                                         </div>
                                     </td>
+                                    <td class="px-4 py-3">
+                                        @if ($roleLabel)
+                                            <span class="badge !px-2 !py-0.5 !text-[10px] {{ $roleClasses }}" title="{{ $roleName }}{{ $roleSource ? ' · '.$roleSource : '' }}">
+                                                {{ $roleLabel }}
+                                            </span>
+                                            <p class="mt-1 text-[10px] text-mist-500">{{ $roleName }}</p>
+                                        @else
+                                            <span class="text-[11px] text-mist-500">—</span>
+                                        @endif
+                                    </td>
                                     <td class="px-4 py-3 font-mono text-[13px] tabular-nums">
                                         <span class="text-emerald-300">{{ $player['kills'] }}</span>
                                         <span class="text-mist-500/60">/</span>
@@ -184,13 +260,58 @@
                                     </td>
                                     <td class="px-4 py-3 font-mono text-[13px] tabular-nums text-mist-300">{{ number_format($player['gpm'], 0, '.', ' ') }}</td>
                                     <td class="px-4 py-3 font-mono text-[13px] tabular-nums text-mist-300">{{ number_format($player['xpm'], 0, '.', ' ') }}</td>
-                                    <td class="px-4 py-3 text-right font-mono text-[13px] tabular-nums text-mist-300 sm:px-5">{{ number_format($player['hero_damage'], 0, '.', ' ') }}</td>
+                                    <td class="px-4 py-3 font-mono text-[13px] tabular-nums text-mist-300">{{ number_format($player['hero_damage'], 0, '.', ' ') }}</td>
+                                    <td class="px-4 py-3 text-right sm:px-5">
+                                        @if ($player['purchases'] !== [])
+                                            <button
+                                                type="button"
+                                                class="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-[11px] font-semibold text-mist-300 transition hover:border-radar-500/30 hover:bg-radar-500/10 hover:text-radar-200"
+                                                @click="openPlayer = openPlayer === {{ $loop->index }} ? null : {{ $loop->index }}"
+                                                :aria-expanded="(openPlayer === {{ $loop->index }}).toString()"
+                                                aria-controls="purchases-{{ $teamKey }}-{{ $loop->index }}"
+                                            >
+                                                Закуп
+                                                <span class="rounded bg-white/[0.06] px-1.5 py-0.5 text-[10px] text-mist-400">{{ count($player['purchases']) }}</span>
+                                                <svg class="h-3 w-3 transition" :class="openPlayer === {{ $loop->index }} ? 'rotate-180' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                                            </button>
+                                        @else
+                                            <span class="text-[11px] text-mist-500">—</span>
+                                        @endif
+                                    </td>
                                 </tr>
+
+                                @if ($player['purchases'] !== [])
+                                    <tr id="purchases-{{ $teamKey }}-{{ $loop->index }}" x-show="openPlayer === {{ $loop->index }}" x-cloak x-transition.opacity.duration.150ms class="bg-ink-950/60">
+                                        <td colspan="7" class="px-4 pb-4 pt-1 sm:px-5">
+                                            <div class="rounded-xl border border-white/[0.06] bg-ink-900/70 p-3">
+                                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                                    <p class="label">Закуп · {{ $player['hero_name'] }}</p>
+                                                    <p class="text-[10px] text-mist-500">{{ $player['purchase_log_count'] }} покупок · показаны ключевые предметы</p>
+                                                </div>
+                                                <div class="mt-3 flex flex-wrap gap-2">
+                                                    @foreach ($player['purchases'] as $item)
+                                                        <div class="flex items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.025] p-2 pr-3" title="{{ $item['name'] }} · {{ $item['time_label'] }}">
+                                                            <div class="grid h-8 w-10 shrink-0 place-items-center overflow-hidden rounded-md bg-ink-800 ring-1 ring-white/10">
+                                                                <img src="{{ $item['image'] }}" alt="" class="h-full w-full object-contain" loading="lazy" referrerpolicy="no-referrer">
+                                                            </div>
+                                                            <div class="min-w-0">
+                                                                <p class="max-w-40 truncate text-[11px] font-semibold text-mist-300">{{ $item['name'] }}</p>
+                                                                <p class="text-[10px] text-mist-500">
+                                                                    {{ $item['time_label'] }}@if ($item['cost'] > 0) · {{ number_format($item['cost'], 0, '.', ' ') }}@endif
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endif
                             @endforeach
 
                             @if ($team['players'] === [])
                                 <tr>
-                                    <td colspan="5" class="px-4 py-8 text-center text-sm text-mist-400">Нет данных по игрокам.</td>
+                                    <td colspan="7" class="px-4 py-8 text-center text-sm text-mist-400">Нет данных по игрокам.</td>
                                 </tr>
                             @endif
                         </tbody>
@@ -213,3 +334,10 @@
         </div>
     </div>
 @endsection
+
+@if ($hasNetWorth)
+    @push('scripts')
+        <script type="application/json" id="stats-radar-match-chart-data">@json($match['net_worth_chart'])</script>
+        @vite('resources/js/match-charts.js')
+    @endpush
+@endif

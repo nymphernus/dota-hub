@@ -21,6 +21,61 @@ class OpenDotaService
 {
     private const HERO_STATS_CACHE_KEY = 'opendota:hero-stats:v1';
 
+    private const ITEM_STATS_CACHE_KEY = 'opendota:item-stats:v1';
+
+    private const TEAM_CHART_COLORS = [
+        '#34d399',
+        '#22d3ee',
+        '#a78bfa',
+        '#fbbf24',
+        '#fb7185',
+    ];
+
+    private const POSITION_ROLES = [
+        1 => ['label' => 'Safe', 'name' => 'Carry'],
+        2 => ['label' => 'Mid', 'name' => 'Mid'],
+        3 => ['label' => 'Off', 'name' => 'Offlane'],
+        4 => ['label' => 'Soft', 'name' => 'Soft Support'],
+        5 => ['label' => 'Hard', 'name' => 'Hard Support'],
+    ];
+
+    private const LANE_ROLES = [
+        1 => ['label' => 'Safe', 'name' => 'Safe Lane'],
+        2 => ['label' => 'Mid', 'name' => 'Mid Lane'],
+        3 => ['label' => 'Off', 'name' => 'Off Lane'],
+        4 => ['label' => 'Jungle', 'name' => 'Jungle'],
+    ];
+
+    private const LOBBY_TYPES = [
+        0 => 'Normal',
+        1 => 'Practice',
+        2 => 'Tournament',
+        3 => 'Tutorial',
+        4 => 'Co-op vs Bots',
+        5 => 'Team Match',
+        6 => 'Solo Queue',
+        7 => 'Ranked',
+        8 => '1v1 Mid',
+        9 => 'Battle Cup',
+    ];
+
+    private const PURCHASE_SKIP = [
+        'tpscroll',
+        'tango',
+        'branches',
+        'clarity',
+        'flask',
+        'faerie_fire',
+        'enchanted_mango',
+        'blood_grenade',
+        'dust',
+        'smoke_of_deceit',
+        'ward_observer',
+        'ward_sentry',
+        'ward_dispenser',
+        'magic_stick',
+    ];
+
     private const RANK_MEDALS = [
         1 => 'Herald',
         2 => 'Guardian',
@@ -135,7 +190,7 @@ class OpenDotaService
     {
         $ttl = (int) config('stats.cache.dota_match', 3600);
 
-        return Cache::remember("opendota:match:{$matchId}", $ttl, function () use ($matchId) {
+        return Cache::remember("opendota:match:v2:{$matchId}", $ttl, function () use ($matchId) {
             try {
                 $match = $this->client->get("matches/{$matchId}");
             } catch (PlayerNotFoundException) {
@@ -266,6 +321,56 @@ class OpenDotaService
     }
 
     /**
+     * Global item metadata (localized names, images and costs), cached for a day.
+     *
+     * @return array<string, array{name: string, image: string, cost: int}>
+     */
+    public function itemStats(): array
+    {
+        $cached = Cache::get(self::ITEM_STATS_CACHE_KEY);
+
+        if (is_array($cached)) {
+            return $cached;
+        }
+
+        try {
+            $items = $this->client->get('constants/items');
+        } catch (ApiUnavailableException $exception) {
+            throw $exception;
+        } catch (ExternalApiException|PlayerNotFoundException $exception) {
+            Log::warning('OpenDota item metadata is unavailable', ['message' => $exception->getMessage()]);
+
+            return [];
+        }
+
+        $map = [];
+
+        foreach ($items as $key => $item) {
+            if (! is_array($item) || ! isset($item['dname'])) {
+                continue;
+            }
+
+            $map[(string) $key] = [
+                'name' => (string) $item['dname'],
+                'image' => isset($item['img'])
+                    ? 'https://cdn.cloudflare.steamstatic.com'.$item['img']
+                    : $this->itemImage((string) $key),
+                'cost' => (int) ($item['cost'] ?? 0),
+            ];
+        }
+
+        if ($map !== []) {
+            Cache::put(
+                self::ITEM_STATS_CACHE_KEY,
+                $map,
+                (int) config('stats.cache.dota_items', 86400)
+            );
+        }
+
+        return $map;
+    }
+
+    /**
      * Build the match view model from the raw OpenDota payload.
      *
      * @param  array<string, mixed>  $match
@@ -274,6 +379,7 @@ class OpenDotaService
     private function transformMatch(array $match): array
     {
         $heroes = $this->heroStats();
+        $items = $this->itemStats();
 
         $radiant = [];
         $dire = [];
@@ -295,6 +401,7 @@ class OpenDotaService
             $assists = (int) ($player['assists'] ?? 0);
             $slot = (int) $player['player_slot'];
             $accountId = isset($player['account_id']) ? (int) $player['account_id'] : 0;
+            $purchaseLog = is_array($player['purchase_log'] ?? null) ? $player['purchase_log'] : [];
 
             $row = [
                 'account_id' => $accountId > 0 ? $accountId : null,
@@ -314,6 +421,11 @@ class OpenDotaService
                 'last_hits' => (int) ($player['last_hits'] ?? 0),
                 'denies' => (int) ($player['denies'] ?? 0),
                 'net_worth' => (int) ($player['net_worth'] ?? 0),
+                'role' => $this->matchRole($player),
+                'purchases' => $this->transformPurchases($purchaseLog, $items),
+                'purchase_log_count' => count($purchaseLog),
+                'net_worth_history' => $this->numericSeries($player['networth_t'] ?? []),
+                'xp_history' => $this->numericSeries($player['xp_t'] ?? []),
             ];
 
             if ($slot < 128) {
@@ -328,6 +440,8 @@ class OpenDotaService
 
         $duration = (int) ($match['duration'] ?? 0);
         $startTime = (int) ($match['start_time'] ?? 0);
+        $lobbyType = isset($match['lobby_type']) ? (int) $match['lobby_type'] : null;
+        $gameMode = isset($match['game_mode']) ? (int) $match['game_mode'] : null;
 
         $radiantScore = isset($match['radiant_score'])
             ? (int) $match['radiant_score']
@@ -345,15 +459,219 @@ class OpenDotaService
             'started_at' => $startTime > 0
                 ? CarbonImmutable::createFromTimestampUTC($startTime)->toIso8601String()
                 : null,
-            'game_mode' => isset($match['game_mode']) ? (int) $match['game_mode'] : null,
-            'game_mode_label' => $this->gameModeLabel(isset($match['game_mode']) ? (int) $match['game_mode'] : null),
+            'game_mode' => $gameMode,
+            'game_mode_label' => $this->gameModeLabel($gameMode),
+            'lobby_type' => $lobbyType,
+            'lobby_type_label' => $this->lobbyTypeLabel($lobbyType),
+            'is_ranked' => $lobbyType === 7,
             'radiant_score' => $radiantScore,
             'dire_score' => $direScore,
             'players' => [
                 'radiant' => $radiant,
                 'dire' => $dire,
             ],
+            'net_worth_chart' => $this->netWorthChart($radiant, $dire),
             'cached_at' => CarbonImmutable::now()->toIso8601String(),
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $player
+     * @return array{label: string|null, name: string|null, source: string|null}
+     */
+    private function matchRole(array $player): array
+    {
+        $position = isset($player['position_est']) && is_numeric($player['position_est'])
+            ? (int) $player['position_est']
+            : 0;
+
+        if (isset(self::POSITION_ROLES[$position])) {
+            return self::POSITION_ROLES[$position] + ['source' => 'OpenDota'];
+        }
+
+        $laneRole = isset($player['lane_role']) && is_numeric($player['lane_role'])
+            ? (int) $player['lane_role']
+            : 0;
+
+        if (isset(self::LANE_ROLES[$laneRole])) {
+            return self::LANE_ROLES[$laneRole] + ['source' => 'OpenDota lane'];
+        }
+
+        if (! empty($player['is_roaming'])) {
+            return ['label' => 'Roam', 'name' => 'Roaming', 'source' => 'OpenDota'];
+        }
+
+        return ['label' => null, 'name' => null, 'source' => null];
+    }
+
+    /**
+     * Keep 5-10 meaningful purchases (skipping consumables and recipes).
+     *
+     * @param  array<int, mixed>  $log
+     * @param  array<string, array{name: string, image: string, cost: int}>  $items
+     * @return array<int, array<string, mixed>>
+     */
+    private function transformPurchases(array $log, array $items): array
+    {
+        $purchases = [];
+
+        foreach ($log as $entry) {
+            if (! is_array($entry) || ! isset($entry['key'])) {
+                continue;
+            }
+
+            $key = (string) $entry['key'];
+
+            if (str_starts_with($key, 'recipe_') || in_array($key, self::PURCHASE_SKIP, true)) {
+                continue;
+            }
+
+            $meta = $items[$key] ?? [];
+            $cost = (int) ($meta['cost'] ?? 0);
+
+            if ($cost > 0 && $cost < 500) {
+                continue;
+            }
+
+            $time = (int) ($entry['time'] ?? 0);
+
+            $purchases[] = [
+                'key' => $key,
+                'name' => $meta['name'] ?? $this->itemName($key),
+                'image' => $meta['image'] ?? $this->itemImage($key),
+                'cost' => $cost,
+                'time' => $time,
+                'time_label' => $this->matchTimeLabel($time),
+            ];
+        }
+
+        $purchases = array_slice($purchases, 0, 10);
+
+        if ($purchases === [] && $log !== []) {
+            foreach (array_slice($log, 0, 8) as $entry) {
+                if (! is_array($entry) || ! isset($entry['key'])) {
+                    continue;
+                }
+
+                $key = (string) $entry['key'];
+                $meta = $items[$key] ?? [];
+                $time = (int) ($entry['time'] ?? 0);
+
+                $purchases[] = [
+                    'key' => $key,
+                    'name' => $meta['name'] ?? $this->itemName($key),
+                    'image' => $meta['image'] ?? $this->itemImage($key),
+                    'cost' => (int) ($meta['cost'] ?? 0),
+                    'time' => $time,
+                    'time_label' => $this->matchTimeLabel($time),
+                ];
+            }
+        }
+
+        return $purchases;
+    }
+
+    private function itemName(string $key): string
+    {
+        return ucwords(str_replace('_', ' ', $key));
+    }
+
+    private function itemImage(string $key): string
+    {
+        return 'https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/items/'.rawurlencode($key).'.png';
+    }
+
+    private function matchTimeLabel(int $seconds): string
+    {
+        if ($seconds <= 0) {
+            return 'старт';
+        }
+
+        $hours = intdiv($seconds, 3600);
+        $minutes = intdiv($seconds % 3600, 60);
+        $remainingSeconds = $seconds % 60;
+
+        return $hours > 0
+            ? sprintf('%d:%02d:%02d', $hours, $minutes, $remainingSeconds)
+            : sprintf('%d:%02d', $minutes, $remainingSeconds);
+    }
+
+    /**
+     * @return array<int, int>
+     */
+    private function numericSeries(mixed $series): array
+    {
+        if (! is_array($series)) {
+            return [];
+        }
+
+        return array_values(array_map(
+            fn ($value) => is_numeric($value) ? (int) $value : 0,
+            $series
+        ));
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $radiant
+     * @param  array<int, array<string, mixed>>  $dire
+     * @return array{labels: array<int, int>, radiant: array{datasets: array<int, array<string, mixed>>}, dire: array{datasets: array<int, array<string, mixed>>}, has_data: bool}
+     */
+    private function netWorthChart(array $radiant, array $dire): array
+    {
+        $lengths = array_merge(
+            [0],
+            array_map(fn (array $player) => count($player['net_worth_history']), $radiant),
+            array_map(fn (array $player) => count($player['net_worth_history']), $dire),
+        );
+        $maxLength = max($lengths);
+
+        if ($maxLength === 0) {
+            return [
+                'labels' => [],
+                'radiant' => ['datasets' => []],
+                'dire' => ['datasets' => []],
+                'has_data' => false,
+            ];
+        }
+
+        $datasets = function (array $players) use ($maxLength): array {
+            $result = [];
+            $index = 0;
+
+            foreach ($players as $player) {
+                $history = $player['net_worth_history'];
+
+                if ($history === []) {
+                    continue;
+                }
+
+                $color = self::TEAM_CHART_COLORS[$index % count(self::TEAM_CHART_COLORS)];
+                $index++;
+
+                $result[] = [
+                    'label' => $player['hero_name'],
+                    'data' => array_pad($history, $maxLength, null),
+                    'borderColor' => $color,
+                    'backgroundColor' => $color,
+                    'pointRadius' => 0,
+                    'pointHoverRadius' => 4,
+                    'borderWidth' => 2,
+                    'tension' => 0.28,
+                    'fill' => false,
+                ];
+            }
+
+            return $result;
+        };
+
+        $radiantDatasets = $datasets($radiant);
+        $direDatasets = $datasets($dire);
+
+        return [
+            'labels' => range(0, $maxLength - 1),
+            'radiant' => ['datasets' => $radiantDatasets],
+            'dire' => ['datasets' => $direDatasets],
+            'has_data' => $radiantDatasets !== [] || $direDatasets !== [],
         ];
     }
 
@@ -365,13 +683,32 @@ class OpenDotaService
             3 => 'Random Draft',
             4 => 'Single Draft',
             5 => 'All Random',
+            6 => 'Intro',
+            7 => 'Diretide',
+            8 => 'Reverse Captains Mode',
+            9 => 'Greeviling',
+            10 => 'Tutorial',
+            11 => 'Mid Only',
             12 => 'Least Played',
+            13 => 'Limited Heroes',
+            14 => 'Compendium',
+            15 => 'Custom',
             16 => 'Captains Draft',
+            17 => 'Balanced Draft',
             18 => 'Ability Draft',
+            19 => 'Event',
+            20 => 'All Random Deathmatch',
+            21 => '1v1 Mid',
             22 => 'Ranked All Pick',
             23 => 'Turbo',
+            24 => 'Mutation',
             default => null,
         };
+    }
+
+    private function lobbyTypeLabel(?int $lobbyType): ?string
+    {
+        return $lobbyType !== null ? (self::LOBBY_TYPES[$lobbyType] ?? null) : null;
     }
 
     /**
