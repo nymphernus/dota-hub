@@ -83,6 +83,23 @@ services:
     networks:
       - radar
 
+  test:
+    profiles: ["testing"]
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: test
+    image: stats-radar/test:local
+    entrypoint: ["php", "artisan", "test"]
+    environment:
+      APP_ENV: testing
+    volumes:
+      # Tests are excluded from the production image via .dockerignore.
+      - ./tests:/var/www/html/tests:ro
+      - ./phpunit.xml:/var/www/html/phpunit.xml:ro
+    networks:
+      - radar
+
   db:
     image: postgres:16-alpine
     restart: unless-stopped

@@ -79,7 +79,21 @@ ENTRYPOINT ["entrypoint.sh"]
 CMD ["php-fpm"]
 
 ###############################################################################
-# Stage 3: Nginx web server (serves the same public assets)
+# Stage 3: test image (dev dependencies, SQLite in-memory from phpunit.xml)
+###############################################################################
+FROM app AS test
+
+# phpunit.xml overrides the values it needs; a .env file simply prevents
+# warnings from code paths that expect one to exist.
+RUN cp .env.example .env
+
+RUN composer install \
+        --no-interaction \
+        --prefer-dist \
+        --optimize-autoloader
+
+###############################################################################
+# Stage 4: Nginx web server (serves the same public assets)
 ###############################################################################
 FROM nginx:1.27-alpine AS web
 
