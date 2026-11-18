@@ -15,7 +15,7 @@
 </head>
 <body class="flex min-h-screen flex-col">
     <header class="sticky top-0 z-40 border-b border-white/5 bg-ink-950/80 backdrop-blur-xl">
-        <div class="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        <div class="mx-auto flex h-16 w-full max-w-7xl items-center px-4 sm:px-6 lg:px-8">
             <a href="{{ route('home') }}" class="group flex items-center gap-3" aria-label="Stats Radar — на главную">
                 <span class="relative grid h-10 w-10 place-items-center overflow-hidden rounded-xl border border-radar-500/30 bg-radar-500/10">
                     <span class="absolute inset-0 bg-radar-500/10 blur-xl"></span>
@@ -31,27 +31,6 @@
                     <span class="block text-[10px] uppercase tracking-[0.28em] text-mist-500">Dota 2 · CS2</span>
                 </span>
             </a>
-
-            <nav class="hidden items-center gap-1 sm:flex" aria-label="Основная навигация">
-                <a href="{{ route('home') }}" class="nav-link">Поиск</a>
-                <a href="{{ route('home') }}#how-it-works" class="nav-link">Как это работает</a>
-                <a href="{{ route('home') }}#search" class="btn-primary ml-2 !px-4 !py-2 text-xs">Найти игрока</a>
-            </nav>
-
-            <div class="relative sm:hidden" x-data="{ open: false }" @keydown.escape.window="open = false">
-                <button type="button" @click="open = !open" class="btn-ghost !p-2.5" aria-label="Открыть меню" :aria-expanded="open.toString()">
-                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                        <path x-show="!open" d="M4 7h16M4 12h16M4 17h16" stroke-linecap="round" />
-                        <path x-show="open" x-cloak d="M6 6l12 12M18 6L6 18" stroke-linecap="round" />
-                    </svg>
-                </button>
-
-                <div x-show="open" x-cloak x-transition.origin.top.right @click.outside="open = false" class="card absolute right-0 mt-2 w-56 space-y-1 p-2">
-                    <a href="{{ route('home') }}" class="nav-link block">Поиск</a>
-                    <a href="{{ route('home') }}#how-it-works" class="nav-link block">Как это работает</a>
-                    <a href="{{ route('home') }}#search" class="btn-primary mt-1 w-full">Найти игрока</a>
-                </div>
-            </div>
         </div>
     </header>
 

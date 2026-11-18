@@ -4,40 +4,30 @@
 @section('description', 'Ищите игроков Dota 2 и CS2 по ссылке на Steam, SteamID64 или никнейму. KDA, GPM, XPM, топ героев, последние матчи, VAC-баны и часы в CS2.')
 
 @section('content')
-    <section class="relative overflow-hidden">
+    <section class="relative flex min-h-[calc(100vh-4rem)] flex-col justify-center overflow-hidden">
         <div class="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
-            <div class="absolute left-1/2 top-[-24rem] h-[46rem] w-[46rem] -translate-x-1/2 rounded-full bg-radar-500/[0.10] blur-3xl"></div>
+            <div class="absolute left-1/2 top-1/2 h-[42rem] w-[42rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-radar-500/[0.10] blur-3xl"></div>
             <div class="absolute right-[-8rem] top-24 h-80 w-80 rounded-full bg-cyan-500/[0.07] blur-3xl"></div>
-            <div class="absolute left-[-10rem] top-64 h-72 w-72 rounded-full bg-dota-500/[0.05] blur-3xl"></div>
+            <div class="absolute bottom-0 left-[-10rem] h-72 w-72 rounded-full bg-dota-500/[0.05] blur-3xl"></div>
         </div>
 
-        <div class="mx-auto w-full max-w-5xl px-4 pb-10 pt-14 text-center sm:px-6 sm:pt-20 lg:px-8">
-            <span class="inline-flex items-center gap-2 rounded-full border border-radar-500/20 bg-radar-500/[0.08] px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-radar-300">
-                <span class="relative flex h-2 w-2">
-                    <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-radar-400 opacity-70"></span>
-                    <span class="relative inline-flex h-2 w-2 rounded-full bg-radar-400"></span>
-                </span>
-                OpenDota · Steam · Redis cache
-            </span>
-
-            <h1 class="mx-auto mt-6 max-w-3xl text-balance text-4xl font-black leading-[1.05] tracking-tight text-white sm:text-6xl">
-                Статистика игроков
-                <span class="block bg-gradient-to-r from-radar-300 via-emerald-200 to-cyan-300 bg-clip-text text-transparent">под радаром</span>
+        <div class="mx-auto w-full max-w-4xl px-4 pb-8 pt-12 text-center sm:px-6 lg:px-8">
+            <h1 class="bg-gradient-to-r from-white via-radar-200 to-cyan-200 bg-clip-text text-5xl font-black tracking-tight text-transparent sm:text-7xl">
+                Stats Radar
             </h1>
 
-            <p class="mx-auto mt-5 max-w-2xl text-pretty text-sm leading-relaxed text-mist-400 sm:text-base">
-                Профиль, ранг, KDA, GPM и последние матчи для Dota 2. VAC-баны и часы в игре для CS2.
-                Один поиск — и весь срез по игроку на одном экране.
+            <p class="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-mist-400 sm:text-base">
+                Статистика игроков Dota 2 и CS2 — профиль, матчи и герои в одном поиске.
             </p>
         </div>
 
-        <div id="search" class="mx-auto w-full max-w-3xl px-4 sm:px-6 lg:px-8">
+        <div id="search" class="mx-auto w-full max-w-3xl px-4 pb-16 sm:px-6 lg:px-8">
             @include('partials.search-form')
         </div>
     </section>
 
     @if ($recentSearches->isNotEmpty())
-        <section class="mx-auto mt-12 w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+        <section class="mx-auto mt-4 w-full max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
             <div class="flex flex-wrap items-end justify-between gap-3">
                 <div>
                     <p class="label">История</p>
@@ -83,58 +73,4 @@
             </div>
         </section>
     @endif
-
-    <section id="how-it-works" class="mx-auto mt-16 w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div class="grid gap-4 md:grid-cols-3">
-            <article class="card card-hover p-5">
-                <span class="grid h-10 w-10 place-items-center rounded-xl border border-radar-500/20 bg-radar-500/10 text-radar-300">
-                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                        <circle cx="11" cy="11" r="6.5" />
-                        <path d="M16 16l4.5 4.5" stroke-linecap="round" />
-                    </svg>
-                </span>
-                <h2 class="mt-4 text-base font-bold text-white">Один запрос — любой формат</h2>
-                <p class="mt-2 text-sm leading-relaxed text-mist-400">
-                    Ссылка на Steam, SteamID64, Dota-аккаунт или никнейм. Для Dota 2 никнейм ищется через OpenDota,
-                    для CS2 достаточно ссылки на профиль.
-                </p>
-            </article>
-
-            <article class="card card-hover p-5">
-                <span class="grid h-10 w-10 place-items-center rounded-xl border border-cyan-500/20 bg-cyan-500/10 text-cyan-300">
-                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                        <path d="M12 3l7 4v5c0 4.2-2.9 7.6-7 9-4.1-1.4-7-4.8-7-9V7l7-4z" stroke-linejoin="round" />
-                        <path d="M9 12l2 2 4-4" stroke-linecap="round" stroke-linejoin="round" />
-                    </svg>
-                </span>
-                <h2 class="mt-4 text-base font-bold text-white">Кэш вместо лимитов</h2>
-                <p class="mt-2 text-sm leading-relaxed text-mist-400">
-                    Профили живут в Redis 30 минут, поэтому повторные просмотры не расходуют дневной лимит OpenDota.
-                    Кнопка «Обновить» сбрасывает кэш точечно.
-                </p>
-            </article>
-
-            <article class="card card-hover p-5">
-                <span class="grid h-10 w-10 place-items-center rounded-xl border border-dota-500/20 bg-dota-500/10 text-dota-300">
-                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                        <path d="M4 19V5M4 19h16" stroke-linecap="round" />
-                        <path d="M8 15l3-4 3 2 4-6" stroke-linecap="round" stroke-linejoin="round" />
-                    </svg>
-                </span>
-                <h2 class="mt-4 text-base font-bold text-white">Только важные метрики</h2>
-                <p class="mt-2 text-sm leading-relaxed text-mist-400">
-                    KDA, GPM, XPM, винрейт, топ-5 героев и последние 20 матчей с цветовым выделением результата.
-                    Для CS2 — часы, приватность и статус блокировок.
-                </p>
-            </article>
-        </div>
-
-        <div class="mt-10 flex flex-col items-start justify-between gap-4 rounded-2xl border border-white/[0.06] bg-gradient-to-r from-ink-900/90 to-ink-850/60 p-5 sm:flex-row sm:items-center">
-            <div>
-                <p class="text-sm font-semibold text-white">Готовы проверить чей-нибудь винрейт?</p>
-                <p class="mt-1 text-xs text-mist-400">Кэширование уже включено — можно начинать с бесплатного OpenDota API.</p>
-            </div>
-            <a href="#search" class="btn-primary shrink-0">Начать поиск</a>
-        </div>
-    </section>
 @endsection

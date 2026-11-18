@@ -18,7 +18,7 @@
     <form method="POST" action="{{ route('search') }}" @submit="loading = true" class="rounded-[calc(1.5rem-1px)] bg-ink-900/95 p-4 backdrop-blur sm:p-5">
         @csrf
 
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
             <div class="inline-flex w-fit items-center gap-1 rounded-xl border border-white/[0.06] bg-ink-950/70 p-1" role="group" aria-label="Выбор игры">
                 <label class="relative cursor-pointer">
                     <input type="radio" name="game" value="dota" x-model="game" class="peer sr-only">
@@ -35,11 +35,6 @@
                     </span>
                 </label>
             </div>
-
-            <p class="hidden items-center gap-2 text-[11px] text-mist-500 sm:flex">
-                <span class="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-radar-400"></span>
-                Кэш 30 минут · без регистрации
-            </p>
         </div>
 
         <div class="mt-4 flex flex-col gap-3 sm:flex-row">
