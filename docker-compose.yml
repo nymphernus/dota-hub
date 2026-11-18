@@ -21,6 +21,10 @@ services:
       REDIS_PORT: 6379
       REDIS_CLIENT: phpredis
       RUN_MIGRATIONS: "true"
+    extra_hosts:
+      # Some DNS resolvers return Cloudflare edge IPs that this network cannot reach.
+      # Pin OpenDota to a working anycast edge; override with OPENDOTA_API_IP if needed.
+      - "api.opendota.com:${OPENDOTA_API_IP:-104.16.0.1}"
     volumes:
       - app-storage:/var/www/html/storage
     depends_on:
@@ -58,6 +62,8 @@ services:
       REDIS_PORT: 6379
       REDIS_CLIENT: phpredis
       RUN_MIGRATIONS: "false"
+    extra_hosts:
+      - "api.opendota.com:${OPENDOTA_API_IP:-104.16.0.1}"
     volumes:
       - app-storage:/var/www/html/storage
     healthcheck:
