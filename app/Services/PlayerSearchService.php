@@ -19,8 +19,7 @@ class PlayerSearchService
     public function __construct(
         private readonly OpenDotaService $openDota,
         private readonly SteamService $steam,
-    ) {
-    }
+    ) {}
 
     /**
      * @return array{

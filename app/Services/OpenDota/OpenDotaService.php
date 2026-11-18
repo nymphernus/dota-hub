@@ -30,9 +30,7 @@ class OpenDotaService
         8 => 'Immortal',
     ];
 
-    public function __construct(private readonly OpenDotaClient $client)
-    {
-    }
+    public function __construct(private readonly OpenDotaClient $client) {}
 
     /**
      * Full cached player profile.

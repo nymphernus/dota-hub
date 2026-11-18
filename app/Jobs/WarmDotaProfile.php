@@ -11,7 +11,7 @@ use Illuminate\Foundation\Queue\Queueable;
  * Warms the Redis cache for a Dota 2 player in the background so the redirect
  * target renders without waiting for OpenDota.
  */
-class WarmDotaProfile implements ShouldQueue, ShouldBeUnique
+class WarmDotaProfile implements ShouldBeUnique, ShouldQueue
 {
     use Queueable;
 
@@ -21,9 +21,7 @@ class WarmDotaProfile implements ShouldQueue, ShouldBeUnique
 
     public int $uniqueFor = 600;
 
-    public function __construct(public readonly int $accountId)
-    {
-    }
+    public function __construct(public readonly int $accountId) {}
 
     public function uniqueId(): string
     {

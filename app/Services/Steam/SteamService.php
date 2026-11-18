@@ -21,9 +21,7 @@ use Illuminate\Support\Facades\Log;
  */
 class SteamService
 {
-    public function __construct(private readonly Factory $http)
-    {
-    }
+    public function __construct(private readonly Factory $http) {}
 
     public function hasApiKey(): bool
     {

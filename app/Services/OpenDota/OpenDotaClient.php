@@ -19,9 +19,7 @@ use Illuminate\Support\Facades\Log;
  */
 class OpenDotaClient
 {
-    public function __construct(private readonly Factory $http)
-    {
-    }
+    public function __construct(private readonly Factory $http) {}
 
     /**
      * @param  array<string, mixed>  $query
