@@ -159,15 +159,21 @@
                 setTab(value) {
                     this.tab = value;
                     history.replaceState(null, '', value === 'matches' ? '#matches' : window.location.pathname);
+                },
+                move(direction, element) {
+                    this.setTab(direction > 0 ? 'matches' : 'overview');
+                    const tabs = element.closest('[role=tablist]').querySelectorAll('[role=tab]');
+                    tabs[direction > 0 ? 1 : 0].focus();
                 }
             }"
+            @hashchange.window="tab = window.location.hash === '#matches' ? 'matches' : 'overview'"
         >
-            <div class="flex items-center gap-1 overflow-x-auto rounded-2xl border border-white/[0.06] bg-ink-900/60 p-1.5" role="tablist" aria-label="Разделы профиля">
-                <button type="button" @click="setTab('overview')" :class="{ 'tab-button-active': tab === 'overview' }" class="tab-button" role="tab" :aria-selected="(tab === 'overview').toString()">
+            <div class="flex items-center gap-1 overflow-x-auto rounded-2xl border border-white/[0.06] bg-ink-900/60 p-1.5" role="tablist" aria-label="Разделы профиля" @keydown.arrow-right.prevent="move(1, $event.target)" @keydown.arrow-left.prevent="move(-1, $event.target)">
+                <button type="button" id="tab-overview" aria-controls="panel-overview" @click="setTab('overview')" :class="{ 'tab-button-active': tab === 'overview' }" class="tab-button" role="tab" :aria-selected="(tab === 'overview').toString()" :tabindex="tab === 'overview' ? 0 : -1">
                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5" /><rect x="13" y="4" width="7" height="7" rx="1.5" /><rect x="4" y="13" width="7" height="7" rx="1.5" /><rect x="13" y="13" width="7" height="7" rx="1.5" /></svg>
                     Обзор
                 </button>
-                <button type="button" @click="setTab('matches')" :class="{ 'tab-button-active': tab === 'matches' }" class="tab-button" role="tab" :aria-selected="(tab === 'matches').toString()">
+                <button type="button" id="tab-matches" aria-controls="panel-matches" @click="setTab('matches')" :class="{ 'tab-button-active': tab === 'matches' }" class="tab-button" role="tab" :aria-selected="(tab === 'matches').toString()" :tabindex="tab === 'matches' ? 0 : -1">
                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h9" stroke-linecap="round" /></svg>
                     Последние матчи
                     <span class="rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-bold text-mist-400">{{ count($player['matches']) }}</span>
@@ -175,7 +181,7 @@
             </div>
 
             <div class="mt-4">
-                <div x-show="tab === 'overview'" x-transition.opacity.duration.200ms role="tabpanel" aria-label="Обзор">
+                <div id="panel-overview" aria-labelledby="tab-overview" x-show="tab === 'overview'" x-transition.opacity.duration.200ms role="tabpanel" tabindex="0" aria-label="Обзор">
                     <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
                         <x-stat label="Средний KDA" :value="number_format($player['averages']['kda'] ?? 0, 2, '.', '')" hint="K + A / D за все матчи" />
                         <x-stat label="GPM" :value="number_format($player['averages']['gpm'] ?? 0, 0, '.', ' ')" hint="Золото в минуту" />
@@ -258,7 +264,7 @@
                     </div>
                 </div>
 
-                <div x-show="tab === 'matches'" x-cloak x-transition.opacity.duration.200ms role="tabpanel" aria-label="Последние матчи">
+                <div id="panel-matches" aria-labelledby="tab-matches" x-show="tab === 'matches'" x-cloak x-transition.opacity.duration.200ms role="tabpanel" tabindex="0" aria-label="Последние матчи">
                     <div class="card overflow-hidden">
                         <div class="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] px-4 py-4 sm:px-5">
                             <div>
