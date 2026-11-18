@@ -295,7 +295,15 @@
                                         @foreach ($heroUsage as $hero)
                                             <div class="flex items-center gap-2 rounded-lg px-2 py-1 text-[11px] transition hover:bg-white/[0.03]">
                                                 <span class="h-2 w-2 shrink-0 rounded-full" style="background-color: {{ $hero['color'] }}"></span>
-                                                <span class="min-w-0 flex-1 truncate text-mist-300">{{ $hero['name'] }}</span>
+                                                <span class="min-w-0 flex-1 truncate text-mist-300">
+                                                    @if ($hero['hero_id'])
+                                                        <a href="{{ route('dota.player.hero', ['accountId' => $player['account_id'], 'heroId' => $hero['hero_id']]) }}" class="transition hover:text-white hover:underline">
+                                                            {{ $hero['name'] }}
+                                                        </a>
+                                                    @else
+                                                        {{ $hero['name'] }}
+                                                    @endif
+                                                </span>
                                                 <span class="shrink-0 font-semibold text-white">{{ $hero['games'] }}</span>
                                                 <span class="w-10 shrink-0 text-right text-mist-500">{{ number_format($hero['share'], 1, '.', '') }}%</span>
                                             </div>
@@ -366,17 +374,20 @@
                                 </thead>
                                 <tbody class="divide-y divide-white/[0.04]">
                                     @foreach ($topHeroes as $index => $hero)
+                                        @php
+                                            $heroUrl = route('dota.player.hero', ['accountId' => $player['account_id'], 'heroId' => $hero['hero_id']]);
+                                        @endphp
                                         <tr class="transition hover:bg-white/[0.03]">
                                             <td class="px-3 py-2 text-center font-mono text-[10px] text-mist-500 sm:px-5">{{ $index + 1 }}</td>
                                             <td class="px-2 py-2">
-                                                <div class="flex items-center gap-2.5">
-                                                    <div class="h-7 w-12 shrink-0 overflow-hidden rounded-md bg-ink-800 ring-1 ring-white/10">
+                                                <a href="{{ $heroUrl }}" class="group flex items-center gap-2.5" aria-label="Статистика героя {{ $hero['name'] }}">
+                                                    <div class="h-7 w-12 shrink-0 overflow-hidden rounded-md bg-ink-800 ring-1 ring-white/10 transition group-hover:ring-radar-400/50">
                                                         @if ($hero['image'])
                                                             <img src="{{ $hero['image'] }}" alt="{{ $hero['name'] }}" class="h-full w-full object-cover" loading="lazy">
                                                         @endif
                                                     </div>
-                                                    <span class="truncate text-[12px] font-semibold text-white">{{ $hero['name'] }}</span>
-                                                </div>
+                                                    <span class="truncate text-[12px] font-semibold text-white transition group-hover:text-radar-200">{{ $hero['name'] }}</span>
+                                                </a>
                                             </td>
                                             <td class="px-3 py-2 text-right font-mono font-semibold text-mist-200">{{ $hero['games'] }}</td>
                                             <td class="px-3 py-2 text-right font-mono font-bold {{ ($hero['winrate'] ?? 0) >= 50 ? 'text-emerald-300' : 'text-rose-300' }} sm:px-5">
@@ -444,24 +455,23 @@
                                                     'border-l-2 border-emerald-400/70' => $match['win'],
                                                     'border-l-2 border-rose-400/70' => ! $match['win'],
                                                 ])>
-                                                    <div class="flex items-center gap-2.5">
-                                                        <div class="relative h-9 w-14 shrink-0 overflow-hidden rounded-md bg-ink-800 ring-1 ring-white/10">
+                                                    <a
+                                                        href="{{ route('dota.player.hero', ['accountId' => $player['account_id'], 'heroId' => $match['hero_id']]) }}"
+                                                        class="group flex items-center gap-2.5"
+                                                        onclick="event.stopPropagation()"
+                                                        aria-label="Статистика героя {{ $match['hero_name'] }}"
+                                                    >
+                                                        <div class="relative h-9 w-14 shrink-0 overflow-hidden rounded-md bg-ink-800 ring-1 ring-white/10 transition group-hover:ring-radar-400/50">
                                                             @if ($match['hero_image'])
                                                                 <img src="{{ $match['hero_image'] }}" alt="{{ $match['hero_name'] }}" class="h-full w-full object-cover" loading="lazy">
                                                             @endif
                                                             <span class="absolute bottom-0 right-0 rounded-tl bg-ink-950/90 px-1 font-mono text-[8px] font-bold leading-4 text-mist-200" title="Уровень героя">{{ $match['level'] ?? '—' }}</span>
                                                         </div>
                                                         <div class="min-w-0">
-                                                            <p class="truncate text-[12px] font-semibold text-white">
-                                                                @if ($matchUrl)
-                                                                    <a href="{{ $matchUrl }}" class="transition hover:text-radar-200 hover:underline" onclick="event.stopPropagation()">{{ $match['hero_name'] }}</a>
-                                                                @else
-                                                                    {{ $match['hero_name'] }}
-                                                                @endif
-                                                            </p>
+                                                            <p class="truncate text-[12px] font-semibold text-white transition group-hover:text-radar-200">{{ $match['hero_name'] }}</p>
                                                             <p class="font-mono text-[9px] text-mist-500">{{ $match['duration_label'] }}</p>
                                                         </div>
-                                                    </div>
+                                                    </a>
                                                 </td>
                                                 <td class="px-3 py-2">
                                                     <span @class([
@@ -530,6 +540,10 @@
                             sortKey: 'games',
                             sortDir: 'desc',
                             heroes: @js($player['heroes']),
+                            heroUrlTemplate: @js(route('dota.player.hero', ['accountId' => $player['account_id'], 'heroId' => '__HERO__'])),
+                            heroUrl(heroId) {
+                                return this.heroUrlTemplate.replace('__HERO__', heroId);
+                            },
                             get filteredHeroes() {
                                 const query = this.search.trim().toLowerCase();
                                 const direction = this.sortDir === 'asc' ? 1 : -1;
@@ -615,8 +629,8 @@
                                         <template x-for="hero in filteredHeroes" :key="hero.hero_id">
                                             <tr class="transition hover:bg-white/[0.03]">
                                                 <td class="px-4 py-2.5 sm:px-5">
-                                                    <div class="flex items-center gap-3">
-                                                        <div class="h-9 w-16 shrink-0 overflow-hidden rounded-md bg-ink-800 ring-1 ring-white/10">
+                                                    <a :href="heroUrl(hero.hero_id)" class="group flex items-center gap-3" :aria-label="'Статистика героя ' + hero.localized_name">
+                                                        <div class="h-9 w-16 shrink-0 overflow-hidden rounded-md bg-ink-800 ring-1 ring-white/10 transition group-hover:ring-radar-400/50">
                                                             <template x-if="hero.image">
                                                                 <img :src="hero.image" :alt="hero.localized_name" class="h-full w-full object-cover" loading="lazy">
                                                             </template>
@@ -624,8 +638,8 @@
                                                                 <span class="grid h-full w-full place-items-center text-xs font-bold text-mist-500" x-text="hero.localized_name.charAt(0)"></span>
                                                             </template>
                                                         </div>
-                                                        <p class="truncate text-[13px] font-semibold text-white" x-text="hero.localized_name"></p>
-                                                    </div>
+                                                        <p class="truncate text-[13px] font-semibold text-white transition group-hover:text-radar-200" x-text="hero.localized_name"></p>
+                                                    </a>
                                                 </td>
                                                 <td class="px-4 py-2.5 font-mono text-[13px] tabular-nums text-mist-300" x-text="hero.games"></td>
                                                 <td class="px-4 py-2.5">

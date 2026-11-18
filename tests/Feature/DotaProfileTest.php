@@ -60,6 +60,10 @@ class DotaProfileTest extends TestCase
             route('dota.match', ['matchId' => 9000000001, 'player_id' => self::ACCOUNT_ID]),
             false
         );
+        $response->assertSee(
+            route('dota.player.hero', ['accountId' => self::ACCOUNT_ID, 'heroId' => 1]),
+            false
+        );
         $response->assertSee('id="winrateChart"', false);
         $response->assertSee('id="heroUsageChart"', false);
         $response->assertSee('data-count=', false);
