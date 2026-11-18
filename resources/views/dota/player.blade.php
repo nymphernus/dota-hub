@@ -4,8 +4,27 @@
 @section('description', 'Статистика Dota 2 игрока '.$player['nickname'].': ранг, винрейт, KDA, GPM, XPM, топ героев и последние матчи.')
 
 @php
-    $winrate = $player['winrate'];
     $topHeroes = $player['top_heroes'] ?? array_slice($player['heroes'], 0, 5);
+
+    $chartMatches = collect($recentMatches)
+        ->reverse()
+        ->values()
+        ->map(fn (array $match) => [
+            'label' => $match['started_at']
+                ? \Carbon\CarbonImmutable::parse($match['started_at'])->format('d.m')
+                : '—',
+            'win' => (bool) $match['win'],
+            'hero' => $match['hero_name'] ?? 'Неизвестный герой',
+        ])
+        ->all();
+
+    $chartData = [
+        'winrate' => $winrate,
+        'wins' => $player['wins'],
+        'losses' => $player['losses'],
+        'matches' => $chartMatches,
+    ];
+
     $rankTone = match ($player['rank_medal']) {
         'Herald' => 'from-zinc-400 to-zinc-600',
         'Guardian' => 'from-emerald-400 to-emerald-700',
@@ -202,8 +221,77 @@
                         <x-stat label="K / D / A" :value="number_format($player['averages']['kills'] ?? 0, 1).' / '.number_format($player['averages']['deaths'] ?? 0, 1).' / '.number_format($player['averages']['assists'] ?? 0, 1)" hint="Средние значения" />
                     </div>
 
-                    <div class="mt-4 grid gap-4 lg:grid-cols-3">
-                        <div class="card p-4 sm:p-5 lg:col-span-2">
+                    <div class="mt-4 grid gap-4 lg:grid-cols-2">
+                        <div class="card p-4 sm:p-5">
+                            <div class="flex items-start justify-between gap-3">
+                                <div>
+                                    <p class="label">Винрейт</p>
+                                    <h2 class="mt-1 text-lg font-bold text-white">Общий винрейт</h2>
+                                </div>
+                                <span class="badge border-emerald-500/20 bg-emerald-500/10 text-emerald-300">За всё время</span>
+                            </div>
+
+                            <div class="relative mx-auto mt-4 h-56 w-full max-w-64">
+                                <canvas id="winrateChart" role="img" aria-label="Круговая диаграмма общего винрейта"></canvas>
+                                <div class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                                    <span class="text-3xl font-black text-white">
+                                        {{ $winrate !== null ? number_format($winrate, 1, '.', '') : '—' }}@if ($winrate !== null)<span class="text-base text-mist-500">%</span>@endif
+                                    </span>
+                                    <span class="mt-1 text-[10px] uppercase tracking-[0.18em] text-mist-500">Winrate</span>
+                                </div>
+                            </div>
+
+                            <div class="mt-4 grid grid-cols-3 gap-2">
+                                <div class="rounded-xl border border-emerald-500/15 bg-emerald-500/[0.08] p-3 text-center">
+                                    <p class="text-lg font-bold text-emerald-300">{{ number_format($player['wins'], 0, '.', ' ') }}</p>
+                                    <p class="text-[9px] uppercase tracking-wider text-emerald-300/60">Победы</p>
+                                </div>
+                                <div class="rounded-xl border border-rose-500/15 bg-rose-500/[0.08] p-3 text-center">
+                                    <p class="text-lg font-bold text-rose-300">{{ number_format($player['losses'], 0, '.', ' ') }}</p>
+                                    <p class="text-[9px] uppercase tracking-wider text-rose-300/60">Поражения</p>
+                                </div>
+                                <div class="rounded-xl border border-white/[0.06] bg-white/[0.03] p-3 text-center">
+                                    <p class="text-lg font-bold text-white">{{ number_format($player['games'], 0, '.', ' ') }}</p>
+                                    <p class="text-[9px] uppercase tracking-wider text-mist-500">Всего</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card p-4 sm:p-5">
+                            <div class="flex flex-wrap items-start justify-between gap-3">
+                                <div>
+                                    <p class="label">Форма</p>
+                                    <h2 class="mt-1 text-lg font-bold text-white">Последние матчи</h2>
+                                </div>
+                                <div class="flex items-center gap-3 text-[10px] text-mist-500">
+                                    <span class="inline-flex items-center gap-1.5">
+                                        <span class="h-2 w-2 rounded-sm bg-emerald-400"></span>
+                                        Победа
+                                    </span>
+                                    <span class="inline-flex items-center gap-1.5">
+                                        <span class="h-2 w-2 rounded-sm bg-rose-400"></span>
+                                        Поражение
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="relative mt-4 h-56">
+                                <canvas id="recentMatchesChart" role="img" aria-label="Столбчатая диаграмма результатов последних матчей"></canvas>
+                                @if ($chartMatches === [])
+                                    <p class="absolute inset-0 grid place-items-center text-sm text-mist-500">
+                                        Для графика пока нет матчей.
+                                    </p>
+                                @endif
+                            </div>
+
+                            <p class="mt-3 text-[11px] leading-relaxed text-mist-500">
+                                Слева — более старые матчи, справа — последние. Наведите на столбец, чтобы увидеть героя и дату.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <div class="card p-4 sm:p-5">
                             <div class="flex items-center justify-between gap-3">
                                 <div>
                                     <p class="label">Любимые герои</p>
@@ -244,35 +332,6 @@
                                     @endforeach
                                 </div>
                             @endif
-                        </div>
-
-                        <div class="card flex flex-col items-center justify-center p-5 sm:p-6">
-                            <p class="label self-start">Соотношение побед</p>
-
-                            <div class="relative mt-5 grid h-40 w-40 place-items-center rounded-full" style="background: conic-gradient(#34d399 {{ $winrate ?? 0 }}%, rgba(255,255,255,0.06) 0);">
-                                <div class="grid h-[8.5rem] w-[8.5rem] place-items-center rounded-full bg-ink-900 text-center shadow-inner">
-                                    <div>
-                                        <p class="text-3xl font-black text-white">{{ $winrate !== null ? number_format($winrate, 1, '.', '') : '—' }}@if ($winrate !== null)<span class="text-base text-mist-500">%</span>@endif</p>
-                                        <p class="mt-1 text-[10px] uppercase tracking-[0.18em] text-mist-500">Winrate</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="mt-6 grid w-full grid-cols-2 gap-2">
-                                <div class="rounded-xl border border-emerald-500/15 bg-emerald-500/[0.08] p-3 text-center">
-                                    <p class="text-lg font-bold text-emerald-300">{{ number_format($player['wins'], 0, '.', ' ') }}</p>
-                                    <p class="text-[10px] uppercase tracking-wider text-emerald-300/60">Победы</p>
-                                </div>
-                                <div class="rounded-xl border border-rose-500/15 bg-rose-500/[0.08] p-3 text-center">
-                                    <p class="text-lg font-bold text-rose-300">{{ number_format($player['losses'], 0, '.', ' ') }}</p>
-                                    <p class="text-[10px] uppercase tracking-wider text-rose-300/60">Поражения</p>
-                                </div>
-                            </div>
-
-                            <div class="mt-2 w-full rounded-xl border border-white/[0.06] bg-white/[0.03] p-3 text-center">
-                                <p class="text-lg font-bold text-white">{{ number_format($player['games'], 0, '.', ' ') }}</p>
-                                <p class="text-[10px] uppercase tracking-wider text-mist-500">Всего матчей</p>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -536,3 +595,8 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+    <script type="application/json" id="stats-radar-chart-data">@json($chartData)</script>
+    @vite('resources/js/charts.js')
+@endpush

@@ -47,6 +47,15 @@ class DotaProfileTest extends TestCase
             route('dota.match', ['matchId' => 9000000001, 'player_id' => self::ACCOUNT_ID]),
             false
         );
+        $response->assertSee('id="winrateChart"', false);
+        $response->assertSee('id="recentMatchesChart"', false);
+        $response->assertViewHas('winrate', 60.0);
+        $response->assertViewHas(
+            'recentMatches',
+            fn (array $matches) => count($matches) === 2
+                && $matches[0]['win'] === true
+                && $matches[1]['win'] === false
+        );
     }
 
     public function test_second_visit_is_served_from_cache(): void

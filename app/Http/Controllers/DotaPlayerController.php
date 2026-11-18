@@ -46,6 +46,8 @@ class DotaPlayerController extends Controller
 
         return view('dota.player', [
             'player' => $player,
+            'winrate' => $player['winrate'],
+            'recentMatches' => array_slice($player['matches'], 0, 20),
         ]);
     }
 

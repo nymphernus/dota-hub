@@ -99,5 +99,7 @@
             <p class="text-[11px] text-mist-500">&copy; {{ date('Y') }} Stats Radar</p>
         </div>
     </footer>
+
+    @stack('scripts')
 </body>
 </html>
