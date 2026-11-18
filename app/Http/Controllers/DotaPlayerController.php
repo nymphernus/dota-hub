@@ -8,6 +8,8 @@ use App\Exceptions\ExternalApiException;
 use App\Exceptions\PlayerNotFoundException;
 use App\Models\PlayerSearch;
 use App\Services\OpenDota\OpenDotaService;
+use App\Services\Steam\SteamService;
+use App\Support\SteamId;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -24,7 +26,7 @@ class DotaPlayerController extends Controller
         '#64748b',
     ];
 
-    public function show(int $accountId, OpenDotaService $openDota): View|Response
+    public function show(int $accountId, OpenDotaService $openDota, SteamService $steam): View|Response
     {
         try {
             $player = $openDota->player($accountId);
@@ -60,6 +62,7 @@ class DotaPlayerController extends Controller
         );
 
         $history = $player['match_history'] ?? [];
+        $steamId = ($player['steam_id'] ?? '') ?: SteamId::steamId64FromAccountId($accountId);
 
         return view('dota.player', [
             'player' => $player,
@@ -67,12 +70,14 @@ class DotaPlayerController extends Controller
             'recentMatches' => array_slice($player['matches'], 0, 20),
             'activityHeatmap' => $this->activityHeatmap($history),
             'heroUsage' => $this->heroUsage(array_slice($history, 0, 25)),
+            'steamProfile' => $steam->summary($steamId),
         ]);
     }
 
-    public function refresh(int $accountId, OpenDotaService $openDota): RedirectResponse
+    public function refresh(int $accountId, OpenDotaService $openDota, SteamService $steam): RedirectResponse
     {
         $openDota->forget($accountId);
+        $steam->forget(SteamId::steamId64FromAccountId($accountId));
 
         return redirect()
             ->route('dota.player', ['accountId' => $accountId])

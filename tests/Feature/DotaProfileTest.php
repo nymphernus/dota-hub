@@ -17,7 +17,10 @@ class DotaProfileTest extends TestCase
     {
         parent::setUp();
 
-        config(['services.opendota.api_key' => null]);
+        config([
+            'services.opendota.api_key' => null,
+            'services.steam.api_key' => null,
+        ]);
         Cache::flush();
     }
 
@@ -55,6 +58,10 @@ class DotaProfileTest extends TestCase
         $response->assertDontSee('id="recentMatchesChart"', false);
         $response->assertDontSee('Частые тиммейты');
         $response->assertDontSee('Окружение');
+        $response->assertSee('Steam API недоступна');
+        $response->assertSee('STEAM_API_KEY не настроен');
+        $response->assertSee('SteamID64');
+        $response->assertViewHas('steamProfile', fn (array $profile) => $profile['available'] === false);
         $response->assertViewHas('winrate', 60.0);
         $response->assertViewHas('activityHeatmap', function (array $days) {
             return count($days) >= 180
@@ -193,8 +200,60 @@ class DotaProfileTest extends TestCase
         $response->assertOk();
         $response->assertSee('У этого игрока нет публичных матчей');
         $response->assertSee('Expose Public Match Data');
+        $response->assertSee('Матчи скрыты или отсутствуют');
         $response->assertDontSee('Anti-Mage');
-        $response->assertViewHas('player', fn (array $player) => $player['games'] === 0 && $player['heroes'] === []);
+        $response->assertViewHas('player', fn (array $player) => $player['games'] === 0
+            && $player['heroes'] === []
+            && $player['dota_data_hidden'] === true);
+    }
+
+    public function test_steam_profile_tab_shows_account_and_public_privacy_status(): void
+    {
+        config(['services.steam.api_key' => 'test-key']);
+
+        $this->fakeOpenDota([
+            'steamid' => '76561198030654385',
+            'personaname' => 'Dendi',
+            'realname' => 'Danil Ishutin',
+            'avatarfull' => 'https://example.com/steam-avatar.jpg',
+            'profileurl' => 'https://steamcommunity.com/id/DendiQ/',
+            'communityvisibilitystate' => 3,
+            'personastate' => 1,
+            'timecreated' => 1173974400,
+            'lastlogoff' => now()->subHours(2)->timestamp,
+        ]);
+
+        $response = $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]));
+
+        $response->assertOk();
+        $response->assertSee('Danil Ishutin');
+        $response->assertSee('Публичный');
+        $response->assertSee('Публичные матчи доступны');
+        $response->assertSee('Последний вход');
+        $response->assertViewHas('steamProfile', fn (array $profile) => $profile['available'] === true
+            && $profile['is_public'] === true
+            && $profile['visibility'] === 'Публичный'
+            && $profile['last_logoff_at'] !== null);
+    }
+
+    public function test_private_steam_community_is_reported(): void
+    {
+        config(['services.steam.api_key' => 'test-key']);
+
+        $this->fakeOpenDota([
+            'steamid' => '76561198030654385',
+            'personaname' => 'Dendi',
+            'communityvisibilitystate' => 1,
+            'personastate' => 0,
+        ]);
+
+        $response = $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]));
+
+        $response->assertOk();
+        $response->assertSee('Приватный');
+        $response->assertViewHas('steamProfile', fn (array $profile) => $profile['available'] === true
+            && $profile['is_public'] === false
+            && $profile['visibility'] === 'Приватный');
     }
 
     public function test_private_profile_is_flagged(): void
@@ -221,9 +280,9 @@ class DotaProfileTest extends TestCase
         $response->assertViewHas('player', fn (array $player) => $player['is_private'] === true);
     }
 
-    private function fakeOpenDota(): void
+    private function fakeOpenDota(?array $steamPlayer = null): void
     {
-        Http::fake([
+        $fakes = [
             'api.opendota.com/api/players/'.self::ACCOUNT_ID.'/wl*' => Http::response(['win' => 120, 'lose' => 80]),
             'api.opendota.com/api/players/'.self::ACCOUNT_ID.'/recentMatches*' => Http::response([
                 [
@@ -293,6 +352,14 @@ class DotaProfileTest extends TestCase
                 ['id' => 5, 'localized_name' => 'Crystal Maiden', 'img' => '/apps/dota2/images/heroes/crystal_maiden_full.png'],
                 ['id' => 6, 'localized_name' => 'Drow Ranger', 'img' => '/apps/dota2/images/heroes/drow_ranger_full.png'],
             ]),
-        ]);
+        ];
+
+        if ($steamPlayer !== null) {
+            $fakes['api.steampowered.com/ISteamUser/GetPlayerSummaries/*'] = Http::response([
+                'response' => ['players' => [$steamPlayer]],
+            ]);
+        }
+
+        Http::fake($fakes);
     }
 }

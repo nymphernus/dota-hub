@@ -187,8 +187,8 @@
         <div
             class="mt-6"
             x-data="{
-                tabs: ['overview', 'heroes', 'matches'],
-                tab: ['overview', 'heroes', 'matches'].includes(window.location.hash.slice(1))
+                tabs: ['overview', 'heroes', 'matches', 'steam'],
+                tab: ['overview', 'heroes', 'matches', 'steam'].includes(window.location.hash.slice(1))
                     ? window.location.hash.slice(1)
                     : 'overview',
                 setTab(value) {
@@ -221,6 +221,10 @@
                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h9" stroke-linecap="round" /></svg>
                     Последние матчи
                     <span class="rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-bold text-mist-400">{{ count($player['matches']) }}</span>
+                </button>
+                <button type="button" id="tab-steam" aria-controls="panel-steam" @click="setTab('steam')" :class="{ 'tab-button-active': tab === 'steam' }" class="tab-button" role="tab" :aria-selected="(tab === 'steam').toString()" :tabindex="tab === 'steam' ? 0 : -1">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="3" /><path d="M12 3v6M12 15v6M3 12h6M15 12h6" stroke-linecap="round" /></svg>
+                    Steam
                 </button>
             </div>
 
@@ -641,6 +645,158 @@
                                 </table>
                             </div>
                         @endif
+                    </div>
+                </div>
+
+                <div id="panel-steam" aria-labelledby="tab-steam" x-show="tab === 'steam'" x-cloak x-transition.opacity.duration.200ms role="tabpanel" tabindex="0" aria-label="Steam">
+                    @php
+                        $steamAvailable = (bool) ($steamProfile['available'] ?? false);
+                        $steamPublic = $steamProfile['is_public'] ?? null;
+                        $dotaPublic = (bool) ($player['has_public_matches'] ?? false);
+                        $steamTone = match (true) {
+                            $steamPublic === true => 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300',
+                            $steamPublic === false => 'border-rose-500/25 bg-rose-500/10 text-rose-300',
+                            default => 'border-white/10 bg-white/5 text-mist-300',
+                        };
+                        $dotaTone = $dotaPublic
+                            ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300'
+                            : 'border-amber-500/25 bg-amber-500/10 text-amber-300';
+                    @endphp
+
+                    <div class="grid gap-4 lg:grid-cols-3">
+                        <div class="card p-4 sm:p-5 lg:col-span-2">
+                            <div class="flex flex-col gap-4 sm:flex-row sm:items-center">
+                                <div class="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-ink-800 ring-1 ring-white/10">
+                                    @if ($steamProfile['avatar'] ?? $player['avatar'])
+                                        <img src="{{ $steamProfile['avatar'] ?? $player['avatar'] }}" alt="Аватар {{ $steamProfile['nickname'] ?? $player['nickname'] }}" class="h-full w-full object-cover" loading="lazy">
+                                    @else
+                                        <span class="grid h-full w-full place-items-center text-2xl font-black text-mist-500">
+                                            {{ mb_strtoupper(mb_substr($steamProfile['nickname'] ?? $player['nickname'], 0, 1)) }}
+                                        </span>
+                                    @endif
+                                </div>
+
+                                <div class="min-w-0 flex-1">
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <span class="badge border-sky-500/25 bg-sky-500/10 text-sky-300">Steam</span>
+                                        @if ($steamAvailable && $steamProfile['status'])
+                                            <span class="badge border-white/10 bg-white/5 text-mist-300">{{ $steamProfile['status'] }}</span>
+                                        @endif
+                                        <span @class(['badge', $steamTone])>{{ $steamProfile['visibility'] ?? 'Неизвестно' }}</span>
+                                    </div>
+                                    <h2 class="mt-2 truncate text-2xl font-black text-white">{{ $steamProfile['nickname'] ?? $player['nickname'] }}</h2>
+                                    <p class="mt-1 text-sm text-mist-400">
+                                        {{ $steamProfile['real_name'] ?? 'Публичное имя не указано' }}
+                                    </p>
+                                    <div class="mt-3 flex flex-wrap items-center gap-3 text-[11px] text-mist-500">
+                                        <span class="font-mono">{{ $steamProfile['steam_id'] ?? $player['steam_id'] }}</span>
+                                        @if ($steamProfile['profile_url'] ?? $player['profile_url'])
+                                            <a href="{{ $steamProfile['profile_url'] ?? $player['profile_url'] }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 transition hover:text-radar-300">
+                                                Открыть Steam
+                                                <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 5h5v5M19 5l-8 8M10 5H5v14h14v-5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                                            </a>
+                                        @endif
+                                    </div>
+                                </div>
+                            </div>
+
+                            @if (! $steamAvailable)
+                                <div class="mt-4 rounded-xl border border-amber-500/20 bg-amber-500/[0.07] px-3.5 py-3 text-xs leading-relaxed text-amber-200/90">
+                                    <p class="font-semibold text-amber-200">Steam API недоступна</p>
+                                    <p class="mt-1">{{ $steamProfile['error'] ?? 'Не удалось получить данные Steam.' }}</p>
+                                    @if (str_contains((string) ($steamProfile['error'] ?? ''), 'STEAM_API_KEY'))
+                                        <p class="mt-1 text-amber-200/60">Добавьте ключ в <code class="rounded bg-ink-950 px-1 py-0.5 font-mono">.env</code>, чтобы видеть статус приватности Steam.</p>
+                                    @endif
+                                </div>
+                            @endif
+                        </div>
+
+                        <div class="space-y-3">
+                            <div class="card p-4">
+                                <p class="label">Приватность</p>
+                                <div class="mt-3 space-y-2.5">
+                                    <div class="flex items-start gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                                        <span class="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-sky-500/10 text-sky-300">
+                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-2.8 7.5-7 9-4.2-1.5-7-4.5-7-9V6l7-3z" stroke-linejoin="round" /></svg>
+                                        </span>
+                                        <div class="min-w-0">
+                                            <p class="text-xs font-semibold text-white">Steam-сообщество</p>
+                                            <p class="mt-0.5 text-[11px] text-mist-400">{{ $steamProfile['visibility'] ?? 'Неизвестно' }}</p>
+                                        </div>
+                                    </div>
+
+                                    <div class="flex items-start gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                                        <span class="mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-radar-500/10 text-radar-300">
+                                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10" stroke-linecap="round" /></svg>
+                                        </span>
+                                        <div class="min-w-0">
+                                            <p class="text-xs font-semibold text-white">Данные Dota 2</p>
+                                            <p @class(['mt-0.5 text-[11px]', $dotaTone])>{{ $dotaPublic ? 'Публичные матчи доступны' : 'Матчи скрыты или отсутствуют' }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card p-4">
+                                <p class="label">Последняя активность</p>
+                                <dl class="mt-3 space-y-2 text-xs">
+                                    <div class="flex items-center justify-between gap-3">
+                                        <dt class="text-mist-500">Последний вход</dt>
+                                        <dd class="text-right font-medium text-mist-200">
+                                            @if ($player['last_login_at'])
+                                                <time datetime="{{ $player['last_login_at'] }}" title="{{ \Carbon\CarbonImmutable::parse($player['last_login_at'])->format('d.m.Y H:i') }}">
+                                                    {{ \Carbon\CarbonImmutable::parse($player['last_login_at'])->diffForHumans(short: true) }}
+                                                </time>
+                                            @else
+                                                —
+                                            @endif
+                                        </dd>
+                                    </div>
+                                    <div class="flex items-center justify-between gap-3">
+                                        <dt class="text-mist-500">Steam logoff</dt>
+                                        <dd class="text-right font-medium text-mist-200">
+                                            @if ($steamProfile['last_logoff_at'])
+                                                <time datetime="{{ $steamProfile['last_logoff_at'] }}" title="{{ \Carbon\CarbonImmutable::parse($steamProfile['last_logoff_at'])->format('d.m.Y H:i') }}">
+                                                    {{ \Carbon\CarbonImmutable::parse($steamProfile['last_logoff_at'])->diffForHumans(short: true) }}
+                                                </time>
+                                            @else
+                                                —
+                                            @endif
+                                        </dd>
+                                    </div>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 card p-4 sm:p-5">
+                        <p class="label">Аккаунт</p>
+                        <dl class="mt-3 grid gap-x-6 gap-y-3 text-xs sm:grid-cols-2 lg:grid-cols-3">
+                            <div>
+                                <dt class="text-mist-500">SteamID64</dt>
+                                <dd class="mt-1 break-all font-mono font-semibold text-white">{{ $steamProfile['steam_id'] ?? $player['steam_id'] }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-mist-500">Dota 2 account ID</dt>
+                                <dd class="mt-1 font-mono font-semibold text-white">{{ $player['account_id'] }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-mist-500">Страна</dt>
+                                <dd class="mt-1 font-semibold text-white">{{ $player['country_code'] ? mb_strtoupper($player['country_code']) : '—' }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-mist-500">Steam-аккаунт создан</dt>
+                                <dd class="mt-1 font-semibold text-white">{{ $steamProfile['account_created_at'] ? \Carbon\CarbonImmutable::parse($steamProfile['account_created_at'])->format('d.m.Y') : '—' }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-mist-500">Последний вход</dt>
+                                <dd class="mt-1 font-semibold text-white">{{ $player['last_login_at'] ? \Carbon\CarbonImmutable::parse($player['last_login_at'])->format('d.m.Y H:i') : '—' }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-mist-500">Видимость Steam</dt>
+                                <dd class="mt-1 font-semibold text-white">{{ $steamProfile['visibility'] ?? 'Неизвестно' }}</dd>
+                            </div>
+                        </dl>
                     </div>
                 </div>
 

@@ -164,6 +164,7 @@ class OpenDotaService
 
         $nickname = $profile['personaname'] ?? null;
         $heroRows = $this->transformHeroes($heroStats, $heroes, $recentMatches);
+        $hasPublicMatches = $matches !== [] || $history !== [] || $winLoss !== [];
 
         return [
             'account_id' => (int) $profile['account_id'],
@@ -172,6 +173,7 @@ class OpenDotaService
             'avatar' => $profile['avatarfull'] ?? $profile['avatarmedium'] ?? $profile['avatar'] ?? null,
             'profile_url' => $profile['profileurl'] ?? null,
             'country_code' => $profile['loccountrycode'] ?? null,
+            'last_login_at' => $this->dateTime($profile['last_login'] ?? null),
             'is_private' => empty($nickname),
             'rank_tier' => $rankTier,
             'rank_label' => $rank['label'],
@@ -190,7 +192,8 @@ class OpenDotaService
             'top_heroes' => array_slice($heroRows, 0, 5),
             'matches' => array_slice($matches, 0, 20),
             'match_history' => $history,
-            'has_public_matches' => $matches !== [] || $history !== [] || $winLoss !== [],
+            'has_public_matches' => $hasPublicMatches,
+            'dota_data_hidden' => ! $hasPublicMatches,
             'cached_at' => CarbonImmutable::now()->toIso8601String(),
             'cache_ttl' => $ttl,
         ];
@@ -840,6 +843,23 @@ class OpenDotaService
         }
 
         return $rows;
+    }
+
+    private function dateTime(mixed $value): ?string
+    {
+        if (is_numeric($value) && (int) $value > 0) {
+            return CarbonImmutable::createFromTimestampUTC((int) $value)->toIso8601String();
+        }
+
+        if (! is_string($value) || trim($value) === '') {
+            return null;
+        }
+
+        try {
+            return CarbonImmutable::parse($value)->toIso8601String();
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     /**
