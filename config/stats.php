@@ -15,6 +15,7 @@ return [
 
     'cache' => [
         'dota_profile' => (int) env('OPENDOTA_CACHE_TTL', 1800),
+        'dota_match' => (int) env('OPENDOTA_MATCH_CACHE_TTL', 3600),
         'dota_heroes' => (int) env('OPENDOTA_HEROES_CACHE_TTL', 86400),
         'steam_profile' => (int) env('STEAM_CACHE_TTL', 1800),
         'steam_vanity' => (int) env('STEAM_VANITY_CACHE_TTL', 604800),
@@ -34,6 +35,6 @@ return [
     |--------------------------------------------------------------------------
     */
 
-    'recent_searches' => (int) env('RECENT_SEARCHES_COUNT', 8),
+    'recent_searches' => (int) env('RECENT_SEARCHES_COUNT', 5),
 
 ];

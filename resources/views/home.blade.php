@@ -41,14 +41,14 @@
             <div class="flex flex-wrap items-end justify-between gap-3">
                 <div>
                     <p class="label">История</p>
-                    <h2 class="mt-1 text-xl font-bold text-white">Недавние поиски</h2>
+                    <h2 class="mt-1 text-xl font-bold text-white">Последние поиски</h2>
                 </div>
                 <span class="text-[11px] text-mist-500">Последние {{ $recentSearches->count() }} игроков</span>
             </div>
 
-            <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="mt-4 flex gap-3 overflow-x-auto pb-2 [scrollbar-width:thin]">
                 @foreach ($recentSearches as $search)
-                    <a href="{{ $search->profileUrl() }}" class="card card-hover group flex items-center gap-3 p-3">
+                    <a href="{{ $search->profileUrl() }}" class="card card-hover group flex min-w-[230px] max-w-xs shrink-0 snap-start items-center gap-3 p-3">
                         <div class="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-ink-800 ring-1 ring-white/10">
                             @if ($search->avatar)
                                 <img src="{{ $search->avatar }}" alt="" class="h-full w-full object-cover" loading="lazy">
