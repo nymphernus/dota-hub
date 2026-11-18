@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Exceptions\ApiRateLimitException;
+use App\Exceptions\ApiUnavailableException;
 use App\Exceptions\ExternalApiException;
 use App\Exceptions\PlayerNotFoundException;
 use App\Models\PlayerSearch;
@@ -29,6 +30,11 @@ class DotaPlayerController extends Controller
                 'message' => $exception->getMessage(),
                 'backUrl' => route('home'),
             ], 429);
+        } catch (ApiUnavailableException $exception) {
+            return response()->view('errors.api', [
+                'message' => $exception->getMessage(),
+                'backUrl' => route('home'),
+            ], 502);
         } catch (ExternalApiException $exception) {
             return response()->view('errors.player', [
                 'title' => 'OpenDota недоступна',

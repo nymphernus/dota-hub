@@ -3,6 +3,7 @@
 namespace App\Services\OpenDota;
 
 use App\Exceptions\ApiRateLimitException;
+use App\Exceptions\ApiUnavailableException;
 use App\Exceptions\ExternalApiException;
 use App\Exceptions\PlayerNotFoundException;
 use Illuminate\Http\Client\ConnectionException;
@@ -27,6 +28,7 @@ class OpenDotaClient
      *
      * @throws PlayerNotFoundException
      * @throws ApiRateLimitException
+     * @throws ApiUnavailableException
      * @throws ExternalApiException
      */
     public function get(string $path, array $query = []): array
@@ -48,7 +50,7 @@ class OpenDotaClient
         } catch (ConnectionException $exception) {
             Log::warning('OpenDota connection failed', ['path' => $path, 'error' => $exception->getMessage()]);
 
-            throw new ExternalApiException('OpenDota', 'Попробуйте ещё раз через минуту.');
+            throw new ApiUnavailableException('OpenDota');
         }
 
         if ($response->status() === 404) {

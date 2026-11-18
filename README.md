@@ -157,6 +157,7 @@ app(App\Services\PlayerSearchService::class)
 | `OPENDOTA_CACHE_TTL` | `1800` | Время жизни кэша Dota-профиля, секунды |
 | `OPENDOTA_MATCH_CACHE_TTL` | `3600` | Кэш деталей матча, секунды |
 | `OPENDOTA_DAILY_LIMIT` | `2000` | Локальный предохранитель дневного лимита |
+| `OPENDOTA_API_IP` | `104.16.0.1` | Docker: IP Cloudflare-края для `api.opendota.com`, если локальный DNS возвращает недоступные адреса |
 | `RECENT_SEARCHES_COUNT` | `5` | Сколько последних поисков показывать на главной |
 | `STEAM_CACHE_TTL` | `1800` | Время жизни кэша CS2-профиля, секунды |
 | `STEAM_VANITY_CACHE_TTL` | `604800` | Кэш резолва кастомных Steam-ссылок (7 дней) |
@@ -181,8 +182,27 @@ app(App\Services\PlayerSearchService::class)
   totals, справочник героев). Справочник героев кэшируется на сутки.
 - Ответы `404`, `429`, `5xx` и сетевые таймауты преобразуются в отдельные
   страницы ошибок, а не в белый экран.
+- При сетевом таймауте показывается страница «Не удалось загрузить данные»
+  с кнопкой повтора вместо нулевой статистики.
+- Если у игрока нет публичных матчей, профиль подсказывает включить
+  `Expose Public Match Data` в настройках Dota 2.
 - Если OpenDota временно недоступна, уже закэшированные профили продолжают
   открываться.
+
+#### Если контейнер не подключается к OpenDota
+
+В некоторых сетях DNS отдаёт адреса Cloudflare, которые недоступны из Docker,
+хотя сам DNS работает. Compose закрепляет `api.opendota.com` за рабочим
+Cloudflare-краем через `extra_hosts`; адрес можно переопределить переменной
+`OPENDOTA_API_IP` в `.env`. Проверка:
+
+```bash
+docker compose exec app curl -I https://api.opendota.com/api/players/883217516
+docker compose up -d --force-recreate app queue   # после изменения OPENDOTA_API_IP
+```
+
+Ожидается `HTTP/1.1 200 OK`. Корень `https://api.opendota.com` возвращает `404`
+— это нормально, проверяйте именно endpoint API.
 
 ### Steam Web API
 

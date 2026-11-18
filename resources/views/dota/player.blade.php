@@ -172,6 +172,22 @@
             </div>
         @endif
 
+        @if ($player['games'] === 0)
+            <div class="mt-4 flex items-start gap-3 rounded-2xl border border-sky-500/25 bg-sky-500/[0.08] p-4 text-sm text-sky-100">
+                <svg class="mt-0.5 h-5 w-5 shrink-0 text-sky-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M12 7.5v5M12 16.2v.3" stroke-linecap="round" />
+                </svg>
+                <div>
+                    <p class="font-semibold">Нет публичных матчей</p>
+                    <p class="mt-1 text-xs leading-relaxed text-sky-100/70">
+                        У этого игрока нет публичных матчей. Убедитесь, что в настройках Dota 2 включена опция
+                        «Expose Public Match Data».
+                    </p>
+                </div>
+            </div>
+        @endif
+
         <div
             class="mt-6"
             x-data="{
@@ -215,10 +231,10 @@
             <div class="mt-4">
                 <div id="panel-overview" aria-labelledby="tab-overview" x-show="tab === 'overview'" x-transition.opacity.duration.200ms role="tabpanel" tabindex="0" aria-label="Обзор">
                     <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                        <x-stat label="Средний KDA" :value="number_format($player['averages']['kda'] ?? 0, 2, '.', '')" hint="K + A / D за все матчи" />
-                        <x-stat label="GPM" :value="number_format($player['averages']['gpm'] ?? 0, 0, '.', ' ')" hint="Золото в минуту" />
-                        <x-stat label="XPM" :value="number_format($player['averages']['xpm'] ?? 0, 0, '.', ' ')" hint="Опыт в минуту" />
-                        <x-stat label="K / D / A" :value="number_format($player['averages']['kills'] ?? 0, 1).' / '.number_format($player['averages']['deaths'] ?? 0, 1).' / '.number_format($player['averages']['assists'] ?? 0, 1)" hint="Средние значения" />
+                        <x-stat label="Средний KDA" :value="$player['games'] > 0 ? number_format($player['averages']['kda'] ?? 0, 2, '.', '') : '—'" hint="K + A / D за все матчи" />
+                        <x-stat label="GPM" :value="$player['games'] > 0 ? number_format($player['averages']['gpm'] ?? 0, 0, '.', ' ') : '—'" hint="Золото в минуту" />
+                        <x-stat label="XPM" :value="$player['games'] > 0 ? number_format($player['averages']['xpm'] ?? 0, 0, '.', ' ') : '—'" hint="Опыт в минуту" />
+                        <x-stat label="K / D / A" :value="$player['games'] > 0 ? number_format($player['averages']['kills'] ?? 0, 1).' / '.number_format($player['averages']['deaths'] ?? 0, 1).' / '.number_format($player['averages']['assists'] ?? 0, 1) : '—'" hint="Средние значения" />
                     </div>
 
                     <div class="mt-4 grid gap-4 lg:grid-cols-2">

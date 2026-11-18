@@ -2,6 +2,7 @@
 
 namespace App\Services\OpenDota;
 
+use App\Exceptions\ApiUnavailableException;
 use App\Exceptions\ExternalApiException;
 use App\Exceptions\MatchNotFoundException;
 use App\Exceptions\PlayerNotFoundException;
@@ -201,6 +202,8 @@ class OpenDotaService
     {
         try {
             return $this->client->get($path);
+        } catch (ApiUnavailableException $exception) {
+            throw $exception;
         } catch (ExternalApiException|PlayerNotFoundException $exception) {
             Log::info('OpenDota optional endpoint failed', [
                 'path' => $path,
@@ -226,6 +229,8 @@ class OpenDotaService
 
         try {
             $heroes = $this->client->get('heroStats');
+        } catch (ApiUnavailableException $exception) {
+            throw $exception;
         } catch (ExternalApiException $exception) {
             Log::warning('OpenDota hero stats are unavailable', ['message' => $exception->getMessage()]);
 
@@ -433,7 +438,7 @@ class OpenDotaService
         $kdaByHero = $this->heroKda($recentMatches);
 
         $rows = collect($heroStats)
-            ->filter(fn ($hero) => is_array($hero) && isset($hero['hero_id']))
+            ->filter(fn ($hero) => is_array($hero) && isset($hero['hero_id']) && (int) ($hero['games'] ?? 0) > 0)
             ->sortByDesc(fn (array $hero) => (int) ($hero['games'] ?? 0))
             ->map(function (array $hero) use ($heroes, $kdaByHero) {
                 $meta = $heroes[(int) $hero['hero_id']] ?? [

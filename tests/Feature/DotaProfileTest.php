@@ -113,6 +113,74 @@ class DotaProfileTest extends TestCase
         $response->assertSee('OpenDota недоступна');
     }
 
+    public function test_connection_failure_returns_a_network_error_page(): void
+    {
+        Http::fake([
+            'api.opendota.com/api/*' => Http::failedConnection('Connection timed out'),
+        ]);
+
+        $response = $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]));
+
+        $response->assertStatus(502);
+        $response->assertViewIs('errors.api');
+        $response->assertSee('Не удалось загрузить данные');
+        $response->assertSee('Ошибка сети');
+        $response->assertSee('Сервера OpenDota временно недоступны');
+    }
+
+    public function test_optional_endpoint_connection_failure_does_not_render_zero_stats(): void
+    {
+        Http::fake([
+            'api.opendota.com/api/players/'.self::ACCOUNT_ID.'/wl*' => Http::failedConnection('Connection timed out'),
+            'api.opendota.com/api/players/'.self::ACCOUNT_ID.'*' => Http::response([
+                'profile' => [
+                    'account_id' => self::ACCOUNT_ID,
+                    'personaname' => 'Public Player',
+                    'steamid' => '76561198030654385',
+                ],
+            ]),
+            'api.opendota.com/api/heroStats*' => Http::response([]),
+        ]);
+
+        $response = $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]));
+
+        $response->assertStatus(502);
+        $response->assertViewIs('errors.api');
+        $response->assertSee('Сервера OpenDota временно недоступны');
+    }
+
+    public function test_profile_without_public_matches_shows_an_exposable_data_warning(): void
+    {
+        Http::fake([
+            'api.opendota.com/api/players/'.self::ACCOUNT_ID.'/wl*' => Http::response([]),
+            'api.opendota.com/api/players/'.self::ACCOUNT_ID.'/recentMatches*' => Http::response([]),
+            'api.opendota.com/api/players/'.self::ACCOUNT_ID.'/heroes*' => Http::response([
+                ['hero_id' => 1, 'games' => 0, 'win' => 0],
+                ['hero_id' => 2, 'games' => 0, 'win' => 0],
+            ]),
+            'api.opendota.com/api/players/'.self::ACCOUNT_ID.'/totals*' => Http::response([]),
+            'api.opendota.com/api/players/'.self::ACCOUNT_ID.'*' => Http::response([
+                'profile' => [
+                    'account_id' => self::ACCOUNT_ID,
+                    'personaname' => 'Public Player',
+                    'steamid' => '76561198030654385',
+                ],
+            ]),
+            'api.opendota.com/api/heroStats*' => Http::response([
+                ['id' => 1, 'localized_name' => 'Anti-Mage', 'img' => '/apps/dota2/images/heroes/antimage_full.png'],
+                ['id' => 2, 'localized_name' => 'Axe', 'img' => '/apps/dota2/images/heroes/axe_full.png'],
+            ]),
+        ]);
+
+        $response = $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]));
+
+        $response->assertOk();
+        $response->assertSee('У этого игрока нет публичных матчей');
+        $response->assertSee('Expose Public Match Data');
+        $response->assertDontSee('Anti-Mage');
+        $response->assertViewHas('player', fn (array $player) => $player['games'] === 0 && $player['heroes'] === []);
+    }
+
     public function test_private_profile_is_flagged(): void
     {
         Http::fake([
