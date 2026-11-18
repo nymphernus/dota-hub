@@ -1,8 +1,8 @@
 {
     "name": "stats-radar/stats-radar",
     "type": "project",
-    "description": "Stats Radar - Dota 2 and CS2 player statistics tracker.",
-    "keywords": ["laravel", "dota2", "cs2", "statistics"],
+    "description": "Stats Radar - Dota 2 player statistics tracker.",
+    "keywords": ["laravel", "dota2", "statistics"],
     "license": "MIT",
     "require": {
         "php": "^8.2",

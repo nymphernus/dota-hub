@@ -11,9 +11,9 @@ return new class extends Migration
         Schema::create('player_searches', function (Blueprint $table) {
             $table->id();
 
-            // "dota" or "cs2"
+            // Reserved for future game support; currently always "dota".
             $table->string('game', 10);
-            // Dota 2 account ID or SteamID64 for CS2.
+            // Dota 2 account ID.
             $table->string('identifier', 20);
 
             $table->string('nickname')->nullable();

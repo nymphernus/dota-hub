@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Stats Radar — статистика игроков Dota 2 и CS2')
-@section('description', 'Ищите игроков Dota 2 и CS2 по ссылке на Steam, SteamID64 или никнейму. KDA, GPM, XPM, топ героев, последние матчи, VAC-баны и часы в CS2.')
+@section('title', 'Stats Radar — статистика игроков Dota 2')
+@section('description', 'Ищите игроков Dota 2 по ссылке на Steam, SteamID64 или никнейму. KDA, GPM, XPM, топ героев, активность и последние матчи.')
 
 @section('content')
     <section class="relative flex min-h-[calc(100vh-4rem)] flex-col justify-center overflow-hidden">
@@ -17,7 +17,7 @@
             </h1>
 
             <p class="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-mist-400 sm:text-base">
-                Статистика игроков Dota 2 и CS2 — профиль, матчи и герои в одном поиске.
+                Статистика игроков Dota 2 — профиль, матчи и герои в одном поиске.
             </p>
         </div>
 
@@ -53,13 +53,7 @@
                                 {{ $search->nickname ?: 'Игрок #'.$search->identifier }}
                             </p>
                             <div class="mt-1 flex items-center gap-2">
-                                <span @class([
-                                    'badge !px-2 !py-0.5 !text-[10px]',
-                                    'border-dota-500/20 bg-dota-500/10 text-dota-300' => $search->game === 'dota',
-                                    'border-cs2-500/20 bg-cs2-500/10 text-cs2-300' => $search->game === 'cs2',
-                                ])>
-                                    {{ $search->game === 'dota' ? 'Dota 2' : 'CS2' }}
-                                </span>
+                                <span class="badge border-dota-500/20 bg-dota-500/10 !px-2 !py-0.5 !text-[10px] text-dota-300">Dota 2</span>
                                 <span class="truncate text-[10px] text-mist-500">
                                     {{ $search->last_searched_at?->diffForHumans(short: true) }}
                                 </span>

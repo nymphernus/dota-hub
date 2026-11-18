@@ -16,7 +16,7 @@ class SearchTest extends TestCase
     {
         Queue::fake();
 
-        $response = $this->post('/search', ['query' => '70388657', 'game' => 'dota']);
+        $response = $this->post('/search', ['query' => '70388657']);
 
         $response->assertRedirect(route('dota.player', ['accountId' => 70388657]));
         Queue::assertPushed(WarmDotaProfile::class, fn (WarmDotaProfile $job) => $job->accountId === 70388657);
@@ -28,7 +28,6 @@ class SearchTest extends TestCase
 
         $response = $this->post('/search', [
             'query' => 'https://steamcommunity.com/profiles/76561198030654385',
-            'game' => 'dota',
         ]);
 
         $response->assertRedirect(route('dota.player', ['accountId' => 70388657]));
@@ -44,7 +43,7 @@ class SearchTest extends TestCase
             ]),
         ]);
 
-        $response = $this->post('/search', ['query' => 'Dendi', 'game' => 'dota']);
+        $response = $this->post('/search', ['query' => 'Dendi']);
 
         $response->assertRedirect(route('dota.player', ['accountId' => 70388657]));
         Http::assertSent(fn ($request) => str_contains($request->url(), '/search')
@@ -57,26 +56,11 @@ class SearchTest extends TestCase
 
         Http::fake(['api.opendota.com/api/search*' => Http::response([])]);
 
-        $response = $this->from('/')->post('/search', ['query' => 'definitely-not-a-player', 'game' => 'dota']);
+        $response = $this->from('/')->post('/search', ['query' => 'definitely-not-a-player']);
 
         $response->assertRedirect('/');
         $response->assertSessionHasErrors('query');
         Queue::assertNothingPushed();
-    }
-
-    public function test_cs2_steam_id_redirects_to_the_cs2_profile(): void
-    {
-        $response = $this->post('/search', ['query' => '76561198030654385', 'game' => 'cs2']);
-
-        $response->assertRedirect(route('cs2.player', ['steamId' => '76561198030654385']));
-    }
-
-    public function test_cs2_nickname_search_is_not_supported(): void
-    {
-        $response = $this->from('/')->post('/search', ['query' => 'Dendi', 'game' => 'cs2']);
-
-        $response->assertRedirect('/');
-        $response->assertSessionHasErrors('query');
     }
 
     public function test_dota_vanity_url_is_resolved_through_the_steam_api(): void
@@ -101,7 +85,6 @@ class SearchTest extends TestCase
 
         $response = $this->post('/search', [
             'query' => 'https://steamcommunity.com/id/nymphernus',
-            'game' => 'dota',
         ]);
 
         $response->assertRedirect(route('dota.player', ['accountId' => 179749744]));
@@ -123,7 +106,6 @@ class SearchTest extends TestCase
 
         $response = $this->from('/')->post('/search', [
             'query' => 'https://steamcommunity.com/id/nymphernus',
-            'game' => 'dota',
         ]);
 
         $response->assertRedirect('/');
@@ -145,29 +127,10 @@ class SearchTest extends TestCase
 
         $response = $this->from('/')->post('/search', [
             'query' => 'https://steamcommunity.com/id/does-not-exist',
-            'game' => 'cs2',
         ]);
 
         $response->assertRedirect('/');
         $response->assertSessionHasErrors('query');
-    }
-
-    public function test_cs2_vanity_url_redirects_to_the_cs2_profile(): void
-    {
-        config(['services.steam.api_key' => 'test-key']);
-
-        Http::fake([
-            'api.steampowered.com/ISteamUser/ResolveVanityURL/*' => Http::response([
-                'response' => ['success' => 1, 'steamid' => '76561198140015472'],
-            ]),
-        ]);
-
-        $response = $this->post('/search', [
-            'query' => 'https://steamcommunity.com/id/nymphernus',
-            'game' => 'cs2',
-        ]);
-
-        $response->assertRedirect(route('cs2.player', ['steamId' => '76561198140015472']));
     }
 
     public function test_search_by_steam_id_renders_the_dota_profile_with_faked_opendota(): void
@@ -188,7 +151,7 @@ class SearchTest extends TestCase
             'api.opendota.com/api/*' => Http::response([], 404),
         ]);
 
-        $response = $this->post('/search', ['query' => '76561198030654385', 'game' => 'dota']);
+        $response = $this->post('/search', ['query' => '76561198030654385']);
 
         $response->assertRedirect(route('dota.player', ['accountId' => 70388657]));
 
@@ -197,17 +160,17 @@ class SearchTest extends TestCase
             ->assertSee('Dendi');
     }
 
-    public function test_search_requires_a_query_and_a_supported_game(): void
+    public function test_search_requires_a_query(): void
     {
-        $response = $this->from('/')->post('/search', ['query' => '', 'game' => 'lol']);
+        $response = $this->from('/')->post('/search', ['query' => '']);
 
         $response->assertRedirect('/');
-        $response->assertSessionHasErrors(['query', 'game']);
+        $response->assertSessionHasErrors(['query']);
     }
 
     public function test_query_shorter_than_two_characters_is_rejected(): void
     {
-        $response = $this->from('/')->post('/search', ['query' => 'a', 'game' => 'dota']);
+        $response = $this->from('/')->post('/search', ['query' => 'a']);
 
         $response->assertRedirect('/');
         $response->assertSessionHasErrors('query');

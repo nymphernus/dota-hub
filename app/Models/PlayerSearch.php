@@ -9,13 +9,6 @@ class PlayerSearch extends Model
 {
     public const GAME_DOTA = 'dota';
 
-    public const GAME_CS2 = 'cs2';
-
-    public const GAMES = [
-        self::GAME_DOTA => 'Dota 2',
-        self::GAME_CS2 => 'CS2',
-    ];
-
     protected $fillable = [
         'game',
         'identifier',
@@ -36,10 +29,10 @@ class PlayerSearch extends Model
     /**
      * Remember (or refresh) a successful search so it can be shown on the home page.
      */
-    public static function track(string $game, string $identifier, ?string $nickname = null, ?string $avatar = null): self
+    public static function track(string $identifier, ?string $nickname = null, ?string $avatar = null): self
     {
         $search = static::firstOrNew([
-            'game' => $game,
+            'game' => self::GAME_DOTA,
             'identifier' => $identifier,
         ]);
 
@@ -57,15 +50,8 @@ class PlayerSearch extends Model
         return $query->orderByDesc('last_searched_at')->orderByDesc('id');
     }
 
-    public function routeGame(): string
-    {
-        return $this->game === self::GAME_DOTA ? 'dota' : 'cs2';
-    }
-
     public function profileUrl(): string
     {
-        return $this->game === self::GAME_DOTA
-            ? route('dota.player', ['accountId' => $this->identifier])
-            : route('cs2.player', ['steamId' => $this->identifier]);
+        return route('dota.player', ['accountId' => $this->identifier]);
     }
 }

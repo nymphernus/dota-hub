@@ -40,7 +40,6 @@ return [
         'base_url' => env('STEAM_BASE_URL', 'https://api.steampowered.com'),
         'api_key' => env('STEAM_API_KEY'),
         'community_url' => env('STEAM_COMMUNITY_URL', 'https://steamcommunity.com'),
-        'cs2_app_id' => (int) env('STEAM_CS2_APP_ID', 730),
     ],
 
     'stratz' => [

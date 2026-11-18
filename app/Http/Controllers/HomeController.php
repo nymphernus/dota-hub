@@ -11,9 +11,10 @@ class HomeController extends Controller
     {
         $limit = (int) config('stats.recent_searches', 5);
 
-        // The table already stores one row per game + identifier. Deduplicate by
-        // account before limiting so the same player cannot occupy several slots.
+        // Only Dota 2 searches are supported now. Rows left over from older
+        // versions of the site are deliberately hidden.
         $recentSearches = PlayerSearch::query()
+            ->where('game', PlayerSearch::GAME_DOTA)
             ->recent()
             ->limit(50)
             ->get()

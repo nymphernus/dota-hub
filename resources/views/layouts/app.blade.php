@@ -4,10 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="description" content="@yield('description', 'Stats Radar — быстрая статистика игроков Dota 2 и CS2. Профили, матчи, герои, VAC-баны и время в игре.')">
+    <meta name="description" content="@yield('description', 'Stats Radar — быстрая статистика игроков Dota 2. Профили, матчи, герои и активность.')">
     <meta name="theme-color" content="#05080f">
 
-    <title>@yield('title', 'Stats Radar — статистика игроков Dota 2 и CS2')</title>
+    <title>@yield('title', 'Stats Radar — статистика игроков Dota 2')</title>
 
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23080d18'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%2334d399' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='3' fill='%2334d399'/%3E%3Cpath d='M16 16l6-6' stroke='%2334d399' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
 
@@ -28,7 +28,7 @@
                 </span>
                 <span class="leading-tight">
                     <span class="block text-sm font-black tracking-[0.14em] text-white transition group-hover:text-radar-200">STATS RADAR</span>
-                    <span class="block text-[10px] uppercase tracking-[0.28em] text-mist-500">Dota 2 · CS2</span>
+                    <span class="block text-[10px] uppercase tracking-[0.28em] text-mist-500">Dota 2</span>
                 </span>
             </a>
         </div>
@@ -92,7 +92,7 @@
             </div>
 
             <p class="max-w-xl text-[11px] leading-relaxed text-mist-500">
-                Проект не аффилирован с Valve Corporation. Dota 2 и Counter-Strike 2 — товарные знаки Valve.
+                Проект не аффилирован с Valve Corporation. Dota 2 — товарный знак Valve.
                 Статистика предоставляется как есть и обновляется из кэша.
             </p>
 
