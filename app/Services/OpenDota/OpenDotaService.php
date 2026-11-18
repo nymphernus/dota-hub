@@ -3,6 +3,7 @@
 namespace App\Services\OpenDota;
 
 use App\Exceptions\ExternalApiException;
+use App\Exceptions\MatchNotFoundException;
 use App\Exceptions\PlayerNotFoundException;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
@@ -118,6 +119,35 @@ class OpenDotaService
     }
 
     /**
+     * Cached match details with a per-team scoreboard.
+     *
+     * Finished matches never change, so the payload is cached for an hour and
+     * re-opening the page costs no OpenDota requests.
+     *
+     * @return array<string, mixed>
+     *
+     * @throws MatchNotFoundException
+     */
+    public function getMatch(int $matchId): array
+    {
+        $ttl = (int) config('stats.cache.dota_match', 3600);
+
+        return Cache::remember("opendota:match:{$matchId}", $ttl, function () use ($matchId) {
+            try {
+                $match = $this->client->get("matches/{$matchId}");
+            } catch (PlayerNotFoundException) {
+                throw new MatchNotFoundException($matchId);
+            }
+
+            if (! is_array($match) || empty($match['match_id']) || empty($match['players'])) {
+                throw new MatchNotFoundException($matchId);
+            }
+
+            return $this->transformMatch($match);
+        });
+    }
+
+    /**
      * Search Dota 2 players by nickname through OpenDota.
      *
      * @return array<int, array<string, mixed>>
@@ -226,6 +256,115 @@ class OpenDotaService
         }
 
         return $map;
+    }
+
+    /**
+     * Build the match view model from the raw OpenDota payload.
+     *
+     * @param  array<string, mixed>  $match
+     * @return array<string, mixed>
+     */
+    private function transformMatch(array $match): array
+    {
+        $heroes = $this->heroStats();
+
+        $radiant = [];
+        $dire = [];
+
+        foreach ($match['players'] as $player) {
+            if (! is_array($player) || ! isset($player['hero_id'], $player['player_slot'])) {
+                continue;
+            }
+
+            $heroId = (int) $player['hero_id'];
+            $hero = $heroes[$heroId] ?? [
+                'id' => $heroId,
+                'name' => 'Hero #'.$heroId,
+                'image' => null,
+            ];
+
+            $kills = (int) ($player['kills'] ?? 0);
+            $deaths = (int) ($player['deaths'] ?? 0);
+            $assists = (int) ($player['assists'] ?? 0);
+            $slot = (int) $player['player_slot'];
+            $accountId = isset($player['account_id']) ? (int) $player['account_id'] : 0;
+
+            $row = [
+                'account_id' => $accountId > 0 ? $accountId : null,
+                'player_slot' => $slot,
+                'hero_id' => $hero['id'],
+                'hero_name' => $hero['name'],
+                'hero_image' => $hero['image'],
+                'nickname' => $player['personaname'] ?? null,
+                'level' => (int) ($player['level'] ?? 0),
+                'kills' => $kills,
+                'deaths' => $deaths,
+                'assists' => $assists,
+                'kda' => round(($kills + $assists) / max($deaths, 1), 2),
+                'gpm' => (int) ($player['gold_per_min'] ?? 0),
+                'xpm' => (int) ($player['xp_per_min'] ?? 0),
+                'hero_damage' => (int) ($player['hero_damage'] ?? 0),
+                'last_hits' => (int) ($player['last_hits'] ?? 0),
+                'denies' => (int) ($player['denies'] ?? 0),
+                'net_worth' => (int) ($player['net_worth'] ?? 0),
+            ];
+
+            if ($slot < 128) {
+                $radiant[] = $row;
+            } else {
+                $dire[] = $row;
+            }
+        }
+
+        usort($radiant, fn (array $a, array $b) => $a['player_slot'] <=> $b['player_slot']);
+        usort($dire, fn (array $a, array $b) => $a['player_slot'] <=> $b['player_slot']);
+
+        $duration = (int) ($match['duration'] ?? 0);
+        $startTime = (int) ($match['start_time'] ?? 0);
+
+        $radiantScore = isset($match['radiant_score'])
+            ? (int) $match['radiant_score']
+            : array_sum(array_column($radiant, 'kills'));
+
+        $direScore = isset($match['dire_score'])
+            ? (int) $match['dire_score']
+            : array_sum(array_column($dire, 'kills'));
+
+        return [
+            'match_id' => (int) $match['match_id'],
+            'radiant_win' => (bool) ($match['radiant_win'] ?? false),
+            'duration' => $duration,
+            'duration_label' => $this->durationLabel($duration),
+            'started_at' => $startTime > 0
+                ? CarbonImmutable::createFromTimestampUTC($startTime)->toIso8601String()
+                : null,
+            'game_mode' => isset($match['game_mode']) ? (int) $match['game_mode'] : null,
+            'game_mode_label' => $this->gameModeLabel(isset($match['game_mode']) ? (int) $match['game_mode'] : null),
+            'radiant_score' => $radiantScore,
+            'dire_score' => $direScore,
+            'players' => [
+                'radiant' => $radiant,
+                'dire' => $dire,
+            ],
+            'cached_at' => CarbonImmutable::now()->toIso8601String(),
+        ];
+    }
+
+    private function gameModeLabel(?int $mode): ?string
+    {
+        return match ($mode) {
+            1 => 'All Pick',
+            2 => 'Captains Mode',
+            3 => 'Random Draft',
+            4 => 'Single Draft',
+            5 => 'All Random',
+            12 => 'Least Played',
+            16 => 'Captains Draft',
+            18 => 'Ability Draft',
+            22 => 'Ranked All Pick',
+            23 => 'Turbo',
+            default => null,
+        };
     }
 
     /**

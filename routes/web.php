@@ -3,6 +3,7 @@
 use App\Http\Controllers\Cs2PlayerController;
 use App\Http\Controllers\DotaPlayerController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\MatchController;
 use App\Http\Controllers\SearchController;
 use Illuminate\Support\Facades\Route;
 
@@ -15,6 +16,10 @@ Route::post('/search', SearchController::class)
 Route::get('/dota/player/{accountId}', [DotaPlayerController::class, 'show'])
     ->whereNumber('accountId')
     ->name('dota.player');
+
+Route::get('/dota/match/{matchId}', [MatchController::class, 'show'])
+    ->whereNumber('matchId')
+    ->name('dota.match');
 
 Route::post('/dota/player/{accountId}/refresh', [DotaPlayerController::class, 'refresh'])
     ->whereNumber('accountId')

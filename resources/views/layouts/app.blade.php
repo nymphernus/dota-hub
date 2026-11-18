@@ -74,6 +74,25 @@
             </div>
         @endif
 
+        @if (session('error'))
+            <div class="mx-auto mt-4 w-full max-w-7xl px-4 sm:px-6 lg:px-8" x-data="{ visible: true }">
+                <div x-show="visible" x-transition class="flex items-start justify-between gap-4 rounded-2xl border border-rose-500/25 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+                    <div class="flex items-start gap-3">
+                        <svg class="mt-0.5 h-5 w-5 shrink-0 text-rose-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                            <circle cx="12" cy="12" r="9" />
+                            <path d="M12 8v5M12 16.5v.01" stroke-linecap="round" />
+                        </svg>
+                        <p>{{ session('error') }}</p>
+                    </div>
+                    <button type="button" @click="visible = false" class="rounded-lg p-1 text-rose-300/70 transition hover:bg-white/5 hover:text-white" aria-label="Закрыть уведомление">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <path d="M6 6l12 12M18 6L6 18" stroke-linecap="round" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        @endif
+
         @yield('content')
     </main>
 
