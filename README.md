@@ -1,66 +1,375 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Stats Radar
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Статистика игроков **Dota 2** и **CS2** в одном интерфейсе: поиск по Steam-профилю,
+SteamID64 или никнейму, тёмный адаптивный дашборд, кэширование внешних API и
+защита от исчерпания дневных лимитов.
 
-## About Laravel
+Проект собран на Laravel 11, Blade, Tailwind CSS 4 и Alpine.js, разворачивается
+одной командой через Docker Compose (PHP-FPM + Nginx + PostgreSQL + Redis).
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Возможности
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- **Dota 2** — профиль, звание, MMR, винрейт, средние KDA/GPM/XPM, топ-герои и
+  последние 20 матчей. Никнейм, SteamID64, `account_id` и ссылки Steam
+  (`/profiles/`, `/id/`) поддерживаются через OpenDota. Для кастомных ссылок
+  `/id/...` нужен `STEAM_API_KEY` — имя резолвится через Steam Web API.
+- **CS2** — никнейм, аватар, статус, видимость профиля, VAC/game/community-баны,
+  всего часов в CS2 и время за последние 2 недели через Steam Web API.
+- **Кэширование** — профили живут в Redis 30 минут, метаданные героев — сутки.
+  Повторный просмотр не тратит запросы к API.
+- **Кнопка обновления** — сбрасывает кэш только одного игрока и перезагружает
+  страницу со свежими данными.
+- **Защита лимитов** — локальный счётчик запросов OpenDota (2000/сутки по
+  умолчанию) и HTTP-троттлинг поиска/обновления.
+- **Фоновый прогрев** — после поиска Dota-игрока задача в Redis-очереди заранее
+  наполняет кэш, чтобы страница открывалась быстрее.
+- **Тёмный адаптивный UI** — Tailwind CSS 4, вкладки и интерактив на Alpine.js,
+  доступная навигация с клавиатуры.
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Стек
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+| Слой | Технологии |
+| --- | --- |
+| Backend | PHP 8.3, Laravel 11 |
+| Frontend | Blade, Tailwind CSS 4, Alpine.js 3, Vite 5 |
+| База данных | PostgreSQL 16 |
+| Кэш / сессии / очереди | Redis 7 |
+| Веб-сервер | Nginx 1.27 + PHP-FPM |
+| Контейнеры | Docker, Docker Compose |
+| Тесты | PHPUnit, Laravel HTTP fake |
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+---
 
-## Laravel Sponsors
+## Быстрый старт (Docker)
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+Требования: Docker Engine 24+ и Docker Compose v2.
 
-### Premium Partners
+```bash
+git clone <repo-url> stats-radar
+cd stats-radar
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+cp .env.example .env
+# Укажите STEAM_API_KEY (нужен для CS2 и ссылок /id/...) и при желании OPENDOTA_API_KEY
+# Пароль PostgreSQL в DB_PASSWORD тоже стоит заменить.
 
-## Contributing
+docker compose up -d --build
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Откройте **http://localhost:8080**.
 
-## Code of Conduct
+При первом запуске контейнер `app`:
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+1. генерирует `APP_KEY` и сохраняет его в volume `app-storage`
+   (`storage/app/.app_key`), поэтому ключ не теряется при пересоздании контейнера;
+2. ждёт готовности PostgreSQL;
+3. выполняет `php artisan migrate --force`;
+4. кэширует конфигурацию, маршруты и представления.
 
-## Security Vulnerabilities
+Полезные команды:
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```bash
+docker compose ps                     # статус сервисов
+docker compose logs -f app            # логи приложения
+docker compose exec app php artisan about
+docker compose exec app php artisan cache:clear
+docker compose down                   # остановить
+docker compose down -v                # остановить и удалить данные (БД, Redis, storage)
+```
 
-## License
+Порт публикуется через `APP_PORT` (по умолчанию `8080`).
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### Проверка после запуска
+
+```bash
+curl http://localhost:8080/up          # 200 OK — приложение живо
+curl -I http://localhost:8080/         # 200 OK — главная страница
+docker compose exec app php artisan migrate:status
+```
+
+Разбор Steam-ссылок можно проверить через tinker:
+
+```bash
+docker compose exec app php artisan tinker
+```
+
+```php
+// 1. Парсер возвращает тип и значение, не выполняя сетевых запросов.
+App\Support\SteamId::parse('https://steamcommunity.com/id/nymphernus');
+// ['type' => 'vanity', 'value' => 'nymphernus']
+
+// 2. Полное разрешение (Steam Web API + вычисление Dota 2 account_id).
+app(App\Services\PlayerSearchService::class)
+    ->resolve('https://steamcommunity.com/id/nymphernus', 'dota');
+// ['game' => 'dota', 'account_id' => 179749744, 'steam_id' => '76561198140015472', ...]
+```
+
+Для второго шага нужен `STEAM_API_KEY` и доступ к `api.steampowered.com`.
+
+---
+
+## Переменные окружения
+
+Все настройки находятся в `.env` (шаблон — `.env.example`).
+
+### Приложение
+
+| Переменная | По умолчанию | Назначение |
+| --- | --- | --- |
+| `APP_ENV` | `production` | Окружение Laravel |
+| `APP_DEBUG` | `false` | Не включайте на продакшене |
+| `APP_URL` | `http://localhost:8080` | Публичный адрес |
+| `APP_PORT` | `8080` | Порт Nginx на хосте |
+| `APP_KEY` | — | Генерируется автоматически, если пуст |
+| `APP_LOCALE` | `ru` | Язык интерфейса |
+
+### База данных и Redis
+
+| Переменная | По умолчанию | Назначение |
+| --- | --- | --- |
+| `DB_CONNECTION` | `pgsql` | Драйвер БД |
+| `DB_HOST` / `DB_PORT` | `db` / `5432` | Адрес PostgreSQL внутри compose-сети |
+| `DB_DATABASE` | `stats_radar` | Имя базы |
+| `DB_USERNAME` / `DB_PASSWORD` | `stats_radar` / `change-me-in-production` | Учётные данные |
+| `CACHE_STORE` | `redis` | Хранилище кэша |
+| `SESSION_DRIVER` | `redis` | Хранилище сессий |
+| `QUEUE_CONNECTION` | `redis` | Драйвер очередей |
+| `REDIS_HOST` / `REDIS_PORT` | `redis` / `6379` | Адрес Redis |
+
+### Внешние API
+
+| Переменная | Обязательна | Назначение |
+| --- | --- | --- |
+| `STEAM_API_KEY` | Для CS2 и ссылок `/id/` | Ключ Steam Web API: https://steamcommunity.com/dev/apikey |
+| `OPENDOTA_API_KEY` | Нет | Повышает лимит OpenDota и добавляется в запросы |
+| `OPENDOTA_CACHE_TTL` | `1800` | Время жизни кэша Dota-профиля, секунды |
+| `OPENDOTA_DAILY_LIMIT` | `2000` | Локальный предохранитель дневного лимита |
+| `STEAM_CACHE_TTL` | `1800` | Время жизни кэша CS2-профиля, секунды |
+| `STEAM_VANITY_CACHE_TTL` | `604800` | Кэш резолва кастомных Steam-ссылок (7 дней) |
+| `STEAM_CS2_APP_ID` | `730` | App ID CS2 |
+| `STRATZ_TOKEN` | Нет | Зарезервировано для будущей интеграции Stratz |
+
+> Конфигурация кэшируется при старте контейнера. После изменения `.env`
+> перезапустите приложение:
+> `docker compose up -d --force-recreate app web queue`.
+
+---
+
+## API и лимиты
+
+### OpenDota
+
+- Публичный лимит — около **2000 запросов в сутки** на IP/ключ и 60 запросов в
+  минуту на часть эндпоинтов.
+- Клиент ведёт счётчик в общем кэше (`opendota:quota:YYYY-MM-DD`) и при
+  достижении `OPENDOTA_DAILY_LIMIT` отдаёт понятную ошибку, не отправляя запрос.
+- Один профиль = до 6 запросов (профиль, win/loss, последние матчи, герои,
+  totals, справочник героев). Справочник героев кэшируется на сутки.
+- Ответы `404`, `429`, `5xx` и сетевые таймауты преобразуются в отдельные
+  страницы ошибок, а не в белый экран.
+- Если OpenDota временно недоступна, уже закэшированные профили продолжают
+  открываться.
+
+### Steam Web API
+
+- Требуется `STEAM_API_KEY`. Без ключа страница CS2 показывает пошаговую
+  инструкцию по настройке (HTTP 503), а не ошибку 500.
+- Используются методы `GetPlayerSummaries`, `GetPlayerBans` и `GetOwnedGames`.
+- Кастомные ссылки `https://steamcommunity.com/id/{name}` резолвятся через
+  `ResolveVanityURL`; результат кэшируется на 7 дней. Без `STEAM_API_KEY`
+  приложение показывает понятную ошибку с просьбой добавить ключ.
+- Valve не предоставляет публичный поиск игроков CS2, поэтому поиск по никнейму
+  для CS2 не поддерживается — нужен SteamID64 или ссылка на профиль.
+- Закрытый профиль и скрытая библиотека игр обрабатываются отдельными
+  предупреждениями.
+
+---
+
+## Маршруты
+
+| Метод | URI | Назначение |
+| --- | --- | --- |
+| `GET` | `/` | Главная с поиском и последними запросами |
+| `POST` | `/search` | Разбор запроса и редирект на профиль (20 запросов/мин) |
+| `GET` | `/dota/player/{accountId}` | Профиль Dota 2 |
+| `POST` | `/dota/player/{accountId}/refresh` | Сброс кэша Dota-профиля (5 запросов/мин) |
+| `GET` | `/cs2/player/{steamId}` | Профиль CS2 (17-значный SteamID64) |
+| `POST` | `/cs2/player/{steamId}/refresh` | Сброс кэша CS2-профиля (5 запросов/мин) |
+| `GET` | `/up` | Health-check приложения |
+
+---
+
+## Структура проекта
+
+```
+app/
+  Exceptions/                 # доменные исключения внешних API
+  Http/Controllers/           # главная, поиск, профили, обновление кэша
+  Jobs/WarmDotaProfile.php    # фоновый прогрев Dota-профиля
+  Models/PlayerSearch.php     # история поиска для главной
+  Services/
+    OpenDota/                 # HTTP-клиент, квоты и сборка Dota-профиля
+    Steam/                    # Steam Web API и сборка CS2-профиля
+    PlayerSearchService.php   # преобразование ввода в игровую identity
+  Support/SteamId.php         # SteamID64, account_id, ссылки Steam
+docker/                       # Dockerfile, entrypoint, php.ini, nginx
+resources/
+  css/app.css                 # тема Tailwind и компоненты
+  js/app.js                   # точка входа Alpine.js
+  views/                      # layout, home, dota, cs2, partials, errors
+routes/web.php
+tests/Feature/                # поиск, Dota/CS2 профили, кэш, главная
+tests/Unit/SteamIdTest.php
+```
+
+### Как обрабатывается запрос
+
+1. `SearchController` валидирует ввод и передаёт его в `PlayerSearchService`.
+2. `PlayerSearchService` разбирает строку через `SteamId`:
+   ссылка `/profiles/` → SteamID64, `account_id` → SteamID64, `/id/` → запрос
+   `ResolveVanityURL` к Steam Web API (нужен `STEAM_API_KEY`), никнейм → поиск
+   OpenDota (только Dota). SteamID64 для Dota конвертируется в `account_id`
+   вычитанием базовой константы.
+3. Для Dota ставится задача `WarmDotaProfile` и выполняется редирект на
+   `/dota/player/{accountId}`. Для CS2 — редирект на `/cs2/player/{steamId}`.
+4. Контроллер профиля берёт агрегированные данные из `Cache::remember`,
+   записывает успешный поиск в `player_searches` и рендерит Blade-шаблон.
+5. Кнопка «Обновить» вызывает `forget()` конкретного ключа и перезагружает
+   страницу.
+
+---
+
+## Локальная разработка (без Docker)
+
+Требования: PHP 8.3+ с расширениями `pdo_sqlite`, `mbstring`, `intl`, `zip`,
+Composer 2, Node.js 20+.
+
+```bash
+composer install
+cp .env.example .env
+php artisan key:generate
+
+# Для локального запуска проще SQLite и файловые кэш/сессии:
+# DB_CONNECTION=sqlite
+# DB_DATABASE=/absolute/path/to/database/database.sqlite
+# CACHE_STORE=file
+# SESSION_DRIVER=file
+# QUEUE_CONNECTION=sync
+
+touch database/database.sqlite   # Windows PowerShell: New-Item database/database.sqlite
+php artisan migrate
+
+npm install
+npm run dev        # отдельный терминал
+php artisan serve
+```
+
+Для production-сборки фронтенда: `npm run build`. Каталог `public/build`
+игнорируется git и собирается внутри Docker-образа.
+
+---
+
+## Тесты
+
+Локально (нужны PHP 8.3+ и dev-зависимости Composer):
+
+```bash
+composer test
+```
+
+В Docker — отдельный образ `test` с dev-зависимостями; production-образ остаётся
+без PHPUnit и Collision:
+
+```bash
+docker compose --profile testing run --rm test
+```
+
+Первый запуск соберёт образ `stats-radar/test:local` (несколько минут), повторные
+запуски используют кэш. Тесты монтируются из рабочего каталога, поэтому правки
+не требуют пересборки.
+
+42 теста и 127 проверок покрывают:
+
+- разбор SteamID64, `account_id`, ссылок `/profiles/` и `/id/`, никнеймов;
+- поиск и редиректы, фоновую задачу, ошибки валидации;
+- резолв кастомных Steam-ссылок через `ResolveVanityURL`, его кэш и ошибку при
+  отсутствии ключа;
+- рендеринг Dota-профиля, кэш, принудительное обновление, 404/502;
+- CS2-профиль, VAC-баны, закрытый профиль, отсутствие ключа, кэш;
+- главную страницу и счётчик повторных поисков.
+
+Тесты используют SQLite `:memory:`, `CACHE_STORE=array` и `Http::fake()`, поэтому
+не обращаются к реальным API.
+
+> В `phpunit.xml` включён `restrictDeprecations="true"`: на локальном PHP 8.5
+> Laravel 11 генерирует deprecation-предупреждения из vendor-конфига
+> (`PDO::MYSQL_ATTR_SSL_CA`). Целевая версия в Docker — PHP 8.3, где этих
+> предупреждений нет.
+
+---
+
+## Production-заметки
+
+- Поставьте `APP_DEBUG=false`, смените `DB_PASSWORD` и включите HTTPS
+  (reverse proxy или балансировщик перед контейнером `web`).
+- Не публикуйте PostgreSQL и Redis наружу: в compose у них нет проброса портов,
+  и это правильно.
+- Данные лежат в named volumes: `db-data`, `redis-data`, `app-storage`.
+  Настройте их резервное копирование (`pg_dump` для PostgreSQL).
+- `docker compose exec app php artisan config:cache route:cache view:cache`
+  выполняется автоматически при старте; после правок `.env` пересоздайте
+  контейнеры.
+- Для горизонтального масштабирования запускайте несколько `queue`-контейнеров;
+  задачи идемпотентны, а `WarmDotaProfile` уникален в течение 10 минут.
+- Логи: `storage/logs/laravel.log` внутри volume `app-storage` и
+  `docker compose logs`.
+- Health-check: `GET /up` (используется в Docker healthcheck Nginx).
+
+---
+
+## Устранение неполадок
+
+- **Сборка идёт долго.** Первый `docker compose build` скачивает базовые образы и
+  собирает PHP-расширения (`intl`, `pdo_pgsql`, `redis`) — на медленной сети это
+  может занять 10–20 минут. Слои кэшируются, повторные сборки заметно быстрее.
+  В `Dockerfile` для `npm ci` увеличены таймауты и число повторов.
+- **Контейнер `app` перезапускается.** Посмотрите `docker compose logs app`.
+  Entrypoint ждёт PostgreSQL через `pg_isready` до 60 секунд и завершает работу,
+  если БД недоступна. Проверьте `DB_HOST`, `DB_DATABASE`, `DB_USERNAME`,
+  `DB_PASSWORD` и здоровье сервиса `db`.
+- **CS2 отдаёт 503.** Не задан `STEAM_API_KEY`. Добавьте ключ в `.env` и
+  пересоздайте контейнеры: `docker compose up -d --force-recreate app web queue`.
+- **Ошибка OpenDota 502/429.** Проверьте доступ к `api.opendota.com` и дневной
+  лимит. Ранее закэшированные профили продолжают открываться.
+- **Изменения `.env` не применяются.** При старте выполняется `config:cache`;
+  пересоздайте контейнеры, а не только перезапустите их.
+- **Права на storage.** Используйте `docker compose exec app chown -R www-data:www-data storage bootstrap/cache`
+  или пересоздайте volume `app-storage`.
+
+---
+
+## Ограничения и известные особенности
+
+- **Laravel 11 достиг End of Life.** На момент сборки Composer блокировал
+  установку из-за security advisories, поэтому в `composer.json` отключён
+  `policy.advisories.block`. Для долгой эксплуатации обновитесь до актуальной
+  LTS-версии Laravel; код сервисов и контроллеров к этому готов.
+- OpenDota не гарантирует полноту приватных профилей: часть данных может быть
+  скрыта, страница покажет то, что доступно публично.
+- Steam не отдаёт статистику CS2 (рейтинг, K/D и т.п.) через публичный Web API.
+  Страница честно показывает только доступные данные: часы, баны и профиль.
+- Никнейм в Dota ищется через OpenDota и может привести к одноимённому игроку —
+  надёжнее использовать SteamID64 или ссылку на профиль.
+- Для ссылок `steamcommunity.com/id/{name}` требуется `STEAM_API_KEY`: Steam
+  резолвит vanity-имена только через авторизованный Web API.
+- Поиск CS2 по никнейму невозможен по ограничениям Valve.
+
+---
+
+## Лицензия
+
+MIT. Данные принадлежат Valve/OpenDota и соответствующим правообладателям.
+Проект не аффилирован с Valve, Dotabuff или Stratz.
