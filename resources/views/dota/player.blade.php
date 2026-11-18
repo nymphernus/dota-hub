@@ -5,6 +5,7 @@
 
 @php
     $winrate = $player['winrate'];
+    $topHeroes = $player['top_heroes'] ?? array_slice($player['heroes'], 0, 5);
     $rankTone = match ($player['rank_medal']) {
         'Herald' => 'from-zinc-400 to-zinc-600',
         'Guardian' => 'from-emerald-400 to-emerald-700',
@@ -155,23 +156,35 @@
         <div
             class="mt-6"
             x-data="{
-                tab: window.location.hash === '#matches' ? 'matches' : 'overview',
+                tabs: ['overview', 'heroes', 'matches'],
+                tab: window.location.hash === '#heroes'
+                    ? 'heroes'
+                    : (window.location.hash === '#matches' ? 'matches' : 'overview'),
                 setTab(value) {
                     this.tab = value;
-                    history.replaceState(null, '', value === 'matches' ? '#matches' : window.location.pathname);
+                    history.replaceState(null, '', value === 'overview' ? window.location.pathname : '#' + value);
+                },
+                syncTab() {
+                    this.tab = this.tabs.includes(window.location.hash.slice(1)) ? window.location.hash.slice(1) : 'overview';
                 },
                 move(direction, element) {
-                    this.setTab(direction > 0 ? 'matches' : 'overview');
-                    const tabs = element.closest('[role=tablist]').querySelectorAll('[role=tab]');
-                    tabs[direction > 0 ? 1 : 0].focus();
+                    const index = this.tabs.indexOf(this.tab);
+                    const next = (index + direction + this.tabs.length) % this.tabs.length;
+                    this.setTab(this.tabs[next]);
+                    element.closest('[role=tablist]').querySelectorAll('[role=tab]')[next].focus();
                 }
             }"
-            @hashchange.window="tab = window.location.hash === '#matches' ? 'matches' : 'overview'"
+            @hashchange.window="syncTab()"
         >
             <div class="flex items-center gap-1 overflow-x-auto rounded-2xl border border-white/[0.06] bg-ink-900/60 p-1.5" role="tablist" aria-label="Разделы профиля" @keydown.arrow-right.prevent="move(1, $event.target)" @keydown.arrow-left.prevent="move(-1, $event.target)">
                 <button type="button" id="tab-overview" aria-controls="panel-overview" @click="setTab('overview')" :class="{ 'tab-button-active': tab === 'overview' }" class="tab-button" role="tab" :aria-selected="(tab === 'overview').toString()" :tabindex="tab === 'overview' ? 0 : -1">
                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5" /><rect x="13" y="4" width="7" height="7" rx="1.5" /><rect x="4" y="13" width="7" height="7" rx="1.5" /><rect x="13" y="13" width="7" height="7" rx="1.5" /></svg>
                     Обзор
+                </button>
+                <button type="button" id="tab-heroes" aria-controls="panel-heroes" @click="setTab('heroes')" :class="{ 'tab-button-active': tab === 'heroes' }" class="tab-button" role="tab" :aria-selected="(tab === 'heroes').toString()" :tabindex="tab === 'heroes' ? 0 : -1">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.5 9.2l5.9-.9L12 3z" stroke-linejoin="round" /></svg>
+                    Герои
+                    <span class="rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-bold text-mist-400">{{ count($player['heroes']) }}</span>
                 </button>
                 <button type="button" id="tab-matches" aria-controls="panel-matches" @click="setTab('matches')" :class="{ 'tab-button-active': tab === 'matches' }" class="tab-button" role="tab" :aria-selected="(tab === 'matches').toString()" :tabindex="tab === 'matches' ? 0 : -1">
                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h9" stroke-linecap="round" /></svg>
@@ -199,13 +212,13 @@
                                 <span class="text-[11px] text-mist-500">Винрейт по герою</span>
                             </div>
 
-                            @if ($player['heroes'] === [])
+                            @if ($topHeroes === [])
                                 <div class="mt-5 rounded-xl border border-dashed border-white/10 p-8 text-center">
                                     <p class="text-sm text-mist-400">OpenDota ещё не проиндексировала матчи этого игрока.</p>
                                 </div>
                             @else
                                 <div class="mt-4 space-y-2">
-                                    @foreach ($player['heroes'] as $index => $hero)
+                                    @foreach ($topHeroes as $index => $hero)
                                         <div class="group flex items-center gap-3 rounded-xl border border-transparent bg-white/[0.02] p-2 transition hover:border-white/[0.06] hover:bg-white/[0.04]">
                                             <span class="w-4 shrink-0 text-center text-[10px] font-bold text-mist-500">{{ $index + 1 }}</span>
                                             <div class="h-10 w-16 shrink-0 overflow-hidden rounded-lg bg-ink-800 ring-1 ring-white/10">
@@ -262,6 +275,149 @@
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <div id="panel-heroes" aria-labelledby="tab-heroes" x-show="tab === 'heroes'" x-cloak x-transition.opacity.duration.200ms role="tabpanel" tabindex="0" aria-label="Герои">
+                    @if ($player['heroes'] === [])
+                        <div class="card p-10 text-center">
+                            <p class="text-sm text-mist-400">OpenDota ещё не проиндексировала героев этого игрока.</p>
+                        </div>
+                    @else
+                        <div class="card overflow-hidden" x-data="{
+                            search: '',
+                            sortKey: 'games',
+                            sortDir: 'desc',
+                            heroes: @js($player['heroes']),
+                            get filteredHeroes() {
+                                const query = this.search.trim().toLowerCase();
+                                const direction = this.sortDir === 'asc' ? 1 : -1;
+
+                                return this.heroes
+                                    .filter((hero) => {
+                                        const name = (hero.localized_name || hero.name || '').toLowerCase();
+                                        return query === '' || name.includes(query);
+                                    })
+                                    .slice()
+                                    .sort((left, right) => {
+                                        const leftValue = left[this.sortKey];
+                                        const rightValue = right[this.sortKey];
+
+                                        if (leftValue == null) return 1;
+                                        if (rightValue == null) return -1;
+
+                                        return (leftValue - rightValue) * direction;
+                                    });
+                            },
+                            sortBy(key) {
+                                if (this.sortKey === key) {
+                                    this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
+                                } else {
+                                    this.sortKey = key;
+                                    this.sortDir = 'desc';
+                                }
+                            },
+                            indicator(key) {
+                                if (this.sortKey !== key) return '↕';
+                                return this.sortDir === 'asc' ? '▲' : '▼';
+                            }
+                        }">
+                            <div class="flex flex-col gap-3 border-b border-white/[0.06] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+                                <div>
+                                    <p class="label">Hero pool</p>
+                                    <h2 class="mt-1 text-lg font-bold text-white">Герои</h2>
+                                    <p class="mt-1 text-[11px] text-mist-500">KDA рассчитан по последним 20 матчам.</p>
+                                </div>
+
+                                <div class="relative w-full sm:w-72">
+                                    <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-mist-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                        <circle cx="11" cy="11" r="6.5" />
+                                        <path d="M16 16l4.5 4.5" stroke-linecap="round" />
+                                    </svg>
+                                    <input
+                                        type="search"
+                                        x-model="search"
+                                        class="input !py-2.5 !pl-10"
+                                        placeholder="Поиск героя..."
+                                        aria-label="Поиск героя по имени"
+                                        autocomplete="off"
+                                    >
+                                </div>
+                            </div>
+
+                            <div class="overflow-x-auto">
+                                <table class="w-full min-w-[640px] text-sm">
+                                    <thead class="table-head">
+                                        <tr>
+                                            <th scope="col" class="px-4 py-3 font-semibold sm:px-5">Герой</th>
+                                            <th scope="col" class="px-4 py-3 font-semibold" :aria-sort="sortKey === 'games' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'">
+                                                <button type="button" @click="sortBy('games')" class="inline-flex items-center gap-1 uppercase tracking-[0.16em] transition hover:text-white">
+                                                    Матчи
+                                                    <span class="text-[10px]" :class="sortKey === 'games' ? 'text-radar-300' : 'text-mist-500'" x-text="indicator('games')"></span>
+                                                </button>
+                                            </th>
+                                            <th scope="col" class="px-4 py-3 font-semibold" :aria-sort="sortKey === 'win_rate' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'">
+                                                <button type="button" @click="sortBy('win_rate')" class="inline-flex items-center gap-1 uppercase tracking-[0.16em] transition hover:text-white">
+                                                    Винрейт
+                                                    <span class="text-[10px]" :class="sortKey === 'win_rate' ? 'text-radar-300' : 'text-mist-500'" x-text="indicator('win_rate')"></span>
+                                                </button>
+                                            </th>
+                                            <th scope="col" class="px-4 py-3 text-right font-semibold sm:px-5" :aria-sort="sortKey === 'kda' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'">
+                                                <button type="button" @click="sortBy('kda')" class="ml-auto inline-flex items-center gap-1 uppercase tracking-[0.16em] transition hover:text-white">
+                                                    KDA
+                                                    <span class="text-[10px]" :class="sortKey === 'kda' ? 'text-radar-300' : 'text-mist-500'" x-text="indicator('kda')"></span>
+                                                </button>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-white/[0.04]">
+                                        <template x-for="hero in filteredHeroes" :key="hero.hero_id">
+                                            <tr class="transition hover:bg-white/[0.03]">
+                                                <td class="px-4 py-2.5 sm:px-5">
+                                                    <div class="flex items-center gap-3">
+                                                        <div class="h-9 w-16 shrink-0 overflow-hidden rounded-md bg-ink-800 ring-1 ring-white/10">
+                                                            <template x-if="hero.image">
+                                                                <img :src="hero.image" :alt="hero.localized_name" class="h-full w-full object-cover" loading="lazy">
+                                                            </template>
+                                                            <template x-if="!hero.image">
+                                                                <span class="grid h-full w-full place-items-center text-xs font-bold text-mist-500" x-text="hero.localized_name.charAt(0)"></span>
+                                                            </template>
+                                                        </div>
+                                                        <p class="truncate text-[13px] font-semibold text-white" x-text="hero.localized_name"></p>
+                                                    </div>
+                                                </td>
+                                                <td class="px-4 py-2.5 font-mono text-[13px] tabular-nums text-mist-300" x-text="hero.games"></td>
+                                                <td class="px-4 py-2.5">
+                                                    <div class="flex items-center gap-2.5">
+                                                        <span
+                                                            class="w-12 text-right font-mono text-[13px] font-semibold tabular-nums"
+                                                            :class="hero.win_rate == null ? 'text-mist-500' : (hero.win_rate >= 50 ? 'text-emerald-300' : 'text-rose-300')"
+                                                            x-text="hero.win_rate == null ? '—' : hero.win_rate.toFixed(1) + '%'"
+                                                        ></span>
+                                                        <div class="h-1.5 w-24 shrink-0 overflow-hidden rounded-full bg-white/[0.06]">
+                                                            <div
+                                                                class="h-full rounded-full"
+                                                                :class="hero.win_rate == null || hero.win_rate >= 50 ? 'bg-emerald-400' : 'bg-rose-400'"
+                                                                :style="'width: ' + Math.min(100, Math.max(2, hero.win_rate || 0)) + '%'"
+                                                            ></div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td class="px-4 py-2.5 text-right font-mono text-[13px] tabular-nums text-mist-300 sm:px-5" x-text="hero.kda == null ? '—' : hero.kda.toFixed(2)"></td>
+                                            </tr>
+                                        </template>
+                                        <tr x-show="filteredHeroes.length === 0">
+                                            <td colspan="4" class="px-4 py-10 text-center text-sm text-mist-400">Герои с таким именем не найдены.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="flex flex-wrap items-center justify-between gap-2 border-t border-white/[0.06] px-4 py-3 text-[11px] text-mist-500 sm:px-5">
+                                <span x-text="'Показано ' + filteredHeroes.length + ' из ' + heroes.length + ' героев'"></span>
+                                <span>Сортировка по клику на заголовок</span>
+                            </div>
+                        </div>
+                    @endif
                 </div>
 
                 <div id="panel-matches" aria-labelledby="tab-matches" x-show="tab === 'matches'" x-cloak x-transition.opacity.duration.200ms role="tabpanel" tabindex="0" aria-label="Последние матчи">

@@ -89,6 +89,7 @@ class OpenDotaService
         $rank = $this->rank($rankTier);
 
         $nickname = $profile['personaname'] ?? null;
+        $heroRows = $this->transformHeroes($heroStats, $heroes, $recentMatches);
 
         return [
             'account_id' => (int) $profile['account_id'],
@@ -111,7 +112,8 @@ class OpenDotaService
             'losses' => $losses,
             'winrate' => $games > 0 ? round($wins / $games * 100, 1) : null,
             'averages' => $averages,
-            'heroes' => $this->transformHeroes($heroStats, $heroes),
+            'heroes' => $heroRows,
+            'top_heroes' => array_slice($heroRows, 0, 5),
             'matches' => array_slice($matches, 0, 20),
             'cached_at' => CarbonImmutable::now()->toIso8601String(),
             'cache_ttl' => $ttl,
@@ -423,15 +425,17 @@ class OpenDotaService
     /**
      * @param  array<int, mixed>  $heroStats
      * @param  array<int, array<string, mixed>>  $heroes
+     * @param  array<int, mixed>  $recentMatches
      * @return array<int, array<string, mixed>>
      */
-    private function transformHeroes(array $heroStats, array $heroes): array
+    private function transformHeroes(array $heroStats, array $heroes, array $recentMatches = []): array
     {
+        $kdaByHero = $this->heroKda($recentMatches);
+
         $rows = collect($heroStats)
             ->filter(fn ($hero) => is_array($hero) && isset($hero['hero_id']))
             ->sortByDesc(fn (array $hero) => (int) ($hero['games'] ?? 0))
-            ->take(5)
-            ->map(function (array $hero) use ($heroes) {
+            ->map(function (array $hero) use ($heroes, $kdaByHero) {
                 $meta = $heroes[(int) $hero['hero_id']] ?? [
                     'id' => (int) $hero['hero_id'],
                     'name' => 'Hero #'.$hero['hero_id'],
@@ -440,14 +444,21 @@ class OpenDotaService
 
                 $games = (int) ($hero['games'] ?? 0);
                 $wins = (int) ($hero['win'] ?? 0);
+                $winRate = $games > 0 ? round($wins / $games * 100, 1) : null;
 
                 return [
                     'hero_id' => $meta['id'],
+                    // Keep both naming schemes: localized_name/win_rate feed the
+                    // interactive table, name/winrate the existing overview.
+                    'localized_name' => $meta['name'],
                     'name' => $meta['name'],
                     'image' => $meta['image'],
                     'games' => $games,
+                    'win' => $wins,
                     'wins' => $wins,
-                    'winrate' => $games > 0 ? round($wins / $games * 100, 1) : null,
+                    'win_rate' => $winRate,
+                    'winrate' => $winRate,
+                    'kda' => $kdaByHero[$meta['id']] ?? null,
                     'last_played_at' => isset($hero['last_played'])
                         ? CarbonImmutable::createFromTimestampUTC((int) $hero['last_played'])->toIso8601String()
                         : null,
@@ -457,6 +468,36 @@ class OpenDotaService
             ->all();
 
         return $rows;
+    }
+
+    /**
+     * Per-hero KDA from the recent matches payload (OpenDota hero totals do not
+     * include kills/deaths/assists). Heroes outside the recent window get null.
+     *
+     * @param  array<int, mixed>  $matches
+     * @return array<int, float>
+     */
+    private function heroKda(array $matches): array
+    {
+        $totals = [];
+
+        foreach ($matches as $match) {
+            if (! is_array($match) || ! isset($match['hero_id'])) {
+                continue;
+            }
+
+            $heroId = (int) $match['hero_id'];
+            $totals[$heroId] ??= ['kills' => 0, 'deaths' => 0, 'assists' => 0];
+
+            $totals[$heroId]['kills'] += (int) ($match['kills'] ?? 0);
+            $totals[$heroId]['deaths'] += (int) ($match['deaths'] ?? 0);
+            $totals[$heroId]['assists'] += (int) ($match['assists'] ?? 0);
+        }
+
+        return array_map(
+            fn (array $row) => round(($row['kills'] + $row['assists']) / max($row['deaths'], 1), 2),
+            $totals
+        );
     }
 
     /**
