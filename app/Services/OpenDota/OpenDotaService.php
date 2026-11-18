@@ -112,6 +112,39 @@ class OpenDotaService
     }
 
     /**
+     * Lightweight player identity used by the hero detail page.
+     *
+     * The profile page stores this entry while building its aggregate, so
+     * navigating from the profile to a hero costs no extra OpenDota request.
+     *
+     * @return array<string, mixed>
+     *
+     * @throws PlayerNotFoundException
+     */
+    public function playerHeader(int $accountId): array
+    {
+        $ttl = (int) config('stats.cache.dota_profile', 1800);
+        $cacheKey = $this->playerHeaderCacheKey($accountId);
+        $cached = Cache::get($cacheKey);
+
+        if (is_array($cached)) {
+            return $cached;
+        }
+
+        $profileResponse = $this->client->get("players/{$accountId}");
+        $profile = $profileResponse['profile'] ?? null;
+
+        if (! is_array($profile) || empty($profile['account_id'])) {
+            throw new PlayerNotFoundException('dota');
+        }
+
+        $header = $this->playerIdentity($profileResponse);
+        Cache::put($cacheKey, $header, $ttl);
+
+        return $header;
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function fetchPlayer(int $accountId, int $ttl): array
@@ -123,6 +156,8 @@ class OpenDotaService
         if (! is_array($profile) || empty($profile['account_id'])) {
             throw new PlayerNotFoundException('dota');
         }
+
+        Cache::put($this->playerHeaderCacheKey($accountId), $this->playerIdentity($profileResponse), $ttl);
 
         // Optional endpoints. A failure here must not hide the profile itself,
         // but rate limit errors do bubble up from the client.
@@ -267,11 +302,156 @@ class OpenDotaService
     public function forget(int $accountId): void
     {
         Cache::forget($this->cacheKey($accountId));
+        Cache::forget($this->playerHeaderCacheKey($accountId));
+    }
+
+    /**
+     * Percentile distributions for a hero, cached for a day.
+     *
+     * OpenDota returns separate distributions for kills, deaths and assists.
+     * The KDA distribution is derived from matching percentiles so it can be
+     * compared on the same scale as GPM and XPM.
+     *
+     * @return array<string, array<int, array{percentile: float, value: float}>>
+     */
+    public function getHeroBenchmarks(int $heroId): array
+    {
+        if ($heroId <= 0) {
+            return [];
+        }
+
+        $ttl = (int) config('stats.cache.dota_benchmarks', 86400);
+
+        return Cache::remember("opendota:hero-benchmarks:v1:{$heroId}", $ttl, function () use ($heroId) {
+            try {
+                $response = $this->client->get('benchmarks', ['hero_id' => $heroId]);
+            } catch (ApiUnavailableException $exception) {
+                throw $exception;
+            } catch (ExternalApiException|PlayerNotFoundException $exception) {
+                Log::warning('OpenDota hero benchmarks are unavailable', [
+                    'hero_id' => $heroId,
+                    'message' => $exception->getMessage(),
+                ]);
+
+                return [];
+            }
+
+            $raw = isset($response['result']) && is_array($response['result'])
+                ? $response['result']
+                : $response;
+
+            if (! is_array($raw)) {
+                return [];
+            }
+
+            $gpm = $this->normalizeBenchmark($raw['gold_per_min'] ?? []);
+            $xpm = $this->normalizeBenchmark($raw['xp_per_min'] ?? []);
+            $kills = $this->normalizeBenchmark($raw['kills_per_min'] ?? []);
+            $deaths = $this->normalizeBenchmark($raw['deaths_per_min'] ?? []);
+            $assists = $this->normalizeBenchmark($raw['assists_per_min'] ?? []);
+
+            return array_filter([
+                'gpm' => $gpm,
+                'xpm' => $xpm,
+                'kda' => $this->kdaBenchmark($kills, $deaths, $assists),
+            ], fn (array $distribution) => $distribution !== []);
+        });
+    }
+
+    /**
+     * Aggregated stats and the latest matches for one hero.
+     *
+     * @return array<string, mixed>
+     */
+    public function getPlayerHeroStats(int $accountId, int $heroId): array
+    {
+        $ttl = (int) config('stats.cache.dota_player_hero', 1800);
+        $cacheKey = "opendota:player-hero:v2:{$accountId}:{$heroId}";
+
+        return Cache::remember($cacheKey, $ttl, function () use ($accountId, $heroId) {
+            $heroes = $this->heroStats();
+            $matches = $this->transformMatches(
+                $this->optionalGet("players/{$accountId}/matches", [
+                    'hero_id' => $heroId,
+                    'limit' => 100,
+                ]),
+                $heroes,
+            );
+
+            // OpenDota's list endpoint no longer includes GPM/XPM. Enrich a
+            // bounded sample from match details instead of spending 100 calls.
+            $matches = $this->enrichHeroMatchSample($matches, $accountId);
+
+            $hero = $heroes[$heroId] ?? [
+                'id' => $heroId,
+                'name' => 'Герой #'.$heroId,
+                'image' => null,
+                'icon' => null,
+            ];
+
+            $games = count($matches);
+            $wins = count(array_filter($matches, fn (array $match) => $match['win']));
+            $kills = array_sum(array_column($matches, 'kills'));
+            $deaths = array_sum(array_column($matches, 'deaths'));
+            $assists = array_sum(array_column($matches, 'assists'));
+            $gpmValues = array_values(array_filter(array_column($matches, 'gpm'), fn (int $value) => $value > 0));
+            $xpmValues = array_values(array_filter(array_column($matches, 'xpm'), fn (int $value) => $value > 0));
+
+            return [
+                'hero' => $hero,
+                'summary' => [
+                    'games' => $games,
+                    'wins' => $wins,
+                    'losses' => $games - $wins,
+                    'winrate' => $games > 0 ? round($wins / $games * 100, 1) : null,
+                    'kills' => $games > 0 ? round($kills / $games, 1) : null,
+                    'deaths' => $games > 0 ? round($deaths / $games, 1) : null,
+                    'assists' => $games > 0 ? round($assists / $games, 1) : null,
+                    'kda' => $games > 0 ? round(($kills + $assists) / max($deaths, 1), 2) : null,
+                    'gpm' => $gpmValues !== [] ? (int) round(array_sum($gpmValues) / count($gpmValues)) : null,
+                    'xpm' => $xpmValues !== [] ? (int) round(array_sum($xpmValues) / count($xpmValues)) : null,
+                    'gpm_games' => count($gpmValues),
+                    'xpm_games' => count($xpmValues),
+                ],
+                'matches' => array_slice($matches, 0, 10),
+                'cached_at' => CarbonImmutable::now()->toIso8601String(),
+            ];
+        });
     }
 
     private function cacheKey(int $accountId): string
     {
         return "opendota:player:v3:{$accountId}";
+    }
+
+    private function playerHeaderCacheKey(int $accountId): string
+    {
+        return "opendota:player-header:v1:{$accountId}";
+    }
+
+    /**
+     * @param  array<string, mixed>  $profileResponse
+     * @return array<string, mixed>
+     */
+    private function playerIdentity(array $profileResponse): array
+    {
+        $profile = is_array($profileResponse['profile'] ?? null) ? $profileResponse['profile'] : [];
+        $nickname = $profile['personaname'] ?? null;
+
+        return [
+            'account_id' => (int) ($profile['account_id'] ?? 0),
+            'steam_id' => (string) ($profile['steamid'] ?? ''),
+            'nickname' => $nickname ?: 'Анонимный игрок',
+            'avatar' => $profile['avatarfull'] ?? $profile['avatarmedium'] ?? $profile['avatar'] ?? null,
+            'profile_url' => $profile['profileurl'] ?? null,
+            'is_private' => empty($nickname),
+            'rank_tier' => isset($profileResponse['rank_tier']) && is_numeric($profileResponse['rank_tier'])
+                ? (int) $profileResponse['rank_tier']
+                : null,
+            'leaderboard_rank' => isset($profileResponse['leaderboard_rank'])
+                ? (int) $profileResponse['leaderboard_rank']
+                : null,
+        ];
     }
 
     /**
@@ -294,6 +474,80 @@ class OpenDotaService
         }
 
         return [];
+    }
+
+    /**
+     * Normalize one OpenDota benchmark distribution.
+     *
+     * @return array<int, array{percentile: float, value: float}>
+     */
+    private function normalizeBenchmark(mixed $rows): array
+    {
+        if (! is_array($rows)) {
+            return [];
+        }
+
+        $points = [];
+
+        foreach ($rows as $row) {
+            if (! is_array($row) || ! is_numeric($row['percentile'] ?? null) || ! is_numeric($row['value'] ?? null)) {
+                continue;
+            }
+
+            $points[] = [
+                'percentile' => (float) $row['percentile'],
+                'value' => (float) $row['value'],
+            ];
+        }
+
+        usort($points, fn (array $left, array $right) => $left['percentile'] <=> $right['percentile']);
+
+        return $points;
+    }
+
+    /**
+     * Derive a KDA benchmark from the kills/deaths/assists distributions.
+     *
+     * @param  array<int, array{percentile: float, value: float}>  $kills
+     * @param  array<int, array{percentile: float, value: float}>  $deaths
+     * @param  array<int, array{percentile: float, value: float}>  $assists
+     * @return array<int, array{percentile: float, value: float}>
+     */
+    private function kdaBenchmark(array $kills, array $deaths, array $assists): array
+    {
+        if ($kills === [] || $deaths === [] || $assists === []) {
+            return [];
+        }
+
+        $deathsByPercentile = [];
+        $assistsByPercentile = [];
+
+        foreach ($deaths as $row) {
+            $deathsByPercentile[(string) $row['percentile']] = $row['value'];
+        }
+
+        foreach ($assists as $row) {
+            $assistsByPercentile[(string) $row['percentile']] = $row['value'];
+        }
+
+        $points = [];
+
+        foreach ($kills as $row) {
+            $key = (string) $row['percentile'];
+            $deathsAtPercentile = $deathsByPercentile[$key] ?? null;
+            $assistsAtPercentile = $assistsByPercentile[$key] ?? null;
+
+            if ($deathsAtPercentile === null || $assistsAtPercentile === null || $deathsAtPercentile <= 0) {
+                continue;
+            }
+
+            $points[] = [
+                'percentile' => $row['percentile'],
+                'value' => round(($row['value'] + $assistsAtPercentile) / $deathsAtPercentile, 2),
+            ];
+        }
+
+        return $points;
     }
 
     /**
@@ -955,6 +1209,57 @@ class OpenDotaService
         Cache::put($cacheKey, $summary, $ttl);
 
         return $summary;
+    }
+
+    /**
+     * Fill GPM/XPM for the most recent hero matches from cached match details.
+     *
+     * @param  array<int, array<string, mixed>>  $matches
+     * @return array<int, array<string, mixed>>
+     */
+    private function enrichHeroMatchSample(array $matches, int $accountId): array
+    {
+        $limit = min(self::RECENT_MATCH_DETAILS, count($matches));
+
+        if ($limit === 0) {
+            return $matches;
+        }
+
+        $ttl = (int) config('stats.cache.dota_match', 3600);
+
+        for ($index = 0; $index < $limit; $index++) {
+            if (($matches[$index]['gpm'] ?? 0) > 0 && ($matches[$index]['xpm'] ?? 0) > 0) {
+                continue;
+            }
+
+            $details = $this->matchPlayerSummary(
+                (int) ($matches[$index]['match_id'] ?? 0),
+                $accountId,
+                $ttl,
+            );
+
+            if ($details === null) {
+                continue;
+            }
+
+            if ($details['gold_per_min'] > 0) {
+                $matches[$index]['gpm'] = $details['gold_per_min'];
+            }
+
+            if ($details['xp_per_min'] > 0) {
+                $matches[$index]['xpm'] = $details['xp_per_min'];
+            }
+
+            if ($details['level'] > 0) {
+                $matches[$index]['level'] = $details['level'];
+            }
+
+            if ($details['net_worth'] > 0) {
+                $matches[$index]['net_worth'] = $details['net_worth'];
+            }
+        }
+
+        return $matches;
     }
 
     /**

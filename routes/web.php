@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\DotaPlayerController;
+use App\Http\Controllers\HeroPlayerController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MatchController;
 use App\Http\Controllers\SearchController;
@@ -15,6 +16,11 @@ Route::post('/search', SearchController::class)
 Route::get('/dota/player/{accountId}', [DotaPlayerController::class, 'show'])
     ->whereNumber('accountId')
     ->name('dota.player');
+
+Route::get('/dota/player/{accountId}/hero/{heroId}', [HeroPlayerController::class, 'show'])
+    ->whereNumber('accountId')
+    ->whereNumber('heroId')
+    ->name('dota.player.hero');
 
 Route::get('/dota/match/{matchId}', [MatchController::class, 'show'])
     ->whereNumber('matchId')
