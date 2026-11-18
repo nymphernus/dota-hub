@@ -43,6 +43,10 @@ class DotaProfileTest extends TestCase
 
         Http::assertSentCount(6);
         $this->assertTrue(Cache::has('opendota:player:'.self::ACCOUNT_ID));
+        $response->assertSee(
+            route('dota.match', ['matchId' => 9000000001, 'player_id' => self::ACCOUNT_ID]),
+            false
+        );
     }
 
     public function test_second_visit_is_served_from_cache(): void

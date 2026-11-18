@@ -41,4 +41,24 @@ class HomeTest extends TestCase
         $this->assertSame(2, $search->search_count);
         $this->assertSame('Dendi', $search->nickname);
     }
+
+    public function test_recent_searches_are_limited_and_deduplicated_by_account(): void
+    {
+        // Same account in both games must occupy a single slot.
+        PlayerSearch::track(PlayerSearch::GAME_DOTA, '70388657', 'Dendi');
+        PlayerSearch::track(PlayerSearch::GAME_CS2, '70388657', 'Dendi on Steam');
+
+        foreach ([1001, 1002, 1003, 1004, 1005, 1006] as $accountId) {
+            PlayerSearch::track(PlayerSearch::GAME_DOTA, (string) $accountId, 'Player '.$accountId);
+        }
+
+        $response = $this->get('/');
+
+        $response->assertOk();
+        $response->assertViewHas('recentSearches', fn ($searches) => $searches->count() === 5);
+        $response->assertSee('Player 1006');
+        $response->assertSee('Player 1002');
+        $response->assertDontSee('Player 1001');
+        $response->assertDontSee('Dendi on Steam');
+    }
 }
