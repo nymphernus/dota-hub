@@ -31,4 +31,21 @@ return [
         ],
     ],
 
+    'opendota' => [
+        'base_url' => env('OPENDOTA_BASE_URL', 'https://api.opendota.com/api'),
+        'api_key' => env('OPENDOTA_API_KEY'),
+    ],
+
+    'steam' => [
+        'base_url' => env('STEAM_BASE_URL', 'https://api.steampowered.com'),
+        'api_key' => env('STEAM_API_KEY'),
+        'community_url' => env('STEAM_COMMUNITY_URL', 'https://steamcommunity.com'),
+        'cs2_app_id' => (int) env('STEAM_CS2_APP_ID', 730),
+    ],
+
+    'stratz' => [
+        'endpoint' => env('STRATZ_ENDPOINT', 'https://api.stratz.com/graphql'),
+        'token' => env('STRATZ_TOKEN'),
+    ],
+
 ];
