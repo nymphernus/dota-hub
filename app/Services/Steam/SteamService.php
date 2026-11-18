@@ -30,17 +30,36 @@ class SteamService
 
     /**
      * Resolve a /id/customname Steam profile to a SteamID64.
+     *
+     * Resolution results are cached for a week: vanity names rarely change and
+     * every search by custom URL would otherwise spend one Steam API request.
      */
     public function resolveVanityUrl(string $vanity): ?string
     {
-        $response = $this->get('ISteamUser/ResolveVanityURL/v0001/', [
-            'vanityurl' => $vanity,
-        ]);
+        $vanity = trim($vanity);
 
-        $result = $response['response'] ?? [];
-        $steamId = $result['steamid'] ?? null;
+        if ($vanity === '') {
+            return null;
+        }
 
-        return is_string($steamId) && SteamId::isSteamId64($steamId) ? $steamId : null;
+        $cacheKey = 'steam:vanity:'.sha1(mb_strtolower($vanity));
+        $ttl = (int) config('stats.cache.steam_vanity', 604800);
+
+        return Cache::remember($cacheKey, $ttl, function () use ($vanity) {
+            $response = $this->get('ISteamUser/ResolveVanityURL/v0001/', [
+                'vanityurl' => $vanity,
+            ]);
+
+            $result = $response['response'] ?? [];
+
+            if ((int) ($result['success'] ?? 0) !== 1) {
+                return null;
+            }
+
+            $steamId = $result['steamid'] ?? null;
+
+            return is_string($steamId) && SteamId::isSteamId64($steamId) ? $steamId : null;
+        });
     }
 
     /**

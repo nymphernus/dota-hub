@@ -62,14 +62,20 @@ class PlayerSearchService
         }
 
         if ($parsed['type'] === 'vanity') {
-            $steamId = $this->steamIdFromVanity($parsed['value']);
-
-            if ($steamId !== null) {
-                return $this->dotaTarget(SteamId::accountIdFromSteamId64($steamId));
+            if (! $this->steam->hasApiKey()) {
+                throw new MissingApiKeyException('Steam API', 'STEAM_API_KEY');
             }
+
+            $steamId = $this->steam->resolveVanityUrl($parsed['value']);
+
+            if ($steamId === null) {
+                throw new PlayerNotFoundException('dota');
+            }
+
+            return $this->dotaTarget(SteamId::accountIdFromSteamId64($steamId));
         }
 
-        // Nickname (or a vanity name we could not resolve) -> OpenDota search.
+        // Nickname -> OpenDota search.
         $results = $this->openDota->search($parsed['value']);
 
         if ($results === []) {
@@ -153,18 +159,5 @@ class PlayerSearchService
             'nickname' => null,
             'avatar' => null,
         ];
-    }
-
-    private function steamIdFromVanity(string $vanity): ?string
-    {
-        if (! $this->steam->hasApiKey()) {
-            return null;
-        }
-
-        try {
-            return $this->steam->resolveVanityUrl($vanity);
-        } catch (MissingApiKeyException) {
-            return null;
-        }
     }
 }
