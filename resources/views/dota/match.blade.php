@@ -246,6 +246,9 @@
                                                 {{ $roleLabel }}
                                             </span>
                                             <p class="mt-1 text-[10px] text-mist-500">{{ $roleName }}</p>
+                                            @if (($player['impact'] ?? null) !== null)
+                                                <p class="mt-0.5 text-[10px] font-semibold text-cyan-300/80" title="STRATZ impact">IMP {{ number_format($player['impact'], 1, '.', '') }}</p>
+                                            @endif
                                         @else
                                             <span class="text-[11px] text-mist-500">—</span>
                                         @endif

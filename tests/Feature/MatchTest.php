@@ -21,7 +21,10 @@ class MatchTest extends TestCase
     {
         parent::setUp();
 
-        config(['services.opendota.api_key' => null]);
+        config([
+            'services.opendota.api_key' => null,
+            'services.stratz.token' => null,
+        ]);
         Cache::flush();
     }
 
@@ -75,6 +78,29 @@ class MatchTest extends TestCase
         });
     }
 
+    public function test_stratz_positions_override_opendota_roles_when_token_is_set(): void
+    {
+        $this->fakeMatch(withStratz: true);
+
+        $response = $this->get(route('dota.match', [
+            'matchId' => self::MATCH_ID,
+            'player_id' => self::ACCOUNT_ID,
+        ]));
+
+        $response->assertOk();
+        $response->assertSee('Hard');
+        $response->assertSee('IMP 7.5');
+        $response->assertSee('STRATZ');
+        $response->assertViewHas('match', function (array $match) {
+            $player = $match['players']['radiant'][0];
+
+            return $player['role']['label'] === 'Hard'
+                && $player['role']['source'] === 'STRATZ'
+                && $player['impact'] === 7.5;
+        });
+        Http::assertSent(fn ($request) => str_contains($request->url(), 'api.stratz.com/graphql'));
+    }
+
     public function test_match_details_are_cached_for_repeat_views(): void
     {
         $this->fakeMatch();
@@ -86,7 +112,7 @@ class MatchTest extends TestCase
 
         // One match request + hero metadata + item metadata.
         Http::assertSentCount(3);
-        $this->assertTrue(Cache::has('opendota:match:v2:'.self::MATCH_ID));
+        $this->assertTrue(Cache::has('opendota:match:v3:'.self::MATCH_ID));
     }
 
     public function test_unknown_match_redirects_back_with_an_error(): void
@@ -139,9 +165,13 @@ class MatchTest extends TestCase
         );
     }
 
-    private function fakeMatch(): void
+    private function fakeMatch(bool $withStratz = false): void
     {
-        Http::fake([
+        if ($withStratz) {
+            config(['services.stratz.token' => 'test-token']);
+        }
+
+        $fakes = [
             'api.opendota.com/api/matches/'.self::MATCH_ID.'*' => Http::response([
                 'match_id' => self::MATCH_ID,
                 'radiant_win' => true,
@@ -243,6 +273,22 @@ class MatchTest extends TestCase
                     'img' => '/apps/dota2/images/dota_react/items/tango.png',
                 ],
             ]),
-        ]);
+        ];
+
+        if ($withStratz) {
+            $fakes['api.stratz.com/graphql*'] = Http::response([
+                'data' => [
+                    'match' => [
+                        'players' => [
+                            ['steamAccountId' => self::ACCOUNT_ID, 'position' => 5, 'imp' => 7.5],
+                            ['steamAccountId' => 123456789, 'position' => 4, 'imp' => 3.25],
+                            ['steamAccountId' => 987654321, 'position' => 1, 'imp' => 1.2],
+                        ],
+                    ],
+                ],
+            ]);
+        }
+
+        Http::fake($fakes);
     }
 }

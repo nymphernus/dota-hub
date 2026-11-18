@@ -6,6 +6,7 @@ use App\Exceptions\ApiUnavailableException;
 use App\Exceptions\ExternalApiException;
 use App\Exceptions\MatchNotFoundException;
 use App\Exceptions\PlayerNotFoundException;
+use App\Services\Stratz\StratzService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -87,7 +88,10 @@ class OpenDotaService
         8 => 'Immortal',
     ];
 
-    public function __construct(private readonly OpenDotaClient $client) {}
+    public function __construct(
+        private readonly OpenDotaClient $client,
+        private readonly StratzService $stratz,
+    ) {}
 
     /**
      * Full cached player profile.
@@ -196,7 +200,7 @@ class OpenDotaService
     {
         $ttl = (int) config('stats.cache.dota_match', 3600);
 
-        return Cache::remember("opendota:match:v2:{$matchId}", $ttl, function () use ($matchId) {
+        return Cache::remember("opendota:match:v3:{$matchId}", $ttl, function () use ($matchId) {
             try {
                 $match = $this->client->get("matches/{$matchId}");
             } catch (PlayerNotFoundException) {
@@ -631,6 +635,7 @@ class OpenDotaService
     {
         $heroes = $this->heroStats();
         $items = $this->itemStats();
+        $stratzPositions = $this->stratz->matchPositions((int) ($match['match_id'] ?? 0));
 
         $radiant = [];
         $dire = [];
@@ -672,7 +677,10 @@ class OpenDotaService
                 'last_hits' => (int) ($player['last_hits'] ?? 0),
                 'denies' => (int) ($player['denies'] ?? 0),
                 'net_worth' => (int) ($player['net_worth'] ?? 0),
-                'role' => $this->matchRole($player),
+                'role' => $this->matchRole($player, $stratzPositions[$accountId] ?? null),
+                'impact' => isset($stratzPositions[$accountId]['imp'])
+                    ? (float) $stratzPositions[$accountId]['imp']
+                    : null,
                 'purchases' => $this->transformPurchases($purchaseLog, $items),
                 'purchase_log_count' => count($purchaseLog),
                 'net_worth_history' => $this->numericSeries($player['networth_t'] ?? []),
@@ -728,10 +736,19 @@ class OpenDotaService
 
     /**
      * @param  array<string, mixed>  $player
+     * @param  array{position: int|null, imp: float|null}|null  $stratz
      * @return array{label: string|null, name: string|null, source: string|null}
      */
-    private function matchRole(array $player): array
+    private function matchRole(array $player, ?array $stratz = null): array
     {
+        $stratzPosition = isset($stratz['position']) && is_numeric($stratz['position'])
+            ? (int) $stratz['position']
+            : 0;
+
+        if (isset(self::POSITION_ROLES[$stratzPosition])) {
+            return self::POSITION_ROLES[$stratzPosition] + ['source' => 'STRATZ'];
+        }
+
         $position = isset($player['position_est']) && is_numeric($player['position_est'])
             ? (int) $player['position_est']
             : 0;
