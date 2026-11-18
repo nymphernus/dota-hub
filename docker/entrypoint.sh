@@ -41,21 +41,19 @@ fi
 # ---------------------------------------------------------------------------
 # Wait for PostgreSQL
 # ---------------------------------------------------------------------------
+# pg_isready ships with postgresql-client and performs a real connection check,
+# unlike raw TCP probes. The database container already has a healthcheck, but
+# this also covers restarts and slow volume initialisation.
 if [ "${DB_CONNECTION:-pgsql}" = "pgsql" ] && [ -n "${DB_HOST:-}" ]; then
     log "Waiting for PostgreSQL at ${DB_HOST}:${DB_PORT:-5432}..."
     ATTEMPTS=0
 
-    until php -r '
-        try {
-            new PDO(
-                sprintf("pgsql:host=%s;port=%s;dbname=%s", getenv("DB_HOST"), getenv("DB_PORT") ?: "5432", getenv("DB_DATABASE")),
-                getenv("DB_USERNAME"),
-                getenv("DB_PASSWORD")
-            );
-        } catch (Throwable $e) {
-            exit(1);
-        }
-    '; do
+    until pg_isready \
+        --host="${DB_HOST}" \
+        --port="${DB_PORT:-5432}" \
+        --username="${DB_USERNAME:-postgres}" \
+        --dbname="${DB_DATABASE:-postgres}" \
+        --timeout=3 >/dev/null 2>&1; do
         ATTEMPTS=$((ATTEMPTS + 1))
         if [ "$ATTEMPTS" -ge 30 ]; then
             log "PostgreSQL is not reachable, giving up."
@@ -63,6 +61,8 @@ if [ "${DB_CONNECTION:-pgsql}" = "pgsql" ] && [ -n "${DB_HOST:-}" ]; then
         fi
         sleep 2
     done
+
+    log "PostgreSQL is ready."
 fi
 
 # ---------------------------------------------------------------------------

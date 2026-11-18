@@ -8,7 +8,7 @@ FROM node:22-alpine AS assets
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci --fetch-timeout=600000 --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000
 
 COPY resources ./resources
 COPY public ./public
@@ -28,6 +28,7 @@ RUN apk add --no-cache \
         icu-dev \
         libzip-dev \
         postgresql-dev \
+        postgresql-client \
         su-exec \
         $PHPIZE_DEPS \
     && docker-php-ext-install -j"$(nproc)" \
