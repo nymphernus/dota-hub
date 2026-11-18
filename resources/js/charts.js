@@ -1,23 +1,13 @@
 import {
     ArcElement,
-    BarController,
-    BarElement,
-    CategoryScale,
     Chart,
     DoughnutController,
-    Legend,
-    LinearScale,
     Tooltip,
 } from 'chart.js';
 
 Chart.register(
     ArcElement,
-    BarController,
-    BarElement,
-    CategoryScale,
     DoughnutController,
-    Legend,
-    LinearScale,
     Tooltip,
 );
 
@@ -75,74 +65,44 @@ if (payload) {
         }));
     }
 
-    const recentMatchesCanvas = document.getElementById('recentMatchesChart');
+    const heroUsageCanvas = document.getElementById('heroUsageChart');
 
-    if (recentMatchesCanvas) {
-        const matches = Array.isArray(data.matches) ? data.matches : [];
-        const colors = matches.map((match) => match.win ? '#10b981' : '#ef4444');
+    if (heroUsageCanvas) {
+        const heroes = Array.isArray(data.heroUsage) ? data.heroUsage : [];
+        const total = heroes.reduce((sum, hero) => sum + (Number(hero.games) || 0), 0);
 
-        charts.push(new Chart(recentMatchesCanvas, {
-            type: 'bar',
+        charts.push(new Chart(heroUsageCanvas, {
+            type: 'doughnut',
             data: {
-                labels: matches.map((match) => match.label || '—'),
+                labels: heroes.map((hero) => hero.name || 'Неизвестный герой'),
                 datasets: [{
-                    label: 'Результат',
-                    data: matches.map(() => 1),
-                    backgroundColor: colors,
-                    borderColor: colors,
-                    borderWidth: 0,
-                    borderRadius: 4,
-                    maxBarThickness: 24,
+                    data: heroes.map((hero) => Number(hero.games) || 0),
+                    backgroundColor: heroes.map((hero) => hero.color || '#64748b'),
+                    borderColor: '#0b1220',
+                    borderWidth: 2,
+                    hoverOffset: 5,
                 }],
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                interaction: {
-                    mode: 'index',
-                    intersect: false,
-                },
-                scales: {
-                    x: {
-                        grid: {
-                            display: false,
-                        },
-                        border: {
-                            display: false,
-                        },
-                        ticks: {
-                            color: '#8ba0bd',
-                            font: {
-                                size: 10,
-                            },
-                            maxRotation: 0,
-                            autoSkip: true,
-                            maxTicksLimit: 10,
-                        },
-                    },
-                    y: {
-                        display: false,
-                        beginAtZero: true,
-                        max: 1.15,
-                    },
-                },
+                cutout: '64%',
                 plugins: {
                     legend: {
                         display: false,
                     },
                     tooltip: {
                         callbacks: {
-                            title(items) {
-                                const match = matches[items[0]?.dataIndex];
-
-                                return match ? match.label : '';
-                            },
                             label(context) {
-                                const match = matches[context.dataIndex];
-
-                                return match
-                                    ? `${match.win ? 'Победа' : 'Поражение'} · ${match.hero}`
+                                const hero = heroes[context.dataIndex] || {};
+                                const share = total > 0
+                                    ? (((Number(hero.games) || 0) / total) * 100).toFixed(1)
+                                    : '0.0';
+                                const winrate = hero.winrate !== null && hero.winrate !== undefined
+                                    ? ` · ${hero.winrate}% WR`
                                     : '';
+
+                                return ` ${context.label}: ${hero.games || 0} игр (${share}%)${winrate}`;
                             },
                         },
                     },

@@ -37,32 +37,35 @@ class DotaProfileTest extends TestCase
                 && $player['losses'] === 80
                 && $player['winrate'] === 60.0
                 && $player['is_private'] === false
+                && $player['has_public_matches'] === true
                 && count($player['matches']) === 2
+                && count($player['match_history']) === 6
                 && count($player['heroes']) === 2;
         });
 
-        Http::assertSentCount(9);
-        $this->assertTrue(Cache::has('opendota:player:'.self::ACCOUNT_ID));
-        $response->assertViewHas('player', function (array $player) {
-            return $player['companions']['analyzed_matches'] === 2
-                && $player['companions']['teammates'][0]['account_id'] === 111111111
-                && $player['companions']['teammates'][0]['games'] === 2
-                && $player['companions']['opponents'][0]['account_id'] === 222222222
-                && $player['companions']['opponents'][0]['games'] === 2;
-        });
+        Http::assertSentCount(7);
+        $this->assertTrue(Cache::has('opendota:player:v2:'.self::ACCOUNT_ID));
         $response->assertSee(
             route('dota.match', ['matchId' => 9000000001, 'player_id' => self::ACCOUNT_ID]),
             false
         );
         $response->assertSee('id="winrateChart"', false);
-        $response->assertSee('id="recentMatchesChart"', false);
-        $response->assertSee('Частые тиммейты');
-        $response->assertSee('Частые оппоненты');
-        $response->assertSee('Best Friend');
-        $response->assertSee('Rival');
-        $response->assertSee('https://example.com/friend.jpg', false);
-        $response->assertSee('https://example.com/rival.jpg', false);
+        $response->assertSee('id="heroUsageChart"', false);
+        $response->assertSee('data-count=', false);
+        $response->assertDontSee('id="recentMatchesChart"', false);
+        $response->assertDontSee('Частые тиммейты');
+        $response->assertDontSee('Окружение');
         $response->assertViewHas('winrate', 60.0);
+        $response->assertViewHas('activityHeatmap', function (array $days) {
+            return count($days) >= 180
+                && array_sum(array_column($days, 'count')) === 6
+                && array_sum(array_column($days, 'wins')) === 3;
+        });
+        $response->assertViewHas('heroUsage', function (array $rows) {
+            return count($rows) === 6
+                && $rows[5]['name'] === 'Другие'
+                && array_sum(array_column($rows, 'games')) === 6;
+        });
         $response->assertViewHas(
             'recentMatches',
             fn (array $matches) => count($matches) === 2
@@ -94,12 +97,11 @@ class DotaProfileTest extends TestCase
             ->assertRedirect(route('dota.player', ['accountId' => self::ACCOUNT_ID]))
             ->assertSessionHas('status');
 
-        $this->assertFalse(Cache::has('opendota:player:'.self::ACCOUNT_ID));
+        $this->assertFalse(Cache::has('opendota:player:v2:'.self::ACCOUNT_ID));
 
         $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]))->assertOk();
 
-        // Hero metadata and match summaries stay cached, the five player
-        // endpoints plus peers are re-fetched.
+        // Hero metadata stays cached; the six player endpoints are re-fetched.
         $this->assertSame($sentAfterFirstVisit + 6, count(Http::recorded()));
     }
 
@@ -262,51 +264,13 @@ class DotaProfileTest extends TestCase
                 ['field' => 'gold_per_min', 'n' => 10, 'sum' => 4980],
                 ['field' => 'xp_per_min', 'n' => 10, 'sum' => 5610],
             ]),
-            'api.opendota.com/api/players/'.self::ACCOUNT_ID.'/peers*' => Http::response([
-                [
-                    'account_id' => 111111111,
-                    'personaname' => 'Best Friend',
-                    'avatarfull' => 'https://example.com/friend.jpg',
-                    'win' => 120,
-                    'games' => 200,
-                    'with_win' => 110,
-                    'with_games' => 180,
-                    'against_win' => 10,
-                    'against_games' => 20,
-                ],
-                [
-                    'account_id' => 222222222,
-                    'personaname' => 'Rival',
-                    'avatarfull' => 'https://example.com/rival.jpg',
-                    'win' => 60,
-                    'games' => 200,
-                    'with_win' => 10,
-                    'with_games' => 20,
-                    'against_win' => 50,
-                    'against_games' => 180,
-                ],
-            ]),
-            'api.opendota.com/api/matches/9000000001*' => Http::response([
-                'match_id' => 9000000001,
-                'radiant_win' => true,
-                'start_time' => 1700000000,
-                'players' => [
-                    ['account_id' => self::ACCOUNT_ID, 'player_slot' => 0, 'hero_id' => 1, 'personaname' => 'Dendi'],
-                    ['account_id' => 111111111, 'player_slot' => 1, 'hero_id' => 2, 'personaname' => 'Best Friend'],
-                    ['account_id' => 222222222, 'player_slot' => 128, 'hero_id' => 1, 'personaname' => 'Rival'],
-                    ['account_id' => 333333333, 'player_slot' => 129, 'hero_id' => 2, 'personaname' => 'Other Enemy'],
-                ],
-            ]),
-            'api.opendota.com/api/matches/9000000002*' => Http::response([
-                'match_id' => 9000000002,
-                'radiant_win' => false,
-                'start_time' => 1699900000,
-                'players' => [
-                    ['account_id' => 222222222, 'player_slot' => 0, 'hero_id' => 2, 'personaname' => 'Rival'],
-                    ['account_id' => 333333333, 'player_slot' => 1, 'hero_id' => 1, 'personaname' => 'Other Enemy'],
-                    ['account_id' => self::ACCOUNT_ID, 'player_slot' => 128, 'hero_id' => 2, 'personaname' => 'Dendi'],
-                    ['account_id' => 111111111, 'player_slot' => 129, 'hero_id' => 1, 'personaname' => 'Best Friend'],
-                ],
+            'api.opendota.com/api/players/'.self::ACCOUNT_ID.'/matches*' => Http::response([
+                ['match_id' => 9000000001, 'hero_id' => 1, 'player_slot' => 0, 'radiant_win' => true, 'start_time' => now()->subDays(1)->timestamp],
+                ['match_id' => 9000000002, 'hero_id' => 2, 'player_slot' => 128, 'radiant_win' => true, 'start_time' => now()->subDays(2)->timestamp],
+                ['match_id' => 9000000003, 'hero_id' => 3, 'player_slot' => 0, 'radiant_win' => true, 'start_time' => now()->subDays(3)->timestamp],
+                ['match_id' => 9000000004, 'hero_id' => 4, 'player_slot' => 128, 'radiant_win' => true, 'start_time' => now()->subDays(4)->timestamp],
+                ['match_id' => 9000000005, 'hero_id' => 5, 'player_slot' => 128, 'radiant_win' => false, 'start_time' => now()->subDays(5)->timestamp],
+                ['match_id' => 9000000006, 'hero_id' => 6, 'player_slot' => 128, 'radiant_win' => true, 'start_time' => now()->subDays(6)->timestamp],
             ]),
             'api.opendota.com/api/players/'.self::ACCOUNT_ID.'*' => Http::response([
                 'profile' => [
@@ -324,6 +288,10 @@ class DotaProfileTest extends TestCase
             'api.opendota.com/api/heroStats*' => Http::response([
                 ['id' => 1, 'localized_name' => 'Anti-Mage', 'img' => '/apps/dota2/images/heroes/antimage_full.png'],
                 ['id' => 2, 'localized_name' => 'Axe', 'img' => '/apps/dota2/images/heroes/axe_full.png'],
+                ['id' => 3, 'localized_name' => 'Bane', 'img' => '/apps/dota2/images/heroes/bane_full.png'],
+                ['id' => 4, 'localized_name' => 'Bloodseeker', 'img' => '/apps/dota2/images/heroes/bloodseeker_full.png'],
+                ['id' => 5, 'localized_name' => 'Crystal Maiden', 'img' => '/apps/dota2/images/heroes/crystal_maiden_full.png'],
+                ['id' => 6, 'localized_name' => 'Drow Ranger', 'img' => '/apps/dota2/images/heroes/drow_ranger_full.png'],
             ]),
         ]);
     }

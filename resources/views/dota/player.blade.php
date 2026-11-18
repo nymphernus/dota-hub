@@ -5,30 +5,20 @@
 
 @php
     $topHeroes = $player['top_heroes'] ?? array_slice($player['heroes'], 0, 5);
-    $companions = $player['companions'] ?? [
-        'teammates' => [],
-        'opponents' => [],
-        'analyzed_matches' => 0,
+    $heroUsageTotal = array_sum(array_column($heroUsage, 'games'));
+    $activityTotal = array_sum(array_column($activityHeatmap, 'count'));
+    $heatmapTones = [
+        'empty' => 'bg-white/[0.04] ring-1 ring-inset ring-white/[0.03]',
+        'low' => 'bg-emerald-900/80 ring-1 ring-inset ring-emerald-700/30',
+        'mid' => 'bg-emerald-600 ring-1 ring-inset ring-emerald-500/30',
+        'high' => 'bg-emerald-400 ring-1 ring-inset ring-emerald-300/30',
     ];
-    $companionCount = count($companions['teammates']) + count($companions['opponents']);
-
-    $chartMatches = collect($recentMatches)
-        ->reverse()
-        ->values()
-        ->map(fn (array $match) => [
-            'label' => $match['started_at']
-                ? \Carbon\CarbonImmutable::parse($match['started_at'])->format('d.m')
-                : '—',
-            'win' => (bool) $match['win'],
-            'hero' => $match['hero_name'] ?? 'Неизвестный герой',
-        ])
-        ->all();
 
     $chartData = [
         'winrate' => $winrate,
         'wins' => $player['wins'],
         'losses' => $player['losses'],
-        'matches' => $chartMatches,
+        'heroUsage' => $heroUsage,
     ];
 
     $rankTone = match ($player['rank_medal']) {
@@ -197,8 +187,8 @@
         <div
             class="mt-6"
             x-data="{
-                tabs: ['overview', 'heroes', 'matches', 'companions'],
-                tab: ['overview', 'heroes', 'matches', 'companions'].includes(window.location.hash.slice(1))
+                tabs: ['overview', 'heroes', 'matches'],
+                tab: ['overview', 'heroes', 'matches'].includes(window.location.hash.slice(1))
                     ? window.location.hash.slice(1)
                     : 'overview',
                 setTab(value) {
@@ -231,11 +221,6 @@
                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h9" stroke-linecap="round" /></svg>
                     Последние матчи
                     <span class="rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-bold text-mist-400">{{ count($player['matches']) }}</span>
-                </button>
-                <button type="button" id="tab-companions" aria-controls="panel-companions" @click="setTab('companions')" :class="{ 'tab-button-active': tab === 'companions' }" class="tab-button" role="tab" :aria-selected="(tab === 'companions').toString()" :tabindex="tab === 'companions' ? 0 : -1">
-                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="9" cy="8" r="3" /><path d="M3.5 19a5.5 5.5 0 0 1 11 0" stroke-linecap="round" /><circle cx="17" cy="9" r="2.2" /><path d="M15 15.4a4.6 4.6 0 0 1 5.5 3.6" stroke-linecap="round" /></svg>
-                    Окружение
-                    <span class="rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-bold text-mist-400">{{ $companionCount }}</span>
                 </button>
             </div>
 
@@ -287,33 +272,73 @@
                         <div class="card p-4 sm:p-5">
                             <div class="flex flex-wrap items-start justify-between gap-3">
                                 <div>
-                                    <p class="label">Форма</p>
-                                    <h2 class="mt-1 text-lg font-bold text-white">Последние матчи</h2>
+                                    <p class="label">Герои</p>
+                                    <h2 class="mt-1 text-lg font-bold text-white">Использование героев</h2>
                                 </div>
-                                <div class="flex items-center gap-3 text-[10px] text-mist-500">
-                                    <span class="inline-flex items-center gap-1.5">
-                                        <span class="h-2 w-2 rounded-sm bg-emerald-400"></span>
-                                        Победа
-                                    </span>
-                                    <span class="inline-flex items-center gap-1.5">
-                                        <span class="h-2 w-2 rounded-sm bg-rose-400"></span>
-                                        Поражение
-                                    </span>
-                                </div>
+                                <span class="badge border-white/10 bg-white/5 text-mist-400">Последние 25</span>
                             </div>
 
-                            <div class="relative mt-4 h-56">
-                                <canvas id="recentMatchesChart" role="img" aria-label="Столбчатая диаграмма результатов последних матчей"></canvas>
-                                @if ($chartMatches === [])
-                                    <p class="absolute inset-0 grid place-items-center text-sm text-mist-500">
-                                        Для графика пока нет матчей.
-                                    </p>
-                                @endif
-                            </div>
+                            @if ($heroUsage === [])
+                                <div class="mt-4 grid h-56 place-items-center rounded-xl border border-dashed border-white/10 text-sm text-mist-500">
+                                    Для графика пока нет матчей.
+                                </div>
+                            @else
+                                <div class="mt-4 flex flex-col items-center gap-4 sm:flex-row">
+                                    <div class="relative h-44 w-44 shrink-0">
+                                        <canvas id="heroUsageChart" role="img" aria-label="Круговая диаграмма использования героев за последние 25 матчей"></canvas>
+                                        <div class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                                            <span class="text-2xl font-black text-white">{{ $heroUsageTotal }}</span>
+                                            <span class="mt-0.5 text-[9px] uppercase tracking-[0.18em] text-mist-500">матчей</span>
+                                        </div>
+                                    </div>
 
-                            <p class="mt-3 text-[11px] leading-relaxed text-mist-500">
-                                Слева — более старые матчи, справа — последние. Наведите на столбец, чтобы увидеть героя и дату.
-                            </p>
+                                    <div class="w-full min-w-0 space-y-1.5">
+                                        @foreach ($heroUsage as $hero)
+                                            <div class="flex items-center gap-2 rounded-lg px-2 py-1 text-[11px] transition hover:bg-white/[0.03]">
+                                                <span class="h-2 w-2 shrink-0 rounded-full" style="background-color: {{ $hero['color'] }}"></span>
+                                                <span class="min-w-0 flex-1 truncate text-mist-300">{{ $hero['name'] }}</span>
+                                                <span class="shrink-0 font-semibold text-white">{{ $hero['games'] }}</span>
+                                                <span class="w-10 shrink-0 text-right text-mist-500">{{ number_format($hero['share'], 1, '.', '') }}%</span>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="mt-4 card p-4 sm:p-5">
+                        <div class="flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                                <p class="label">Активность</p>
+                                <h2 class="mt-1 text-lg font-bold text-white">Календарь матчей</h2>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-3 text-[10px] text-mist-500">
+                                <span class="font-semibold text-mist-300">{{ number_format($activityTotal, 0, '.', ' ') }} матчей за 6 месяцев</span>
+                                <span class="inline-flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-[2px] bg-white/[0.04] ring-1 ring-inset ring-white/[0.03]"></span>0</span>
+                                <span class="inline-flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-[2px] bg-emerald-900/80"></span>1–2</span>
+                                <span class="inline-flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-[2px] bg-emerald-600"></span>3–4</span>
+                                <span class="inline-flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-[2px] bg-emerald-400"></span>5+</span>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 overflow-x-auto pb-1">
+                            <div class="grid w-max grid-flow-col grid-rows-7 gap-[3px]" aria-label="Активность за последние 6 месяцев">
+                                @foreach ($activityHeatmap as $day)
+                                    <div
+                                        class="h-[11px] w-[11px] rounded-[2px] {{ $heatmapTones[$day['level']] }} transition hover:scale-125 hover:ring-white/30"
+                                        title="{{ $day['label'] }}: {{ $day['count'] }} игр, {{ $day['wins'] }} побед, {{ $day['losses'] }} поражений"
+                                        aria-label="{{ $day['label'] }}: {{ $day['count'] }} игр, {{ $day['wins'] }} побед, {{ $day['losses'] }} поражений"
+                                        data-date="{{ $day['date'] }}"
+                                        data-count="{{ $day['count'] }}"
+                                    ></div>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <div class="mt-2 flex items-center justify-between text-[10px] text-mist-500">
+                            <span>6 месяцев назад</span>
+                            <span>Сегодня</span>
                         </div>
                     </div>
 
@@ -619,156 +644,6 @@
                     </div>
                 </div>
 
-                <div id="panel-companions" aria-labelledby="tab-companions" x-show="tab === 'companions'" x-cloak x-transition.opacity.duration.200ms role="tabpanel" tabindex="0" aria-label="Окружение" x-data="{ companionTab: 'teammates' }">
-                    <div class="card overflow-hidden">
-                        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] px-4 py-4 sm:px-5">
-                            <div>
-                                <p class="label">Social graph</p>
-                                <h2 class="mt-1 text-lg font-bold text-white">Окружение</h2>
-                            </div>
-                            <span class="badge border-white/10 bg-white/5 text-[10px] text-mist-400">
-                                Анализ последних {{ $companions['analyzed_matches'] }} матчей
-                            </span>
-                        </div>
-
-                        <div class="border-b border-white/[0.06] px-4 py-3 sm:px-5">
-                            <div class="inline-flex items-center gap-1 rounded-xl border border-white/[0.06] bg-ink-950/60 p-1">
-                                <button
-                                    type="button"
-                                    class="tab-button !gap-1.5 !px-3 !py-1.5 !text-[11px]"
-                                    :class="{ 'tab-button-active': companionTab === 'teammates' }"
-                                    @click="companionTab = 'teammates'"
-                                    :aria-pressed="(companionTab === 'teammates').toString()"
-                                >
-                                    Частые тиммейты
-                                    <span class="rounded bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-bold text-mist-400">{{ count($companions['teammates']) }}</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    class="tab-button !gap-1.5 !px-3 !py-1.5 !text-[11px]"
-                                    :class="{ 'tab-button-active': companionTab === 'opponents' }"
-                                    @click="companionTab = 'opponents'"
-                                    :aria-pressed="(companionTab === 'opponents').toString()"
-                                >
-                                    Частые оппоненты
-                                    <span class="rounded bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-bold text-mist-400">{{ count($companions['opponents']) }}</span>
-                                </button>
-                            </div>
-                            <p class="mt-2 text-[11px] text-mist-500">
-                                Совместные матчи из последних {{ $companions['analyzed_matches'] }} игр. Винрейт, топ-герои и аватар подтягиваются из OpenDota.
-                            </p>
-                        </div>
-
-                        @if ($companions['analyzed_matches'] === 0)
-                            <div class="p-10 text-center">
-                                <p class="text-sm text-mist-400">Не удалось получить детали последних матчей. Попробуйте обновить профиль позже.</p>
-                            </div>
-                        @else
-                            <div class="p-4 sm:p-5">
-                                @foreach (['teammates' => 'Частые тиммейты', 'opponents' => 'Частые оппоненты'] as $type => $label)
-                                    <div x-show="companionTab === '{{ $type }}'" @if ($type === 'opponents') x-cloak @endif>
-                                        @if ($companions[$type] === [])
-                                            <div class="rounded-xl border border-dashed border-white/10 bg-ink-950/40 p-8 text-center">
-                                                <p class="text-sm text-mist-400">
-                                                    @if ($type === 'teammates')
-                                                        В последних матчах не нашлось повторяющихся тиммейтов.
-                                                    @else
-                                                        В последних матчах не нашлось повторяющихся оппонентов.
-                                                    @endif
-                                                </p>
-                                            </div>
-                                        @else
-                                            <div class="grid gap-3 md:grid-cols-2">
-                                                @foreach ($companions[$type] as $companion)
-                                                    <article class="rounded-xl border border-white/[0.06] bg-ink-900/70 p-4 transition hover:border-radar-500/20 hover:bg-ink-850">
-                                                        <div class="flex items-start gap-3">
-                                                            <a href="{{ route('dota.player', ['accountId' => $companion['account_id']]) }}" class="h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-ink-800 ring-1 ring-white/10 transition hover:ring-radar-400/40" aria-label="Профиль {{ $companion['nickname'] }}">
-                                                                @if ($companion['avatar'])
-                                                                    <img src="{{ $companion['avatar'] }}" alt="Аватар {{ $companion['nickname'] }}" class="h-full w-full object-cover" loading="lazy">
-                                                                @else
-                                                                    <span class="grid h-full w-full place-items-center text-sm font-black text-mist-500">
-                                                                        {{ mb_strtoupper(mb_substr($companion['nickname'], 0, 1)) }}
-                                                                    </span>
-                                                                @endif
-                                                            </a>
-
-                                                            <div class="min-w-0 flex-1">
-                                                                <a href="{{ route('dota.player', ['accountId' => $companion['account_id']]) }}" class="block truncate text-sm font-bold text-white transition hover:text-radar-200">
-                                                                    {{ $companion['nickname'] }}
-                                                                </a>
-                                                                <p class="mt-0.5 font-mono text-[10px] text-mist-500">ID {{ $companion['account_id'] }}</p>
-                                                            </div>
-
-                                                            @if ($companion['overall_winrate'] !== null)
-                                                                <span @class([
-                                                                    'badge shrink-0 !px-2 !py-1 !text-[10px]',
-                                                                    'border-emerald-500/25 bg-emerald-500/10 text-emerald-300' => $companion['overall_winrate'] >= 50,
-                                                                    'border-rose-500/25 bg-rose-500/10 text-rose-300' => $companion['overall_winrate'] < 50,
-                                                                ]) title="Винрейт в общих матчах за всё время">
-                                                                    {{ number_format($companion['overall_winrate'], 1, '.', '') }}%
-                                                                </span>
-                                                            @endif
-                                                        </div>
-
-                                                        <div class="mt-3 grid grid-cols-3 gap-px overflow-hidden rounded-lg border border-white/[0.06] bg-white/[0.06] text-center">
-                                                            <div class="bg-ink-900 px-2 py-2">
-                                                                <p class="text-[9px] uppercase tracking-wider text-mist-500">Матчи</p>
-                                                                <p class="mt-0.5 text-sm font-bold text-white">{{ $companion['games'] }}</p>
-                                                            </div>
-                                                            <div class="bg-ink-900 px-2 py-2">
-                                                                <p class="text-[9px] uppercase tracking-wider text-mist-500">Победы</p>
-                                                                <p class="mt-0.5 text-sm font-bold text-emerald-300">{{ $companion['wins'] }}</p>
-                                                            </div>
-                                                            <div class="bg-ink-900 px-2 py-2">
-                                                                <p class="text-[9px] uppercase tracking-wider text-mist-500">Винрейт</p>
-                                                                <p @class([
-                                                                    'mt-0.5 text-sm font-bold',
-                                                                    'text-emerald-300' => $companion['winrate'] >= 50,
-                                                                    'text-rose-300' => $companion['winrate'] < 50,
-                                                                ])>{{ number_format($companion['winrate'], 1, '.', '') }}%</p>
-                                                            </div>
-                                                        </div>
-
-                                                        <div class="mt-3">
-                                                            <p class="label">Топ-герои</p>
-                                                            <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
-                                                                @forelse ($companion['heroes'] as $hero)
-                                                                    <div class="flex items-center gap-1.5 rounded-md border border-white/[0.06] bg-white/[0.025] p-1 pr-2" title="{{ $hero['name'] }} · {{ $hero['games'] }} игр">
-                                                                        <div class="h-6 w-10 shrink-0 overflow-hidden rounded bg-ink-800 ring-1 ring-white/10">
-                                                                            @if ($hero['image'])
-                                                                                <img src="{{ $hero['image'] }}" alt="{{ $hero['name'] }}" class="h-full w-full object-cover" loading="lazy">
-                                                                            @endif
-                                                                        </div>
-                                                                        <span class="text-[10px] font-semibold text-mist-400">{{ $hero['games'] }}</span>
-                                                                    </div>
-                                                                @empty
-                                                                    <span class="text-[11px] text-mist-500">—</span>
-                                                                @endforelse
-                                                            </div>
-                                                        </div>
-
-                                                        <div class="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-white/[0.05] pt-2.5 text-[10px] text-mist-500">
-                                                            @if ($companion['overall_games'] !== null)
-                                                                <span>Всего общих: {{ number_format($companion['overall_games'], 0, '.', ' ') }} · {{ number_format($companion['overall_winrate'], 1, '.', '') }}%</span>
-                                                            @else
-                                                                <span>Статистика OpenDota недоступна</span>
-                                                            @endif
-                                                            @if ($companion['last_played_at'])
-                                                                <time datetime="{{ $companion['last_played_at'] }}" title="{{ \Carbon\CarbonImmutable::parse($companion['last_played_at'])->format('d.m.Y H:i') }}">
-                                                                    {{ \Carbon\CarbonImmutable::parse($companion['last_played_at'])->diffForHumans(short: true) }}
-                                                                </time>
-                                                            @endif
-                                                        </div>
-                                                    </article>
-                                                @endforeach
-                                            </div>
-                                        @endif
-                                    </div>
-                                @endforeach
-                            </div>
-                        @endif
-                    </div>
-                </div>
             </div>
         </div>
     </div>

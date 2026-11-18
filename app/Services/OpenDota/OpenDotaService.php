@@ -24,6 +24,8 @@ class OpenDotaService
 
     private const ITEM_STATS_CACHE_KEY = 'opendota:item-stats:v1';
 
+    private const HISTORY_DAYS = 182;
+
     private const TEAM_CHART_COLORS = [
         '#34d399',
         '#22d3ee',
@@ -126,15 +128,22 @@ class OpenDotaService
         $recentMatches = $this->optionalGet('players/'.$accountId.'/recentMatches');
         $heroStats = $this->optionalGet('players/'.$accountId.'/heroes');
         $totals = $this->optionalGet('players/'.$accountId.'/totals');
+        $matchHistory = $this->optionalGet('players/'.$accountId.'/matches', [
+            'limit' => 500,
+            'date' => self::HISTORY_DAYS,
+        ]);
 
         $heroes = $this->heroStats();
         $matches = $this->transformMatches($recentMatches, $heroes);
-        $totalsByField = $this->indexTotals($totals);
+        $history = $this->transformHistory($matchHistory, $heroes);
 
-        $peers = $recentMatches === []
-            ? []
-            : $this->optionalGet('players/'.$accountId.'/peers');
-        $companions = $this->companionStats($accountId, $recentMatches, $heroes, $peers, $ttl);
+        // The history endpoint can be unavailable even when recent matches are
+        // not. The last 20 games are still a useful (if shorter) fallback.
+        if ($history === []) {
+            $history = $this->transformHistory($recentMatches, $heroes);
+        }
+
+        $totalsByField = $this->indexTotals($totals);
 
         $wins = (int) ($winLoss['win'] ?? 0);
         $losses = (int) ($winLoss['lose'] ?? 0);
@@ -180,7 +189,8 @@ class OpenDotaService
             'heroes' => $heroRows,
             'top_heroes' => array_slice($heroRows, 0, 5),
             'matches' => array_slice($matches, 0, 20),
-            'companions' => $companions,
+            'match_history' => $history,
+            'has_public_matches' => $matches !== [] || $history !== [] || $winLoss !== [],
             'cached_at' => CarbonImmutable::now()->toIso8601String(),
             'cache_ttl' => $ttl,
         ];
@@ -213,251 +223,6 @@ class OpenDotaService
 
             return $this->transformMatch($match);
         });
-    }
-
-    /**
-     * Aggregate teammates and opponents from the latest match details.
-     *
-     * @param  array<int, mixed>  $recentMatches
-     * @param  array<int, array<string, mixed>>  $heroes
-     * @param  array<int, mixed>  $peers
-     * @return array{teammates: array<int, array<string, mixed>>, opponents: array<int, array<string, mixed>>, analyzed_matches: int}
-     */
-    private function companionStats(int $accountId, array $recentMatches, array $heroes, array $peers, int $ttl): array
-    {
-        $matchIds = collect($recentMatches)
-            ->filter(fn ($match) => is_array($match) && ! empty($match['match_id']))
-            ->pluck('match_id')
-            ->map(fn ($matchId) => (int) $matchId)
-            ->unique()
-            ->take(20)
-            ->values()
-            ->all();
-
-        if ($matchIds === []) {
-            return [
-                'teammates' => [],
-                'opponents' => [],
-                'analyzed_matches' => 0,
-            ];
-        }
-
-        $peersById = [];
-
-        foreach ($peers as $peer) {
-            if (! is_array($peer) || empty($peer['account_id'])) {
-                continue;
-            }
-
-            $peersById[(int) $peer['account_id']] = $peer;
-        }
-
-        $relations = [
-            'teammates' => [],
-            'opponents' => [],
-        ];
-
-        $analyzedMatches = 0;
-
-        foreach ($matchIds as $matchId) {
-            $match = $this->companionMatch($matchId, $ttl);
-
-            if ($match === null) {
-                continue;
-            }
-
-            $target = null;
-
-            foreach ($match['players'] as $player) {
-                if ($player['account_id'] === $accountId) {
-                    $target = $player;
-                    break;
-                }
-            }
-
-            if ($target === null) {
-                continue;
-            }
-
-            $analyzedMatches++;
-            $targetRadiant = $target['player_slot'] < 128;
-
-            foreach ($match['players'] as $player) {
-                $otherAccountId = $player['account_id'];
-
-                if ($otherAccountId <= 0 || $otherAccountId === $accountId) {
-                    continue;
-                }
-
-                $otherRadiant = $player['player_slot'] < 128;
-                $type = $otherRadiant === $targetRadiant ? 'teammates' : 'opponents';
-
-                if (! isset($relations[$type][$otherAccountId])) {
-                    $relations[$type][$otherAccountId] = [
-                        'games' => 0,
-                        'wins' => 0,
-                        'last_played' => 0,
-                        'nickname' => null,
-                        'hero_games' => [],
-                    ];
-                }
-
-                $relation = &$relations[$type][$otherAccountId];
-                $relation['games']++;
-                $relation['last_played'] = max($relation['last_played'], $match['start_time']);
-
-                if ($player['nickname']) {
-                    $relation['nickname'] = $player['nickname'];
-                }
-
-                if ($player['hero_id'] > 0) {
-                    $relation['hero_games'][$player['hero_id']] =
-                        ($relation['hero_games'][$player['hero_id']] ?? 0) + 1;
-                }
-
-                if ($match['radiant_win'] === $otherRadiant) {
-                    $relation['wins']++;
-                }
-
-                unset($relation);
-            }
-        }
-
-        return [
-            'teammates' => $this->companionRows($relations['teammates'], $peersById, $heroes),
-            'opponents' => $this->companionRows($relations['opponents'], $peersById, $heroes),
-            'analyzed_matches' => $analyzedMatches,
-        ];
-    }
-
-    /**
-     * Fetch only the fields required for companion analysis and cache the small
-     * summary for an hour. The full match payload is intentionally not stored:
-     * twenty detailed matches would be far too large for Redis.
-     *
-     * @return array{match_id: int, radiant_win: bool, start_time: int, players: array<int, array{account_id: int, player_slot: int, hero_id: int, nickname: string|null}>}|null
-     */
-    private function companionMatch(int $matchId, int $ttl): ?array
-    {
-        try {
-            return Cache::remember("opendota:match:companions:v1:{$matchId}", $ttl, function () use ($matchId) {
-                try {
-                    $match = $this->client->get("matches/{$matchId}");
-                } catch (PlayerNotFoundException) {
-                    throw new MatchNotFoundException($matchId);
-                }
-
-                if (! is_array($match) || empty($match['players'])) {
-                    throw new MatchNotFoundException($matchId);
-                }
-
-                $players = [];
-
-                foreach ($match['players'] as $player) {
-                    if (! is_array($player)) {
-                        continue;
-                    }
-
-                    $players[] = [
-                        'account_id' => (int) ($player['account_id'] ?? 0),
-                        'player_slot' => (int) ($player['player_slot'] ?? 0),
-                        'hero_id' => (int) ($player['hero_id'] ?? 0),
-                        'nickname' => $player['personaname'] ?? null,
-                    ];
-                }
-
-                return [
-                    'match_id' => (int) ($match['match_id'] ?? $matchId),
-                    'radiant_win' => (bool) ($match['radiant_win'] ?? false),
-                    'start_time' => (int) ($match['start_time'] ?? 0),
-                    'players' => $players,
-                ];
-            });
-        } catch (MatchNotFoundException) {
-            return null;
-        } catch (ApiUnavailableException $exception) {
-            throw $exception;
-        } catch (ExternalApiException $exception) {
-            Log::info('OpenDota match details are unavailable for companion analysis', [
-                'match_id' => $matchId,
-                'message' => $exception->getMessage(),
-            ]);
-
-            return null;
-        }
-    }
-
-    /**
-     * @param  array<int, array<string, mixed>>  $relations
-     * @param  array<int, array<string, mixed>>  $peersById
-     * @param  array<int, array<string, mixed>>  $heroes
-     * @return array<int, array<string, mixed>>
-     */
-    private function companionRows(array $relations, array $peersById, array $heroes): array
-    {
-        $rows = [];
-
-        foreach ($relations as $accountId => $relation) {
-            $games = (int) ($relation['games'] ?? 0);
-
-            if ($games === 0) {
-                continue;
-            }
-
-            $wins = (int) ($relation['wins'] ?? 0);
-            $peer = $peersById[$accountId] ?? [];
-            $peerGames = (int) ($peer['games'] ?? 0);
-            $peerWins = (int) ($peer['win'] ?? 0);
-            $heroGames = is_array($relation['hero_games'] ?? null) ? $relation['hero_games'] : [];
-            arsort($heroGames);
-
-            $topHeroes = [];
-
-            foreach (array_slice(array_keys($heroGames), 0, 3) as $heroId) {
-                $hero = $heroes[(int) $heroId] ?? [
-                    'id' => (int) $heroId,
-                    'name' => 'Hero #'.(int) $heroId,
-                    'image' => null,
-                ];
-
-                $topHeroes[] = [
-                    'hero_id' => (int) $heroId,
-                    'name' => $hero['name'],
-                    'image' => $hero['image'],
-                    'games' => (int) $heroGames[$heroId],
-                ];
-            }
-
-            $lastPlayed = (int) ($relation['last_played'] ?? 0);
-
-            $rows[] = [
-                'account_id' => (int) $accountId,
-                'nickname' => ($peer['personaname'] ?? null)
-                    ?: ($relation['nickname'] ?? null)
-                    ?: 'Анонимный игрок',
-                'avatar' => $peer['avatarfull'] ?? $peer['avatar'] ?? null,
-                'overall_games' => $peerGames > 0 ? $peerGames : null,
-                'overall_wins' => $peerGames > 0 ? $peerWins : null,
-                'overall_winrate' => $peerGames > 0 ? round($peerWins / $peerGames * 100, 1) : null,
-                'games' => $games,
-                'wins' => $wins,
-                'winrate' => round($wins / $games * 100, 1),
-                'last_played_at' => $lastPlayed > 0
-                    ? CarbonImmutable::createFromTimestampUTC($lastPlayed)->toIso8601String()
-                    : null,
-                'heroes' => $topHeroes,
-            ];
-        }
-
-        usort($rows, function (array $a, array $b) {
-            $byGames = $b['games'] <=> $a['games'];
-
-            return $byGames !== 0
-                ? $byGames
-                : (float) ($b['winrate'] ?? 0) <=> (float) ($a['winrate'] ?? 0);
-        });
-
-        return array_slice($rows, 0, 8);
     }
 
     /**
@@ -500,18 +265,19 @@ class OpenDotaService
 
     private function cacheKey(int $accountId): string
     {
-        return "opendota:player:{$accountId}";
+        return "opendota:player:v2:{$accountId}";
     }
 
     /**
      * Fetch an optional endpoint and return an empty array on failure.
      *
+     * @param  array<string, mixed>  $query
      * @return array<mixed>
      */
-    private function optionalGet(string $path): array
+    private function optionalGet(string $path, array $query = []): array
     {
         try {
-            return $this->client->get($path);
+            return $this->client->get($path, $query);
         } catch (ApiUnavailableException $exception) {
             throw $exception;
         } catch (ExternalApiException|PlayerNotFoundException $exception) {
@@ -1030,6 +796,50 @@ class OpenDotaService
         }
 
         return $transformed;
+    }
+
+    /**
+     * Slim match history used by the activity heatmap and hero usage chart.
+     *
+     * @param  array<int, mixed>  $matches
+     * @param  array<int, array<string, mixed>>  $heroes
+     * @return array<int, array<string, mixed>>
+     */
+    private function transformHistory(array $matches, array $heroes): array
+    {
+        $rows = [];
+
+        foreach ($matches as $match) {
+            if (! is_array($match) || ! isset($match['hero_id'], $match['player_slot'])) {
+                continue;
+            }
+
+            $startTime = (int) ($match['start_time'] ?? 0);
+
+            if ($startTime <= 0) {
+                continue;
+            }
+
+            $hero = $heroes[(int) $match['hero_id']] ?? [
+                'id' => (int) $match['hero_id'],
+                'name' => 'Hero #'.$match['hero_id'],
+                'image' => null,
+            ];
+
+            $radiantWin = (bool) ($match['radiant_win'] ?? false);
+            $isRadiant = (int) $match['player_slot'] < 128;
+
+            $rows[] = [
+                'match_id' => isset($match['match_id']) ? (int) $match['match_id'] : null,
+                'hero_id' => $hero['id'],
+                'hero_name' => $hero['name'],
+                'hero_image' => $hero['image'],
+                'win' => $radiantWin === $isRadiant,
+                'started_at' => CarbonImmutable::createFromTimestampUTC($startTime)->toIso8601String(),
+            ];
+        }
+
+        return $rows;
     }
 
     /**
