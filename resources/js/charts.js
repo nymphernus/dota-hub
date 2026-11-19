@@ -29,7 +29,7 @@ if (payload) {
     if (canvas) {
         const parent = canvas.parentElement;
         const tooltipElement = document.createElement('div');
-        tooltipElement.className = 'radar-hero-tooltip pointer-events-none absolute z-20 hidden w-52 rounded-xl border border-white/10 bg-ink-950/95 p-2.5 shadow-2xl backdrop-blur';
+        tooltipElement.className = 'radar-hero-tooltip pointer-events-none absolute z-[9999] hidden w-52 rounded-xl border border-white/10 bg-ink-950/95 p-2.5 shadow-2xl backdrop-blur';
         parent.appendChild(tooltipElement);
 
         const imageCache = new Map();
@@ -65,9 +65,8 @@ if (payload) {
 
                     if (!image?.complete || !image.naturalWidth || games <= 0) return;
 
-                    const point = arc.tooltipPosition();
                     const angle = arc.endAngle - arc.startAngle;
-                    const radius = arc.outerRadius;
+                    const radius = arc.outerRadius + (arc.hoverOffset || 0);
                     const band = radius - arc.innerRadius;
                     const middleRadius = (arc.innerRadius + radius) / 2;
                     const arcLength = Math.max(angle * middleRadius, 1);
@@ -84,13 +83,13 @@ if (payload) {
                     // Too narrow for a square icon: leave the sector coloured.
                     if (size < 6) return;
 
+                    // Derive the icon position from the live sector angle so
+                    // icons travel with their slice during hover animations.
                     const centreX = (instance.chartArea.left + instance.chartArea.right) / 2;
                     const centreY = (instance.chartArea.top + instance.chartArea.bottom) / 2;
-                    const vectorX = point.x - centreX;
-                    const vectorY = point.y - centreY;
-                    const distance = Math.hypot(vectorX, vectorY) || 1;
-                    const x = centreX + (vectorX / distance) * middleRadius;
-                    const y = centreY + (vectorY / distance) * middleRadius;
+                    const middleAngle = (arc.startAngle + arc.endAngle) / 2;
+                    const x = centreX + Math.cos(middleAngle) * middleRadius;
+                    const y = centreY + Math.sin(middleAngle) * middleRadius;
 
                     instance.ctx.drawImage(
                         image,
@@ -175,10 +174,11 @@ if (payload) {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                cutout: '68%',
+                cutout: '40%',
                 plugins: {
                     legend: { display: false },
                     tooltip: {
+                        zIndex: 9999,
                         enabled: false,
                         external: renderHeroTooltip,
                     },

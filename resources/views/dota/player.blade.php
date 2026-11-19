@@ -120,7 +120,7 @@
                     @if ($heroUsage === [])
                         <div class="mt-4 grid h-48 place-items-center rounded-xl border border-dashed border-white/10 text-xs text-mist-500">Нет данных</div>
                     @else
-                        <div class="relative mx-auto mt-4 h-56 w-56">
+                        <div class="relative z-10 mx-auto mt-4 h-56 w-56" style="position: relative; z-index: 10;">
                             <canvas id="heroUsageChart" role="img" aria-label="Колесо героев за последние 25 матчей"></canvas>
                         </div>
                     @endif

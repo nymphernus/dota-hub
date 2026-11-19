@@ -19,6 +19,22 @@ class UiAssetsTest extends TestCase
         $this->assertStringNotContainsString('context.arc', $source);
     }
 
+    public function test_hero_wheel_uses_thin_ring_moving_icons_and_visible_tooltip(): void
+    {
+        $source = (string) file_get_contents(resource_path('js/charts.js'));
+
+        $this->assertStringContainsString("cutout: '40%'", $source);
+        $this->assertStringContainsString('zIndex: 9999', $source);
+        $this->assertStringContainsString('Math.cos(middleAngle)', $source);
+        $this->assertStringContainsString('Math.sin(middleAngle)', $source);
+        $this->assertStringContainsString('drawImage', $source);
+        $this->assertStringNotContainsString('tooltipPosition()', $source);
+
+        $view = (string) file_get_contents(resource_path('views/dota/player.blade.php'));
+        $this->assertStringContainsString('relative z-10 mx-auto mt-4 h-56 w-56', $view);
+        $this->assertStringContainsString('style="position: relative; z-index: 10;"', $view);
+    }
+
     public function test_hero_wheel_uses_dark_sectors_and_highlights_only_the_first_three(): void
     {
         $source = (string) file_get_contents(resource_path('js/charts.js'));
