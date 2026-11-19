@@ -11,6 +11,7 @@
             this.$refs.input.focus();
         }
     }"
+    @pageshow.window="loading = false"
     class="rounded-3xl bg-gradient-to-br from-radar-500/30 via-white/[0.06] to-cyan-500/20 p-px shadow-[0_30px_90px_-40px_rgba(16,185,129,0.55)]"
 >
     <form method="POST" action="{{ route('search') }}" @submit="loading = true" class="rounded-[calc(1.5rem-1px)] bg-ink-900/95 p-4 backdrop-blur sm:p-5">

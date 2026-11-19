@@ -175,4 +175,13 @@ class SearchTest extends TestCase
         $response->assertRedirect('/');
         $response->assertSessionHasErrors('query');
     }
+
+    public function test_search_button_resets_loading_state_on_pageshow(): void
+    {
+        $response = $this->get('/');
+
+        $response->assertOk();
+        $response->assertSee('@pageshow.window="loading = false"', false);
+        $response->assertSee('@submit="loading = true"', false);
+    }
 }

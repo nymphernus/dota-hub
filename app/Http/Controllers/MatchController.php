@@ -8,11 +8,10 @@ use App\Exceptions\MatchNotFoundException;
 use App\Services\OpenDota\OpenDotaService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 
 class MatchController extends Controller
 {
-    public function show(int $matchId, Request $request, OpenDotaService $openDota): View|RedirectResponse
+    public function show(int $matchId, OpenDotaService $openDota): View|RedirectResponse
     {
         try {
             $match = $openDota->getMatch($matchId);
@@ -24,7 +23,6 @@ class MatchController extends Controller
 
         return view('dota.match', [
             'match' => $match,
-            'highlightPlayerId' => $request->integer('player_id') ?: null,
         ]);
     }
 }

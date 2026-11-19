@@ -46,7 +46,7 @@ class MatchTest extends TestCase
         $response->assertSee('Axe');
         $response->assertSee('Radiant');
         $response->assertSee('Dire');
-        $response->assertSee('Вы');
+        $response->assertDontSee('Вы');
         $response->assertSee('Ranked');
         $response->assertSee('Ranked All Pick');
         $response->assertSee('Safe');
@@ -56,7 +56,6 @@ class MatchTest extends TestCase
         $response->assertSee('Black King Bar');
         $response->assertSee('id="radiantNetWorthChart"', false);
         $response->assertSee('id="direNetWorthChart"', false);
-        $response->assertViewHas('highlightPlayerId', self::ACCOUNT_ID);
         $response->assertViewHas('match', function (array $match) {
             $radiantCarry = $match['players']['radiant'][0];
             $radiantSupport = $match['players']['radiant'][1];
@@ -76,6 +75,20 @@ class MatchTest extends TestCase
                 && $radiantCarry['net_worth_history'] === [600, 1200, 2100, 3000]
                 && $radiantSupport['role']['label'] === 'Mid';
         });
+    }
+
+    public function test_you_badge_is_never_shown_for_any_player(): void
+    {
+        $this->fakeMatch();
+
+        $response = $this->get(route('dota.match', [
+            'matchId' => self::MATCH_ID,
+            'player_id' => self::ACCOUNT_ID,
+        ]));
+
+        $response->assertOk();
+        $response->assertDontSee('Вы');
+        $response->assertSee('Dendi');
     }
 
     public function test_stratz_positions_override_opendota_roles_when_token_is_set(): void
