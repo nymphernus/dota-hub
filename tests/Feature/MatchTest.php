@@ -50,21 +50,24 @@ class MatchTest extends TestCase
         $response->assertSee('Ranked');
         $response->assertSee('All Pick');
         $response->assertSee('ring-sky-500/50', false);
-        $response->assertSee('P7');
+        $response->assertSee('P1');
         $response->assertDontSee('Party #', false);
         $response->assertSee('Safe');
         $response->assertSee('Mid');
         $response->assertSee('Hard');
         $response->assertSee('Blink Dagger');
         $response->assertSee('Black King Bar');
-        $response->assertSee('id="radiantNetWorthChart"', false);
-        $response->assertSee('id="direNetWorthChart"', false);
+        $response->assertDontSee('Нетворс по минутам');
+        $response->assertDontSee('id="radiantNetWorthChart"', false);
+        $response->assertDontSee('id="direNetWorthChart"', false);
+        $response->assertDontSee('>Нетворс<', false);
+        $response->assertSee('bg-blue-600', false);
+        $response->assertSee('>P1<', false);
         $response->assertSee('Команда Dire', false);
         $response->assertSee('Пики и баны');
-        $response->assertSee('Нетворс');
         $response->assertSee('Башни');
         $response->assertSee('Лечение');
-        $response->assertSee('31 200');
+        $response->assertDontSee('31 200');
         $response->assertSee('3 400');
         $response->assertSee('1 250');
         $response->assertSee(route('dota.player', ['accountId' => 123456789]), false);
@@ -109,7 +112,7 @@ class MatchTest extends TestCase
         $response->assertSee('Dendi');
     }
 
-    public function test_players_without_party_ids_are_grouped_by_team_and_linked(): void
+    public function test_players_without_party_ids_have_no_party_badges(): void
     {
         $this->fakeMatch(withParties: false);
 
@@ -120,21 +123,26 @@ class MatchTest extends TestCase
         $response->assertSee('Команда Dire', false);
         $response->assertDontSee('Party #', false);
         $response->assertDontSee('P7');
+        $response->assertDontSee('bg-blue-600', false);
         $response->assertSee(route('dota.player', ['accountId' => 123456789]), false);
         $response->assertSee(route('dota.player', ['accountId' => 987654321]), false);
     }
 
-    public function test_unparsed_match_shows_the_net_worth_placeholder(): void
+    public function test_match_page_never_renders_a_net_worth_chart(): void
     {
-        $this->fakeMatch(parsed: false);
+        foreach ([true, false] as $parsed) {
+            Cache::flush();
+            $this->fakeMatch(parsed: $parsed);
 
-        $response = $this->get(route('dota.match', ['matchId' => self::MATCH_ID]));
+            $response = $this->get(route('dota.match', ['matchId' => self::MATCH_ID]));
 
-        $response->assertOk();
-        $response->assertSee('Данные о нетворсе появятся после парсинга матча');
-        $response->assertDontSee('id="radiantNetWorthChart"', false);
-        $response->assertViewHas('match', fn (array $match) => $match['net_worth_chart']['has_data'] === false
-            && $match['net_worth_chart']['radiant']['datasets'] === []);
+            $response->assertOk();
+            $response->assertDontSee('Нетворс по минутам');
+            $response->assertDontSee('Данные о нетворсе появятся после парсинга матча');
+            $response->assertDontSee('id="radiantNetWorthChart"', false);
+            $response->assertDontSee('id="direNetWorthChart"', false);
+            $response->assertDontSee('stats-radar-match-chart-data', false);
+        }
     }
 
     public function test_stratz_positions_override_opendota_roles_when_token_is_set(): void

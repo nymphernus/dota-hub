@@ -110,7 +110,7 @@ class DotaProfileTest extends TestCase
         $response->assertDontSee('120 из 200 побед');
         $response->assertSee('text-[11px]', false);
         $response->assertSee('Blink Dagger');
-        $response->assertSee('Нетворс');
+        $response->assertDontSee('Нетворс');
         $response->assertSee('90 дней назад');
         $response->assertSee('id="heatmap-weekdays"', false);
         $response->assertSee('>Пн<', false);

@@ -48,12 +48,13 @@
                     $partyId = (int) ($match['party_id'] ?? 0);
                     $partySize = (int) ($match['party_size'] ?? 0);
                     $partyBadge = $partyId > 0
-                        ? 'P'.$partyId
-                        : ((($match['party_label'] ?? null) === 'Party' && $partySize > 1) ? 'P'.$partySize : null);
+                        || (($match['party_label'] ?? null) === 'Party' && $partySize > 1)
+                        ? 'P1'
+                        : null;
                 @endphp
                 <div class="flex items-center gap-2">
                     @if ($partyBadge)
-                        <span class="rounded bg-sky-500/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-sky-300">{{ $partyBadge }}</span>
+                        <span class="rounded bg-blue-600 px-1 text-xs font-bold leading-none text-white">{{ $partyBadge }}</span>
                     @endif
                     @if ($heroUrl)
                         <a href="{{ $heroUrl }}" onclick="event.stopPropagation()" class="truncate text-[12px] font-bold text-white transition group-hover:text-radar-200">{{ $match['hero_name'] }}</a>
@@ -85,11 +86,6 @@
     <td class="px-2 py-2.5 font-mono text-[12px] tabular-nums">
         <span class="text-emerald-300">{{ $match['kills'] }}</span><span class="text-mist-500/60">/</span><span class="text-rose-300">{{ $match['deaths'] }}</span><span class="text-mist-500/60">/</span><span class="text-sky-300">{{ $match['assists'] }}</span>
         <p class="mt-0.5 text-[9px] text-mist-500">KDA {{ $match['kda'] ?? '—' }}</p>
-    </td>
-
-    <td class="px-2 py-2.5 text-right font-mono text-[12px] tabular-nums text-mist-200">
-        {{ ($match['net_worth'] ?? null) !== null ? number_format($match['net_worth'], 0, '.', ' ') : '—' }}
-        <p class="mt-0.5 text-[9px] text-mist-500">нетворс</p>
     </td>
 
     <td class="px-2 py-2.5 font-mono text-[12px] tabular-nums text-mist-300">

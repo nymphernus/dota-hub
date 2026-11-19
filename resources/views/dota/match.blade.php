@@ -1,20 +1,18 @@
 @extends('layouts.app')
 
 @section('title', $pageTitle ?? ('Матч '.$match['match_id'].' - DotaHub'))
-@section('description', 'Детальная статистика матча Dota 2 #'.$match['match_id'].': счёт, роли, график нетворса, закуп, длительность, герои, K/D/A, GPM, XPM и урон игроков Radiant и Dire.')
+@section('description', 'Детальная статистика матча Dota 2 #'.$match['match_id'].': счёт, роли, закуп, длительность, герои, K/D/A, GPM, XPM и урон игроков Radiant и Dire.')
 
 @php
     $profilePlayerId = request()->integer('player_id') ?: null;
     $radiantWin = $match['radiant_win'];
     $winner = $radiantWin ? 'Radiant' : 'Dire';
     $startedAt = $match['started_at'] ? \Carbon\CarbonImmutable::parse($match['started_at']) : null;
-    $hasNetWorth = $match['net_worth_chart']['has_data'] ?? false;
     $allPlayers = collect($match['players']['radiant'] ?? [])->merge($match['players']['dire'] ?? []);
-    $showNetWorth = $allPlayers->contains(fn (array $player) => (int) ($player['net_worth'] ?? 0) > 0);
     $showTowerDamage = $allPlayers->contains(fn (array $player) => (int) ($player['tower_damage'] ?? 0) > 0);
     $showHealing = $allPlayers->contains(fn (array $player) => (int) ($player['hero_healing'] ?? 0) > 0);
     $picksBans = collect($match['picks_bans'] ?? []);
-    $columnCount = 7 + ($showNetWorth ? 1 : 0) + ($showTowerDamage ? 1 : 0) + ($showHealing ? 1 : 0);
+    $columnCount = 7 + ($showTowerDamage ? 1 : 0) + ($showHealing ? 1 : 0);
     $teams = [
         'radiant' => [
             'label' => 'Radiant',
@@ -30,40 +28,23 @@
         ],
     ];
 
-    // OpenDota annotates parties only when it knows them. Unknown party ids are
-    // grouped by team instead of dumping every player into one anonymous list.
+    // Every player stays in one table. Party membership is only a small badge
+    // next to the nickname, never a separate group of rows. Raw party IDs can
+    // be huge, so they are mapped to compact P1/P2 labels per team.
+    $partyLabels = [];
+
     foreach ($teams as $teamKey => $team) {
-        $groups = [];
-        $teamPlayers = [
-            'label' => 'Команда '.$team['label'],
-            'players' => [],
-        ];
+        $partyNumber = 0;
 
         foreach ($team['players'] as $index => $player) {
-            $player['view_index'] = $index;
+            $teams[$teamKey]['players'][$index]['view_index'] = $index;
             $partyId = (int) ($player['party_id'] ?? 0);
 
-            if ($partyId > 0) {
-                $groupKey = 'party-'.$partyId;
-
-                if (! isset($groups[$groupKey])) {
-                    $groups[$groupKey] = [
-                        'label' => 'P'.$partyId,
-                        'players' => [],
-                    ];
-                }
-
-                $groups[$groupKey]['players'][] = $player;
-            } else {
-                $teamPlayers['players'][] = $player;
+            if ($partyId > 0 && ! isset($partyLabels[$partyId])) {
+                $partyNumber++;
+                $partyLabels[$partyId] = 'P'.$partyNumber;
             }
         }
-
-        if ($teamPlayers['players'] !== []) {
-            $groups['team'] = $teamPlayers;
-        }
-
-        $teams[$teamKey]['groups'] = $groups;
     }
 @endphp
 
@@ -205,47 +186,6 @@
             </section>
         @endif
 
-        <section class="mt-4" aria-label="График нетворса">
-            <div class="mb-3 flex flex-wrap items-end justify-between gap-2">
-                <h2 class="text-lg font-bold text-white">Нетворс по минутам</h2>
-                <span class="text-[11px] text-mist-500">
-                    @if ($hasNetWorth)
-                        OpenDota parsed data · Radiant и Dire
-                    @else
-                        Данные о нетворсе появятся после парсинга матча
-                    @endif
-                </span>
-            </div>
-
-            @if ($hasNetWorth)
-                <div class="grid gap-4 lg:grid-cols-2">
-                    <div class="card p-4 sm:p-5">
-                        <div class="flex items-center justify-between gap-2">
-                            <h3 class="text-sm font-bold text-emerald-300">Radiant</h3>
-                            <span class="badge border-emerald-500/20 bg-emerald-500/10 text-[10px] text-emerald-300">Золото</span>
-                        </div>
-                        <div class="relative mt-4 h-64">
-                            <canvas id="radiantNetWorthChart" role="img" aria-label="График нетворса игроков Radiant по минутам"></canvas>
-                        </div>
-                    </div>
-
-                    <div class="card p-4 sm:p-5">
-                        <div class="flex items-center justify-between gap-2">
-                            <h3 class="text-sm font-bold text-rose-300">Dire</h3>
-                            <span class="badge border-rose-500/20 bg-rose-500/10 text-[10px] text-rose-300">Золото</span>
-                        </div>
-                        <div class="relative mt-4 h-64">
-                            <canvas id="direNetWorthChart" role="img" aria-label="График нетворса игроков Dire по минутам"></canvas>
-                        </div>
-                    </div>
-                </div>
-            @else
-                <div class="card p-6 text-center text-sm text-mist-400">
-                    Данные о нетворсе появятся после парсинга матча
-                </div>
-            @endif
-        </section>
-
         @foreach ($teams as $teamKey => $team)
             <section class="card mt-4 overflow-hidden" aria-label="Состав {{ $team['label'] }}">
                 <div class="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] px-4 py-4 sm:px-5">
@@ -258,8 +198,8 @@
                             {{ mb_substr($team['label'], 0, 1) }}
                         </span>
                         <div>
-                            <p class="text-[10px] uppercase tracking-[0.18em] text-mist-500">Команда</p>
-                            <h2 class="text-lg font-bold text-white">{{ $team['label'] }}</h2>
+                            <p class="text-[10px] uppercase tracking-[0.18em] text-mist-500">Состав</p>
+                            <h2 class="text-lg font-bold text-white">Команда {{ $team['label'] }}</h2>
                         </div>
                     </div>
                     <span @class([
@@ -280,9 +220,6 @@
                                 <th class="px-4 py-3 font-semibold">K / D / A</th>
                                 <th class="px-4 py-3 font-semibold">GPM</th>
                                 <th class="px-4 py-3 font-semibold">XPM</th>
-                                @if ($showNetWorth)
-                                    <th class="px-4 py-3 font-semibold">Нетворс</th>
-                                @endif
                                 <th class="px-4 py-3 font-semibold">Урон</th>
                                 @if ($showTowerDamage)
                                     <th class="px-4 py-3 font-semibold">Башни</th>
@@ -294,17 +231,7 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-white/[0.04]" x-data="{ openPlayer: null }">
-                            @forelse ($team['groups'] as $group)
-                                <tr class="bg-white/[0.02]">
-                                    <td colspan="{{ $columnCount }}" class="border-y border-white/[0.05] px-4 py-2 sm:px-5">
-                                        <div class="flex items-center justify-between gap-2">
-                                            <span class="text-[10px] font-black uppercase tracking-[0.16em] text-radar-300">{{ $group['label'] }}</span>
-                                            <span class="text-[10px] text-mist-500">{{ count($group['players']) }} игроков</span>
-                                        </div>
-                                    </td>
-                                </tr>
-
-                                @foreach ($group['players'] as $player)
+                            @forelse ($team['players'] as $player)
                                     @php
                                         $roleLabel = $player['role']['label'] ?? null;
                                         $roleName = $player['role']['name'] ?? null;
@@ -326,7 +253,6 @@
                                     <tr @class([
                                         'transition hover:bg-white/[0.03]',
                                         'bg-sky-500/[0.09] ring-2 ring-inset ring-sky-500/50' => $isCurrentPlayer,
-                                        'border-l-2 border-sky-400/40' => ! $isCurrentPlayer && $partyId,
                                     ])>
                                         <td class="px-4 py-3 sm:px-5">
                                             <div class="flex items-center gap-3">
@@ -342,18 +268,23 @@
                                                 <div class="min-w-0">
                                                     <p class="truncate text-[13px] font-semibold text-white">{{ $player['hero_name'] }}</p>
                                                     <p class="mt-0.5 flex flex-wrap items-center gap-1.5 truncate text-[10px] text-mist-500">
-                                                        @if ($partyId)
-                                                            <span class="rounded bg-sky-500/10 px-1 py-0.5 text-[8px] font-bold uppercase tracking-wide text-sky-300">P{{ $partyId }}</span>
-                                                        @endif
                                                         @if (! empty($player['rank_label']))
                                                             <span class="rounded bg-amber-500/10 px-1 py-0.5 text-[8px] font-bold uppercase tracking-wide text-amber-300" title="Ранг">{{ $player['rank_label'] }}</span>
                                                         @endif
                                                         @if ($accountId > 0)
                                                             <a href="{{ route('dota.player', ['accountId' => $accountId]) }}" class="truncate font-semibold text-radar-300 transition hover:text-radar-200 hover:underline">
+                                                                @if ($partyId && isset($partyLabels[(int) $partyId]))
+                                                                    <span class="rounded bg-blue-600 px-1 text-xs font-bold leading-none text-white" title="Party {{ $partyId }}">{{ $partyLabels[(int) $partyId] }}</span>
+                                                                @endif
                                                                 {{ $player['nickname'] ?: 'Игрок '.$accountId }}
                                                             </a>
                                                         @else
-                                                            <span class="truncate">{{ $player['nickname'] ?: 'Неизвестный игрок' }}</span>
+                                                            <span class="truncate">
+                                                                @if ($partyId && isset($partyLabels[(int) $partyId]))
+                                                                    <span class="rounded bg-blue-600 px-1 text-xs font-bold leading-none text-white" title="Party {{ $partyId }}">{{ $partyLabels[(int) $partyId] }}</span>
+                                                                @endif
+                                                                {{ $player['nickname'] ?: 'Неизвестный игрок' }}
+                                                            </span>
                                                         @endif
                                                         @if ($player['level'] > 0)
                                                             <span>ур. {{ $player['level'] }}</span>
@@ -385,9 +316,6 @@
                                         </td>
                                         <td class="px-4 py-3 font-mono text-[13px] tabular-nums text-mist-300">{{ number_format((int) ($player['gpm'] ?? 0), 0, '.', ' ') }}</td>
                                         <td class="px-4 py-3 font-mono text-[13px] tabular-nums text-mist-300">{{ number_format((int) ($player['xpm'] ?? 0), 0, '.', ' ') }}</td>
-                                        @if ($showNetWorth)
-                                            <td class="px-4 py-3 font-mono text-[13px] tabular-nums text-mist-300">{{ isset($player['net_worth']) ? number_format((int) $player['net_worth'], 0, '.', ' ') : '—' }}</td>
-                                        @endif
                                         <td class="px-4 py-3 font-mono text-[13px] tabular-nums text-mist-300">{{ number_format((int) ($player['hero_damage'] ?? 0), 0, '.', ' ') }}</td>
                                         @if ($showTowerDamage)
                                             <td class="px-4 py-3 font-mono text-[13px] tabular-nums text-mist-300">{{ isset($player['tower_damage']) ? number_format((int) $player['tower_damage'], 0, '.', ' ') : '—' }}</td>
@@ -441,7 +369,6 @@
                                             </td>
                                         </tr>
                                     @endif
-                                @endforeach
                             @empty
                                 <tr>
                                     <td colspan="{{ $columnCount }}" class="px-4 py-8 text-center text-sm text-mist-400">Нет данных по игрокам.</td>
@@ -467,10 +394,3 @@
         </div>
     </div>
 @endsection
-
-@if ($hasNetWorth)
-    @push('scripts')
-        <script type="application/json" id="stats-radar-match-chart-data">@json($match['net_worth_chart'])</script>
-        @vite('resources/js/match-charts.js')
-    @endpush
-@endif
