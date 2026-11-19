@@ -6,6 +6,7 @@ use App\Exceptions\ApiUnavailableException;
 use App\Exceptions\ExternalApiException;
 use App\Exceptions\MatchNotFoundException;
 use App\Exceptions\PlayerNotFoundException;
+use App\Models\PlayerNameHistory;
 use App\Models\PlayerProfile;
 use App\Services\Stratz\StratzService;
 use Carbon\CarbonImmutable;
@@ -29,7 +30,26 @@ class OpenDotaService
 
     private const RECENT_MATCH_DETAILS = 10;
 
-    private const PROFILE_SCHEMA_VERSION = 2;
+    private const PROFILE_SCHEMA_VERSION = 3;
+
+    private const MMR_SAMPLE_SIZE = 20;
+
+    private const MMR_WIN = 25;
+
+    private const MMR_LOSS = -25;
+
+    private const RANK_BASE_MMR = [
+        1 => 0,
+        2 => 770,
+        3 => 1540,
+        4 => 2310,
+        5 => 3080,
+        6 => 3850,
+        7 => 4620,
+        8 => 5420,
+    ];
+
+    private const MMR_PER_STAR = 120;
 
     private const TEAM_CHART_COLORS = [
         '#34d399',
@@ -121,6 +141,7 @@ class OpenDotaService
         try {
             $profile = $this->fetchPlayer($accountId, $ttl);
             $this->storeProfile($accountId, $profile);
+            $profile['name_history'] = $this->nameHistory($accountId);
 
             return $profile;
         } catch (ApiUnavailableException $exception) {
@@ -154,6 +175,7 @@ class OpenDotaService
             ?? ($profile['cached_at'] ?? CarbonImmutable::now()->toIso8601String());
         $profile['cache_ttl'] = $ttl;
         $profile['is_offline_cache'] = false;
+        $profile['name_history'] = $this->nameHistory((int) $record->account_id);
 
         return $profile;
     }
@@ -163,15 +185,43 @@ class OpenDotaService
      */
     private function storeProfile(int $accountId, array $profile): void
     {
+        $existing = PlayerProfile::find($accountId);
+        $oldNickname = $existing?->nickname;
+        $newNickname = $profile['nickname'] ?? null;
+
+        if (is_string($oldNickname) && is_string($newNickname) && $oldNickname !== $newNickname) {
+            PlayerNameHistory::firstOrCreate(
+                ['account_id' => $accountId, 'name' => $oldNickname],
+                ['changed_at' => CarbonImmutable::now()],
+            );
+        }
+
         PlayerProfile::updateOrCreate(
             ['account_id' => $accountId],
             [
-                'nickname' => $profile['nickname'] ?? null,
+                'nickname' => $newNickname,
                 'avatar' => $profile['avatar'] ?? null,
                 'data' => $profile,
                 'updated_at' => CarbonImmutable::now(),
             ]
         );
+    }
+
+    /**
+     * @return array<int, array{name: string, changed_at: string}>
+     */
+    private function nameHistory(int $accountId): array
+    {
+        return PlayerNameHistory::query()
+            ->where('account_id', $accountId)
+            ->orderByDesc('changed_at')
+            ->limit(20)
+            ->get()
+            ->map(fn (PlayerNameHistory $row) => [
+                'name' => (string) $row->name,
+                'changed_at' => $row->changed_at?->toIso8601String(),
+            ])
+            ->all();
     }
 
     /**
@@ -205,6 +255,97 @@ class OpenDotaService
         Cache::put($cacheKey, $header, $ttl);
 
         return $header;
+    }
+
+    /**
+     * Estimate a player's MMR without spending extra requests on a normal
+     * profile render. OpenDota's own estimate wins when it is available;
+     * otherwise the current medal is used as a baseline and the most recent
+     * ranked games move the value by 25 MMR per win/loss.
+     */
+    public function calculateMmrEstimate(int $accountId): ?int
+    {
+        $profileResponse = $this->client->get("players/{$accountId}");
+        $rankTier = isset($profileResponse['rank_tier']) && is_numeric($profileResponse['rank_tier'])
+            ? (int) $profileResponse['rank_tier']
+            : null;
+
+        $matches = $this->optionalGet("players/{$accountId}/matches", [
+            'limit' => self::MMR_SAMPLE_SIZE,
+        ]);
+
+        return $this->estimateMmr(
+            $rankTier,
+            $matches,
+            isset($profileResponse['mmr_estimate']['estimate'])
+                ? (int) $profileResponse['mmr_estimate']['estimate']
+                : null,
+        )['value'];
+    }
+
+    /**
+     * @param  array<int, mixed>  $matches
+     * @return array{value: int|null, is_estimated: bool, source: string|null, games: int}
+     */
+    private function estimateMmr(?int $rankTier, array $matches, ?int $openDotaEstimate = null): array
+    {
+        if ($openDotaEstimate !== null && $openDotaEstimate > 0) {
+            return [
+                'value' => $openDotaEstimate,
+                'is_estimated' => false,
+                'source' => 'OpenDota',
+                'games' => 0,
+            ];
+        }
+
+        if ($rankTier === null || $rankTier <= 0) {
+            return ['value' => null, 'is_estimated' => false, 'source' => null, 'games' => 0];
+        }
+
+        $wins = 0;
+        $losses = 0;
+
+        foreach ($matches as $match) {
+            if (! is_array($match) || empty($match['start_time'])) {
+                continue;
+            }
+
+            // Ranked games only: turbo and normal games do not move MMR.
+            if ((int) ($match['lobby_type'] ?? 0) !== 7) {
+                continue;
+            }
+
+            $radiantWin = (bool) ($match['radiant_win'] ?? false);
+            $isRadiant = (int) ($match['player_slot'] ?? 0) < 128;
+
+            if ($radiantWin === $isRadiant) {
+                $wins++;
+            } else {
+                $losses++;
+            }
+
+            if ($wins + $losses >= self::MMR_SAMPLE_SIZE) {
+                break;
+            }
+        }
+
+        $base = $this->baseMmr($rankTier);
+        $value = max(0, $base + ($wins * self::MMR_WIN) + ($losses * self::MMR_LOSS));
+
+        return [
+            'value' => $value,
+            'is_estimated' => true,
+            'source' => 'rank+recent',
+            'games' => $wins + $losses,
+        ];
+    }
+
+    private function baseMmr(int $rankTier): int
+    {
+        $tier = max(1, min(8, intdiv($rankTier, 10)));
+        $stars = max(1, min(8, $rankTier % 10));
+
+        return (self::RANK_BASE_MMR[$tier] ?? 0) + (($stars - 1) * self::MMR_PER_STAR);
     }
 
     /**
@@ -265,6 +406,13 @@ class OpenDotaService
             : null;
 
         $rank = $this->rank($rankTier);
+        $mmr = $this->estimateMmr(
+            $rankTier,
+            $matchHistory,
+            isset($profileResponse['mmr_estimate']['estimate'])
+                ? (int) $profileResponse['mmr_estimate']['estimate']
+                : null,
+        );
 
         $nickname = $profile['personaname'] ?? null;
         $heroRows = $this->transformHeroes($heroStats, $heroes, $recentMatches);
@@ -284,9 +432,10 @@ class OpenDotaService
             'rank_medal' => $rank['medal'],
             'rank_stars' => $rank['stars'],
             'leaderboard_rank' => isset($profileResponse['leaderboard_rank']) ? (int) $profileResponse['leaderboard_rank'] : null,
-            'mmr_estimate' => isset($profileResponse['mmr_estimate']['estimate'])
-                ? (int) $profileResponse['mmr_estimate']['estimate']
-                : null,
+            'mmr_estimate' => $mmr['value'],
+            'mmr_is_estimated' => $mmr['is_estimated'],
+            'mmr_source' => $mmr['source'],
+            'mmr_games_considered' => $mmr['games'],
             'games' => $games,
             'wins' => $wins,
             'losses' => $losses,
@@ -323,11 +472,15 @@ class OpenDotaService
             $games = (int) ($peer['games'] ?? 0);
             $wins = (int) ($peer['win'] ?? 0);
             $lastMatch = $peer['last_match_time'] ?? null;
+            $profile = $peer['profile'] ?? null;
+            $profileHidden = array_key_exists('profile', $peer) && empty($profile);
 
             $rows[] = [
                 'account_id' => (int) $peer['account_id'],
                 'nickname' => ($peer['personaname'] ?? null) ?: 'Анонимный игрок',
                 'avatar' => $peer['avatarfull'] ?? $peer['avatar'] ?? null,
+                'profile_url' => is_array($profile) ? ($profile['profileurl'] ?? null) : null,
+                'is_private' => $profileHidden || empty($peer['personaname']),
                 'games' => $games,
                 'wins' => $wins,
                 'winrate' => $games > 0 ? round($wins / $games * 100, 1) : null,
@@ -337,7 +490,7 @@ class OpenDotaService
 
         usort($rows, fn (array $a, array $b) => [$b['games'], $b['wins']] <=> [$a['games'], $a['wins']]);
 
-        return array_slice($rows, 0, 8);
+        return array_slice($rows, 0, 50);
     }
 
     /**
@@ -354,7 +507,7 @@ class OpenDotaService
     {
         $ttl = (int) config('stats.cache.dota_match', 3600);
 
-        return Cache::remember("opendota:match:v3:{$matchId}", $ttl, function () use ($matchId) {
+        return Cache::remember("opendota:match:v4:{$matchId}", $ttl, function () use ($matchId) {
             try {
                 $match = $this->client->get("matches/{$matchId}");
             } catch (PlayerNotFoundException) {
@@ -526,7 +679,7 @@ class OpenDotaService
     /**
      * Full match history for the dedicated matches tab.
      *
-     * @param  array{hero_id?: int, result?: string, rank?: string}  $filters
+     * @param  array{hero_id?: int, result?: string, mode?: string, role?: string}  $filters
      * @return array{player: array<string, mixed>, rows: array<int, array<string, mixed>>, total: int, heroes: array<int, array<string, mixed>>, filters: array<string, mixed>}
      */
     public function playerMatches(int $accountId, int $page, int $perPage, array $filters = []): array
@@ -560,7 +713,7 @@ class OpenDotaService
                 foreach ([
                     'kills', 'deaths', 'assists', 'gpm', 'xpm', 'duration', 'duration_label',
                     'net_worth', 'level', 'items', 'lobby_type', 'game_mode',
-                    'lobby_type_label', 'game_mode_label', 'is_ranked', 'party_label',
+                    'lobby_type_label', 'game_mode_label', 'match_type_label', 'is_ranked',
                 ] as $field) {
                     $value = $detail[$field] ?? null;
 
@@ -579,9 +732,10 @@ class OpenDotaService
 
         $heroId = (int) ($filters['hero_id'] ?? 0);
         $result = (string) ($filters['result'] ?? '');
-        $rank = (string) ($filters['rank'] ?? '');
+        $mode = (string) ($filters['mode'] ?? '');
+        $role = (string) ($filters['role'] ?? '');
 
-        $rows = array_values(array_filter($rows, function (array $row) use ($heroId, $result, $rank) {
+        $rows = array_values(array_filter($rows, function (array $row) use ($heroId, $result, $mode, $role) {
             if ($heroId > 0 && (int) ($row['hero_id'] ?? 0) !== $heroId) {
                 return false;
             }
@@ -594,11 +748,22 @@ class OpenDotaService
                 return false;
             }
 
-            if ($rank === 'ranked' && ! ($row['is_ranked'] ?? false)) {
+            $gameMode = (int) ($row['game_mode'] ?? 0);
+            $lobbyType = (int) ($row['lobby_type'] ?? 0);
+
+            if ($mode === 'ranked' && ($lobbyType !== 7 || $gameMode === 23)) {
                 return false;
             }
 
-            if ($rank === 'unranked' && ($row['is_ranked'] ?? false)) {
+            if ($mode === 'turbo' && $gameMode !== 23) {
+                return false;
+            }
+
+            if ($mode === 'normal' && ($lobbyType !== 0 || $gameMode === 23)) {
+                return false;
+            }
+
+            if ($role !== '' && ($row['role_key'] ?? null) !== $role) {
                 return false;
             }
 
@@ -620,7 +785,8 @@ class OpenDotaService
             'filters' => [
                 'hero_id' => $heroId,
                 'result' => $result,
-                'rank' => $rank,
+                'mode' => $mode,
+                'role' => $role,
             ],
         ];
     }
@@ -895,6 +1061,12 @@ class OpenDotaService
             $row = [
                 'account_id' => $accountId > 0 ? $accountId : null,
                 'player_slot' => $slot,
+                'party_id' => isset($player['party_id']) && is_numeric($player['party_id'])
+                    ? (int) $player['party_id']
+                    : null,
+                'party_size' => isset($player['party_size']) && is_numeric($player['party_size'])
+                    ? (int) $player['party_size']
+                    : null,
                 'hero_id' => $hero['id'],
                 'hero_name' => $hero['name'],
                 'hero_image' => $hero['image'],
@@ -955,6 +1127,7 @@ class OpenDotaService
             'game_mode_label' => $this->gameModeLabel($gameMode),
             'lobby_type' => $lobbyType,
             'lobby_type_label' => $this->lobbyTypeLabel($lobbyType),
+            'match_type_label' => $this->matchTypeLabel($lobbyType, $gameMode),
             'is_ranked' => $lobbyType === 7,
             'radiant_score' => $radiantScore,
             'dire_score' => $direScore,
@@ -1200,7 +1373,7 @@ class OpenDotaService
             19 => 'Event',
             20 => 'All Random Deathmatch',
             21 => '1v1 Mid',
-            22 => 'Ranked All Pick',
+            22 => 'All Pick',
             23 => 'Turbo',
             24 => 'Mutation',
             default => null,
@@ -1210,6 +1383,77 @@ class OpenDotaService
     private function lobbyTypeLabel(?int $lobbyType): ?string
     {
         return $lobbyType !== null ? (self::LOBBY_TYPES[$lobbyType] ?? null) : null;
+    }
+
+    private function matchTypeLabel(?int $lobbyType, ?int $gameMode): string
+    {
+        if ($gameMode === 23) {
+            return 'Turbo';
+        }
+
+        return match ($lobbyType) {
+            7 => 'Ranked',
+            0 => 'Normal',
+            6 => 'Solo',
+            default => $this->lobbyTypeLabel($lobbyType) ?? 'Normal',
+        };
+    }
+
+    /**
+     * @param  array<string, mixed>  $match
+     */
+    private function partyLabel(array $match): string
+    {
+        $partySize = isset($match['party_size']) && is_numeric($match['party_size'])
+            ? (int) $match['party_size']
+            : 0;
+
+        if ($partySize > 1
+            || ! empty($match['is_party'])
+            || (int) ($match['party_id'] ?? 0) > 0) {
+            return 'Party';
+        }
+
+        return 'Solo';
+    }
+
+    /**
+     * @param  array<string, mixed>  $match
+     */
+    private function roleKey(array $match): ?string
+    {
+        $position = isset($match['position_est']) && is_numeric($match['position_est'])
+            ? (int) $match['position_est']
+            : 0;
+
+        if ($position < 1 && isset($match['position']) && is_numeric($match['position'])) {
+            $position = (int) $match['position'];
+        }
+
+        $role = match ($position) {
+            1 => 'carry',
+            2 => 'mid',
+            3 => 'offlane',
+            4 => 'support',
+            5 => 'hard_support',
+            default => null,
+        };
+
+        if ($role !== null) {
+            return $role;
+        }
+
+        $lane = isset($match['lane_role']) && is_numeric($match['lane_role'])
+            ? (int) $match['lane_role']
+            : 0;
+
+        return match ($lane) {
+            1 => 'carry',
+            2 => 'mid',
+            3 => 'offlane',
+            4 => 'jungle',
+            default => null,
+        };
     }
 
     /**
@@ -1263,8 +1507,15 @@ class OpenDotaService
                 'game_mode' => isset($match['game_mode']) ? (int) $match['game_mode'] : null,
                 'lobby_type_label' => $this->lobbyTypeLabel(isset($match['lobby_type']) ? (int) $match['lobby_type'] : null),
                 'game_mode_label' => $this->gameModeLabel(isset($match['game_mode']) ? (int) $match['game_mode'] : null),
+                'match_type_label' => $this->matchTypeLabel(
+                    isset($match['lobby_type']) ? (int) $match['lobby_type'] : null,
+                    isset($match['game_mode']) ? (int) $match['game_mode'] : null,
+                ),
                 'is_ranked' => (int) ($match['lobby_type'] ?? 0) === 7,
-                'party_label' => (int) ($match['party_id'] ?? 0) > 0 ? 'Party' : 'Solo',
+                'party_label' => $this->partyLabel($match),
+                'party_size' => isset($match['party_size']) && is_numeric($match['party_size']) ? (int) $match['party_size'] : null,
+                'role_key' => $this->roleKey($match),
+                'lane_role' => isset($match['lane_role']) ? (int) $match['lane_role'] : null,
                 'level' => null,
                 'net_worth' => null,
                 'item_0' => null,
@@ -1522,8 +1773,15 @@ class OpenDotaService
                 'game_mode' => isset($match['game_mode']) ? (int) $match['game_mode'] : null,
                 'lobby_type_label' => $this->lobbyTypeLabel(isset($match['lobby_type']) ? (int) $match['lobby_type'] : null),
                 'game_mode_label' => $this->gameModeLabel(isset($match['game_mode']) ? (int) $match['game_mode'] : null),
+                'match_type_label' => $this->matchTypeLabel(
+                    isset($match['lobby_type']) ? (int) $match['lobby_type'] : null,
+                    isset($match['game_mode']) ? (int) $match['game_mode'] : null,
+                ),
                 'is_ranked' => (int) ($match['lobby_type'] ?? 0) === 7,
-                'party_label' => (int) ($match['party_id'] ?? 0) > 0 ? 'Party' : 'Solo',
+                'party_label' => $this->partyLabel($match),
+                'party_size' => isset($match['party_size']) && is_numeric($match['party_size']) ? (int) $match['party_size'] : null,
+                'role_key' => $this->roleKey($match),
+                'lane_role' => isset($match['lane_role']) ? (int) $match['lane_role'] : null,
             ];
         }
 
