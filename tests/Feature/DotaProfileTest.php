@@ -70,7 +70,9 @@ class DotaProfileTest extends TestCase
         $response->assertSee('id="tab-matches"', false);
         $response->assertDontSee('id="tab-account"', false);
         $response->assertSee('id="tab-peers"', false);
-        $response->assertSee('Товарищи');
+        $response->assertSee('Союзники');
+        $response->assertSee(route('dota.player.heroes', ['accountId' => self::ACCOUNT_ID]), false);
+        $response->assertSee(route('dota.player.peers', ['accountId' => self::ACCOUNT_ID]), false);
         $response->assertSee('images/dota/ranks/rank_icon_8.png', false);
         $response->assertSee(
             route('dota.player.hero', ['accountId' => self::ACCOUNT_ID, 'heroId' => 1]),
@@ -115,7 +117,7 @@ class DotaProfileTest extends TestCase
                 && $peers[0]['games'] === 12
                 && $peers[1]['is_private'] === true;
         });
-        $response->assertSee('Скрытый профиль');
+        $response->assertSee('OtherPeer');
         $response->assertViewHas(
             'recentMatches',
             fn (array $matches) => count($matches) === 2
@@ -279,8 +281,8 @@ class DotaProfileTest extends TestCase
         $response = $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertOk();
-        $response->assertSee('Нет публичных матчей');
-        $response->assertSee('Expose Public Match Data');
+        $response->assertSee('Профиль игрока скрыт. Данные недоступны.');
+        $response->assertDontSee('Expose Public Match Data', false);
         $response->assertSee('Матчи скрыты или отсутствуют');
         $response->assertDontSee('Anti-Mage');
         $response->assertViewHas('player', fn (array $player) => $player['games'] === 0
@@ -481,6 +483,30 @@ class DotaProfileTest extends TestCase
 
         Http::assertSent(fn ($request) => $request->hasHeader('Authorization', 'Bearer test-token')
             && str_contains($request->body(), 'heroId'));
+    }
+
+    public function test_heroes_page_renders_full_hero_table(): void
+    {
+        $this->fakeOpenDota();
+
+        $response = $this->get(route('dota.player.heroes', ['accountId' => self::ACCOUNT_ID]));
+
+        $response->assertOk();
+        $response->assertViewIs('dota.heroes');
+        $response->assertSee('Anti-Mage');
+        $response->assertSee('Союзники');
+    }
+
+    public function test_peers_page_renders_teammates_table(): void
+    {
+        $this->fakeOpenDota();
+
+        $response = $this->get(route('dota.player.peers', ['accountId' => self::ACCOUNT_ID]));
+
+        $response->assertOk();
+        $response->assertViewIs('dota.peers');
+        $response->assertSee('Teammate');
+        $response->assertSee('Скрытый профиль');
     }
 
     private function fakeOpenDota(

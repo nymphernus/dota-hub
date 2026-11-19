@@ -34,8 +34,91 @@ class DotaPlayerController extends Controller
 
     public function show(int $accountId, OpenDotaService $openDota, SteamService $steam): View|Response
     {
+        $player = $this->playerOrError($accountId, $openDota);
+
+        if ($player instanceof Response) {
+            return $player;
+        }
+
+        PlayerSearch::track(
+            (string) $accountId,
+            $player['is_private'] ? null : $player['nickname'],
+            $player['avatar'],
+        );
+
+        $history = $player['match_history'] ?? [];
+        $steamId = ($player['steam_id'] ?? '') ?: SteamId::steamId64FromAccountId($accountId);
+
+        return view('dota.player', [
+            'player' => $player,
+            'winrate' => $player['winrate'],
+            'recentMatches' => array_slice($player['matches'], 0, 25),
+            'activityHeatmap' => $this->activityHeatmap($history),
+            'heroUsage' => $this->heroUsage(array_slice($history, 0, 25)),
+            'rankStats' => $this->rankStats($history),
+            'steamProfile' => $steam->summary($steamId),
+        ]);
+    }
+
+    /**
+     * Full hero pool for the dedicated heroes page.
+     */
+    public function heroes(int $accountId, OpenDotaService $openDota, SteamService $steam): View|Response
+    {
+        $player = $this->playerOrError($accountId, $openDota);
+
+        if ($player instanceof Response) {
+            return $player;
+        }
+
+        PlayerSearch::track(
+            (string) $accountId,
+            $player['is_private'] ? null : $player['nickname'],
+            $player['avatar'],
+        );
+
+        return view('dota.heroes', [
+            'player' => $player,
+            'steamProfile' => $steam->summary(
+                ($player['steam_id'] ?? '') ?: SteamId::steamId64FromAccountId($accountId)
+            ),
+        ]);
+    }
+
+    /**
+     * Frequent teammates for the dedicated allies page.
+     */
+    public function peers(int $accountId, OpenDotaService $openDota, SteamService $steam): View|Response
+    {
+        $player = $this->playerOrError($accountId, $openDota);
+
+        if ($player instanceof Response) {
+            return $player;
+        }
+
+        PlayerSearch::track(
+            (string) $accountId,
+            $player['is_private'] ? null : $player['nickname'],
+            $player['avatar'],
+        );
+
+        return view('dota.peers', [
+            'player' => $player,
+            'steamProfile' => $steam->summary(
+                ($player['steam_id'] ?? '') ?: SteamId::steamId64FromAccountId($accountId)
+            ),
+        ]);
+    }
+
+    /**
+     * Resolve a player profile, converting service failures into error views.
+     *
+     * @return array<string, mixed>|Response
+     */
+    private function playerOrError(int $accountId, OpenDotaService $openDota): array|Response
+    {
         try {
-            $player = $openDota->player($accountId);
+            return $openDota->player($accountId);
         } catch (PlayerNotFoundException $exception) {
             return response()->view('errors.player', [
                 'title' => 'Игрок не найден',
@@ -60,25 +143,6 @@ class DotaPlayerController extends Controller
                 'backUrl' => route('home'),
             ], 502);
         }
-
-        PlayerSearch::track(
-            (string) $accountId,
-            $player['is_private'] ? null : $player['nickname'],
-            $player['avatar'],
-        );
-
-        $history = $player['match_history'] ?? [];
-        $steamId = ($player['steam_id'] ?? '') ?: SteamId::steamId64FromAccountId($accountId);
-
-        return view('dota.player', [
-            'player' => $player,
-            'winrate' => $player['winrate'],
-            'recentMatches' => array_slice($player['matches'], 0, 25),
-            'activityHeatmap' => $this->activityHeatmap($history),
-            'heroUsage' => $this->heroUsage(array_slice($history, 0, 25)),
-            'rankStats' => $this->rankStats($history),
-            'steamProfile' => $steam->summary($steamId),
-        ]);
     }
 
     /**
@@ -190,9 +254,11 @@ class DotaPlayerController extends Controller
                 'losses' => (int) $row['losses'],
                 'level' => match (true) {
                     $count === 0 => 'empty',
-                    $row['wins'] > 0 && $row['losses'] > 0 => 'mixed',
-                    $row['wins'] > 0 => 'win',
-                    default => 'loss',
+                    $row['losses'] === 0 => 'win',
+                    $row['wins'] === 0 => 'loss',
+                    $row['losses'] > $row['wins'] => 'loss_majority',
+                    $row['wins'] > $row['losses'] => 'win_majority',
+                    default => 'mixed',
                 },
             ];
         }
@@ -221,6 +287,7 @@ class DotaPlayerController extends Controller
                 'hero_id' => $heroId,
                 'name' => $match['hero_name'] ?? 'Hero #'.$heroId,
                 'image' => $match['hero_image'] ?? null,
+                'icon' => $match['hero_icon'] ?? null,
                 'games' => 0,
                 'wins' => 0,
             ];

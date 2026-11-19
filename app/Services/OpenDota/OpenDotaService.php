@@ -1782,6 +1782,7 @@ class OpenDotaService
                 'hero_id' => $hero['id'],
                 'hero_name' => $hero['name'],
                 'hero_image' => $hero['image'],
+                'hero_icon' => $hero['icon'] ?? null,
                 'win' => $radiantWin === $isRadiant,
                 'started_at' => CarbonImmutable::createFromTimestampUTC($startTime)->toIso8601String(),
                 'duration' => (int) ($match['duration'] ?? 0),

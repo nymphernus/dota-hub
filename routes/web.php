@@ -26,6 +26,14 @@ Route::get('/dota/player/{accountId}/matches', [DotaPlayerController::class, 'ma
     ->whereNumber('accountId')
     ->name('dota.player.matches');
 
+Route::get('/dota/player/{accountId}/heroes', [DotaPlayerController::class, 'heroes'])
+    ->whereNumber('accountId')
+    ->name('dota.player.heroes');
+
+Route::get('/dota/player/{accountId}/peers', [DotaPlayerController::class, 'peers'])
+    ->whereNumber('accountId')
+    ->name('dota.player.peers');
+
 Route::get('/dota/player/{accountId}/hero/{heroId}', [HeroPlayerController::class, 'show'])
     ->whereNumber('accountId')
     ->whereNumber('heroId')

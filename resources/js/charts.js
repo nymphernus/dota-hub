@@ -49,18 +49,35 @@ if (payload) {
             id: 'heroIcons',
             afterDatasetsDraw(instance) {
                 const meta = instance.getDatasetMeta(0);
-                const dataset = instance.data.datasets[0];
 
-                if (!meta?.data || !dataset) return;
+                if (!meta?.data) return;
+
+                const maxGames = Math.max(...heroes.map((hero) => Number(hero.games) || 0), 1);
 
                 meta.data.forEach((arc, index) => {
                     const hero = heroes[index] || {};
-                    const image = heroImage(hero.image);
+                    const games = Number(hero.games) || 0;
+                    const source = hero.icon || hero.image;
+                    const image = heroImage(source);
 
-                    if (!image?.complete || !image.naturalWidth) return;
+                    if (!image?.complete || !image.naturalWidth || games <= 0) return;
 
                     const point = arc.tooltipPosition();
-                    const size = Math.max(16, Math.min(30, arc.outerRadius * 0.38));
+                    const angle = arc.endAngle - arc.startAngle;
+                    const midRadius = (arc.innerRadius + arc.outerRadius) / 2;
+                    const arcLength = Math.max(angle * midRadius, 1);
+
+                    // Scale with the played share so a 1-game slice stays tiny
+                    // instead of covering its neighbours.
+                    const size = Math.min(
+                        arc.outerRadius * 0.55,
+                        Math.max(10, Math.sqrt(games / maxGames) * arc.outerRadius * 0.7),
+                    );
+
+                    // Too narrow for even the smallest badge: leave the sector
+                    // coloured but do not draw an icon over the wheel.
+                    if (size + 6 > arcLength) return;
+
                     const context = instance.ctx;
 
                     context.save();
