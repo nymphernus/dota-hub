@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\SteamAuthController;
 use App\Http\Controllers\DotaPlayerController;
 use App\Http\Controllers\HeroPlayerController;
 use App\Http\Controllers\HomeController;
@@ -8,6 +9,10 @@ use App\Http\Controllers\SearchController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
+
+Route::get('/auth/steam', [SteamAuthController::class, 'redirect'])->name('auth.steam');
+Route::get('/auth/steam/callback', [SteamAuthController::class, 'callback'])->name('auth.steam.callback');
+Route::post('/auth/steam/logout', [SteamAuthController::class, 'logout'])->name('auth.steam.logout');
 
 Route::post('/search', SearchController::class)
     ->middleware('throttle:20,1')

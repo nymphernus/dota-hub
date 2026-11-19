@@ -37,6 +37,9 @@ return [
     ],
 
     'steam' => [
+        'client_id' => env('STEAM_CLIENT_ID', env('STEAM_API_KEY')),
+        'client_secret' => env('STEAM_API_KEY'),
+        'redirect' => env('STEAM_REDIRECT_URI', '/auth/steam/callback'),
         'base_url' => env('STEAM_BASE_URL', 'https://api.steampowered.com'),
         'api_key' => env('STEAM_API_KEY'),
         'community_url' => env('STEAM_COMMUNITY_URL', 'https://steamcommunity.com'),

@@ -31,6 +31,31 @@
                     <span class="block text-[10px] uppercase tracking-[0.28em] text-mist-500">Dota 2</span>
                 </span>
             </a>
+
+            <div class="ml-auto flex items-center gap-3">
+                @if (session('steam_id'))
+                    <div class="flex items-center gap-2.5">
+                        @if (session('steam_avatar'))
+                            <img src="{{ session('steam_avatar') }}" alt="Аватар Steam" class="h-8 w-8 rounded-lg object-cover ring-1 ring-white/10">
+                        @endif
+                        <span class="hidden max-w-[140px] truncate text-xs font-semibold text-mist-200 sm:block">
+                            {{ session('steam_nickname') ?: 'Steam аккаунт' }}
+                        </span>
+                        <form method="POST" action="{{ route('auth.steam.logout') }}">
+                            @csrf
+                            <input type="hidden" name="intended" value="{{ url()->current() }}">
+                            <button type="submit" class="btn-ghost !py-2">Выйти</button>
+                        </form>
+                    </div>
+                @else
+                    <a href="{{ route('auth.steam', ['intended' => url()->current()]) }}" class="btn-ghost !py-2">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                            <path d="M12 2a10 10 0 0 0-9.97 9.24l5.35 2.21a2.8 2.8 0 0 1 1.6-.49l2.37-3.43v-.5a3.74 3.74 0 1 1 3.74 3.74h-.1l-3.37 2.42c0 .07.01.14.01.21a2.8 2.8 0 0 1-5.58.37l-3.83-1.58A10 10 0 1 0 12 2Zm-5.6 15.08 1.2-.5a2.1 2.1 0 1 0-1.2.5Zm11.16-8.13a2.5 2.5 0 1 0-4.98.2 2.5 2.5 0 0 0 4.98-.2Z"/>
+                        </svg>
+                        Войти через Steam
+                    </a>
+                @endif
+            </div>
         </div>
     </header>
 
