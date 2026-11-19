@@ -276,7 +276,7 @@ class DotaProfileTest extends TestCase
         $response->assertSee('Сервера OpenDota временно недоступны');
     }
 
-    public function test_profile_without_public_matches_shows_an_exposable_data_warning(): void
+    public function test_profile_without_public_matches_is_not_treated_as_private(): void
     {
         Http::fake([
             'api.opendota.com/api/players/'.self::ACCOUNT_ID.'/wl*' => Http::response([]),
@@ -302,13 +302,15 @@ class DotaProfileTest extends TestCase
         $response = $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertOk();
-        $response->assertSee('Профиль игрока скрыт. Данные недоступны.');
+        $response->assertDontSee('Профиль игрока скрыт. Данные недоступны.');
         $response->assertDontSee('Expose Public Match Data', false);
-        $response->assertSee('Матчи скрыты или отсутствуют');
+        $response->assertSee('Матчей пока нет');
+        $response->assertSee('Матчи не найдены. Возможно, у игрока пока мало игр или данные ещё не проиндексированы.');
         $response->assertDontSee('Anti-Mage');
         $response->assertViewHas('player', fn (array $player) => $player['games'] === 0
-            && $player['heroes'] === []
-            && $player['dota_data_hidden'] === true);
+            && $player['is_private'] === false
+            && $player['has_public_matches'] === false
+            && $player['heroes'] === []);
     }
 
     public function test_steam_profile_tab_shows_account_and_public_privacy_status(): void
@@ -362,6 +364,32 @@ class DotaProfileTest extends TestCase
 
     public function test_private_profile_is_flagged(): void
     {
+        foreach ([null, []] as $hiddenProfile) {
+            Cache::flush();
+            PlayerProfile::query()->delete();
+            Http::fake([
+                'api.opendota.com/api/players/'.self::ACCOUNT_ID.'/wl*' => Http::response([]),
+                'api.opendota.com/api/players/'.self::ACCOUNT_ID.'/recentMatches*' => Http::response([]),
+                'api.opendota.com/api/players/'.self::ACCOUNT_ID.'/heroes*' => Http::response([]),
+                'api.opendota.com/api/players/'.self::ACCOUNT_ID.'/totals*' => Http::response([]),
+                'api.opendota.com/api/players/'.self::ACCOUNT_ID.'*' => Http::response([
+                    'profile' => $hiddenProfile,
+                ]),
+                'api.opendota.com/api/heroStats*' => Http::response([]),
+            ]);
+
+            $response = $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]));
+
+            $response->assertOk();
+            $response->assertSee('Анонимный игрок');
+            $response->assertSee('Профиль игрока скрыт. Данные недоступны.');
+            $response->assertViewHas('player', fn (array $player) => $player['is_private'] === true
+                && $player['account_id'] === self::ACCOUNT_ID);
+        }
+    }
+
+    public function test_profile_without_a_nickname_is_not_automatically_private(): void
+    {
         Http::fake([
             'api.opendota.com/api/players/'.self::ACCOUNT_ID.'/wl*' => Http::response([]),
             'api.opendota.com/api/players/'.self::ACCOUNT_ID.'/recentMatches*' => Http::response([]),
@@ -381,7 +409,8 @@ class DotaProfileTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Анонимный игрок');
-        $response->assertViewHas('player', fn (array $player) => $player['is_private'] === true);
+        $response->assertDontSee('Профиль игрока скрыт. Данные недоступны.');
+        $response->assertViewHas('player', fn (array $player) => $player['is_private'] === false);
     }
 
     public function test_account_metadata_is_rendered_in_the_header_without_an_account_tab(): void
@@ -448,10 +477,32 @@ class DotaProfileTest extends TestCase
         $response = $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertOk();
-        $response->assertSee('3 184 MMR');
-        $response->assertViewHas('player', fn (array $player) => $player['mmr_estimate'] === 3184
+        $response->assertSee('3 199 MMR');
+        $response->assertViewHas('player', fn (array $player) => $player['mmr_estimate'] === 3199
             && $player['mmr_is_estimated'] === true
             && $player['mmr_games_considered'] === 4);
+    }
+
+    public function test_mmr_uses_plus_25_per_win_and_minus_20_per_loss(): void
+    {
+        $service = $this->app->make(OpenDotaService::class);
+        $method = new \ReflectionMethod($service, 'estimateMmr');
+
+        $matches = [];
+
+        for ($index = 0; $index < 15; $index++) {
+            $matches[] = [
+                'start_time' => 1700000000 - $index,
+                'lobby_type' => 7,
+                'radiant_win' => true,
+                'player_slot' => $index < 10 ? 0 : 128,
+            ];
+        }
+
+        $result = $method->invoke($service, 52, $matches, null);
+
+        $this->assertSame(3384, $result['value']); // 3234 + 10*25 - 5*20
+        $this->assertSame(15, $result['games']);
     }
 
     public function test_mmr_table_uses_official_star_values(): void

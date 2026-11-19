@@ -45,7 +45,7 @@
             {{ $player['mmr_estimate'] !== null ? number_format($player['mmr_estimate'], 0, '.', ' ') : '—' }}
         </p>
         <p class="mt-2 text-[10px] text-mist-500">
-            {{ $player['mmr_is_estimated'] ? 'Медаль + последние '.$player['mmr_games_considered'].' рейтинговых игр' : 'Данные OpenDota' }}
+            {{ $player['mmr_is_estimated'] ? 'Оценка по рангу' : 'Данные OpenDota' }}
         </p>
     </div>
 </div>

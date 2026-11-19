@@ -36,7 +36,7 @@ class OpenDotaService
 
     private const MMR_WIN = 25;
 
-    private const MMR_LOSS = -25;
+    private const MMR_LOSS = -20;
 
     /**
      * Official rank medal base values: five stars per medal, then Immortal.
@@ -248,13 +248,7 @@ class OpenDotaService
         }
 
         $profileResponse = $this->client->get("players/{$accountId}");
-        $profile = $profileResponse['profile'] ?? null;
-
-        if (! is_array($profile) || empty($profile['account_id'])) {
-            throw new PlayerNotFoundException('dota');
-        }
-
-        $header = $this->playerIdentity($profileResponse);
+        $header = $this->playerIdentity($profileResponse, $accountId);
         Cache::put($cacheKey, $header, $ttl);
 
         return $header;
@@ -263,8 +257,8 @@ class OpenDotaService
     /**
      * Estimate a player's MMR without spending extra requests on a normal
      * profile render. OpenDota's own estimate wins when it is available;
-     * otherwise the current medal is used as a baseline and the most recent
-     * ranked games move the value by 25 MMR per win/loss.
+     * otherwise the current medal is the baseline and the last 20 ranked
+     * games move it by +25 for a win and -20 for a loss.
      */
     public function calculateMmrEstimate(int $accountId): ?int
     {
@@ -371,12 +365,10 @@ class OpenDotaService
         $profileResponse = $this->client->get("players/{$accountId}");
 
         $profile = $profileResponse['profile'] ?? null;
+        $isProfileHidden = ! is_array($profile) || $profile === [];
+        $profile = is_array($profile) ? $profile : [];
 
-        if (! is_array($profile) || empty($profile['account_id'])) {
-            throw new PlayerNotFoundException('dota');
-        }
-
-        Cache::put($this->playerHeaderCacheKey($accountId), $this->playerIdentity($profileResponse), $ttl);
+        Cache::put($this->playerHeaderCacheKey($accountId), $this->playerIdentity($profileResponse, $accountId), $ttl);
 
         // Optional endpoints. A failure here must not hide the profile itself,
         // but rate limit errors do bubble up from the client.
@@ -437,17 +429,17 @@ class OpenDotaService
 
         $nickname = $profile['personaname'] ?? null;
         $heroRows = $this->transformHeroes($heroStats, $heroes, $recentMatches);
-        $hasPublicMatches = $matches !== [] || $history !== [] || $winLoss !== [];
+        $hasPublicMatches = $matches !== [] || $history !== [];
 
         return [
-            'account_id' => (int) $profile['account_id'],
+            'account_id' => (int) ($profile['account_id'] ?? $accountId),
             'steam_id' => (string) ($profile['steamid'] ?? ''),
             'nickname' => $nickname ?: 'Анонимный игрок',
             'avatar' => $profile['avatarfull'] ?? $profile['avatarmedium'] ?? $profile['avatar'] ?? null,
             'profile_url' => $profile['profileurl'] ?? null,
             'country_code' => $profile['loccountrycode'] ?? null,
             'last_login_at' => $this->dateTime($profile['last_login'] ?? null),
-            'is_private' => empty($nickname),
+            'is_private' => $isProfileHidden,
             'rank_tier' => $rankTier,
             'rank_label' => $rank['label'],
             'rank_medal' => $rank['medal'],
@@ -501,7 +493,7 @@ class OpenDotaService
                 'nickname' => ($peer['personaname'] ?? null) ?: 'Анонимный игрок',
                 'avatar' => $peer['avatarfull'] ?? $peer['avatar'] ?? null,
                 'profile_url' => is_array($profile) ? ($profile['profileurl'] ?? null) : null,
-                'is_private' => $profileHidden || empty($peer['personaname']),
+                'is_private' => $profileHidden,
                 'games' => $games,
                 'wins' => $wins,
                 'winrate' => $games > 0 ? round($wins / $games * 100, 1) : null,
@@ -826,18 +818,18 @@ class OpenDotaService
      * @param  array<string, mixed>  $profileResponse
      * @return array<string, mixed>
      */
-    private function playerIdentity(array $profileResponse): array
+    private function playerIdentity(array $profileResponse, int $accountId = 0): array
     {
         $profile = is_array($profileResponse['profile'] ?? null) ? $profileResponse['profile'] : [];
         $nickname = $profile['personaname'] ?? null;
 
         return [
-            'account_id' => (int) ($profile['account_id'] ?? 0),
+            'account_id' => (int) ($profile['account_id'] ?? $accountId),
             'steam_id' => (string) ($profile['steamid'] ?? ''),
             'nickname' => $nickname ?: 'Анонимный игрок',
             'avatar' => $profile['avatarfull'] ?? $profile['avatarmedium'] ?? $profile['avatar'] ?? null,
             'profile_url' => $profile['profileurl'] ?? null,
-            'is_private' => empty($nickname),
+            'is_private' => $profile === [],
             'rank_tier' => isset($profileResponse['rank_tier']) && is_numeric($profileResponse['rank_tier'])
                 ? (int) $profileResponse['rank_tier']
                 : null,

@@ -55,7 +55,7 @@
                             <span class="text-xs font-bold text-white">{{ $player['rank_label'] ?: 'Без ранга' }}</span>
                         </span>
                         @if ($player['mmr_estimate'] !== null)
-                            <span class="badge border-amber-500/25 bg-amber-500/10 text-amber-200" title="{{ $player['mmr_is_estimated'] ? 'Расчёт по медали и последним рейтинговым матчам' : 'Оценка OpenDota' }}">
+                            <span class="badge border-amber-500/25 bg-amber-500/10 text-amber-200" title="Оценка MMR">
                                 {{ number_format($player['mmr_estimate'], 0, '.', ' ') }} MMR
                             </span>
                         @endif
@@ -120,7 +120,7 @@
 <div class="mt-4 flex flex-wrap items-center gap-2 rounded-2xl border border-white/[0.06] bg-ink-900/60 px-4 py-3 text-[11px]">
     <span class="uppercase tracking-[0.16em] text-mist-500">Приватность</span>
     <span @class(['badge', $steamTone])>Steam: {{ $steamProfile['visibility'] ?? 'Неизвестно' }}</span>
-    <span @class(['badge', $dotaTone])>Dota: {{ $dotaPublic ? 'Публичные матчи доступны' : 'Матчи скрыты или отсутствуют' }}</span>
+    <span @class(['badge', $dotaTone])>Dota: {{ $dotaPublic ? 'Публичные матчи доступны' : 'Матчей пока нет' }}</span>
     @if (! $steamAvailable)
         <span class="text-amber-300/80">{{ $steamProfile['error'] ?? 'Steam API недоступна' }}</span>
     @endif

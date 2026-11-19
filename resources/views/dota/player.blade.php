@@ -32,7 +32,7 @@
 
         <x-player-tabs :player="$player" active="overview" />
 
-        @if ($player['games'] === 0)
+        @if ($player['is_private'])
             <div class="mt-4 flex items-start gap-3 rounded-2xl border border-amber-500/25 bg-amber-500/[0.08] p-4 text-sm text-amber-100">
                 <svg class="mt-0.5 h-5 w-5 shrink-0 text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2" /><path d="M8 10V7a4 4 0 018 0v3" stroke-linecap="round" /></svg>
                 <div>
@@ -50,7 +50,7 @@
                     </div>
 
                     @if ($recentMatches === [])
-                        <div class="p-10 text-center text-sm text-mist-400">Матчи не найдены. OpenDota индексирует только открытые профили.</div>
+                        <div class="p-10 text-center text-sm text-mist-400">Матчи не найдены. Возможно, у игрока пока мало игр или данные ещё не проиндексированы.</div>
                     @else
                         <div class="overflow-x-auto">
                             <table class="w-full min-w-[820px] text-sm">
