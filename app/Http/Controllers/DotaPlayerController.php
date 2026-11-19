@@ -45,6 +45,7 @@ class DotaPlayerController extends Controller
             'recentMatches' => array_slice($player['matches'], 0, 25),
             'activityHeatmap' => $this->activityHeatmap($history),
             'heroUsage' => $this->heroUsage(array_slice($history, 0, 25)),
+            'lifetimeStats' => $openDota->lifetimeStats($accountId, $history),
             'rankStats' => $this->rankStats($history),
             'steamProfile' => $steam->summary($steamId),
             'isFavorite' => SteamId::isSteamId64($sessionSteamId) && $favorites->has($sessionSteamId, $accountId),
@@ -97,6 +98,33 @@ class DotaPlayerController extends Controller
         return view('dota.peers', [
             'player' => $player,
             'pageTitle' => $player['nickname'].' - Союзники - DotaHub',
+            'steamProfile' => $steam->summary(
+                ($player['steam_id'] ?? '') ?: SteamId::steamId64FromAccountId($accountId)
+            ),
+        ]);
+    }
+
+    /**
+     * Personal records rendered as tiles, backed by a 24-hour Redis cache.
+     */
+    public function records(int $accountId, OpenDotaService $openDota, SteamService $steam): View|Response
+    {
+        $player = $this->playerOrError($accountId, $openDota);
+
+        if ($player instanceof Response) {
+            return $player;
+        }
+
+        PlayerSearch::track(
+            (string) $accountId,
+            $player['is_private'] ? null : $player['nickname'],
+            $player['avatar'],
+        );
+
+        return view('dota.records', [
+            'player' => $player,
+            'pageTitle' => $player['nickname'].' - Рекорды - DotaHub',
+            'records' => $openDota->playerRecords($accountId, $player['match_history'] ?? []),
             'steamProfile' => $steam->summary(
                 ($player['steam_id'] ?? '') ?: SteamId::steamId64FromAccountId($accountId)
             ),

@@ -18,6 +18,8 @@ return [
         'dota_player_hero' => (int) env('OPENDOTA_PLAYER_HERO_CACHE_TTL', 1800),
         'dota_benchmarks' => (int) env('OPENDOTA_BENCHMARKS_CACHE_TTL', 86400),
         'dota_match' => (int) env('OPENDOTA_MATCH_CACHE_TTL', 3600),
+        'dota_lifetime_stats' => (int) env('OPENDOTA_LIFETIME_STATS_CACHE_TTL', 86400),
+        'dota_records' => (int) env('OPENDOTA_RECORDS_CACHE_TTL', 86400),
         'dota_heroes' => (int) env('OPENDOTA_HEROES_CACHE_TTL', 86400),
         'dota_items' => (int) env('OPENDOTA_ITEMS_CACHE_TTL', 86400),
         'steam_profile' => (int) env('STEAM_CACHE_TTL', 1800),

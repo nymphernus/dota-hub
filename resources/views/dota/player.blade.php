@@ -214,6 +214,54 @@
                 </section>
             </aside>
         </div>
+
+        @if (($lifetimeStats['total'] ?? 0) > 0)
+            <section class="card mt-4 overflow-hidden">
+                <div class="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] px-4 py-3 sm:px-5">
+                    <div>
+                        <h2 class="text-base font-bold text-white">Lifetime Stats</h2>
+                        <p class="mt-0.5 text-[11px] text-mist-500">Сводка по {{ number_format($lifetimeStats['total'], 0, '.', ' ') }} матчам за всё время</p>
+                    </div>
+                    <span class="badge border-white/10 bg-white/5 text-mist-400">
+                        Винрейт {{ $lifetimeStats['winrate'] !== null ? number_format($lifetimeStats['winrate'], 1, '.', '').'%' : '—' }}
+                    </span>
+                </div>
+
+                <div class="grid gap-4 p-4 sm:grid-cols-3 sm:p-5">
+                    @foreach ($lifetimeStats['groups'] as $group)
+                        <div class="min-w-0">
+                            <p class="label mb-2 uppercase tracking-[0.16em]">{{ $group['title'] }}</p>
+                            @if ($group['rows'] === [])
+                                <p class="text-[11px] text-mist-500">Нет данных</p>
+                            @else
+                                <div class="overflow-hidden rounded-xl border border-white/[0.05]">
+                                    <table class="w-full text-[11px]">
+                                        <thead class="table-head">
+                                            <tr>
+                                                <th class="px-3 py-2 text-left font-semibold">Категория</th>
+                                                <th class="px-2 py-2 text-right font-semibold">Матчи</th>
+                                                <th class="px-3 py-2 text-right font-semibold">Винрейт</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-white/[0.04]">
+                                            @foreach ($group['rows'] as $row)
+                                                <tr>
+                                                    <td class="px-3 py-2 font-semibold text-mist-200">{{ $row['label'] }}</td>
+                                                    <td class="px-2 py-2 text-right font-mono text-white">{{ $row['games'] }}</td>
+                                                    <td class="px-3 py-2 text-right font-mono {{ ($row['winrate'] ?? 0) >= 50 ? 'text-emerald-300' : 'text-rose-300' }}">
+                                                        {{ $row['winrate'] !== null ? number_format($row['winrate'], 1, '.', '').'%' : '—' }}
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+            </section>
+        @endif
     </div>
 @endsection
 

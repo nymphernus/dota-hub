@@ -5,6 +5,7 @@
         ['key' => 'matches', 'label' => 'Матчи', 'url' => route('dota.player.matches', ['accountId' => $accountId])],
         ['key' => 'heroes', 'label' => 'Герои', 'url' => route('dota.player.heroes', ['accountId' => $accountId]), 'count' => count($player['heroes'] ?? [])],
         ['key' => 'peers', 'label' => 'Союзники', 'url' => route('dota.player.peers', ['accountId' => $accountId])],
+        ['key' => 'records', 'label' => 'Рекорды', 'url' => route('dota.player.records', ['accountId' => $accountId])],
     ];
 @endphp
 

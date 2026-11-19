@@ -32,6 +32,36 @@ class OpenDotaService
 
     private const PROFILE_SCHEMA_VERSION = 3;
 
+    /**
+     * Human-readable labels for OpenDota /players/{id}/records keys.
+     */
+    private const RECORD_LABELS = [
+        'KILLS' => 'Наибольшее число убийств',
+        'DEATHS' => 'Больше всего смертей',
+        'ASSISTS' => 'Наибольшее число ассистов',
+        'GPM' => 'Максимум GPM',
+        'XPM' => 'Максимум XPM',
+        'LAST_HITS' => 'Максимум добиваний',
+        'DENIES' => 'Максимум отказов',
+        'GOLD' => 'Максимум золота',
+        'NET_WORTH' => 'Максимум нетворса',
+        'HERO_DAMAGE' => 'Максимум урона по героям',
+        'TOWER_DAMAGE' => 'Максимум урона по вышкам',
+        'HERO_HEALING' => 'Максимум лечения',
+        'DURATION' => 'Самый длинный матч',
+        'LEVEL' => 'Максимальный уровень',
+    ];
+
+    /** Record fields available in the cached match history. */
+    private const HISTORY_RECORD_FIELDS = [
+        'KILLS' => 'kills',
+        'DEATHS' => 'deaths',
+        'ASSISTS' => 'assists',
+        'GPM' => 'gpm',
+        'XPM' => 'xpm',
+        'DURATION' => 'duration',
+    ];
+
     private const MMR_SAMPLE_SIZE = 20;
 
     private const MMR_WIN = 25;
@@ -574,6 +604,7 @@ class OpenDotaService
         PlayerProfile::whereKey($accountId)->delete();
         Cache::forget($this->cacheKey($accountId));
         Cache::forget($this->playerHeaderCacheKey($accountId));
+        Cache::forget("opendota:records:v1:{$accountId}");
     }
 
     /**
@@ -804,6 +835,279 @@ class OpenDotaService
                 'role' => $role,
             ],
         ];
+    }
+
+    /**
+     * Lifetime summary grouped by lobby, game mode and faction.
+     *
+     * The match history is already part of the PlayerProfile JSON, so this
+     * method never calls an external API. The aggregated table gets its own
+     * 24-hour Redis entry keyed by the history fingerprint.
+     *
+     * @param  array<int, array<string, mixed>>  $history
+     * @return array{total: int, wins: int, losses: int, winrate: float|null, groups: array<int, array<string, mixed>>}
+     */
+    public function lifetimeStats(int $accountId, array $history): array
+    {
+        $ttl = (int) config('stats.cache.dota_lifetime_stats', 86400);
+        $fingerprint = sha1(implode(':', array_map(
+            fn (array $match) => (string) ($match['match_id'] ?? '').':'.(string) ($match['win'] ?? ''),
+            $history,
+        )));
+        $cacheKey = "opendota:lifetime-stats:v1:{$accountId}:{$fingerprint}";
+
+        return Cache::remember($cacheKey, $ttl, fn (): array => $this->aggregateLifetimeStats($history));
+    }
+
+    /**
+     * Personal records from OpenDota, cached for 24 hours.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    /**
+     * @param  array<int, array<string, mixed>>  $history
+     * @return array<int, array<string, mixed>>
+     */
+    public function playerRecords(int $accountId, array $history = []): array
+    {
+        $ttl = (int) config('stats.cache.dota_records', 86400);
+        $cacheKey = "opendota:records:v1:{$accountId}";
+        $fingerprint = sha1(implode(':', array_map(
+            fn (array $match) => (string) ($match['match_id'] ?? ''),
+            $history,
+        )));
+
+        $cached = Cache::get($cacheKey);
+
+        if (is_array($cached) && ($cached['_fingerprint'] ?? null) === $fingerprint) {
+            return is_array($cached['records'] ?? null) ? $cached['records'] : [];
+        }
+
+        try {
+            $raw = $this->optionalGet("players/{$accountId}/records");
+            $heroes = $this->heroStats();
+        } catch (ApiUnavailableException $exception) {
+            Log::warning('OpenDota player records are unavailable', [
+                'account_id' => $accountId,
+                'message' => $exception->getMessage(),
+            ]);
+
+            return [];
+        }
+
+        if (isset($raw['records']) && is_array($raw['records'])) {
+            $raw = $raw['records'];
+        }
+
+        $records = $this->transformRecords($raw, $heroes);
+
+        // OpenDota's records endpoint is frequently unavailable (404). The
+        // cached match history already contains every field needed for the
+        // core tiles, so fall back to it instead of showing an empty page.
+        if ($records === [] && $history !== []) {
+            $records = $this->recordsFromHistory($history, $heroes);
+        }
+
+        Cache::put($cacheKey, [
+            '_fingerprint' => $fingerprint,
+            'records' => $records,
+        ], $ttl);
+
+        return $records;
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $history
+     * @return array{total: int, wins: int, losses: int, winrate: float|null, groups: array<int, array<string, mixed>>}
+     */
+    private function aggregateLifetimeStats(array $history): array
+    {
+        $total = count($history);
+        $wins = count(array_filter($history, fn (array $match) => (bool) ($match['win'] ?? false)));
+
+        $buckets = ['lobby' => [], 'mode' => [], 'side' => []];
+
+        foreach ($history as $match) {
+            if (! is_array($match)) {
+                continue;
+            }
+
+            $lobby = $this->lifetimeLobbyLabel($match);
+            $mode = (string) ($match['game_mode_label'] ?? 'Другой');
+            $side = ($match['is_radiant'] ?? ((int) ($match['player_slot'] ?? 0) < 128)) ? 'Radiant' : 'Dire';
+            $win = (bool) ($match['win'] ?? false);
+
+            foreach ([['lobby', $lobby], ['mode', $mode], ['side', $side]] as [$group, $label]) {
+                $buckets[$group][$label] ??= ['label' => $label, 'games' => 0, 'wins' => 0, 'losses' => 0];
+                $buckets[$group][$label]['games']++;
+
+                if ($win) {
+                    $buckets[$group][$label]['wins']++;
+                } else {
+                    $buckets[$group][$label]['losses']++;
+                }
+            }
+        }
+
+        $rows = function (array $bucket): array {
+            $rows = array_values($bucket);
+
+            foreach ($rows as &$row) {
+                $row['winrate'] = $row['games'] > 0
+                    ? round($row['wins'] / $row['games'] * 100, 1)
+                    : null;
+            }
+            unset($row);
+
+            usort($rows, fn (array $left, array $right) => [$right['games'], $left['label']] <=> [$left['games'], $right['label']]);
+
+            return $rows;
+        };
+
+        return [
+            'total' => $total,
+            'wins' => $wins,
+            'losses' => $total - $wins,
+            'winrate' => $total > 0 ? round($wins / $total * 100, 1) : null,
+            'groups' => [
+                ['key' => 'lobby', 'title' => 'По типу игры', 'rows' => $rows($buckets['lobby'])],
+                ['key' => 'mode', 'title' => 'По режиму', 'rows' => $rows($buckets['mode'])],
+                ['key' => 'side', 'title' => 'По фракции', 'rows' => $rows($buckets['side'])],
+            ],
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $match
+     */
+    private function lifetimeLobbyLabel(array $match): string
+    {
+        $lobbyType = isset($match['lobby_type']) && is_numeric($match['lobby_type'])
+            ? (int) $match['lobby_type']
+            : null;
+        $gameMode = isset($match['game_mode']) && is_numeric($match['game_mode'])
+            ? (int) $match['game_mode']
+            : null;
+
+        return $this->matchTypeLabel($lobbyType, $gameMode);
+    }
+
+    /**
+     * @param  array<int, mixed>  $records
+     * @param  array<int, array<string, mixed>>  $heroes
+     * @return array<int, array<string, mixed>>
+     */
+    private function transformRecords(array $records, array $heroes): array
+    {
+        $rows = [];
+
+        foreach ($records as $record) {
+            if (! is_array($record)) {
+                continue;
+            }
+
+            $name = strtoupper((string) ($record['name'] ?? $record['record_name'] ?? ''));
+            $value = $record['value'] ?? null;
+
+            if ($name === '' || ! is_numeric($value)) {
+                continue;
+            }
+
+            $heroId = (int) ($record['hero_id'] ?? 0);
+            $hero = $heroes[$heroId] ?? [];
+            $startTime = (int) ($record['start_time'] ?? 0);
+            $value = (int) $value;
+
+            $row = [
+                'key' => $name,
+                'label' => self::RECORD_LABELS[$name] ?? ucwords(str_replace('_', ' ', strtolower($name))),
+                'value' => $value,
+                'value_label' => $name === 'DURATION'
+                    ? $this->durationLabel($value)
+                    : number_format($value, 0, '.', ' '),
+                'hero_id' => $heroId > 0 ? $heroId : null,
+                'hero_name' => $hero['name'] ?? null,
+                'hero_image' => $hero['image'] ?? null,
+                'hero_icon' => $hero['icon'] ?? null,
+                'match_id' => isset($record['match_id']) ? (int) $record['match_id'] : null,
+                'played_at' => $startTime > 0 ? CarbonImmutable::createFromTimestampUTC($startTime)->toIso8601String() : null,
+                'is_team' => (bool) ($record['is_team'] ?? false),
+            ];
+
+            // OpenDota may report one record several times; keep the best value.
+            $existing = $rows[$row['key']] ?? null;
+
+            if ($existing === null || $row['value'] > $existing['value']) {
+                $rows[$row['key']] = $row;
+            }
+        }
+
+        return $this->orderRecords(array_values($rows));
+    }
+
+    /**
+     * Build the core record tiles from the cached match history.
+     *
+     * @param  array<int, array<string, mixed>>  $history
+     * @param  array<int, array<string, mixed>>  $heroes
+     * @return array<int, array<string, mixed>>
+     */
+    private function recordsFromHistory(array $history, array $heroes): array
+    {
+        $best = [];
+
+        foreach ($history as $match) {
+            if (! is_array($match)) {
+                continue;
+            }
+
+            foreach (self::HISTORY_RECORD_FIELDS as $name => $field) {
+                $value = (int) ($match[$field] ?? 0);
+
+                if ($value <= 0 || ($best[$name]['value'] ?? 0) >= $value) {
+                    continue;
+                }
+
+                $heroId = (int) ($match['hero_id'] ?? 0);
+                $hero = $heroes[$heroId] ?? [];
+
+                $best[$name] = [
+                    'key' => $name,
+                    'label' => self::RECORD_LABELS[$name],
+                    'value' => $value,
+                    'value_label' => $name === 'DURATION'
+                        ? $this->durationLabel($value)
+                        : number_format($value, 0, '.', ' '),
+                    'hero_id' => $heroId > 0 ? $heroId : null,
+                    'hero_name' => $hero['name'] ?? ($match['hero_name'] ?? null),
+                    'hero_image' => $hero['image'] ?? ($match['hero_image'] ?? null),
+                    'hero_icon' => $hero['icon'] ?? ($match['hero_icon'] ?? null),
+                    'match_id' => (int) ($match['match_id'] ?? 0) ?: null,
+                    'played_at' => $match['started_at'] ?? null,
+                    'is_team' => false,
+                ];
+            }
+        }
+
+        return $this->orderRecords(array_values($best));
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $rows
+     * @return array<int, array<string, mixed>>
+     */
+    private function orderRecords(array $rows): array
+    {
+        $order = array_keys(self::RECORD_LABELS);
+
+        usort($rows, function (array $left, array $right) use ($order): int {
+            $leftIndex = array_search($left['key'], $order, true);
+            $rightIndex = array_search($right['key'], $order, true);
+
+            return ($leftIndex === false ? PHP_INT_MAX : $leftIndex) <=> ($rightIndex === false ? PHP_INT_MAX : $rightIndex);
+        });
+
+        return $rows;
     }
 
     private function cacheKey(int $accountId): string
@@ -1843,6 +2147,7 @@ class OpenDotaService
                 'hero_image' => $hero['image'],
                 'hero_icon' => $hero['icon'] ?? null,
                 'win' => $radiantWin === $isRadiant,
+                'is_radiant' => $isRadiant,
                 'started_at' => CarbonImmutable::createFromTimestampUTC($startTime)->toIso8601String(),
                 'duration' => (int) ($match['duration'] ?? 0),
                 'kills' => (int) ($match['kills'] ?? 0),
