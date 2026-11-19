@@ -94,12 +94,39 @@ class LifetimeStatsTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Самый длинный матч');
+        $response->assertSee('Самый короткий матч');
         $response->assertSee('Наибольшее число убийств');
         $response->assertSee('Максимум GPM');
+        $response->assertSee('Максимум урона по героям');
+        $response->assertSee('Самая длинная серия поражений');
         $response->assertViewHas('records', function (array $records): bool {
-            return count($records) >= 4
+            return count($records) >= 12
                 && collect($records)->every(fn (array $record) => $record['played_at'] !== null
                     && $record['match_id'] !== null);
+        });
+    }
+
+    public function test_records_derive_damage_tiles_and_streaks_from_the_cached_history(): void
+    {
+        $this->fakeOpenDota([]);
+
+        $response = $this->get(route('dota.player.records', ['accountId' => self::ACCOUNT_ID]));
+
+        $response->assertOk();
+        $response->assertSee('Максимум лечения');
+        $response->assertSee('Максимум урона по вышкам');
+        $response->assertSee('Самая длинная серия побед');
+        $response->assertViewHas('records', function (array $records): bool {
+            $byKey = collect($records)->keyBy('key');
+
+            return $byKey['SHORTEST_DURATION']['value'] === 1500
+                && $byKey['SHORTEST_DURATION']['value_label'] === '25:00'
+                && $byKey['HERO_DAMAGE']['value'] === 24500
+                && $byKey['TOWER_DAMAGE']['value'] === 1200
+                && $byKey['HERO_HEALING']['value'] === 800
+                && $byKey['LONGEST_WIN_STREAK']['value'] === 1
+                && $byKey['LONGEST_LOSS_STREAK']['value'] === 2
+                && $byKey['LONGEST_LOSS_STREAK']['value_label'] === '2 поражения';
         });
     }
 
@@ -137,10 +164,10 @@ class LifetimeStatsTest extends TestCase
         $start = CarbonImmutable::parse('2026-11-15 12:00:00')->timestamp;
 
         $history = [
-            ['match_id' => 9100000001, 'hero_id' => 1, 'player_slot' => 0, 'radiant_win' => true, 'start_time' => $start, 'duration' => 2400, 'kills' => 10, 'deaths' => 2, 'assists' => 15, 'gold_per_min' => 620, 'xp_per_min' => 710, 'lobby_type' => 7, 'game_mode' => 22],
-            ['match_id' => 9100000002, 'hero_id' => 2, 'player_slot' => 128, 'radiant_win' => true, 'start_time' => $start - 86400, 'duration' => 1980, 'kills' => 3, 'deaths' => 8, 'assists' => 6, 'gold_per_min' => 340, 'xp_per_min' => 420, 'lobby_type' => 7, 'game_mode' => 22],
-            ['match_id' => 9100000003, 'hero_id' => 1, 'player_slot' => 0, 'radiant_win' => false, 'start_time' => $start - 172800, 'duration' => 1500, 'kills' => 4, 'deaths' => 9, 'assists' => 7, 'gold_per_min' => 390, 'xp_per_min' => 450, 'lobby_type' => 0, 'game_mode' => 23],
-            ['match_id' => 9100000004, 'hero_id' => 1, 'player_slot' => 0, 'radiant_win' => true, 'start_time' => $start - 259200, 'duration' => 2100, 'kills' => 8, 'deaths' => 4, 'assists' => 11, 'gold_per_min' => 510, 'xp_per_min' => 590, 'lobby_type' => 0, 'game_mode' => 23],
+            ['match_id' => 9100000001, 'hero_id' => 1, 'player_slot' => 0, 'radiant_win' => true, 'start_time' => $start, 'duration' => 2400, 'kills' => 10, 'deaths' => 2, 'assists' => 15, 'gold_per_min' => 620, 'xp_per_min' => 710, 'last_hits' => 210, 'denies' => 12, 'gold' => 19800, 'hero_damage' => 24500, 'tower_damage' => 1200, 'hero_healing' => 800, 'level' => 27, 'lobby_type' => 7, 'game_mode' => 22],
+            ['match_id' => 9100000002, 'hero_id' => 2, 'player_slot' => 128, 'radiant_win' => true, 'start_time' => $start - 86400, 'duration' => 1980, 'kills' => 3, 'deaths' => 8, 'assists' => 6, 'gold_per_min' => 340, 'xp_per_min' => 420, 'last_hits' => 95, 'denies' => 8, 'gold' => 7600, 'hero_damage' => 9800, 'tower_damage' => 600, 'hero_healing' => 300, 'level' => 18, 'lobby_type' => 7, 'game_mode' => 22],
+            ['match_id' => 9100000003, 'hero_id' => 1, 'player_slot' => 0, 'radiant_win' => false, 'start_time' => $start - 172800, 'duration' => 1500, 'kills' => 4, 'deaths' => 9, 'assists' => 7, 'gold_per_min' => 390, 'xp_per_min' => 450, 'last_hits' => 110, 'denies' => 5, 'gold' => 8500, 'hero_damage' => 11000, 'tower_damage' => 350, 'hero_healing' => 150, 'level' => 20, 'lobby_type' => 0, 'game_mode' => 23],
+            ['match_id' => 9100000004, 'hero_id' => 1, 'player_slot' => 0, 'radiant_win' => true, 'start_time' => $start - 259200, 'duration' => 2100, 'kills' => 8, 'deaths' => 4, 'assists' => 11, 'gold_per_min' => 510, 'xp_per_min' => 590, 'last_hits' => 175, 'denies' => 10, 'gold' => 15200, 'hero_damage' => 18200, 'tower_damage' => 900, 'hero_healing' => 500, 'level' => 24, 'lobby_type' => 0, 'game_mode' => 23],
         ];
 
         $records = $records ?? [

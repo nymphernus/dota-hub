@@ -1,7 +1,7 @@
 @extends('dota.layouts.profile')
 
 @section('title', $pageTitle ?? ($player['nickname'].' - Рекорды - DotaHub'))
-@section('description', 'Личные рекорды игрока '.$player['nickname'].' в Dota 2: самый длинный матч, максимум убийств, GPM и другие достижения.')
+@section('description', 'Личные рекорды игрока '.$player['nickname'].' в Dota 2: самый длинный и короткий матч, максимум убийств, урона, GPM и серии побед и поражений.')
 
 @section('profile-content')
         <section class="mt-4">
@@ -11,7 +11,7 @@
                     <p class="mt-0.5 text-[11px] text-mist-500">Лучшие результаты игрока в отдельных матчах</p>
                 </div>
                 @if ($records !== [])
-                    <span class="badge border-white/10 bg-white/5 text-mist-400">{{ count($records) }} достижений</span>
+                    <span class="badge text-mist-400">{{ count($records) }} достижений</span>
                 @endif
             </div>
 
@@ -23,6 +23,7 @@
                 <div class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     @foreach ($records as $record)
                         <article class="card relative overflow-hidden p-4">
+                            <span class="absolute inset-y-0 left-0 w-0.5 bg-gold-400/70" aria-hidden="true"></span>
                             <div class="flex items-start justify-between gap-3">
                                 <div class="min-w-0">
                                     <p class="label uppercase tracking-[0.14em] text-mist-500">{{ $record['label'] }}</p>
@@ -48,7 +49,7 @@
                                     </a>
                                 @endif
                                 @if ($record['is_team'])
-                                    <span class="badge border-white/10 bg-white/5 text-mist-400">Командный</span>
+                                    <span class="badge text-mist-400">Командный</span>
                                 @endif
                             </div>
                         </article>

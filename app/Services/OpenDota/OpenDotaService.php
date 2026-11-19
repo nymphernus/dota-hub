@@ -36,30 +36,42 @@ class OpenDotaService
      * Human-readable labels for OpenDota /players/{id}/records keys.
      */
     private const RECORD_LABELS = [
+        'DURATION' => 'Самый длинный матч',
+        'SHORTEST_DURATION' => 'Самый короткий матч',
         'KILLS' => 'Наибольшее число убийств',
         'DEATHS' => 'Больше всего смертей',
         'ASSISTS' => 'Наибольшее число ассистов',
         'GPM' => 'Максимум GPM',
         'XPM' => 'Максимум XPM',
+        'HERO_DAMAGE' => 'Максимум урона по героям',
+        'TOWER_DAMAGE' => 'Максимум урона по вышкам',
+        'HERO_HEALING' => 'Максимум лечения',
         'LAST_HITS' => 'Максимум добиваний',
         'DENIES' => 'Максимум отказов',
         'GOLD' => 'Максимум золота',
         'NET_WORTH' => 'Максимум нетворса',
-        'HERO_DAMAGE' => 'Максимум урона по героям',
-        'TOWER_DAMAGE' => 'Максимум урона по вышкам',
-        'HERO_HEALING' => 'Максимум лечения',
-        'DURATION' => 'Самый длинный матч',
         'LEVEL' => 'Максимальный уровень',
+        'LONGEST_WIN_STREAK' => 'Самая длинная серия побед',
+        'LONGEST_LOSS_STREAK' => 'Самая длинная серия поражений',
     ];
 
     /** Record fields available in the cached match history. */
     private const HISTORY_RECORD_FIELDS = [
+        'DURATION' => 'duration',
+        'SHORTEST_DURATION' => 'duration',
         'KILLS' => 'kills',
         'DEATHS' => 'deaths',
         'ASSISTS' => 'assists',
         'GPM' => 'gpm',
         'XPM' => 'xpm',
-        'DURATION' => 'duration',
+        'HERO_DAMAGE' => 'hero_damage',
+        'TOWER_DAMAGE' => 'tower_damage',
+        'HERO_HEALING' => 'hero_healing',
+        'LAST_HITS' => 'last_hits',
+        'DENIES' => 'denies',
+        'GOLD' => 'gold',
+        'NET_WORTH' => 'net_worth',
+        'LEVEL' => 'level',
     ];
 
     private const MMR_SAMPLE_SIZE = 20;
@@ -871,7 +883,7 @@ class OpenDotaService
     public function playerRecords(int $accountId, array $history = []): array
     {
         $ttl = (int) config('stats.cache.dota_records', 86400);
-        $cacheKey = "opendota:records:v1:{$accountId}";
+        $cacheKey = "opendota:records:v2:{$accountId}";
         $fingerprint = sha1(implode(':', array_map(
             fn (array $match) => (string) ($match['match_id'] ?? ''),
             $history,
@@ -883,30 +895,45 @@ class OpenDotaService
             return is_array($cached['records'] ?? null) ? $cached['records'] : [];
         }
 
+        $heroes = [];
+        $derived = $history !== [] ? $this->recordsFromHistory($history, $heroes) : [];
+
         try {
             $raw = $this->optionalGet("players/{$accountId}/records");
             $heroes = $this->heroStats();
+            $derived = $history !== [] ? $this->recordsFromHistory($history, $heroes) : [];
         } catch (ApiUnavailableException $exception) {
             Log::warning('OpenDota player records are unavailable', [
                 'account_id' => $accountId,
                 'message' => $exception->getMessage(),
             ]);
 
-            return [];
+            Cache::put($cacheKey, [
+                '_fingerprint' => $fingerprint,
+                'records' => $derived,
+            ], $ttl);
+
+            return $derived;
         }
 
         if (isset($raw['records']) && is_array($raw['records'])) {
             $raw = $raw['records'];
         }
 
-        $records = $this->transformRecords($raw, $heroes);
+        $records = [];
 
-        // OpenDota's records endpoint is frequently unavailable (404). The
-        // cached match history already contains every field needed for the
-        // core tiles, so fall back to it instead of showing an empty page.
-        if ($records === [] && $history !== []) {
-            $records = $this->recordsFromHistory($history, $heroes);
+        foreach ($this->transformRecords($raw, $heroes) as $row) {
+            $records[$row['key']] = $row;
         }
+
+        // OpenDota's records endpoint is frequently unavailable (404) and only
+        // reports a few keys. The cached history of the last 500 matches is the
+        // source of truth for the rest of the record tiles.
+        foreach ($derived as $row) {
+            $records[$row['key']] ??= $row;
+        }
+
+        $records = $this->orderRecords(array_values($records));
 
         Cache::put($cacheKey, [
             '_fingerprint' => $fingerprint,
@@ -1022,9 +1049,7 @@ class OpenDotaService
                 'key' => $name,
                 'label' => self::RECORD_LABELS[$name] ?? ucwords(str_replace('_', ' ', strtolower($name))),
                 'value' => $value,
-                'value_label' => $name === 'DURATION'
-                    ? $this->durationLabel($value)
-                    : number_format($value, 0, '.', ' '),
+                'value_label' => $this->recordValueLabel($name, $value),
                 'hero_id' => $heroId > 0 ? $heroId : null,
                 'hero_name' => $hero['name'] ?? null,
                 'hero_image' => $hero['image'] ?? null,
@@ -1064,32 +1089,119 @@ class OpenDotaService
             foreach (self::HISTORY_RECORD_FIELDS as $name => $field) {
                 $value = (int) ($match[$field] ?? 0);
 
-                if ($value <= 0 || ($best[$name]['value'] ?? 0) >= $value) {
+                if ($value <= 0) {
                     continue;
                 }
 
-                $heroId = (int) ($match['hero_id'] ?? 0);
-                $hero = $heroes[$heroId] ?? [];
+                $current = $best[$name]['value'] ?? null;
+                $isBetter = $name === 'SHORTEST_DURATION'
+                    ? ($current === null || $value < $current)
+                    : ($current === null || $value > $current);
 
-                $best[$name] = [
-                    'key' => $name,
-                    'label' => self::RECORD_LABELS[$name],
-                    'value' => $value,
-                    'value_label' => $name === 'DURATION'
-                        ? $this->durationLabel($value)
-                        : number_format($value, 0, '.', ' '),
-                    'hero_id' => $heroId > 0 ? $heroId : null,
-                    'hero_name' => $hero['name'] ?? ($match['hero_name'] ?? null),
-                    'hero_image' => $hero['image'] ?? ($match['hero_image'] ?? null),
-                    'hero_icon' => $hero['icon'] ?? ($match['hero_icon'] ?? null),
-                    'match_id' => (int) ($match['match_id'] ?? 0) ?: null,
-                    'played_at' => $match['started_at'] ?? null,
-                    'is_team' => false,
-                ];
+                if ($isBetter) {
+                    $best[$name] = $this->historyRecordRow($name, $value, $match, $heroes);
+                }
             }
         }
 
+        foreach ($this->recordsFromStreaks($history, $heroes) as $row) {
+            $best[$row['key']] = $row;
+        }
+
         return $this->orderRecords(array_values($best));
+    }
+
+    /**
+     * @param  array<string, mixed>  $match
+     * @param  array<int, array<string, mixed>>  $heroes
+     * @return array<string, mixed>
+     */
+    private function historyRecordRow(string $name, int $value, array $match, array $heroes): array
+    {
+        $heroId = (int) ($match['hero_id'] ?? 0);
+        $hero = $heroes[$heroId] ?? [];
+
+        return [
+            'key' => $name,
+            'label' => self::RECORD_LABELS[$name] ?? ucwords(str_replace('_', ' ', strtolower($name))),
+            'value' => $value,
+            'value_label' => $this->recordValueLabel($name, $value),
+            'hero_id' => $heroId > 0 ? $heroId : null,
+            'hero_name' => $hero['name'] ?? ($match['hero_name'] ?? null),
+            'hero_image' => $hero['image'] ?? ($match['hero_image'] ?? null),
+            'hero_icon' => $hero['icon'] ?? ($match['hero_icon'] ?? null),
+            'match_id' => (int) ($match['match_id'] ?? 0) ?: null,
+            'played_at' => $match['started_at'] ?? null,
+            'is_team' => false,
+        ];
+    }
+
+    /**
+     * Longest run of consecutive wins/losses in the cached match history.
+     *
+     * @param  array<int, array<string, mixed>>  $history
+     * @param  array<int, array<string, mixed>>  $heroes
+     * @return array<int, array<string, mixed>>
+     */
+    private function recordsFromStreaks(array $history, array $heroes): array
+    {
+        $chronological = array_values(array_filter(
+            $history,
+            fn (mixed $match): bool => is_array($match) && ! empty($match['started_at']),
+        ));
+
+        usort($chronological, fn (array $left, array $right): int => strcmp(
+            (string) $left['started_at'],
+            (string) $right['started_at'],
+        ));
+
+        $best = [];
+        $wins = 0;
+        $losses = 0;
+
+        foreach ($chronological as $match) {
+            if ((bool) ($match['win'] ?? false)) {
+                $wins++;
+                $losses = 0;
+                $key = 'LONGEST_WIN_STREAK';
+                $value = $wins;
+            } else {
+                $losses++;
+                $wins = 0;
+                $key = 'LONGEST_LOSS_STREAK';
+                $value = $losses;
+            }
+
+            if ($value > ($best[$key]['value'] ?? 0)) {
+                $best[$key] = $this->historyRecordRow($key, $value, $match, $heroes);
+            }
+        }
+
+        return array_values($best);
+    }
+
+    private function recordValueLabel(string $name, int $value): string
+    {
+        return match ($name) {
+            'DURATION', 'SHORTEST_DURATION' => $this->durationLabel($value),
+            'LONGEST_WIN_STREAK' => $this->streakLabel($value, 'победа', 'победы', 'побед'),
+            'LONGEST_LOSS_STREAK' => $this->streakLabel($value, 'поражение', 'поражения', 'поражений'),
+            default => number_format($value, 0, '.', ' '),
+        };
+    }
+
+    private function streakLabel(int $value, string $one, string $few, string $many): string
+    {
+        $lastDigit = $value % 10;
+        $lastTwoDigits = $value % 100;
+
+        $word = match (true) {
+            $lastDigit === 1 && $lastTwoDigits !== 11 => $one,
+            $lastDigit >= 2 && $lastDigit <= 4 && ($lastTwoDigits < 12 || $lastTwoDigits > 14) => $few,
+            default => $many,
+        };
+
+        return $value.' '.$word;
     }
 
     /**
@@ -2155,6 +2267,14 @@ class OpenDotaService
                 'assists' => (int) ($match['assists'] ?? 0),
                 'gpm' => (int) ($match['gold_per_min'] ?? 0),
                 'xpm' => (int) ($match['xp_per_min'] ?? 0),
+                'last_hits' => (int) ($match['last_hits'] ?? 0),
+                'denies' => (int) ($match['denies'] ?? 0),
+                'gold' => (int) ($match['gold'] ?? 0),
+                'hero_damage' => (int) ($match['hero_damage'] ?? 0),
+                'tower_damage' => (int) ($match['tower_damage'] ?? 0),
+                'hero_healing' => (int) ($match['hero_healing'] ?? 0),
+                'level' => (int) ($match['level'] ?? 0),
+                'net_worth' => (int) ($match['net_worth'] ?? 0),
                 'lobby_type' => isset($match['lobby_type']) ? (int) $match['lobby_type'] : null,
                 'game_mode' => isset($match['game_mode']) ? (int) $match['game_mode'] : null,
                 'lobby_type_label' => $this->lobbyTypeLabel(isset($match['lobby_type']) ? (int) $match['lobby_type'] : null),
