@@ -64,15 +64,15 @@
                         <div class="grid gap-2 p-3 sm:grid-cols-2 sm:p-4">
                             @foreach ($topHeroes as $index => $hero)
                                 @php $heroUrl = route('dota.player.hero', ['accountId' => $player['account_id'], 'heroId' => $hero['hero_id']]); @endphp
-                                <a href="{{ $heroUrl }}" class="group flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-2 transition hover:border-radar-500/30 hover:bg-radar-500/[0.06]">
+                                <a href="{{ $heroUrl }}" class="group flex items-center gap-3 rounded-xl bg-white/[0.03] p-2 transition hover:border-gold-500/30 hover:bg-gold-500/[0.06]">
                                     <span class="w-4 text-center font-mono text-[10px] text-mist-500">{{ $index + 1 }}</span>
-                                    <span class="h-9 w-16 shrink-0 overflow-hidden rounded-md bg-ink-800 ring-1 ring-white/10 transition group-hover:ring-radar-400/50">
+                                    <span class="h-9 w-16 shrink-0 overflow-hidden rounded-md bg-ink-800 ring-1 ring-white/10 transition group-hover:ring-gold-400/50">
                                         @if ($hero['image'])
                                             <img src="{{ $hero['image'] }}" alt="{{ $hero['name'] }}" class="h-full w-full object-cover" loading="lazy">
                                         @endif
                                     </span>
                                     <span class="min-w-0 flex-1">
-                                        <span class="block truncate text-[12px] font-bold text-white transition group-hover:text-radar-200">{{ $hero['name'] }}</span>
+                                        <span class="block truncate text-[12px] font-bold text-white transition group-hover:text-gold-200">{{ $hero['name'] }}</span>
                                         <span class="block text-[10px] text-mist-500">{{ $hero['games'] }} игр</span>
                                     </span>
                                     <span class="font-mono text-[12px] font-bold {{ ($hero['winrate'] ?? 0) >= 50 ? 'text-emerald-300' : 'text-rose-300' }}">
@@ -143,14 +143,14 @@
                     @else
                         <div class="mt-3 space-y-2">
                             @foreach ($topPeers as $peer)
-                                <a href="{{ route('dota.player', ['accountId' => $peer['account_id']]) }}" class="group flex items-center gap-2.5 rounded-xl border border-white/[0.06] bg-white/[0.02] p-2 transition hover:border-radar-500/30 hover:bg-radar-500/[0.06]">
+                                <a href="{{ route('dota.player', ['accountId' => $peer['account_id']]) }}" class="group flex items-center gap-2.5 rounded-xl bg-white/[0.03] p-2 transition hover:border-gold-500/30 hover:bg-gold-500/[0.06]">
                                     <span class="h-8 w-8 shrink-0 overflow-hidden rounded-lg bg-ink-800 ring-1 ring-white/10">
                                         @if ($peer['avatar'])
                                             <img src="{{ $peer['avatar'] }}" alt="{{ $peer['nickname'] }}" class="h-full w-full object-cover" loading="lazy">
                                         @endif
                                     </span>
                                     <span class="min-w-0 flex-1">
-                                        <span class="block truncate text-[11px] font-bold text-white transition group-hover:text-radar-200">{{ $peer['nickname'] }}</span>
+                                        <span class="block truncate text-[11px] font-bold text-white transition group-hover:text-gold-200">{{ $peer['nickname'] }}</span>
                                         <span class="block text-[9px] text-mist-500">{{ $peer['games'] }} совм. игр · {{ $peer['winrate'] !== null ? number_format($peer['winrate'], 1, '.', '').'%' : '—' }}</span>
                                     </span>
                                 </a>
@@ -180,7 +180,7 @@
                             @if ($group['rows'] === [])
                                 <p class="text-[11px] text-mist-500">Нет данных</p>
                             @else
-                                <div class="overflow-hidden rounded-xl border border-white/[0.05]">
+                                <div class="overflow-hidden rounded-lg">
                                     <table class="w-full text-[11px]">
                                         <thead class="table-head">
                                             <tr>

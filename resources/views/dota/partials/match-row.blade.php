@@ -29,7 +29,7 @@
     ])>
         <div class="flex items-center gap-2.5">
             @if ($heroUrl)
-                <a href="{{ $heroUrl }}" class="relative block h-10 w-16 shrink-0 overflow-hidden rounded-md bg-ink-800 ring-1 ring-white/10 transition group-hover:ring-radar-400/60" onclick="event.stopPropagation()" aria-label="Статистика героя {{ $match['hero_name'] }}">
+                <a href="{{ $heroUrl }}" class="relative block h-10 w-16 shrink-0 overflow-hidden rounded-md bg-ink-800 ring-1 ring-white/10 transition group-hover:ring-gold-400/60" onclick="event.stopPropagation()" aria-label="Статистика героя {{ $match['hero_name'] }}">
                     @if ($match['hero_image'])
                         <img src="{{ $match['hero_image'] }}" alt="{{ $match['hero_name'] }}" class="h-full w-full object-cover" loading="lazy">
                     @else
@@ -57,7 +57,7 @@
                         <span class="rounded bg-blue-600 px-1 text-xs font-bold leading-none text-white">{{ $partyBadge }}</span>
                     @endif
                     @if ($heroUrl)
-                        <a href="{{ $heroUrl }}" onclick="event.stopPropagation()" class="truncate text-[12px] font-bold text-white transition group-hover:text-radar-200">{{ $match['hero_name'] }}</a>
+                        <a href="{{ $heroUrl }}" onclick="event.stopPropagation()" class="truncate text-[12px] font-bold text-white transition group-hover:text-gold-200">{{ $match['hero_name'] }}</a>
                     @else
                         <span class="truncate text-[12px] font-bold text-white">{{ $match['hero_name'] }}</span>
                     @endif
@@ -71,7 +71,7 @@
                     <span class="font-mono">{{ $match['duration_label'] ?? '—' }}</span>
                     <span class="text-mist-600">·</span>
                     @php $modeLabel = $match['game_mode_label'] ?? null; @endphp
-                    <span class="{{ ($match['match_type_label'] ?? '') === 'Ranked' ? 'font-semibold text-amber-300' : (($match['match_type_label'] ?? '') === 'Turbo' ? 'font-semibold text-cyan-300' : '') }}">
+                    <span class="{{ ($match['match_type_label'] ?? '') === 'Ranked' ? 'font-semibold text-amber-300' : (($match['match_type_label'] ?? '') === 'Turbo' ? 'font-semibold text-accent-300' : '') }}">
                         {{ $match['match_type_label'] ?? 'Normal' }}
                     </span>
                     @if ($modeLabel && $modeLabel !== 'All Pick' && $modeLabel !== ($match['match_type_label'] ?? null))

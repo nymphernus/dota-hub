@@ -43,7 +43,7 @@
                                     <span>{{ \Carbon\CarbonImmutable::parse($record['played_at'])->format('d.m.Y') }}</span>
                                 @endif
                                 @if ($record['match_id'])
-                                    <a href="{{ route('dota.match', ['matchId' => $record['match_id']]) }}" class="transition hover:text-radar-300">
+                                    <a href="{{ route('dota.match', ['matchId' => $record['match_id']]) }}" class="transition hover:text-gold-300">
                                         Матч #{{ $record['match_id'] }}
                                     </a>
                                 @endif

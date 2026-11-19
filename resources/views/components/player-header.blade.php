@@ -29,7 +29,7 @@
 @endphp
 
 <section class="card relative overflow-hidden">
-    <div class="absolute inset-x-0 top-0 h-32 bg-gradient-to-r from-dota-500/20 via-ink-800/40 to-cyan-500/10" aria-hidden="true"></div>
+    <div class="absolute inset-x-0 top-0 h-32 bg-gradient-to-r from-dota-500/20 via-ink-800/40 to-accent-500/10" aria-hidden="true"></div>
     <div class="absolute -right-16 -top-24 h-64 w-64 rounded-full bg-dota-500/10 blur-3xl" aria-hidden="true"></div>
 
     <div class="relative px-4 pb-5 pt-8 sm:px-6 lg:px-8">
@@ -45,7 +45,7 @@
 
                 <div class="min-w-0">
                     <div class="flex flex-wrap items-center gap-2">
-                        <span class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-2.5 py-1.5" title="Ранг: {{ $player['rank_label'] ?: 'Не откалиброван' }}">
+                        <span class="inline-flex items-center gap-2 rounded-xl bg-white/[0.04] px-2.5 py-1.5" title="Ранг: {{ $player['rank_label'] ?: 'Не откалиброван' }}">
                             <span class="relative inline-flex h-9 w-9 items-center justify-center">
                                 <img src="{{ $rankIcon }}" alt="Иконка ранга {{ $player['rank_label'] ?: 'без ранга' }}" class="h-9 w-9 object-contain">
                                 @if ($rankStarIcon)
@@ -124,7 +124,7 @@
                         @if ($steamProfile['account_created_at'] ?? null)
                             <span>Регистрация {{ \Carbon\CarbonImmutable::parse($steamProfile['account_created_at'])->format('d.m.Y') }}</span>
                         @endif
-                        <a href="{{ $player['profile_url'] ?: 'https://steamcommunity.com/profiles/'.$player['steam_id'] }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 transition hover:text-radar-300">
+                        <a href="{{ $player['profile_url'] ?: 'https://steamcommunity.com/profiles/'.$player['steam_id'] }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 transition hover:text-gold-300">
                             Steam
                             <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 5h5v5M19 5l-8 8M10 5H5v14h14v-5" stroke-linecap="round" stroke-linejoin="round" /></svg>
                         </a>
@@ -149,7 +149,7 @@
     </div>
 </section>
 
-<div class="mt-4 flex flex-wrap items-center gap-2 rounded-2xl border border-white/[0.06] bg-ink-900/60 px-4 py-3 text-[11px]">
+<div class="mt-4 flex flex-wrap items-center gap-2 rounded-lg bg-ink-900/60 px-4 py-3 text-[11px]">
     <span class="uppercase tracking-[0.16em] text-mist-500">Приватность</span>
     <span @class(['badge', $steamTone])>Steam: {{ $steamProfile['visibility'] ?? 'Неизвестно' }}</span>
     <span @class(['badge', $dotaTone])>Dota: {{ $dotaPublic ? 'Публичные матчи доступны' : 'Матчей пока нет' }}</span>

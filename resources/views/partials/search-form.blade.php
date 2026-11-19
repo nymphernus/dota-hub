@@ -12,7 +12,7 @@
         }
     }"
     @pageshow.window="loading = false"
-    class="rounded-3xl bg-gradient-to-br from-radar-500/30 via-white/[0.06] to-cyan-500/20 p-px shadow-[0_30px_90px_-40px_rgba(16,185,129,0.55)]"
+    class="rounded-3xl bg-gradient-to-br from-gold-500/30 via-white/[0.06] to-accent-500/20 p-px shadow-[0_30px_90px_-40px_rgba(16,185,129,0.55)]"
 >
     <form method="POST" action="{{ route('search') }}" @submit="loading = true" class="rounded-[calc(1.5rem-1px)] bg-ink-900/95 p-4 backdrop-blur sm:p-5">
         @csrf
@@ -63,9 +63,9 @@
 
         <div class="mt-4 flex flex-wrap items-center gap-2 text-[11px] text-mist-500">
             <span class="uppercase tracking-wider">Например:</span>
-            <button type="button" @click="pick('Dendi')" class="rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1 font-medium text-mist-300 transition hover:border-radar-500/30 hover:text-radar-200">Dendi</button>
-            <button type="button" @click="pick('70388657')" class="rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1 font-mono font-medium text-mist-300 transition hover:border-radar-500/30 hover:text-radar-200">70388657</button>
-            <button type="button" @click="pick('https://steamcommunity.com/profiles/76561198030654385')" class="rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1 font-medium text-mist-300 transition hover:border-radar-500/30 hover:text-radar-200">Ссылка на Steam</button>
+            <button type="button" @click="pick('Dendi')" class="rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1 font-medium text-mist-300 transition hover:border-gold-500/30 hover:text-gold-200">Dendi</button>
+            <button type="button" @click="pick('70388657')" class="rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1 font-mono font-medium text-mist-300 transition hover:border-gold-500/30 hover:text-gold-200">70388657</button>
+            <button type="button" @click="pick('https://steamcommunity.com/profiles/76561198030654385')" class="rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1 font-medium text-mist-300 transition hover:border-gold-500/30 hover:text-gold-200">Ссылка на Steam</button>
         </div>
     </form>
 </div>

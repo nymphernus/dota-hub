@@ -108,6 +108,6 @@
         </section>
 
         @if ($matches->hasPages())
-            <div class="mt-4">{{ $matches->links('vendor.pagination.radar') }}</div>
+            <div class="mt-4">{{ $matches->links('vendor.pagination.dotahub') }}</div>
         @endif
 @endsection

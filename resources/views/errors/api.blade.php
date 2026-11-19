@@ -7,7 +7,7 @@
     <div class="relative overflow-hidden">
         <div class="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
             <div class="absolute left-1/2 top-1/3 h-[34rem] w-[34rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-sky-500/[0.08] blur-3xl"></div>
-            <div class="absolute right-[-8rem] bottom-0 h-72 w-72 rounded-full bg-cyan-500/[0.05] blur-3xl"></div>
+            <div class="absolute right-[-8rem] bottom-0 h-72 w-72 rounded-full bg-accent-500/[0.05] blur-3xl"></div>
         </div>
 
         <div class="mx-auto flex min-h-[calc(100vh-8rem)] w-full max-w-3xl flex-col items-center justify-center px-4 py-20 text-center sm:px-6 lg:px-8">

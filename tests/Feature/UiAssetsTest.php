@@ -121,4 +121,27 @@ class UiAssetsTest extends TestCase
         $layout = (string) file_get_contents(resource_path('views/layouts/app.blade.php'));
         $this->assertStringNotContainsString('Проект не аффилирован', $layout);
     }
+
+    public function test_dotabuff_palette_font_and_text_logo_are_applied(): void
+    {
+        $css = (string) file_get_contents(resource_path('css/app.css'));
+        $layout = (string) file_get_contents(resource_path('views/layouts/app.blade.php'));
+
+        $this->assertStringContainsString('--color-ink-900: #0f111a', $css);
+        $this->assertStringContainsString('--color-ink-800: #1b1f2e', $css);
+        $this->assertStringContainsString('--color-gold-400: #e2b02b', $css);
+        $this->assertStringContainsString('--color-accent-400: #3b82f6', $css);
+        $this->assertStringContainsString('--color-mist-200: #e2e8f0', $css);
+        $this->assertStringContainsString("--font-sans: 'Inter'", $css);
+        $this->assertStringContainsString('@apply rounded-lg bg-ink-800;', $css);
+        $this->assertStringContainsString('border-b border-white/[0.06]', $css);
+        $this->assertStringNotContainsString('--color-radar-', $css);
+
+        $this->assertStringContainsString('fonts.googleapis.com/css2?family=Inter', $layout);
+        $this->assertStringContainsString('<span class="text-gold-400">D</span>otaHub', $layout);
+        $this->assertStringContainsString('content="#0f111a"', $layout);
+        $this->assertStringNotContainsString('radar', $layout);
+        $this->assertStringNotContainsString('circle cx="12" cy="12" r="8.25"', $layout);
+        $this->assertStringContainsString("<title>@yield('title', 'DotaHub')</title>", $layout);
+    }
 }

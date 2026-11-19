@@ -10,8 +10,8 @@
 @section('content')
     <section class="relative flex min-h-[calc(100vh-4rem)] flex-col justify-center overflow-hidden">
         <div class="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
-            <div class="absolute left-1/2 top-1/2 h-[42rem] w-[42rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-radar-500/[0.10] blur-3xl"></div>
-            <div class="absolute right-[-8rem] top-24 h-80 w-80 rounded-full bg-cyan-500/[0.07] blur-3xl"></div>
+            <div class="absolute left-1/2 top-1/2 h-[42rem] w-[42rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gold-500/[0.10] blur-3xl"></div>
+            <div class="absolute right-[-8rem] top-24 h-80 w-80 rounded-full bg-accent-500/[0.07] blur-3xl"></div>
             <div class="absolute bottom-0 left-[-10rem] h-72 w-72 rounded-full bg-dota-500/[0.05] blur-3xl"></div>
         </div>
 
@@ -20,14 +20,14 @@
                 <section class="card overflow-hidden p-5 sm:p-6">
                     <div class="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
                         <a href="{{ route('dota.player', ['accountId' => $dashboard['account_id']]) }}" class="group flex min-w-0 items-center gap-4">
-                            <span class="h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-ink-800 ring-1 ring-white/10 transition group-hover:ring-radar-500/40">
+                            <span class="h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-ink-800 ring-1 ring-white/10 transition group-hover:ring-gold-500/40">
                                 @if (! empty($dashboard['avatar']))
                                     <img src="{{ $dashboard['avatar'] }}" alt="{{ $dashboard['nickname'] }}" class="h-full w-full object-cover">
                                 @endif
                             </span>
                             <span class="min-w-0">
                                 <span class="block text-[11px] font-semibold uppercase tracking-[0.18em] text-mist-500">Дашборд</span>
-                                <span class="mt-1 block truncate text-2xl font-black text-white transition group-hover:text-radar-200">
+                                <span class="mt-1 block truncate text-2xl font-black text-white transition group-hover:text-gold-200">
                                     С возвращением, {{ $dashboard['nickname'] }}
                                 </span>
                                 <span class="mt-1 block text-xs text-mist-400">
@@ -37,7 +37,7 @@
                         </a>
 
                         <div class="grid min-w-[220px] grid-cols-2 gap-2">
-                            <div class="rounded-2xl border border-white/[0.08] bg-white/[0.03] px-4 py-3">
+                            <div class="rounded-lg bg-white/[0.03] px-4 py-3">
                                 <p class="label">MMR</p>
                                 <p class="mt-1 text-xl font-black text-white">
                                     {{ $dashboard['mmr_estimate'] !== null ? number_format((int) $dashboard['mmr_estimate'], 0, '.', ' ') : '—' }}
@@ -46,9 +46,9 @@
                                     {{ $dashboard['mmr_is_estimated'] ? 'Оценка' : 'Открыт' }}
                                 </p>
                             </div>
-                            <a href="{{ route('dota.player', ['accountId' => $dashboard['account_id']]) }}" class="group grid place-items-center rounded-2xl border border-radar-500/20 bg-radar-500/10 px-4 py-3 text-center transition hover:border-radar-500/40 hover:bg-radar-500/[0.16]">
-                                <span class="text-xs font-bold text-radar-200">Мой профиль</span>
-                                <span class="mt-1 text-[10px] text-mist-400 transition group-hover:text-radar-100">Открыть →</span>
+                            <a href="{{ route('dota.player', ['accountId' => $dashboard['account_id']]) }}" class="group grid place-items-center rounded-lg bg-gold-500/10 px-4 py-3 text-center transition hover:bg-gold-500/[0.16]">
+                                <span class="text-xs font-bold text-gold-200">Мой профиль</span>
+                                <span class="mt-1 text-[10px] text-mist-400 transition group-hover:text-gold-100">Открыть →</span>
                             </a>
                         </div>
                     </div>
@@ -56,7 +56,7 @@
                     <div class="mt-6">
                         <div class="flex flex-wrap items-center justify-between gap-2">
                             <h2 class="text-base font-bold text-white">Последние матчи</h2>
-                            <a href="{{ route('dota.player', ['accountId' => $dashboard['account_id']]) }}" class="text-[11px] font-semibold text-mist-400 transition hover:text-radar-200">
+                            <a href="{{ route('dota.player', ['accountId' => $dashboard['account_id']]) }}" class="text-[11px] font-semibold text-mist-400 transition hover:text-gold-200">
                                 Все матчи
                             </a>
                         </div>
@@ -78,9 +78,9 @@
                                             : route('dota.player', ['accountId' => $dashboard['account_id']]);
                                     @endphp
                                     <a href="{{ $matchUrl }}" @class([
-                                        'group rounded-2xl border p-3 transition',
-                                        'border-emerald-500/20 bg-emerald-500/[0.08] hover:border-emerald-500/35 hover:bg-emerald-500/[0.12]' => $match['win'] ?? false,
-                                        'border-rose-500/20 bg-rose-500/[0.08] hover:border-rose-500/35 hover:bg-rose-500/[0.12]' => ! ($match['win'] ?? false),
+                                        'group rounded-lg p-3 transition',
+                                        'bg-emerald-500/[0.08] hover:bg-emerald-500/[0.14]' => $match['win'] ?? false,
+                                        'bg-rose-500/[0.08] hover:bg-rose-500/[0.14]' => ! ($match['win'] ?? false),
                                     ])>
                                         <div class="flex items-center gap-3">
                                             <span class="h-10 w-[70px] shrink-0 overflow-hidden rounded-lg bg-ink-800 ring-1 ring-white/10">
@@ -116,7 +116,7 @@
             </div>
         @else
             <div class="mx-auto w-full max-w-4xl px-4 pb-8 pt-12 text-center sm:px-6 lg:px-8">
-                <h1 class="bg-gradient-to-r from-white via-radar-200 to-cyan-200 bg-clip-text text-5xl font-black tracking-tight text-transparent sm:text-7xl">
+                <h1 class="bg-gradient-to-r from-white via-gold-200 to-accent-300 bg-clip-text text-5xl font-black tracking-tight text-transparent sm:text-7xl">
                     DotaHub
                 </h1>
 

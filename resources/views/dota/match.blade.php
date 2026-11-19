@@ -63,7 +63,7 @@
         </nav>
 
         <section class="card relative overflow-hidden">
-            <div class="absolute inset-x-0 top-0 h-32 bg-gradient-to-r {{ $radiantWin ? 'from-emerald-500/25 via-ink-800/40' : 'from-rose-500/25 via-ink-800/40' }} to-cyan-500/10" aria-hidden="true"></div>
+            <div class="absolute inset-x-0 top-0 h-32 bg-gradient-to-r {{ $radiantWin ? 'from-emerald-500/25 via-ink-800/40' : 'from-rose-500/25 via-ink-800/40' }} to-accent-500/10" aria-hidden="true"></div>
             <div class="absolute -right-16 -top-24 h-64 w-64 rounded-full {{ $radiantWin ? 'bg-emerald-500/10' : 'bg-rose-500/10' }} blur-3xl" aria-hidden="true"></div>
 
             <div class="relative px-4 pb-6 pt-14 sm:px-6 lg:px-8">
@@ -138,7 +138,7 @@
                             $picks = $teamEntries->where('is_pick', true)->values();
                             $bans = $teamEntries->where('is_pick', false)->values();
                         @endphp
-                        <div class="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                        <div class="rounded-xl bg-white/[0.03] p-3">
                             <p class="text-[11px] font-black uppercase tracking-[0.14em] {{ $teamId === 0 ? 'text-emerald-300' : 'text-rose-300' }}">{{ $teamLabel }}</p>
 
                             @if ($picks->isNotEmpty())
@@ -146,7 +146,7 @@
                                     <p class="text-[10px] uppercase tracking-[0.14em] text-mist-500">Пики</p>
                                     <div class="mt-2 flex flex-wrap gap-2">
                                         @foreach ($picks as $entry)
-                                            <div class="flex items-center gap-2 rounded-lg border border-white/[0.06] bg-ink-900/60 px-2 py-1.5" title="{{ $entry['hero_name'] }}">
+                                            <div class="flex items-center gap-2 rounded-lg bg-ink-900/60 px-2 py-1.5" title="{{ $entry['hero_name'] }}">
                                                 <span class="h-7 w-12 overflow-hidden rounded bg-ink-800 ring-1 ring-white/10">
                                                     @if (! empty($entry['hero_image']))
                                                         <img src="{{ $entry['hero_image'] }}" alt="{{ $entry['hero_name'] }}" class="h-full w-full object-cover" loading="lazy">
@@ -272,7 +272,7 @@
                                                             <span class="rounded bg-amber-500/10 px-1 py-0.5 text-[8px] font-bold uppercase tracking-wide text-amber-300" title="Ранг">{{ $player['rank_label'] }}</span>
                                                         @endif
                                                         @if ($accountId > 0)
-                                                            <a href="{{ route('dota.player', ['accountId' => $accountId]) }}" class="truncate font-semibold text-radar-300 transition hover:text-radar-200 hover:underline">
+                                                            <a href="{{ route('dota.player', ['accountId' => $accountId]) }}" class="truncate font-semibold text-gold-300 transition hover:text-gold-200 hover:underline">
                                                                 @if ($partyId && isset($partyLabels[(int) $partyId]))
                                                                     <span class="rounded bg-blue-600 px-1 text-xs font-bold leading-none text-white" title="Party {{ $partyId }}">{{ $partyLabels[(int) $partyId] }}</span>
                                                                 @endif
@@ -300,7 +300,7 @@
                                                 </span>
                                                 <p class="mt-1 text-[10px] text-mist-500">{{ $roleName }}</p>
                                                 @if (($player['impact'] ?? null) !== null)
-                                                    <p class="mt-0.5 text-[10px] font-semibold text-cyan-300/80" title="STRATZ impact">IMP {{ number_format($player['impact'], 1, '.', '') }}</p>
+                                                    <p class="mt-0.5 text-[10px] font-semibold text-accent-300/80" title="STRATZ impact">IMP {{ number_format($player['impact'], 1, '.', '') }}</p>
                                                 @endif
                                             @else
                                                 <span class="text-[11px] text-mist-500">—</span>
@@ -327,7 +327,7 @@
                                             @if ($player['purchases'] !== [])
                                                 <button
                                                     type="button"
-                                                    class="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-[11px] font-semibold text-mist-300 transition hover:border-radar-500/30 hover:bg-radar-500/10 hover:text-radar-200"
+                                                    class="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-[11px] font-semibold text-mist-300 transition hover:border-gold-500/30 hover:bg-gold-500/10 hover:text-gold-200"
                                                     @click="openPlayer = openPlayer === {{ $playerIndex }} ? null : {{ $playerIndex }}"
                                                     :aria-expanded="(openPlayer === {{ $playerIndex }}).toString()"
                                                     aria-controls="purchases-{{ $teamKey }}-{{ $playerIndex }}"
@@ -345,14 +345,14 @@
                                     @if ($player['purchases'] !== [])
                                         <tr id="purchases-{{ $teamKey }}-{{ $playerIndex }}" x-show="openPlayer === {{ $playerIndex }}" x-cloak x-transition.opacity.duration.150ms class="bg-ink-950/60">
                                             <td colspan="{{ $columnCount }}" class="px-4 pb-4 pt-1 sm:px-5">
-                                                <div class="rounded-xl border border-white/[0.06] bg-ink-900/70 p-3">
+                                                <div class="rounded-lg bg-ink-900/70 p-3">
                                                     <div class="flex flex-wrap items-center justify-between gap-2">
                                                         <p class="label">Закуп · {{ $player['hero_name'] }}</p>
                                                         <p class="text-[10px] text-mist-500">{{ $player['purchase_log_count'] }} покупок · показаны ключевые предметы</p>
                                                     </div>
                                                     <div class="mt-3 flex flex-wrap gap-2">
                                                         @foreach ($player['purchases'] as $item)
-                                                            <div class="flex items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.025] p-2 pr-3" title="{{ $item['name'] }} · {{ $item['time_label'] }}">
+                                                            <div class="flex items-center gap-2 rounded-lg bg-white/[0.03] p-2 pr-3" title="{{ $item['name'] }} · {{ $item['time_label'] }}">
                                                                 <div class="grid h-8 w-10 shrink-0 place-items-center overflow-hidden rounded-md bg-ink-800 ring-1 ring-white/10">
                                                                     <img src="{{ $item['image'] }}" alt="" class="h-full w-full object-contain" loading="lazy" referrerpolicy="no-referrer">
                                                                 </div>
@@ -380,11 +380,11 @@
             </section>
         @endforeach
 
-        <div class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/[0.06] bg-ink-900/60 px-4 py-3 text-[11px] text-mist-500">
+        <div class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-ink-900/60 px-4 py-3 text-[11px] text-mist-500">
             <span>Данные OpenDota · кэш матча 1 час</span>
             <div class="flex items-center gap-3">
                 @if ($profilePlayerId)
-                    <a href="{{ route('dota.player', ['accountId' => $profilePlayerId]) }}" class="inline-flex items-center gap-1 font-semibold text-radar-300 transition hover:text-radar-200">
+                    <a href="{{ route('dota.player', ['accountId' => $profilePlayerId]) }}" class="inline-flex items-center gap-1 font-semibold text-gold-300 transition hover:text-gold-200">
                         <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 5l-7 7 7 7" stroke-linecap="round" stroke-linejoin="round" /></svg>
                         Вернуться к профилю
                     </a>

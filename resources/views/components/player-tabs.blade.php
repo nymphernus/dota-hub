@@ -9,7 +9,7 @@
     ];
 @endphp
 
-<div class="mt-4 flex items-center gap-1 overflow-x-auto rounded-2xl border border-white/[0.06] bg-ink-900/60 p-1.5" role="tablist" aria-label="Разделы профиля">
+<div class="mt-4 flex items-center gap-1 overflow-x-auto rounded-lg bg-ink-900/60 p-1.5" role="tablist" aria-label="Разделы профиля">
     @foreach ($tabs as $tab)
         <a
             id="tab-{{ $tab['key'] }}"

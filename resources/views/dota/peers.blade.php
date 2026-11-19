@@ -34,7 +34,7 @@
                                                 @endif
                                             </span>
                                             <span class="min-w-0">
-                                                <span class="flex items-center gap-1.5 truncate text-[13px] font-semibold text-white transition group-hover:text-radar-200">
+                                                <span class="flex items-center gap-1.5 truncate text-[13px] font-semibold text-white transition group-hover:text-gold-200">
                                                     {{ $peer['nickname'] }}
                                                     @if ($peer['is_private'] ?? false)
                                                         <svg class="h-3.5 w-3.5 shrink-0 text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-label="Скрытый профиль" title="Скрытый профиль"><rect x="5" y="10" width="14" height="10" rx="2" /><path d="M8 10V7a4 4 0 018 0v3" stroke-linecap="round" /></svg>

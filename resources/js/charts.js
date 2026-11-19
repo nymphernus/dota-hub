@@ -29,7 +29,7 @@ if (payload) {
     if (canvas) {
         const parent = canvas.parentElement;
         const tooltipElement = document.createElement('div');
-        tooltipElement.className = 'radar-hero-tooltip pointer-events-none absolute z-[9999] hidden w-52 rounded-lg bg-ink-950/95 p-2.5 shadow-2xl backdrop-blur';
+        tooltipElement.className = 'dotahub-hero-tooltip pointer-events-none absolute z-[9999] hidden w-52 rounded-lg bg-ink-950/95 p-2.5 shadow-2xl backdrop-blur';
         parent.appendChild(tooltipElement);
 
         const imageCache = new Map();

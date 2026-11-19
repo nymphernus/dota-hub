@@ -45,11 +45,11 @@
         </nav>
 
         <section class="card relative overflow-hidden">
-            <div class="absolute inset-x-0 top-0 h-40 bg-gradient-to-r from-dota-500/20 via-ink-800/30 to-radar-500/10" aria-hidden="true"></div>
+            <div class="absolute inset-x-0 top-0 h-40 bg-gradient-to-r from-dota-500/20 via-ink-800/30 to-gold-500/10" aria-hidden="true"></div>
             @if ($hero['image'])
                 <img src="{{ $hero['image'] }}" alt="" class="pointer-events-none absolute -right-10 -top-8 h-56 w-auto scale-110 object-cover opacity-20 blur-[1px]" aria-hidden="true">
             @endif
-            <div class="absolute -left-16 -top-24 h-64 w-64 rounded-full bg-radar-500/10 blur-3xl" aria-hidden="true"></div>
+            <div class="absolute -left-16 -top-24 h-64 w-64 rounded-full bg-gold-500/10 blur-3xl" aria-hidden="true"></div>
 
             <div class="relative px-4 pb-5 pt-10 sm:px-6 lg:px-8">
                 <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
@@ -127,7 +127,7 @@
                         Перцентили OpenDota по последним матчам. Чем правее маркер, тем сильнее показатель относительно других игроков.
                     </p>
                 </div>
-                <span class="badge border-radar-500/25 bg-radar-500/10 text-radar-300">Dota Plus style</span>
+                <span class="badge border-gold-500/25 bg-gold-500/10 text-gold-300">Dota Plus style</span>
             </div>
 
             @if (collect($benchmarks)->every(fn (array $benchmark) => ! $benchmark['available']))
@@ -216,7 +216,7 @@
             @if ($matches === [])
                 <div class="p-10 text-center">
                     <p class="text-sm text-mist-400">У игрока нет публичных матчей на этом герое.</p>
-                    <a href="{{ $backUrl }}" class="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-radar-300 transition hover:text-radar-200">
+                    <a href="{{ $backUrl }}" class="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-gold-300 transition hover:text-gold-200">
                         Вернуться в профиль
                         <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke-linecap="round" /></svg>
                     </a>
@@ -244,7 +244,7 @@
                                 <tr
                                     @class([
                                         'transition',
-                                        'cursor-pointer hover:ring-1 hover:ring-inset hover:ring-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-radar-400' => $matchUrl,
+                                        'cursor-pointer hover:ring-1 hover:ring-inset hover:ring-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-gold-400' => $matchUrl,
                                         'bg-emerald-500/[0.055] hover:bg-emerald-500/[0.10]' => $match['win'],
                                         'bg-rose-500/[0.055] hover:bg-rose-500/[0.10]' => ! $match['win'],
                                     ])

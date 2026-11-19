@@ -70,10 +70,10 @@
                                 <tr class="transition hover:bg-white/[0.03]">
                                     <td class="px-4 py-2.5 sm:px-5">
                                         <a :href="heroUrl(hero.hero_id)" class="group flex items-center gap-3" :aria-label="'Статистика героя ' + hero.localized_name">
-                                            <span class="h-9 w-16 shrink-0 overflow-hidden rounded-md bg-ink-800 ring-1 ring-white/10 transition group-hover:ring-radar-400/50">
+                                            <span class="h-9 w-16 shrink-0 overflow-hidden rounded-md bg-ink-800 ring-1 ring-white/10 transition group-hover:ring-gold-400/50">
                                                 <img :src="hero.image" :alt="hero.localized_name" class="h-full w-full object-cover" loading="lazy" x-show="hero.image">
                                             </span>
-                                            <span class="truncate text-[13px] font-semibold text-white transition group-hover:text-radar-200" x-text="hero.localized_name"></span>
+                                            <span class="truncate text-[13px] font-semibold text-white transition group-hover:text-gold-200" x-text="hero.localized_name"></span>
                                         </a>
                                     </td>
                                     <td class="px-4 py-2.5 font-mono text-[13px] tabular-nums text-mist-300" x-text="hero.games"></td>
