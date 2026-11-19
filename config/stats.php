@@ -14,7 +14,7 @@ return [
     */
 
     'cache' => [
-        'dota_profile' => (int) env('OPENDOTA_CACHE_TTL', 1800),
+        'dota_profile' => (int) env('OPENDOTA_CACHE_TTL', 3600),
         'dota_player_hero' => (int) env('OPENDOTA_PLAYER_HERO_CACHE_TTL', 1800),
         'dota_benchmarks' => (int) env('OPENDOTA_BENCHMARKS_CACHE_TTL', 86400),
         'dota_match' => (int) env('OPENDOTA_MATCH_CACHE_TTL', 3600),

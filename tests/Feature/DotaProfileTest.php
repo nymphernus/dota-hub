@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\PlayerProfile;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -55,7 +57,7 @@ class DotaProfileTest extends TestCase
         });
 
         Http::assertSentCount(10);
-        $this->assertTrue(Cache::has('opendota:player:v3:'.self::ACCOUNT_ID));
+        $this->assertDatabaseHas('player_profiles', ['account_id' => self::ACCOUNT_ID]);
         $response->assertSee(
             route('dota.match', ['matchId' => 9000000001, 'player_id' => self::ACCOUNT_ID]),
             false
@@ -97,7 +99,23 @@ class DotaProfileTest extends TestCase
         );
     }
 
-    public function test_second_visit_is_served_from_cache(): void
+    public function test_profile_is_persisted_in_the_database(): void
+    {
+        $this->fakeOpenDota();
+
+        $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]))->assertOk();
+
+        $this->assertDatabaseHas('player_profiles', [
+            'account_id' => self::ACCOUNT_ID,
+            'nickname' => 'Dendi',
+        ]);
+        $record = PlayerProfile::find(self::ACCOUNT_ID);
+        $this->assertNotNull($record);
+        $this->assertSame('Dendi', $record->data['nickname']);
+        $this->assertSame(120, $record->data['wins']);
+    }
+
+    public function test_second_visit_is_served_from_the_database(): void
     {
         $this->fakeOpenDota();
 
@@ -107,6 +125,27 @@ class DotaProfileTest extends TestCase
         $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]))->assertOk();
 
         $this->assertSame($sentAfterFirstVisit, count(Http::recorded()));
+    }
+
+    public function test_stale_database_profile_is_shown_when_opendota_is_unavailable(): void
+    {
+        $this->fakeOpenDota();
+        $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]))->assertOk();
+
+        PlayerProfile::whereKey(self::ACCOUNT_ID)->update([
+            'updated_at' => CarbonImmutable::now()->subHours(2),
+        ]);
+        Cache::flush();
+        Http::fake([
+            'api.opendota.com/api/*' => Http::failedConnection('Connection timed out'),
+        ]);
+
+        $response = $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]));
+
+        $response->assertOk();
+        $response->assertSee('Dendi');
+        $response->assertSee('Данные из кэша (Офлайн)');
+        $response->assertViewHas('player', fn (array $player) => ($player['is_offline_cache'] ?? false) === true);
     }
 
     public function test_refresh_forgets_the_profile_cache_and_rebuilds_it(): void
@@ -121,6 +160,7 @@ class DotaProfileTest extends TestCase
             ->assertSessionHas('status');
 
         $this->assertFalse(Cache::has('opendota:player:v3:'.self::ACCOUNT_ID));
+        $this->assertDatabaseMissing('player_profiles', ['account_id' => self::ACCOUNT_ID]);
 
         $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]))->assertOk();
 

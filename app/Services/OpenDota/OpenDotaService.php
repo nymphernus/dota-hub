@@ -6,6 +6,7 @@ use App\Exceptions\ApiUnavailableException;
 use App\Exceptions\ExternalApiException;
 use App\Exceptions\MatchNotFoundException;
 use App\Exceptions\PlayerNotFoundException;
+use App\Models\PlayerProfile;
 use App\Services\Stratz\StratzService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
@@ -14,9 +15,9 @@ use Illuminate\Support\Facades\Log;
 /**
  * Builds the view models used by the Dota 2 profile page.
  *
- * Each player is cached as a single aggregate entry, so rendering a profile
- * normally costs zero upstream requests. The "refresh" action forgets exactly
- * one key and rebuilds it on the next request.
+ * Full player aggregates are stored in PostgreSQL so a profile remains
+ * available even when Redis is cold or OpenDota is down. Small derived lookups
+ * (match summaries, hero metadata) stay in the regular Laravel cache.
  */
 class OpenDotaService
 {
@@ -98,17 +99,76 @@ class OpenDotaService
     ) {}
 
     /**
-     * Full cached player profile.
+     * Full player profile, persisted in PostgreSQL for offline access.
+     *
+     * Fresh database rows are returned immediately. Stale rows are kept as a
+     * fallback: if OpenDota becomes unreachable the last known snapshot is
+     * rendered with an explicit offline marker instead of a 502 page.
      *
      * @return array<string, mixed>
      */
     public function player(int $accountId): array
     {
-        $ttl = (int) config('stats.cache.dota_profile', 1800);
+        $ttl = (int) config('stats.cache.dota_profile', 3600);
+        $record = PlayerProfile::find($accountId);
 
-        return Cache::remember($this->cacheKey($accountId), $ttl, function () use ($accountId, $ttl) {
-            return $this->fetchPlayer($accountId, $ttl);
-        });
+        if ($record !== null && $this->isFresh($record, $ttl)) {
+            return $this->profileFromRecord($record, $ttl);
+        }
+
+        try {
+            $profile = $this->fetchPlayer($accountId, $ttl);
+            $this->storeProfile($accountId, $profile);
+
+            return $profile;
+        } catch (ApiUnavailableException $exception) {
+            if ($record === null) {
+                throw $exception;
+            }
+
+            $profile = $this->profileFromRecord($record, $ttl);
+            $profile['is_offline_cache'] = true;
+
+            return $profile;
+        }
+    }
+
+    private function isFresh(PlayerProfile $record, int $ttl): bool
+    {
+        $updatedAt = $record->updated_at;
+
+        return $updatedAt !== null
+            && $updatedAt->greaterThan(CarbonImmutable::now()->subSeconds(max($ttl, 1)));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function profileFromRecord(PlayerProfile $record, int $ttl): array
+    {
+        $profile = is_array($record->data) ? $record->data : [];
+        $profile['cached_at'] = $record->updated_at?->toIso8601String()
+            ?? ($profile['cached_at'] ?? CarbonImmutable::now()->toIso8601String());
+        $profile['cache_ttl'] = $ttl;
+        $profile['is_offline_cache'] = false;
+
+        return $profile;
+    }
+
+    /**
+     * @param  array<string, mixed>  $profile
+     */
+    private function storeProfile(int $accountId, array $profile): void
+    {
+        PlayerProfile::updateOrCreate(
+            ['account_id' => $accountId],
+            [
+                'nickname' => $profile['nickname'] ?? null,
+                'avatar' => $profile['avatar'] ?? null,
+                'data' => $profile,
+                'updated_at' => CarbonImmutable::now(),
+            ]
+        );
     }
 
     /**
@@ -301,6 +361,7 @@ class OpenDotaService
 
     public function forget(int $accountId): void
     {
+        PlayerProfile::whereKey($accountId)->delete();
         Cache::forget($this->cacheKey($accountId));
         Cache::forget($this->playerHeaderCacheKey($accountId));
     }

@@ -67,6 +67,9 @@
                                 @if ($player['is_private'])
                                     <span class="badge border-amber-500/25 bg-amber-500/10 text-amber-300">Данные скрыты</span>
                                 @endif
+                                @if ($player['is_offline_cache'] ?? false)
+                                    <span class="badge border-sky-500/25 bg-sky-500/10 text-sky-300">Данные из кэша (Офлайн)</span>
+                                @endif
                                 @if ($player['country_code'])
                                     <span class="badge border-white/10 bg-white/5 text-mist-300">{{ mb_strtoupper($player['country_code']) }}</span>
                                 @endif
