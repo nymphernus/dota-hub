@@ -202,6 +202,37 @@ class DotaProfileTest extends TestCase
         $this->assertSame($sentAfterFirstVisit, count(Http::recorded()));
     }
 
+    public function test_fresh_database_profile_makes_no_external_requests_with_cold_cache(): void
+    {
+        $this->fakeOpenDota();
+        $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]))->assertOk();
+
+        // Keep the database row fresh but drop every Redis entry so the second
+        // visit cannot lean on cached hero/item/match metadata.
+        Cache::flush();
+        Http::fake();
+
+        $response = $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]));
+
+        $response->assertOk();
+        $response->assertViewHas('player', fn (array $player) => ($player['served_from_fresh_db'] ?? false) === true);
+        Http::assertNothingSent();
+    }
+
+    public function test_fresh_database_match_list_makes_no_external_requests_with_cold_cache(): void
+    {
+        $this->fakeOpenDota();
+        $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]))->assertOk();
+
+        Cache::flush();
+        Http::fake();
+
+        $response = $this->get(route('dota.player.matches', ['accountId' => self::ACCOUNT_ID]));
+
+        $response->assertOk();
+        Http::assertNothingSent();
+    }
+
     public function test_stale_database_profile_is_shown_when_opendota_is_unavailable(): void
     {
         $this->fakeOpenDota();

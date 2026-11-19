@@ -138,7 +138,7 @@ class OpenDotaService
         $record = PlayerProfile::find($accountId);
 
         if ($record !== null && $this->isFresh($record, $ttl)) {
-            return $this->profileFromRecord($record, $ttl);
+            return $this->profileFromRecord($record, $ttl, false);
         }
 
         try {
@@ -152,8 +152,8 @@ class OpenDotaService
                 throw $exception;
             }
 
-            $profile = $this->profileFromRecord($record, $ttl);
-            $profile['is_offline_cache'] = true;
+            $profile = $this->profileFromRecord($record, $ttl, true);
+            $profile['served_from_fresh_db'] = false;
 
             return $profile;
         }
@@ -171,13 +171,14 @@ class OpenDotaService
     /**
      * @return array<string, mixed>
      */
-    private function profileFromRecord(PlayerProfile $record, int $ttl): array
+    private function profileFromRecord(PlayerProfile $record, int $ttl, bool $isOffline = false): array
     {
         $profile = is_array($record->data) ? $record->data : [];
         $profile['cached_at'] = $record->updated_at?->toIso8601String()
             ?? ($profile['cached_at'] ?? CarbonImmutable::now()->toIso8601String());
         $profile['cache_ttl'] = $ttl;
-        $profile['is_offline_cache'] = false;
+        $profile['is_offline_cache'] = $isOffline;
+        $profile['served_from_fresh_db'] = ! $isOffline;
         $profile['name_history'] = $this->nameHistory((int) $record->account_id);
 
         return $profile;
@@ -698,10 +699,11 @@ class OpenDotaService
     public function playerMatches(int $accountId, int $page, int $perPage, array $filters = []): array
     {
         $profile = $this->player($accountId);
-        $heroes = $this->heroStats();
+        $servedFromFreshDb = (bool) ($profile['served_from_fresh_db'] ?? false);
         $rows = $profile['match_history'] ?? [];
 
-        if ($rows === []) {
+        if ($rows === [] && ! $servedFromFreshDb) {
+            $heroes = $this->heroStats();
             $rows = $this->transformHistory(
                 $this->optionalGet('players/'.$accountId.'/matches', [
                     'limit' => 500,
@@ -788,7 +790,7 @@ class OpenDotaService
         $total = count($rows);
         $offset = ($page - 1) * $perPage;
         $pageRows = array_slice($rows, $offset, $perPage);
-        $pageRows = $this->enrichMatches($pageRows, $accountId, count($pageRows));
+        $pageRows = $this->enrichMatches($pageRows, $accountId, count($pageRows), ! $servedFromFreshDb);
 
         return [
             'player' => $profile,
@@ -1609,7 +1611,7 @@ class OpenDotaService
      * @param  array<int, array<string, mixed>>  $matches
      * @return array<int, array<string, mixed>>
      */
-    private function enrichMatches(array $matches, int $accountId, int $limit): array
+    private function enrichMatches(array $matches, int $accountId, int $limit, bool $allowExternalFetch = true): array
     {
         $limit = min($limit, count($matches));
 
@@ -1620,12 +1622,14 @@ class OpenDotaService
         $itemsById = [];
         $itemStats = [];
 
-        try {
-            $itemStats = $this->itemStats();
-        } catch (ExternalApiException $exception) {
-            Log::info('OpenDota item metadata failed for profile', [
-                'message' => $exception->getMessage(),
-            ]);
+        if ($allowExternalFetch) {
+            try {
+                $itemStats = $this->itemStats();
+            } catch (ExternalApiException $exception) {
+                Log::info('OpenDota item metadata failed for profile', [
+                    'message' => $exception->getMessage(),
+                ]);
+            }
         }
 
         foreach ($itemStats as $item) {
@@ -1640,7 +1644,7 @@ class OpenDotaService
 
         for ($index = 0; $index < $limit; $index++) {
             $matchId = (int) ($matches[$index]['match_id'] ?? 0);
-            $details = $this->matchPlayerSummary($matchId, $accountId, $ttl);
+            $details = $this->matchPlayerSummary($matchId, $accountId, $ttl, $allowExternalFetch);
 
             if ($details === null) {
                 continue;
@@ -1690,7 +1694,7 @@ class OpenDotaService
     /**
      * @return array{level: int, net_worth: int, gold_per_min: int, xp_per_min: int, item_0: int, item_1: int, item_2: int, item_3: int, item_4: int, item_5: int}|null
      */
-    private function matchPlayerSummary(int $matchId, int $accountId, int $ttl): ?array
+    private function matchPlayerSummary(int $matchId, int $accountId, int $ttl, bool $allowExternalFetch = true): ?array
     {
         if ($matchId <= 0) {
             return null;
@@ -1701,6 +1705,10 @@ class OpenDotaService
 
         if (is_array($cached)) {
             return $cached;
+        }
+
+        if (! $allowExternalFetch) {
+            return null;
         }
 
         try {
@@ -1751,7 +1759,7 @@ class OpenDotaService
      * @param  array<int, array<string, mixed>>  $matches
      * @return array<int, array<string, mixed>>
      */
-    private function enrichHeroMatchSample(array $matches, int $accountId): array
+    private function enrichHeroMatchSample(array $matches, int $accountId, bool $allowExternalFetch = true): array
     {
         $limit = min(self::RECENT_MATCH_DETAILS, count($matches));
 
@@ -1770,6 +1778,7 @@ class OpenDotaService
                 (int) ($matches[$index]['match_id'] ?? 0),
                 $accountId,
                 $ttl,
+                $allowExternalFetch,
             );
 
             if ($details === null) {
