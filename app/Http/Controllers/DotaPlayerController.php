@@ -23,7 +23,11 @@ class DotaPlayerController extends Controller
         '#a78bfa',
         '#fbbf24',
         '#fb7185',
-        '#64748b',
+        '#f472b6',
+        '#60a5fa',
+        '#facc15',
+        '#4ade80',
+        '#94a3b8',
     ];
 
     public function show(int $accountId, OpenDotaService $openDota, SteamService $steam): View|Response
@@ -67,9 +71,11 @@ class DotaPlayerController extends Controller
         return view('dota.player', [
             'player' => $player,
             'winrate' => $player['winrate'],
-            'recentMatches' => array_slice($player['matches'], 0, 10),
+            'recentMatches' => array_slice($player['matches'], 0, 25),
             'activityHeatmap' => $this->activityHeatmap($history),
             'heroUsage' => $this->heroUsage(array_slice($history, 0, 25)),
+            'steamBans' => $steam->bans($steamId),
+            'rankStats' => $this->rankStats($history),
             'steamProfile' => $steam->summary($steamId),
         ]);
     }
@@ -138,7 +144,7 @@ class DotaPlayerController extends Controller
     }
 
     /**
-     * Hero distribution across the last 25 matches: top five plus “Другие”.
+     * Every hero played in the last 25 matches — no "Другие" bucket.
      *
      * @param  array<int, array<string, mixed>>  $matches
      * @return array<int, array<string, mixed>>
@@ -169,45 +175,37 @@ class DotaPlayerController extends Controller
             }
         }
 
-        if ($aggregated === []) {
-            return [];
+        $rows = array_values($aggregated);
+        usort($rows, fn (array $a, array $b) => [$b['games'], $b['wins']] <=> [$a['games'], $a['wins']]);
+
+        $totalGames = array_sum(array_column($rows, 'games'));
+
+        foreach ($rows as $index => &$hero) {
+            $hero['winrate'] = round($hero['wins'] / max($hero['games'], 1) * 100, 1);
+            $hero['share'] = round($hero['games'] / max($totalGames, 1) * 100, 1);
+            $hero['color'] = self::HERO_USAGE_COLORS[$index % count(self::HERO_USAGE_COLORS)];
         }
-
-        $aggregated = array_values($aggregated);
-        usort($aggregated, fn (array $a, array $b) => [$b['games'], $b['wins']] <=> [$a['games'], $a['wins']]);
-
-        $totalGames = array_sum(array_column($aggregated, 'games'));
-        $top = array_slice($aggregated, 0, 5);
-        $otherGames = max(0, $totalGames - array_sum(array_column($top, 'games')));
-        $otherWins = max(0, array_sum(array_column($aggregated, 'wins')) - array_sum(array_column($top, 'wins')));
-        $rows = [];
-
-        foreach ($top as $index => $hero) {
-            $rows[] = [
-                'hero_id' => $hero['hero_id'],
-                'name' => $hero['name'],
-                'image' => $hero['image'],
-                'games' => $hero['games'],
-                'wins' => $hero['wins'],
-                'winrate' => round($hero['wins'] / max($hero['games'], 1) * 100, 1),
-                'share' => round($hero['games'] / max($totalGames, 1) * 100, 1),
-                'color' => self::HERO_USAGE_COLORS[$index % 5],
-            ];
-        }
-
-        if ($otherGames > 0) {
-            $rows[] = [
-                'hero_id' => null,
-                'name' => 'Другие',
-                'image' => null,
-                'games' => $otherGames,
-                'wins' => $otherWins,
-                'winrate' => round($otherWins / max($otherGames, 1) * 100, 1),
-                'share' => round($otherGames / max($totalGames, 1) * 100, 1),
-                'color' => self::HERO_USAGE_COLORS[5],
-            ];
-        }
+        unset($hero);
 
         return $rows;
+    }
+
+    /**
+     * Ranked/unranked split used by the sidebar rank card.
+     *
+     * @param  array<int, array<string, mixed>>  $matches
+     * @return array{ranked: int, unranked: int, total: int, ranked_share: float}
+     */
+    private function rankStats(array $matches): array
+    {
+        $ranked = count(array_filter($matches, fn (array $match) => (bool) ($match['is_ranked'] ?? false)));
+        $total = count($matches);
+
+        return [
+            'ranked' => $ranked,
+            'unranked' => $total - $ranked,
+            'total' => $total,
+            'ranked_share' => $total > 0 ? round($ranked / $total * 100, 1) : 0.0,
+        ];
     }
 }

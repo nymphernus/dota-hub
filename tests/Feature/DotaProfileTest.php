@@ -56,25 +56,34 @@ class DotaProfileTest extends TestCase
                 && count($player['heroes']) === 2;
         });
 
-        Http::assertSentCount(10);
+        Http::assertSentCount(11);
         $this->assertDatabaseHas('player_profiles', ['account_id' => self::ACCOUNT_ID]);
         $response->assertSee(
             route('dota.match', ['matchId' => 9000000001, 'player_id' => self::ACCOUNT_ID]),
             false
         );
         $response->assertSee(
+            route('dota.player.matches', ['accountId' => self::ACCOUNT_ID]),
+            false
+        );
+        $response->assertSee('Матчи');
+        $response->assertSee('id="tab-account"', false);
+        $response->assertSee('id="tab-matches"', false);
+        $response->assertDontSee('id="tab-peers"', false);
+        $response->assertSee('Товарищи');
+        $response->assertSee('images/dota/ranks/rank_icon_8.png', false);
+        $response->assertSee(
             route('dota.player.hero', ['accountId' => self::ACCOUNT_ID, 'heroId' => 1]),
             false
         );
-        $response->assertSee('id="winrateChart"', false);
         $response->assertSee('id="heroUsageChart"', false);
+        $response->assertDontSee('id="winrateChart"', false);
         $response->assertSee('data-count=', false);
         $response->assertSee('Blink Dagger');
         $response->assertSee('Нетворс');
+        $response->assertSee('90 дней назад');
         $response->assertDontSee('id="recentMatchesChart"', false);
-        $response->assertDontSee('id="tab-matches"', false);
         $response->assertDontSee('panel-matches', false);
-        $response->assertDontSee('Частые тиммейты');
         $response->assertDontSee('Окружение');
         $response->assertSee('Steam API недоступна');
         $response->assertSee('STEAM_API_KEY не настроен');
@@ -88,9 +97,21 @@ class DotaProfileTest extends TestCase
         });
         $response->assertViewHas('heroUsage', function (array $rows) {
             return count($rows) === 6
-                && $rows[5]['name'] === 'Другие'
+                && $rows[0]['name'] === 'Anti-Mage'
+                && ! in_array('Другие', array_column($rows, 'name'), true)
                 && array_sum(array_column($rows, 'games')) === 6;
         });
+        $response->assertViewHas('rankStats', fn (array $stats) => $stats['total'] === 6
+            && $stats['ranked'] === 4
+            && $stats['unranked'] === 2);
+        $response->assertViewHas('player', function (array $player) {
+            $peers = $player['peers'] ?? [];
+
+            return count($peers) === 2
+                && $peers[0]['nickname'] === 'Teammate'
+                && $peers[0]['games'] === 12;
+        });
+        $response->assertViewHas('steamBans', fn (array $bans) => $bans['available'] === false);
         $response->assertViewHas(
             'recentMatches',
             fn (array $matches) => count($matches) === 2
@@ -164,8 +185,8 @@ class DotaProfileTest extends TestCase
 
         $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]))->assertOk();
 
-        // Hero metadata stays cached; the six player endpoints are re-fetched.
-        $this->assertSame($sentAfterFirstVisit + 6, count(Http::recorded()));
+        // Hero/item metadata and match details stay cached; seven player endpoints are re-fetched.
+        $this->assertSame($sentAfterFirstVisit + 7, count(Http::recorded()));
     }
 
     public function test_unknown_player_returns_a_404_page(): void
@@ -254,7 +275,7 @@ class DotaProfileTest extends TestCase
         $response = $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertOk();
-        $response->assertSee('У этого игрока нет публичных матчей');
+        $response->assertSee('Нет публичных матчей');
         $response->assertSee('Expose Public Match Data');
         $response->assertSee('Матчи скрыты или отсутствуют');
         $response->assertDontSee('Anti-Mage');
@@ -336,7 +357,44 @@ class DotaProfileTest extends TestCase
         $response->assertViewHas('player', fn (array $player) => $player['is_private'] === true);
     }
 
-    private function fakeOpenDota(?array $steamPlayer = null): void
+    public function test_account_tab_shows_vac_and_game_ban_status(): void
+    {
+        config(['services.steam.api_key' => 'test-key']);
+
+        $this->fakeOpenDota(
+            [
+                'steamid' => '76561198030654385',
+                'personaname' => 'Dendi',
+                'profileurl' => 'https://steamcommunity.com/profiles/76561198030654385',
+                'avatarfull' => 'https://example.com/dendi.jpg',
+                'communityvisibilitystate' => 3,
+                'timecreated' => 946684800,
+                'lastlogoff' => 1700000000,
+            ],
+            [
+                'SteamId' => '76561198030654385',
+                'VACBanned' => true,
+                'NumberOfVACBans' => 2,
+                'GameBanCount' => 1,
+                'DaysSinceLastBan' => 45,
+            ]
+        );
+
+        $response = $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]));
+
+        $response->assertOk();
+        $response->assertSee('VAC-бан');
+        $response->assertSee('Game Ban');
+        $response->assertSee('Дата регистрации');
+        $response->assertSee('45 дн. назад');
+        $response->assertViewHas('steamBans', fn (array $bans) => $bans['available'] === true
+            && $bans['vac_banned'] === true
+            && $bans['vac_bans'] === 2
+            && $bans['game_bans'] === 1
+            && $bans['days_since_last_ban'] === 45);
+    }
+
+    private function fakeOpenDota(?array $steamPlayer = null, ?array $steamBans = null): void
     {
         $fakes = [
             'api.opendota.com/api/players/'.self::ACCOUNT_ID.'/wl*' => Http::response(['win' => 120, 'lose' => 80]),
@@ -380,12 +438,16 @@ class DotaProfileTest extends TestCase
                 ['field' => 'xp_per_min', 'n' => 10, 'sum' => 5610],
             ]),
             'api.opendota.com/api/players/'.self::ACCOUNT_ID.'/matches*' => Http::response([
-                ['match_id' => 9000000001, 'hero_id' => 1, 'player_slot' => 0, 'radiant_win' => true, 'start_time' => now()->subDays(1)->timestamp],
-                ['match_id' => 9000000002, 'hero_id' => 2, 'player_slot' => 128, 'radiant_win' => true, 'start_time' => now()->subDays(2)->timestamp],
-                ['match_id' => 9000000003, 'hero_id' => 3, 'player_slot' => 0, 'radiant_win' => true, 'start_time' => now()->subDays(3)->timestamp],
-                ['match_id' => 9000000004, 'hero_id' => 4, 'player_slot' => 128, 'radiant_win' => true, 'start_time' => now()->subDays(4)->timestamp],
-                ['match_id' => 9000000005, 'hero_id' => 5, 'player_slot' => 128, 'radiant_win' => false, 'start_time' => now()->subDays(5)->timestamp],
-                ['match_id' => 9000000006, 'hero_id' => 6, 'player_slot' => 128, 'radiant_win' => true, 'start_time' => now()->subDays(6)->timestamp],
+                ['match_id' => 9000000001, 'hero_id' => 1, 'player_slot' => 0, 'radiant_win' => true, 'start_time' => now()->subDays(1)->timestamp, 'duration' => 2400, 'kills' => 10, 'deaths' => 2, 'assists' => 15, 'gold_per_min' => 620, 'xp_per_min' => 710, 'lobby_type' => 7, 'game_mode' => 22, 'party_id' => 0],
+                ['match_id' => 9000000002, 'hero_id' => 2, 'player_slot' => 128, 'radiant_win' => true, 'start_time' => now()->subDays(2)->timestamp, 'duration' => 1980, 'kills' => 3, 'deaths' => 8, 'assists' => 6, 'gold_per_min' => 340, 'xp_per_min' => 420, 'lobby_type' => 7, 'game_mode' => 22, 'party_id' => 42],
+                ['match_id' => 9000000003, 'hero_id' => 3, 'player_slot' => 0, 'radiant_win' => true, 'start_time' => now()->subDays(3)->timestamp, 'duration' => 2100, 'kills' => 8, 'deaths' => 4, 'assists' => 11, 'gold_per_min' => 510, 'xp_per_min' => 590, 'lobby_type' => 1, 'game_mode' => 1, 'party_id' => 0],
+                ['match_id' => 9000000004, 'hero_id' => 4, 'player_slot' => 128, 'radiant_win' => true, 'start_time' => now()->subDays(4)->timestamp, 'duration' => 2600, 'kills' => 12, 'deaths' => 6, 'assists' => 9, 'gold_per_min' => 580, 'xp_per_min' => 640, 'lobby_type' => 7, 'game_mode' => 22, 'party_id' => 42],
+                ['match_id' => 9000000005, 'hero_id' => 5, 'player_slot' => 128, 'radiant_win' => false, 'start_time' => now()->subDays(4)->timestamp, 'duration' => 1750, 'kills' => 4, 'deaths' => 9, 'assists' => 7, 'gold_per_min' => 390, 'xp_per_min' => 450, 'lobby_type' => 1, 'game_mode' => 1, 'party_id' => 0],
+                ['match_id' => 9000000006, 'hero_id' => 6, 'player_slot' => 128, 'radiant_win' => true, 'start_time' => now()->subDays(6)->timestamp, 'duration' => 2300, 'kills' => 7, 'deaths' => 5, 'assists' => 13, 'gold_per_min' => 470, 'xp_per_min' => 530, 'lobby_type' => 7, 'game_mode' => 22, 'party_id' => 0],
+            ]),
+            'api.opendota.com/api/players/'.self::ACCOUNT_ID.'/peers*' => Http::response([
+                ['account_id' => 123456789, 'personaname' => 'Teammate', 'avatar' => 'https://example.com/peer.jpg', 'games' => 12, 'win' => 8, 'last_match_time' => now()->subDay()->timestamp],
+                ['account_id' => 987654321, 'personaname' => 'OtherPeer', 'games' => 5, 'win' => 2],
             ]),
             'api.opendota.com/api/constants/items*' => Http::response([
                 'blink' => ['id' => 1, 'dname' => 'Blink Dagger', 'img' => '/apps/dota2/images/dota_react/items/blink.png', 'cost' => 2250],
@@ -457,6 +519,12 @@ class DotaProfileTest extends TestCase
         if ($steamPlayer !== null) {
             $fakes['api.steampowered.com/ISteamUser/GetPlayerSummaries/*'] = Http::response([
                 'response' => ['players' => [$steamPlayer]],
+            ]);
+        }
+
+        if ($steamBans !== null) {
+            $fakes['api.steampowered.com/ISteamUser/GetPlayerBans/*'] = Http::response([
+                'response' => ['players' => [$steamBans]],
             ]);
         }
 

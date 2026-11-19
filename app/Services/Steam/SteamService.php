@@ -125,10 +125,83 @@ class SteamService
         return $summary;
     }
 
+    /**
+     * Public VAC / Game Ban state for the account tab.
+     *
+     * @return array<string, mixed>
+     */
+    public function bans(?string $steamId64): array
+    {
+        $steamId64 = is_string($steamId64) ? trim($steamId64) : '';
+
+        if (! SteamId::isSteamId64($steamId64)) {
+            return $this->unavailableBans($steamId64 ?: null, 'Некорректный SteamID64.');
+        }
+
+        if (! $this->hasApiKey()) {
+            return $this->unavailableBans($steamId64, 'STEAM_API_KEY не настроен.');
+        }
+
+        $cacheKey = 'steam:bans:v1:'.$steamId64;
+        $cached = Cache::get($cacheKey);
+
+        if (is_array($cached)) {
+            return $cached;
+        }
+
+        try {
+            $response = $this->get('ISteamUser/GetPlayerBans/v1/', [
+                'steamids' => $steamId64,
+            ]);
+            $players = $response['response']['players'] ?? [];
+            $player = is_array($players) ? ($players[0] ?? null) : null;
+
+            if (! is_array($player) || empty($player['SteamId'])) {
+                throw new ExternalApiException('Steam', 'Steam не вернул данные о банах.');
+            }
+
+            $daysSinceLastBan = isset($player['DaysSinceLastBan'])
+                ? (int) $player['DaysSinceLastBan']
+                : null;
+
+            $bans = [
+                'available' => true,
+                'vac_banned' => (bool) ($player['VACBanned'] ?? false),
+                'vac_bans' => (int) ($player['NumberOfVACBans'] ?? 0),
+                'game_bans' => (int) ($player['GameBanCount'] ?? 0),
+                'days_since_last_ban' => $daysSinceLastBan,
+                'error' => null,
+            ];
+        } catch (MissingApiKeyException|ExternalApiException $exception) {
+            $bans = $this->unavailableBans($steamId64, $exception->getMessage());
+        }
+
+        Cache::put($cacheKey, $bans, (int) config('stats.cache.steam_profile', 1800));
+
+        return $bans;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function unavailableBans(?string $steamId64, string $message): array
+    {
+        return [
+            'available' => false,
+            'steam_id' => $steamId64,
+            'vac_banned' => null,
+            'vac_bans' => null,
+            'game_bans' => null,
+            'days_since_last_ban' => null,
+            'error' => $message,
+        ];
+    }
+
     public function forget(?string $steamId64): void
     {
         if (is_string($steamId64) && SteamId::isSteamId64($steamId64)) {
             Cache::forget('steam:summary:v1:'.$steamId64);
+            Cache::forget('steam:bans:v1:'.$steamId64);
         }
     }
 

@@ -29,6 +29,8 @@ class OpenDotaService
 
     private const RECENT_MATCH_DETAILS = 10;
 
+    private const PROFILE_SCHEMA_VERSION = 2;
+
     private const TEAM_CHART_COLORS = [
         '#34d399',
         '#22d3ee',
@@ -138,6 +140,7 @@ class OpenDotaService
         $updatedAt = $record->updated_at;
 
         return $updatedAt !== null
+            && ($record->data['schema_version'] ?? 0) === self::PROFILE_SCHEMA_VERSION
             && $updatedAt->greaterThan(CarbonImmutable::now()->subSeconds(max($ttl, 1)));
     }
 
@@ -229,6 +232,9 @@ class OpenDotaService
             'limit' => 500,
             'date' => self::HISTORY_DAYS,
         ]);
+        $peers = $recentMatches === []
+            ? []
+            : $this->optionalGet('players/'.$accountId.'/peers');
 
         $heroes = $this->heroStats();
         $matches = $this->transformMatches($recentMatches, $heroes);
@@ -288,13 +294,50 @@ class OpenDotaService
             'averages' => $averages,
             'heroes' => $heroRows,
             'top_heroes' => array_slice($heroRows, 0, 5),
-            'matches' => array_slice($matches, 0, 20),
+            'matches' => array_slice($matches, 0, 25),
             'match_history' => $history,
+            'peers' => $this->transformPeers($peers),
             'has_public_matches' => $hasPublicMatches,
             'dota_data_hidden' => ! $hasPublicMatches,
             'cached_at' => CarbonImmutable::now()->toIso8601String(),
             'cache_ttl' => $ttl,
+            'schema_version' => self::PROFILE_SCHEMA_VERSION,
         ];
+    }
+
+    /**
+     * Frequent teammates from OpenDota's aggregated peers endpoint.
+     *
+     * @param  array<int, mixed>  $peers
+     * @return array<int, array<string, mixed>>
+     */
+    private function transformPeers(array $peers): array
+    {
+        $rows = [];
+
+        foreach ($peers as $peer) {
+            if (! is_array($peer) || (int) ($peer['account_id'] ?? 0) <= 0) {
+                continue;
+            }
+
+            $games = (int) ($peer['games'] ?? 0);
+            $wins = (int) ($peer['win'] ?? 0);
+            $lastMatch = $peer['last_match_time'] ?? null;
+
+            $rows[] = [
+                'account_id' => (int) $peer['account_id'],
+                'nickname' => ($peer['personaname'] ?? null) ?: 'Анонимный игрок',
+                'avatar' => $peer['avatarfull'] ?? $peer['avatar'] ?? null,
+                'games' => $games,
+                'wins' => $wins,
+                'winrate' => $games > 0 ? round($wins / $games * 100, 1) : null,
+                'last_played_at' => $this->dateTime($lastMatch),
+            ];
+        }
+
+        usort($rows, fn (array $a, array $b) => [$b['games'], $b['wins']] <=> [$a['games'], $a['wins']]);
+
+        return array_slice($rows, 0, 8);
     }
 
     /**
