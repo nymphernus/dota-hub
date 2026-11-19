@@ -624,7 +624,7 @@ class DotaProfileTest extends TestCase
             && $player['heroes'][0]['games'] === 20);
 
         Http::assertSent(fn ($request) => $request->hasHeader('Authorization', 'Bearer test-token')
-            && str_contains($request->body(), 'heroes(take: 20)')
+            && str_contains($request->body(), 'heroesPerformance(take: 20)')
             && str_contains($request->body(), 'matchCount'));
     }
 
@@ -800,7 +800,7 @@ class DotaProfileTest extends TestCase
 
         if ($stratzHeroes !== null) {
             $fakes['api.stratz.com/graphql'] = Http::response([
-                'data' => ['player' => ['heroes' => $stratzHeroes]],
+                'data' => ['player' => ['heroesPerformance' => $stratzHeroes]],
             ]);
         }
 

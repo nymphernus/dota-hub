@@ -6,6 +6,7 @@ use App\Services\Stratz\StratzService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Tests\TestCase;
 
 class StratzServiceTest extends TestCase
@@ -29,7 +30,7 @@ class StratzServiceTest extends TestCase
             'api.stratz.com/graphql' => Http::response([
                 'data' => [
                     'player' => [
-                        'heroes' => [
+                        'heroesPerformance' => [
                             ['heroId' => 2, 'matchCount' => 5, 'winCount' => 2],
                             ['heroId' => 1, 'matchCount' => 12, 'winCount' => 8],
                             ['heroId' => 3, 'matchCount' => 0, 'winCount' => 0],
@@ -48,22 +49,22 @@ class StratzServiceTest extends TestCase
         ], $heroes);
 
         Http::assertSent(fn ($request) => $request->hasHeader('Authorization', 'Bearer test-token')
-            && str_contains($request->body(), 'heroes(take: 20)')
+            && str_contains($request->body(), 'heroesPerformance(take: 20)')
             && str_contains($request->body(), 'matchCount')
             && str_contains($request->body(), '70388657'));
     }
 
-    public function test_player_heroes_falls_back_to_the_legacy_game_count_field(): void
+    public function test_player_heroes_falls_back_to_the_legacy_heroes_field(): void
     {
         config(['services.stratz.token' => 'test-token']);
         Cache::flush();
 
         Http::fake([
             'api.stratz.com/graphql' => Http::sequence()
-                ->push(['errors' => [['message' => 'Cannot query field matchCount']]])
+                ->push(['errors' => [['message' => 'Cannot query field heroesPerformance']]])
                 ->push([
                     'data' => ['player' => ['heroes' => [
-                        ['heroId' => 1, 'gameCount' => 9, 'winCount' => 6],
+                        ['heroId' => 1, 'matchCount' => 9, 'winCount' => 6],
                     ]]],
                 ]),
         ]);
@@ -75,7 +76,7 @@ class StratzServiceTest extends TestCase
         ], $service->playerHeroes(70388657));
 
         Http::assertSentCount(2);
-        Http::assertSent(fn ($request) => str_contains($request->body(), 'gameCount'));
+        Http::assertSent(fn ($request) => str_contains($request->body(), 'heroes(take: 20)'));
     }
 
     public function test_player_heroes_stops_after_a_cloudflare_response(): void
@@ -149,5 +150,68 @@ class StratzServiceTest extends TestCase
         $service = $this->app->make(StratzService::class);
 
         $this->assertSame([], $service->playerHeroes(70388657));
+    }
+
+    public function test_match_positions_parses_enum_position_and_impact(): void
+    {
+        config(['services.stratz.token' => 'test-token']);
+        Cache::flush();
+
+        Http::fake([
+            'api.stratz.com/graphql' => Http::response([
+                'data' => [
+                    'match' => [
+                        'players' => [
+                            [
+                                'steamAccountId' => 70388657,
+                                'position' => 'POSITION_2',
+                                'imp' => -10,
+                                'steamAccount' => ['seasonRank' => 80],
+                            ],
+                        ],
+                    ],
+                ],
+            ]),
+        ]);
+
+        $service = $this->app->make(StratzService::class);
+
+        $this->assertSame([
+            70388657 => ['position' => 2, 'imp' => -10.0, 'rank_tier' => 80],
+        ], $service->matchPositions(8847785956));
+
+        Http::assertSent(fn ($request) => str_contains($request->body(), 'position')
+            && str_contains($request->body(), 'imp')
+            && str_contains($request->body(), '8847785956'));
+    }
+
+    public function test_debug_request_logs_the_raw_graphql_response(): void
+    {
+        config(['services.stratz.token' => 'test-token']);
+        Cache::flush();
+
+        $raw = '{"data":{"player":{"steamAccountId":70388657,"heroesPerformance":[{"heroId":128,"matchCount":2,"winCount":1,"imp":16}]}}}';
+
+        Http::fake([
+            'api.stratz.com/graphql' => Http::response(json_decode($raw, true), 200),
+        ]);
+
+        Log::shouldReceive('info')->once()->withArgs(function (string $message, array $context) use ($raw): bool {
+            return $message === 'STRATZ debugRequest raw response'
+                && $context['account_id'] === 70388657
+                && $context['status'] === 200
+                && $context['raw_response'] === $raw
+                && isset($context['json']['data']['player']['heroesPerformance']);
+        });
+
+        $result = $this->app->make(StratzService::class)->debugRequest(70388657);
+
+        $this->assertSame(200, $result['status']);
+        $this->assertSame($raw, $result['raw_response']);
+        $this->assertSame(128, $result['json']['data']['player']['heroesPerformance'][0]['heroId']);
+
+        Http::assertSent(fn ($request) => str_contains($request->body(), 'DebugPlayer')
+            && str_contains($request->body(), 'heroesPerformance')
+            && str_contains($request->body(), '70388657'));
     }
 }
