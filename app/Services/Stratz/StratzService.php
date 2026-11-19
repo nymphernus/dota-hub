@@ -158,7 +158,7 @@ class StratzService
     }
 
     /**
-     * @return array<int, array{position: int|null, imp: float|null}>
+     * @return array<int, array{position: int|null, imp: float|null, rank_tier: int|null}>
      */
     public function matchPositions(int $matchId): array
     {
@@ -166,63 +166,91 @@ class StratzService
             return [];
         }
 
-        $cacheKey = "stratz:match:{$matchId}:positions";
+        $cacheKey = "stratz:match:{$matchId}:positions:v2";
         $cached = Cache::get($cacheKey);
 
         if (is_array($cached)) {
             return $cached;
         }
 
-        try {
-            $response = $this->http
-                ->withToken((string) config('services.stratz.token'))
-                ->withHeaders(['User-Agent' => 'Stats Radar/1.0'])
-                ->acceptJson()
-                ->timeout(10)
-                ->post((string) config('services.stratz.endpoint', 'https://api.stratz.com/graphql'), [
-                    'query' => <<<'GRAPHQL'
-                        query MatchPlayers($matchId: Long!) {
-                            match(id: $matchId) {
-                                players {
-                                    steamAccountId
-                                    position
-                                    imp
-                                }
+        $queries = [
+            <<<'GRAPHQL'
+                query MatchPlayers($matchId: Long!) {
+                    match(id: $matchId) {
+                        players {
+                            steamAccountId
+                            position
+                            imp
+                            steamAccount {
+                                seasonRank
                             }
                         }
-                    GRAPHQL,
-                    'variables' => ['matchId' => $matchId],
+                    }
+                }
+            GRAPHQL,
+            <<<'GRAPHQL'
+                query MatchPlayers($matchId: Long!) {
+                    match(id: $matchId) {
+                        players {
+                            steamAccountId
+                            position
+                            imp
+                        }
+                    }
+                }
+            GRAPHQL,
+        ];
+
+        $players = null;
+
+        foreach ($queries as $query) {
+            try {
+                $response = $this->http
+                    ->withToken((string) config('services.stratz.token'))
+                    ->withHeaders(['User-Agent' => 'Stats Radar/1.0'])
+                    ->acceptJson()
+                    ->timeout(10)
+                    ->post((string) config('services.stratz.endpoint', 'https://api.stratz.com/graphql'), [
+                        'query' => $query,
+                        'variables' => ['matchId' => $matchId],
+                    ]);
+            } catch (ConnectionException $exception) {
+                Log::warning('STRATZ is unreachable', [
+                    'match_id' => $matchId,
+                    'message' => $exception->getMessage(),
                 ]);
-        } catch (ConnectionException $exception) {
-            Log::warning('STRATZ is unreachable', [
-                'match_id' => $matchId,
-                'message' => $exception->getMessage(),
-            ]);
 
-            return [];
+                return [];
+            }
+
+            if ($response->failed()) {
+                Log::warning('STRATZ request failed', [
+                    'match_id' => $matchId,
+                    'status' => $response->status(),
+                ]);
+
+                return [];
+            }
+
+            $payload = $response->json();
+
+            if (! is_array($payload) || isset($payload['errors'])) {
+                Log::info('STRATZ match query attempt failed', [
+                    'match_id' => $matchId,
+                    'errors' => is_array($payload['errors'] ?? null) ? $payload['errors'] : null,
+                ]);
+
+                continue;
+            }
+
+            $candidate = $payload['data']['match']['players'] ?? null;
+
+            if (is_array($candidate)) {
+                $players = $candidate;
+
+                break;
+            }
         }
-
-        if ($response->failed()) {
-            Log::warning('STRATZ request failed', [
-                'match_id' => $matchId,
-                'status' => $response->status(),
-            ]);
-
-            return [];
-        }
-
-        $payload = $response->json();
-
-        if (! is_array($payload) || isset($payload['errors'])) {
-            Log::warning('STRATZ returned an invalid response', [
-                'match_id' => $matchId,
-                'errors' => is_array($payload['errors'] ?? null) ? $payload['errors'] : null,
-            ]);
-
-            return [];
-        }
-
-        $players = $payload['data']['match']['players'] ?? null;
 
         if (! is_array($players)) {
             return [];
@@ -242,14 +270,23 @@ class StratzService
             $imp = isset($player['imp']) && is_numeric($player['imp'])
                 ? round((float) $player['imp'], 2)
                 : null;
+            $rankTier = null;
 
-            if ($position === null && $imp === null) {
+            $steamAccount = $player['steamAccount'] ?? null;
+            if (is_array($steamAccount) && isset($steamAccount['seasonRank']) && is_numeric($steamAccount['seasonRank'])) {
+                $rankTier = (int) $steamAccount['seasonRank'];
+            } elseif (isset($player['rank']) && is_numeric($player['rank'])) {
+                $rankTier = (int) $player['rank'];
+            }
+
+            if ($position === null && $imp === null && $rankTier === null) {
                 continue;
             }
 
             $positions[$accountId] = [
                 'position' => $position,
                 'imp' => $imp,
+                'rank_tier' => $rankTier,
             ];
         }
 

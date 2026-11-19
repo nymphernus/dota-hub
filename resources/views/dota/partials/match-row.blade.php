@@ -44,7 +44,17 @@
             @endif
 
             <div class="min-w-0">
+                @php
+                    $partyId = (int) ($match['party_id'] ?? 0);
+                    $partySize = (int) ($match['party_size'] ?? 0);
+                    $partyBadge = $partyId > 0
+                        ? 'P'.$partyId
+                        : ((($match['party_label'] ?? null) === 'Party' && $partySize > 1) ? 'P'.$partySize : null);
+                @endphp
                 <div class="flex items-center gap-2">
+                    @if ($partyBadge)
+                        <span class="rounded bg-sky-500/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-sky-300">{{ $partyBadge }}</span>
+                    @endif
                     @if ($heroUrl)
                         <a href="{{ $heroUrl }}" onclick="event.stopPropagation()" class="truncate text-[12px] font-bold text-white transition group-hover:text-radar-200">{{ $match['hero_name'] }}</a>
                     @else
@@ -63,11 +73,9 @@
                     <span class="{{ ($match['match_type_label'] ?? '') === 'Ranked' ? 'font-semibold text-amber-300' : (($match['match_type_label'] ?? '') === 'Turbo' ? 'font-semibold text-cyan-300' : '') }}">
                         {{ $match['match_type_label'] ?? 'Normal' }}
                     </span>
-                    <span class="text-mist-600">·</span>
-                    <span>{{ $match['party_label'] ?? 'Solo' }}</span>
                     @if ($modeLabel && $modeLabel !== 'All Pick' && $modeLabel !== ($match['match_type_label'] ?? null))
-                        <span class="hidden text-mist-600 sm:inline">·</span>
-                        <span class="hidden sm:inline">{{ $modeLabel }}</span>
+                        <span class="text-mist-600">·</span>
+                        <span>{{ $modeLabel }}</span>
                     @endif
                 </div>
             </div>

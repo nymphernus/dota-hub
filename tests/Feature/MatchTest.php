@@ -50,7 +50,8 @@ class MatchTest extends TestCase
         $response->assertSee('Ranked');
         $response->assertSee('All Pick');
         $response->assertSee('ring-sky-500/50', false);
-        $response->assertSee('Party');
+        $response->assertSee('P7');
+        $response->assertDontSee('Party #', false);
         $response->assertSee('Safe');
         $response->assertSee('Mid');
         $response->assertSee('Hard');
@@ -58,8 +59,14 @@ class MatchTest extends TestCase
         $response->assertSee('Black King Bar');
         $response->assertSee('id="radiantNetWorthChart"', false);
         $response->assertSee('id="direNetWorthChart"', false);
-        $response->assertSee('Party #7', false);
         $response->assertSee('Команда Dire', false);
+        $response->assertSee('Пики и баны');
+        $response->assertSee('Нетворс');
+        $response->assertSee('Башни');
+        $response->assertSee('Лечение');
+        $response->assertSee('31 200');
+        $response->assertSee('3 400');
+        $response->assertSee('1 250');
         $response->assertSee(route('dota.player', ['accountId' => 123456789]), false);
         $response->assertSee(route('dota.player', ['accountId' => 987654321]), false);
         $response->assertDontSee('Данные о нетворсе появятся после парсинга матча');
@@ -77,9 +84,13 @@ class MatchTest extends TestCase
                 && count($match['net_worth_chart']['radiant']['datasets']) === 2
                 && count($match['players']['radiant']) === 2
                 && count($match['players']['dire']) === 2
+                && count($match['picks_bans'] ?? []) === 2
                 && $radiantCarry['role']['label'] === 'Safe'
                 && $radiantCarry['purchases'][0]['name'] === 'Blink Dagger'
                 && $radiantCarry['net_worth_history'] === [600, 1200, 2100, 3000]
+                && $radiantCarry['net_worth'] === 31200
+                && $radiantCarry['tower_damage'] === 3400
+                && $radiantCarry['hero_healing'] === 1250
                 && $radiantSupport['role']['label'] === 'Mid';
         });
     }
@@ -108,6 +119,7 @@ class MatchTest extends TestCase
         $response->assertSee('Команда Radiant', false);
         $response->assertSee('Команда Dire', false);
         $response->assertDontSee('Party #', false);
+        $response->assertDontSee('P7');
         $response->assertSee(route('dota.player', ['accountId' => 123456789]), false);
         $response->assertSee(route('dota.player', ['accountId' => 987654321]), false);
     }
@@ -138,12 +150,15 @@ class MatchTest extends TestCase
         $response->assertSee('Hard');
         $response->assertSee('IMP 7.5');
         $response->assertSee('STRATZ');
+        $response->assertSee('Immortal');
         $response->assertViewHas('match', function (array $match) {
             $player = $match['players']['radiant'][0];
 
             return $player['role']['label'] === 'Hard'
                 && $player['role']['source'] === 'STRATZ'
-                && $player['impact'] === 7.5;
+                && $player['impact'] === 7.5
+                && $player['rank_tier'] === 80
+                && $player['rank_label'] === 'Immortal';
         });
         Http::assertSent(fn ($request) => str_contains($request->url(), 'api.stratz.com/graphql'));
     }
@@ -228,6 +243,10 @@ class MatchTest extends TestCase
                 'game_mode' => 22,
                 'radiant_score' => 32,
                 'dire_score' => 18,
+                'picks_bans' => [
+                    ['is_pick' => false, 'hero_id' => 1, 'team' => 1, 'order' => 0],
+                    ['is_pick' => true, 'hero_id' => 2, 'team' => 0, 'order' => 1],
+                ],
                 'players' => [
                     [
                         'account_id' => self::ACCOUNT_ID,
@@ -244,7 +263,10 @@ class MatchTest extends TestCase
                         'assists' => 15,
                         'gold_per_min' => 620,
                         'xp_per_min' => 710,
+                        'net_worth' => 31200,
                         'hero_damage' => 25000,
+                        'tower_damage' => 3400,
+                        'hero_healing' => 1250,
                         'networth_t' => [600, 1200, 2100, 3000],
                         'xp_t' => [0, 400, 900, 1600],
                         'purchase_log' => [
@@ -267,7 +289,10 @@ class MatchTest extends TestCase
                         'assists' => 19,
                         'gold_per_min' => 410,
                         'xp_per_min' => 520,
+                        'net_worth' => 18400,
                         'hero_damage' => 12000,
+                        'tower_damage' => 900,
+                        'hero_healing' => 400,
                         'networth_t' => [600, 900, 1400, 1900],
                         'purchase_log' => [
                             ['time' => 620, 'key' => 'blink'],
@@ -285,7 +310,10 @@ class MatchTest extends TestCase
                         'assists' => 8,
                         'gold_per_min' => 380,
                         'xp_per_min' => 460,
+                        'net_worth' => 14100,
                         'hero_damage' => 16000,
+                        'tower_damage' => 500,
+                        'hero_healing' => 300,
                         'networth_t' => [600, 750, 1100, 1500],
                     ],
                     [
@@ -299,7 +327,10 @@ class MatchTest extends TestCase
                         'assists' => 5,
                         'gold_per_min' => 290,
                         'xp_per_min' => 390,
+                        'net_worth' => 9800,
                         'hero_damage' => 8000,
+                        'tower_damage' => 200,
+                        'hero_healing' => 0,
                     ],
                 ],
             ]),
@@ -350,7 +381,12 @@ class MatchTest extends TestCase
                 'data' => [
                     'match' => [
                         'players' => [
-                            ['steamAccountId' => self::ACCOUNT_ID, 'position' => 5, 'imp' => 7.5],
+                            [
+                                'steamAccountId' => self::ACCOUNT_ID,
+                                'position' => 5,
+                                'imp' => 7.5,
+                                'steamAccount' => ['seasonRank' => 80],
+                            ],
                             ['steamAccountId' => 123456789, 'position' => 4, 'imp' => 3.25],
                             ['steamAccountId' => 987654321, 'position' => 1, 'imp' => 1.2],
                         ],

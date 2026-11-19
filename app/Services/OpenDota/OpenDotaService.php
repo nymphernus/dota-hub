@@ -1070,6 +1070,11 @@ class OpenDotaService
             $slot = (int) $player['player_slot'];
             $accountId = isset($player['account_id']) ? (int) $player['account_id'] : 0;
             $purchaseLog = is_array($player['purchase_log'] ?? null) ? $player['purchase_log'] : [];
+            $stratzPlayer = $stratzPositions[$accountId] ?? null;
+            $rankTier = isset($stratzPlayer['rank_tier']) && is_numeric($stratzPlayer['rank_tier'])
+                ? (int) $stratzPlayer['rank_tier']
+                : (isset($player['rank_tier']) && is_numeric($player['rank_tier']) ? (int) $player['rank_tier'] : null);
+            $rank = $this->rank($rankTier);
 
             $row = [
                 'account_id' => $accountId > 0 ? $accountId : null,
@@ -1092,12 +1097,17 @@ class OpenDotaService
                 'gpm' => (int) ($player['gold_per_min'] ?? 0),
                 'xpm' => (int) ($player['xp_per_min'] ?? 0),
                 'hero_damage' => (int) ($player['hero_damage'] ?? 0),
+                'tower_damage' => (int) ($player['tower_damage'] ?? 0),
+                'hero_healing' => (int) ($player['hero_healing'] ?? 0),
                 'last_hits' => (int) ($player['last_hits'] ?? 0),
                 'denies' => (int) ($player['denies'] ?? 0),
                 'net_worth' => (int) ($player['net_worth'] ?? 0),
-                'role' => $this->matchRole($player, $stratzPositions[$accountId] ?? null),
-                'impact' => isset($stratzPositions[$accountId]['imp'])
-                    ? (float) $stratzPositions[$accountId]['imp']
+                'rank_tier' => $rankTier,
+                'rank_label' => $rank['label'],
+                'rank_medal' => $rank['medal'],
+                'role' => $this->matchRole($player, $stratzPlayer),
+                'impact' => isset($stratzPlayer['imp'])
+                    ? (float) $stratzPlayer['imp']
                     : null,
                 'purchases' => $this->transformPurchases($purchaseLog, $items),
                 'purchase_log_count' => count($purchaseLog),
@@ -1148,6 +1158,7 @@ class OpenDotaService
                 'radiant' => $radiant,
                 'dire' => $dire,
             ],
+            'picks_bans' => $this->transformPicksBans($match['picks_bans'] ?? null, $heroes),
             'net_worth_chart' => $this->netWorthChart($radiant, $dire),
             'cached_at' => CarbonImmutable::now()->toIso8601String(),
         ];
@@ -1431,6 +1442,52 @@ class OpenDotaService
     }
 
     /**
+     * @param  array<int, array<string, mixed>>  $heroes
+     * @return array<int, array<string, mixed>>
+     */
+    private function transformPicksBans(mixed $picksBans, array $heroes): array
+    {
+        if (! is_array($picksBans)) {
+            return [];
+        }
+
+        $rows = [];
+
+        foreach ($picksBans as $entry) {
+            if (! is_array($entry)) {
+                continue;
+            }
+
+            $heroId = (int) ($entry['hero_id'] ?? 0);
+
+            if ($heroId <= 0) {
+                continue;
+            }
+
+            $hero = $heroes[$heroId] ?? [
+                'id' => $heroId,
+                'name' => 'Hero #'.$heroId,
+                'image' => null,
+            ];
+            $team = isset($entry['team']) && is_numeric($entry['team']) ? (int) $entry['team'] : null;
+
+            $rows[] = [
+                'is_pick' => (bool) ($entry['is_pick'] ?? false),
+                'team' => $team,
+                'team_label' => $team === 0 ? 'Radiant' : ($team === 1 ? 'Dire' : null),
+                'hero_id' => $heroId,
+                'hero_name' => $hero['name'] ?? 'Hero #'.$heroId,
+                'hero_image' => $hero['image'] ?? null,
+                'order' => isset($entry['order']) && is_numeric($entry['order']) ? (int) $entry['order'] : null,
+            ];
+        }
+
+        usort($rows, fn (array $left, array $right) => ($left['order'] ?? 0) <=> ($right['order'] ?? 0));
+
+        return $rows;
+    }
+
+    /**
      * @param  array<string, mixed>  $match
      */
     private function roleKey(array $match): ?string
@@ -1526,6 +1583,7 @@ class OpenDotaService
                 ),
                 'is_ranked' => (int) ($match['lobby_type'] ?? 0) === 7,
                 'party_label' => $this->partyLabel($match),
+                'party_id' => isset($match['party_id']) && is_numeric($match['party_id']) ? (int) $match['party_id'] : null,
                 'party_size' => isset($match['party_size']) && is_numeric($match['party_size']) ? (int) $match['party_size'] : null,
                 'role_key' => $this->roleKey($match),
                 'lane_role' => isset($match['lane_role']) ? (int) $match['lane_role'] : null,
@@ -1793,6 +1851,7 @@ class OpenDotaService
                 ),
                 'is_ranked' => (int) ($match['lobby_type'] ?? 0) === 7,
                 'party_label' => $this->partyLabel($match),
+                'party_id' => isset($match['party_id']) && is_numeric($match['party_id']) ? (int) $match['party_id'] : null,
                 'party_size' => isset($match['party_size']) && is_numeric($match['party_size']) ? (int) $match['party_size'] : null,
                 'role_key' => $this->roleKey($match),
                 'lane_role' => isset($match['lane_role']) ? (int) $match['lane_role'] : null,
