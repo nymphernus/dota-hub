@@ -66,10 +66,9 @@ class DotaProfileTest extends TestCase
             route('dota.player.matches', ['accountId' => self::ACCOUNT_ID]),
             false
         );
-        $response->assertSee('Матчи');
-        $response->assertSee('id="tab-account"', false);
         $response->assertSee('id="tab-matches"', false);
-        $response->assertDontSee('id="tab-peers"', false);
+        $response->assertDontSee('id="tab-account"', false);
+        $response->assertSee('id="tab-peers"', false);
         $response->assertSee('Товарищи');
         $response->assertSee('images/dota/ranks/rank_icon_8.png', false);
         $response->assertSee(
@@ -85,8 +84,6 @@ class DotaProfileTest extends TestCase
         $response->assertDontSee('id="recentMatchesChart"', false);
         $response->assertDontSee('panel-matches', false);
         $response->assertDontSee('Окружение');
-        $response->assertSee('Steam API недоступна');
-        $response->assertSee('STEAM_API_KEY не настроен');
         $response->assertSee('SteamID64');
         $response->assertViewHas('steamProfile', fn (array $profile) => $profile['available'] === false);
         $response->assertViewHas('winrate', 60.0);
@@ -114,9 +111,10 @@ class DotaProfileTest extends TestCase
 
             return count($peers) === 2
                 && $peers[0]['nickname'] === 'Teammate'
-                && $peers[0]['games'] === 12;
+                && $peers[0]['games'] === 12
+                && $peers[1]['is_private'] === true;
         });
-        $response->assertViewHas('steamBans', fn (array $bans) => $bans['available'] === false);
+        $response->assertSee('Скрытый профиль');
         $response->assertViewHas(
             'recentMatches',
             fn (array $matches) => count($matches) === 2
@@ -308,10 +306,10 @@ class DotaProfileTest extends TestCase
         $response = $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertOk();
-        $response->assertSee('Danil Ishutin');
         $response->assertSee('Публичный');
         $response->assertSee('Публичные матчи доступны');
-        $response->assertSee('Последний вход');
+        $response->assertSee('Регистрация 15.03.2007');
+        $response->assertDontSee('Последний вход');
         $response->assertViewHas('steamProfile', fn (array $profile) => $profile['available'] === true
             && $profile['is_public'] === true
             && $profile['visibility'] === 'Публичный'
@@ -362,45 +360,96 @@ class DotaProfileTest extends TestCase
         $response->assertViewHas('player', fn (array $player) => $player['is_private'] === true);
     }
 
-    public function test_account_tab_shows_vac_and_game_ban_status(): void
+    public function test_account_metadata_is_rendered_in_the_header_without_an_account_tab(): void
     {
         config(['services.steam.api_key' => 'test-key']);
 
-        $this->fakeOpenDota(
-            [
-                'steamid' => '76561198030654385',
-                'personaname' => 'Dendi',
-                'profileurl' => 'https://steamcommunity.com/profiles/76561198030654385',
-                'avatarfull' => 'https://example.com/dendi.jpg',
-                'communityvisibilitystate' => 3,
-                'timecreated' => 946684800,
-                'lastlogoff' => 1700000000,
-            ],
-            [
-                'SteamId' => '76561198030654385',
-                'VACBanned' => true,
-                'NumberOfVACBans' => 2,
-                'GameBanCount' => 1,
-                'DaysSinceLastBan' => 45,
-            ]
-        );
+        $this->fakeOpenDota([
+            'steamid' => '76561198030654385',
+            'personaname' => 'Dendi',
+            'profileurl' => 'https://steamcommunity.com/profiles/76561198030654385',
+            'avatarfull' => 'https://example.com/dendi.jpg',
+            'communityvisibilitystate' => 3,
+            'timecreated' => 946684800,
+            'lastlogoff' => 1700000000,
+        ]);
 
         $response = $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertOk();
-        $response->assertSee('VAC-бан');
-        $response->assertSee('Game Ban');
-        $response->assertSee('Дата регистрации');
-        $response->assertSee('45 дн. назад');
-        $response->assertViewHas('steamBans', fn (array $bans) => $bans['available'] === true
-            && $bans['vac_banned'] === true
-            && $bans['vac_bans'] === 2
-            && $bans['game_bans'] === 1
-            && $bans['days_since_last_ban'] === 45);
+        $response->assertDontSee('id="tab-account"', false);
+        $response->assertSee('Dota ID '.self::ACCOUNT_ID);
+        $response->assertSee('SteamID64 76561198030654385');
+        $response->assertSee('Регистрация 01.01.2000');
+        $response->assertDontSee('VAC-бан');
+        $response->assertDontSee('Game Ban');
     }
 
-    private function fakeOpenDota(?array $steamPlayer = null, ?array $steamBans = null): void
+    public function test_name_history_records_the_previous_nickname(): void
     {
+        $this->fakeOpenDota();
+
+        $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]))->assertOk();
+
+        $record = PlayerProfile::findOrFail(self::ACCOUNT_ID);
+        $data = $record->data;
+        $data['schema_version'] = 1;
+        $record->data = $data;
+        $record->nickname = 'Dendi Prime';
+        $record->updated_at = CarbonImmutable::now()->subHours(2);
+        $record->save();
+        Cache::flush();
+
+        $response = $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]));
+
+        $response->assertOk();
+        $response->assertSee('Dendi Prime');
+        $this->assertDatabaseHas('player_name_history', [
+            'account_id' => self::ACCOUNT_ID,
+            'name' => 'Dendi Prime',
+        ]);
+        $response->assertViewHas('player', function (array $player) {
+            return count($player['name_history']) === 1
+                && $player['name_history'][0]['name'] === 'Dendi Prime';
+        });
+    }
+
+    public function test_mmr_is_estimated_from_rank_and_recent_ranked_games(): void
+    {
+        $this->fakeOpenDota(profileOverrides: [
+            'rank_tier' => 52,
+            'mmr_estimate' => null,
+        ]);
+
+        $response = $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]));
+
+        $response->assertOk();
+        $response->assertSee('~3 150 MMR');
+        $response->assertViewHas('player', fn (array $player) => $player['mmr_estimate'] === 3150
+            && $player['mmr_is_estimated'] === true
+            && $player['mmr_games_considered'] === 4);
+    }
+
+    private function fakeOpenDota(
+        ?array $steamPlayer = null,
+        ?array $steamBans = null,
+        ?string $nickname = null,
+        array $profileOverrides = [],
+    ): void {
+        $profileResponse = array_merge([
+            'profile' => [
+                'account_id' => self::ACCOUNT_ID,
+                'personaname' => $nickname ?? 'Dendi',
+                'avatarfull' => 'https://example.com/dendi.jpg',
+                'steamid' => '76561198030654385',
+                'profileurl' => 'https://steamcommunity.com/profiles/76561198030654385',
+                'loccountrycode' => 'UA',
+            ],
+            'rank_tier' => 80,
+            'leaderboard_rank' => 120,
+            'mmr_estimate' => ['estimate' => 9120],
+        ], $profileOverrides);
+
         $fakes = [
             'api.opendota.com/api/players/'.self::ACCOUNT_ID.'/wl*' => Http::response(['win' => 120, 'lose' => 80]),
             'api.opendota.com/api/players/'.self::ACCOUNT_ID.'/recentMatches*' => Http::response([
@@ -452,7 +501,7 @@ class DotaProfileTest extends TestCase
             ]),
             'api.opendota.com/api/players/'.self::ACCOUNT_ID.'/peers*' => Http::response([
                 ['account_id' => 123456789, 'personaname' => 'Teammate', 'avatar' => 'https://example.com/peer.jpg', 'games' => 12, 'win' => 8, 'last_match_time' => now()->subDay()->timestamp],
-                ['account_id' => 987654321, 'personaname' => 'OtherPeer', 'games' => 5, 'win' => 2],
+                ['account_id' => 987654321, 'personaname' => 'OtherPeer', 'games' => 5, 'win' => 2, 'profile' => null],
             ]),
             'api.opendota.com/api/constants/items*' => Http::response([
                 'blink' => ['id' => 1, 'dname' => 'Blink Dagger', 'img' => '/apps/dota2/images/dota_react/items/blink.png', 'cost' => 2250],
@@ -498,19 +547,7 @@ class DotaProfileTest extends TestCase
                     ],
                 ],
             ]),
-            'api.opendota.com/api/players/'.self::ACCOUNT_ID.'*' => Http::response([
-                'profile' => [
-                    'account_id' => self::ACCOUNT_ID,
-                    'personaname' => 'Dendi',
-                    'avatarfull' => 'https://example.com/dendi.jpg',
-                    'steamid' => '76561198030654385',
-                    'profileurl' => 'https://steamcommunity.com/profiles/76561198030654385',
-                    'loccountrycode' => 'UA',
-                ],
-                'rank_tier' => 80,
-                'leaderboard_rank' => 120,
-                'mmr_estimate' => ['estimate' => 9120],
-            ]),
+            'api.opendota.com/api/players/'.self::ACCOUNT_ID.'*' => Http::response($profileResponse),
             'api.opendota.com/api/heroStats*' => Http::response([
                 ['id' => 1, 'localized_name' => 'Anti-Mage', 'img' => '/apps/dota2/images/heroes/antimage_full.png'],
                 ['id' => 2, 'localized_name' => 'Axe', 'img' => '/apps/dota2/images/heroes/axe_full.png'],
