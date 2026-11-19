@@ -13,7 +13,9 @@ use App\Support\SteamId;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class DotaPlayerController extends Controller
 {
@@ -74,9 +76,64 @@ class DotaPlayerController extends Controller
             'recentMatches' => array_slice($player['matches'], 0, 25),
             'activityHeatmap' => $this->activityHeatmap($history),
             'heroUsage' => $this->heroUsage(array_slice($history, 0, 25)),
-            'steamBans' => $steam->bans($steamId),
             'rankStats' => $this->rankStats($history),
             'steamProfile' => $steam->summary($steamId),
+            'steamBans' => $steam->bans($steamId),
+        ]);
+    }
+
+    /**
+     * Paginated, filterable match list for one player.
+     */
+    public function matches(int $accountId, Request $request, OpenDotaService $openDota): View|Response
+    {
+        $filters = [
+            'hero_id' => $request->integer('hero_id') ?: 0,
+            'result' => in_array($request->query('result'), ['win', 'loss'], true) ? $request->query('result') : '',
+            'rank' => in_array($request->query('rank'), ['ranked', 'unranked'], true) ? $request->query('rank') : '',
+        ];
+
+        try {
+            $result = $openDota->playerMatches(
+                $accountId,
+                max(1, $request->integer('page') ?: 1),
+                min(50, max(5, $request->integer('per_page') ?: 25)),
+                $filters,
+            );
+        } catch (PlayerNotFoundException $exception) {
+            return response()->view('errors.player', [
+                'title' => 'Игрок не найден',
+                'message' => $exception->getMessage(),
+                'backUrl' => route('home'),
+            ], 404);
+        } catch (ApiRateLimitException $exception) {
+            return response()->view('errors.player', [
+                'title' => 'Лимит API исчерпан',
+                'message' => $exception->getMessage(),
+                'backUrl' => route('home'),
+            ], 429);
+        } catch (ApiUnavailableException|ExternalApiException $exception) {
+            return response()->view('errors.api', [
+                'message' => $exception->getMessage(),
+                'backUrl' => route('home'),
+            ], 502);
+        }
+
+        $perPage = min(50, max(5, $request->integer('per_page') ?: 25));
+        $matches = new LengthAwarePaginator(
+            $result['rows'],
+            $result['total'],
+            $perPage,
+            max(1, $request->integer('page') ?: 1),
+            ['path' => $request->url()],
+        );
+        $matches->withQueryString();
+
+        return view('dota.matches', [
+            'player' => $result['player'],
+            'matches' => $matches,
+            'heroOptions' => $result['heroes'],
+            'filters' => $result['filters'],
         ]);
     }
 

@@ -523,6 +523,108 @@ class OpenDotaService
         });
     }
 
+    /**
+     * Full match history for the dedicated matches tab.
+     *
+     * @param  array{hero_id?: int, result?: string, rank?: string}  $filters
+     * @return array{player: array<string, mixed>, rows: array<int, array<string, mixed>>, total: int, heroes: array<int, array<string, mixed>>, filters: array<string, mixed>}
+     */
+    public function playerMatches(int $accountId, int $page, int $perPage, array $filters = []): array
+    {
+        $profile = $this->player($accountId);
+        $heroes = $this->heroStats();
+        $rows = $profile['match_history'] ?? [];
+
+        if ($rows === []) {
+            $rows = $this->transformHistory(
+                $this->optionalGet('players/'.$accountId.'/matches', [
+                    'limit' => 500,
+                    'date' => self::HISTORY_DAYS,
+                ]),
+                $heroes,
+            );
+        }
+
+        $known = [];
+
+        foreach ($profile['matches'] ?? [] as $match) {
+            if (! empty($match['match_id'])) {
+                $known[(int) $match['match_id']] = $match;
+            }
+        }
+
+        foreach ($rows as &$row) {
+            $detail = $known[(int) ($row['match_id'] ?? 0)] ?? null;
+
+            if (is_array($detail)) {
+                foreach ([
+                    'kills', 'deaths', 'assists', 'gpm', 'xpm', 'duration', 'duration_label',
+                    'net_worth', 'level', 'items', 'lobby_type', 'game_mode',
+                    'lobby_type_label', 'game_mode_label', 'is_ranked', 'party_label',
+                ] as $field) {
+                    $value = $detail[$field] ?? null;
+
+                    if ($value !== null && $value !== [] && $value !== false) {
+                        $row[$field] = $value;
+                    }
+                }
+            }
+
+            $row['kda'] = round(
+                ((int) ($row['kills'] ?? 0) + (int) ($row['assists'] ?? 0)) / max((int) ($row['deaths'] ?? 0), 1),
+                2
+            );
+        }
+        unset($row);
+
+        $heroId = (int) ($filters['hero_id'] ?? 0);
+        $result = (string) ($filters['result'] ?? '');
+        $rank = (string) ($filters['rank'] ?? '');
+
+        $rows = array_values(array_filter($rows, function (array $row) use ($heroId, $result, $rank) {
+            if ($heroId > 0 && (int) ($row['hero_id'] ?? 0) !== $heroId) {
+                return false;
+            }
+
+            if ($result === 'win' && ! ($row['win'] ?? false)) {
+                return false;
+            }
+
+            if ($result === 'loss' && ($row['win'] ?? false)) {
+                return false;
+            }
+
+            if ($rank === 'ranked' && ! ($row['is_ranked'] ?? false)) {
+                return false;
+            }
+
+            if ($rank === 'unranked' && ($row['is_ranked'] ?? false)) {
+                return false;
+            }
+
+            return true;
+        }));
+
+        usort($rows, fn (array $a, array $b) => strcmp((string) ($b['started_at'] ?? ''), (string) ($a['started_at'] ?? '')));
+
+        $total = count($rows);
+        $offset = ($page - 1) * $perPage;
+        $pageRows = array_slice($rows, $offset, $perPage);
+        $pageRows = $this->enrichMatches($pageRows, $accountId, count($pageRows));
+
+        return [
+            'player' => $profile,
+            'rows' => $pageRows,
+            'total' => $total,
+            'heroes' => $profile['heroes'] ?? [],
+            'filters' => [
+                'hero_id' => $heroId,
+                'result' => $result,
+                'rank' => $rank,
+            ],
+        ];
+    }
+
     private function cacheKey(int $accountId): string
     {
         return "opendota:player:v3:{$accountId}";
@@ -1157,6 +1259,12 @@ class OpenDotaService
                 'started_at' => $startTime > 0
                     ? CarbonImmutable::createFromTimestampUTC($startTime)->toIso8601String()
                     : null,
+                'lobby_type' => isset($match['lobby_type']) ? (int) $match['lobby_type'] : null,
+                'game_mode' => isset($match['game_mode']) ? (int) $match['game_mode'] : null,
+                'lobby_type_label' => $this->lobbyTypeLabel(isset($match['lobby_type']) ? (int) $match['lobby_type'] : null),
+                'game_mode_label' => $this->gameModeLabel(isset($match['game_mode']) ? (int) $match['game_mode'] : null),
+                'is_ranked' => (int) ($match['lobby_type'] ?? 0) === 7,
+                'party_label' => (int) ($match['party_id'] ?? 0) > 0 ? 'Party' : 'Solo',
                 'level' => null,
                 'net_worth' => null,
                 'item_0' => null,
@@ -1404,6 +1512,18 @@ class OpenDotaService
                 'hero_image' => $hero['image'],
                 'win' => $radiantWin === $isRadiant,
                 'started_at' => CarbonImmutable::createFromTimestampUTC($startTime)->toIso8601String(),
+                'duration' => (int) ($match['duration'] ?? 0),
+                'kills' => (int) ($match['kills'] ?? 0),
+                'deaths' => (int) ($match['deaths'] ?? 0),
+                'assists' => (int) ($match['assists'] ?? 0),
+                'gpm' => (int) ($match['gold_per_min'] ?? 0),
+                'xpm' => (int) ($match['xp_per_min'] ?? 0),
+                'lobby_type' => isset($match['lobby_type']) ? (int) $match['lobby_type'] : null,
+                'game_mode' => isset($match['game_mode']) ? (int) $match['game_mode'] : null,
+                'lobby_type_label' => $this->lobbyTypeLabel(isset($match['lobby_type']) ? (int) $match['lobby_type'] : null),
+                'game_mode_label' => $this->gameModeLabel(isset($match['game_mode']) ? (int) $match['game_mode'] : null),
+                'is_ranked' => (int) ($match['lobby_type'] ?? 0) === 7,
+                'party_label' => (int) ($match['party_id'] ?? 0) > 0 ? 'Party' : 'Solo',
             ];
         }
 
