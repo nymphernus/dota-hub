@@ -116,11 +116,6 @@
                 </div>
             </div>
 
-            <p class="max-w-xl text-[11px] leading-relaxed text-mist-500">
-                Проект не аффилирован с Valve Corporation. Dota 2 — товарный знак Valve.
-                Статистика предоставляется как есть и обновляется из кэша.
-            </p>
-
             <p class="text-[11px] text-mist-500">&copy; {{ date('Y') }} Stats Radar</p>
         </div>
     </footer>

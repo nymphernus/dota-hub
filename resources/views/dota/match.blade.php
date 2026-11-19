@@ -139,10 +139,7 @@
 
         <section class="mt-4" aria-label="График нетворса">
             <div class="mb-3 flex flex-wrap items-end justify-between gap-2">
-                <div>
-                    <p class="label">Economy</p>
-                    <h2 class="mt-1 text-lg font-bold text-white">Нетворс по минутам</h2>
-                </div>
+                <h2 class="text-lg font-bold text-white">Нетворс по минутам</h2>
                 <span class="text-[11px] text-mist-500">
                     @if ($hasNetWorth)
                         OpenDota parsed data · Radiant и Dire

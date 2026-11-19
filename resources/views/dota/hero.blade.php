@@ -122,8 +122,7 @@
         <section class="mt-4 card overflow-hidden">
             <div class="flex flex-wrap items-start justify-between gap-3 border-b border-white/[0.06] px-4 py-4 sm:px-5">
                 <div>
-                    <p class="label">Бенчмарки</p>
-                    <h2 class="mt-1 text-lg font-bold text-white">Сравнение с игроками на этом герое</h2>
+                    <h2 class="text-lg font-bold text-white">Бенчмарки</h2>
                     <p class="mt-1 text-[11px] leading-relaxed text-mist-500">
                         Перцентили OpenDota по последним матчам. Чем правее маркер, тем сильнее показатель относительно других игроков.
                     </p>
@@ -207,10 +206,7 @@
 
         <section class="mt-4 card overflow-hidden">
             <div class="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.06] px-4 py-4 sm:px-5">
-                <div>
-                    <p class="label">История</p>
-                    <h2 class="mt-1 text-lg font-bold text-white">Последние матчи на герое</h2>
-                </div>
+                <h2 class="text-lg font-bold text-white">История матчей</h2>
                 <div class="flex items-center gap-3 text-[11px]">
                     <span class="inline-flex items-center gap-1.5 text-emerald-300"><span class="h-2 w-2 rounded-full bg-emerald-400"></span> Победа</span>
                     <span class="inline-flex items-center gap-1.5 text-rose-300"><span class="h-2 w-2 rounded-full bg-rose-400"></span> Поражение</span>

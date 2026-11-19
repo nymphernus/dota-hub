@@ -55,10 +55,7 @@
                 }
             }">
                 <div class="flex flex-col gap-3 border-b border-white/[0.06] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-                    <div>
-                        <p class="label">Hero pool</p>
-                        <h2 class="mt-1 text-lg font-bold text-white">Герои</h2>
-                    </div>
+                    <h2 class="text-lg font-bold text-white">Герои</h2>
                     <div class="relative w-full sm:w-72">
                         <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-mist-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="6.5" /><path d="M16 16l4.5 4.5" stroke-linecap="round" /></svg>
                         <input type="search" x-model="search" class="input !py-2.5 !pl-10" placeholder="Поиск героя..." aria-label="Поиск героя по имени" autocomplete="off">

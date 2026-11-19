@@ -19,10 +19,7 @@
 
         <div class="card mt-4 overflow-hidden">
             <div class="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] px-4 py-4 sm:px-5">
-                <div>
-                    <p class="label">Совместные матчи</p>
-                    <h2 class="mt-1 text-lg font-bold text-white">Союзники</h2>
-                </div>
+                <h2 class="text-lg font-bold text-white">Союзники</h2>
                 <span class="badge border-white/10 bg-white/5 text-mist-400">{{ count($player['peers'] ?? []) }}</span>
             </div>
 

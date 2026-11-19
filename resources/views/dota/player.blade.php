@@ -76,10 +76,7 @@
 
                 <section class="card overflow-hidden">
                     <div class="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] px-4 py-3 sm:px-5">
-                        <div>
-                            <p class="label">Hero pool</p>
-                            <h2 class="mt-1 text-base font-bold text-white">Самые играемые герои</h2>
-                        </div>
+                        <h2 class="text-base font-bold text-white">Самые играемые герои</h2>
                         <span class="badge border-white/10 bg-white/5 text-mist-400">За всё время</span>
                     </div>
 

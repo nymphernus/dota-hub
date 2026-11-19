@@ -85,6 +85,13 @@ class DotaProfileTest extends TestCase
         $response->assertSee('aria-label="Матчей в колесе: 6"', false);
 
         $content = (string) $response->getContent();
+        $this->assertSame(3, substr_count($content, 'role="listitem"'));
+        $response->assertDontSee('>KDA<', false);
+        $response->assertDontSee('K + A / D');
+        $response->assertDontSee('Hero pool');
+        $response->assertDontSee('аффилирован');
+        $response->assertSee('Самые играемые герои');
+
         $wheelPosition = strpos($content, 'id="heroUsageChart"');
         $activityPosition = strpos($content, '90 дней назад');
         $alliesPosition = strpos($content, '>Союзники</h2>');

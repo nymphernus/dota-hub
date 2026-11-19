@@ -31,4 +31,41 @@ class UiAssetsTest extends TestCase
         $controller = (string) file_get_contents(app_path('Http/Controllers/DotaPlayerController.php'));
         $this->assertStringNotContainsString('HERO_USAGE_COLORS', $controller);
     }
+
+    public function test_section_titles_have_no_english_or_duplicate_eyebrows(): void
+    {
+        $files = [
+            'dota/player.blade.php',
+            'dota/heroes.blade.php',
+            'dota/peers.blade.php',
+            'dota/match.blade.php',
+            'dota/hero.blade.php',
+        ];
+
+        $staleLabels = [
+            '>Hero pool<',
+            '>Hero wheel<',
+            '>Frequently played with<',
+            '>Календарь матчей<',
+            '>Совместные матчи<',
+            '>Economy<',
+            '<p class="label">Бенчмарки</p>',
+            '<p class="label">История</p>',
+        ];
+
+        foreach ($files as $file) {
+            $source = (string) file_get_contents(resource_path('views/'.$file));
+
+            foreach ($staleLabels as $label) {
+                $this->assertStringNotContainsString($label, $source, $file.' still contains '.$label);
+            }
+        }
+
+        $metrics = (string) file_get_contents(resource_path('views/components/player-metrics.blade.php'));
+        $this->assertStringNotContainsString('>KDA<', $metrics);
+        $this->assertStringNotContainsString('K + A / D', $metrics);
+
+        $layout = (string) file_get_contents(resource_path('views/layouts/app.blade.php'));
+        $this->assertStringNotContainsString('Проект не аффилирован', $layout);
+    }
 }
