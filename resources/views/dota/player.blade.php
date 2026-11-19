@@ -32,6 +32,37 @@
 
         <x-player-tabs :player="$player" active="overview" />
 
+        <div class="mt-4 flex flex-wrap items-center gap-2">
+            @if (session('steam_id'))
+                @if ($isFavorite ?? false)
+                    <form method="POST" action="{{ route('favorites.destroy', ['accountId' => $player['account_id']]) }}">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn-ghost !border-amber-500/25 !bg-amber-500/10 !text-amber-200">
+                            <svg class="h-4 w-4 text-amber-300" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.5l6.1-.9L12 3Z"/></svg>
+                            В избранном
+                        </button>
+                    </form>
+                @else
+                    <form method="POST" action="{{ route('favorites.store') }}">
+                        @csrf
+                        <input type="hidden" name="account_id" value="{{ $player['account_id'] }}">
+                        <input type="hidden" name="nickname" value="{{ $player['nickname'] }}">
+                        <input type="hidden" name="avatar" value="{{ $player['avatar'] }}">
+                        <button type="submit" class="btn-ghost">
+                            <svg class="h-4 w-4 text-mist-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.5l6.1-.9L12 3Z" stroke-linejoin="round"/></svg>
+                            В избранное
+                        </button>
+                    </form>
+                @endif
+            @else
+                <a href="{{ route('auth.steam', ['intended' => url()->current()]) }}" class="btn-ghost">
+                    <svg class="h-4 w-4 text-mist-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.5l6.1-.9L12 3Z" stroke-linejoin="round"/></svg>
+                    В избранное
+                </a>
+            @endif
+        </div>
+
         @if ($player['is_private'])
             <div class="mt-4 flex items-start gap-3 rounded-2xl border border-amber-500/25 bg-amber-500/[0.08] p-4 text-sm text-amber-100">
                 <svg class="mt-0.5 h-5 w-5 shrink-0 text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2" /><path d="M8 10V7a4 4 0 018 0v3" stroke-linecap="round" /></svg>

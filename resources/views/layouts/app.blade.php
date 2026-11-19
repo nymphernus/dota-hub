@@ -33,14 +33,29 @@
             </a>
 
             <div class="ml-auto flex items-center gap-3">
-                @if (session('steam_id'))
+                @php
+                    $steamSessionId = (string) session('steam_id', '');
+                    $steamAccountId = \App\Support\SteamId::isSteamId64($steamSessionId)
+                        ? \App\Support\SteamId::accountIdFromSteamId64($steamSessionId)
+                        : null;
+                @endphp
+
+                @if ($steamAccountId)
                     <div class="flex items-center gap-2.5">
-                        @if (session('steam_avatar'))
-                            <img src="{{ session('steam_avatar') }}" alt="Аватар Steam" class="h-8 w-8 rounded-lg object-cover ring-1 ring-white/10">
-                        @endif
-                        <span class="hidden max-w-[140px] truncate text-xs font-semibold text-mist-200 sm:block">
-                            {{ session('steam_nickname') ?: 'Steam аккаунт' }}
-                        </span>
+                        <a href="{{ route('dota.player', ['accountId' => $steamAccountId]) }}" class="group flex items-center gap-2.5 rounded-xl px-1 py-1 transition hover:bg-white/5" aria-label="Открыть мой профиль">
+                            @if (session('steam_avatar'))
+                                <img src="{{ session('steam_avatar') }}" alt="Аватар Steam" class="h-8 w-8 rounded-lg object-cover ring-1 ring-white/10 transition group-hover:ring-radar-500/40">
+                            @endif
+                            <span class="hidden max-w-[140px] truncate text-xs font-semibold text-mist-200 transition group-hover:text-white sm:block">
+                                {{ session('steam_nickname') ?: 'Steam аккаунт' }}
+                            </span>
+                        </a>
+
+                        <a href="{{ route('favorites.index') }}" class="btn-ghost !px-2.5 !py-2" aria-label="Избранное" title="Избранное">
+                            <svg class="h-4 w-4 text-amber-300" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.5l6.1-.9L12 3Z"/></svg>
+                            <span class="hidden sm:inline">Избранное</span>
+                        </a>
+
                         <form method="POST" action="{{ route('auth.steam.logout') }}">
                             @csrf
                             <input type="hidden" name="intended" value="{{ url()->current() }}">

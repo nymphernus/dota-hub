@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\SteamAuthController;
 use App\Http\Controllers\DotaPlayerController;
+use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\HeroPlayerController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MatchController;
@@ -17,6 +18,12 @@ Route::post('/auth/steam/logout', [SteamAuthController::class, 'logout'])->name(
 Route::post('/search', SearchController::class)
     ->middleware('throttle:20,1')
     ->name('search');
+
+Route::get('/favorites', [FavoriteController::class, 'index'])->name('favorites.index');
+Route::post('/favorites', [FavoriteController::class, 'store'])->name('favorites.store');
+Route::delete('/favorites/{accountId}', [FavoriteController::class, 'destroy'])
+    ->whereNumber('accountId')
+    ->name('favorites.destroy');
 
 Route::get('/dota/player/{accountId}', [DotaPlayerController::class, 'show'])
     ->whereNumber('accountId')

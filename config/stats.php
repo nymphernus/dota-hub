@@ -22,6 +22,7 @@ return [
         'dota_items' => (int) env('OPENDOTA_ITEMS_CACHE_TTL', 86400),
         'steam_profile' => (int) env('STEAM_CACHE_TTL', 1800),
         'steam_vanity' => (int) env('STEAM_VANITY_CACHE_TTL', 604800),
+        'favorites' => (int) env('FAVORITES_CACHE_TTL', 2592000),
     ],
 
     /*

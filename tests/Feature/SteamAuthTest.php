@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Services\OpenDota\OpenDotaService;
+use App\Support\SteamId;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Socialite\Contracts\Factory as SocialiteFactory;
 use Laravel\Socialite\Contracts\Provider;
@@ -138,10 +140,27 @@ class SteamAuthTest extends TestCase
             ->assertSessionMissing('steam_avatar');
     }
 
-    public function test_authenticated_header_shows_avatar_and_logout(): void
+    public function test_authenticated_header_shows_profile_link_favorites_and_logout(): void
     {
+        $steamId = '76561198030654385';
+        $accountId = SteamId::accountIdFromSteamId64($steamId);
+
+        $this->mock(OpenDotaService::class, function ($mock) use ($accountId): void {
+            $mock->shouldReceive('player')
+                ->once()
+                ->with($accountId)
+                ->andReturn([
+                    'nickname' => 'Dendi',
+                    'avatar' => 'https://example.com/dendi.jpg',
+                    'mmr_estimate' => 5290,
+                    'mmr_is_estimated' => true,
+                    'rank_label' => 'Immortal',
+                    'matches' => [],
+                ]);
+        });
+
         $response = $this->withSession([
-            'steam_id' => '76561198030654385',
+            'steam_id' => $steamId,
             'steam_nickname' => 'Dendi',
             'steam_avatar' => 'https://example.com/steam.jpg',
         ])->get(route('home'));
@@ -149,6 +168,9 @@ class SteamAuthTest extends TestCase
         $response->assertOk();
         $response->assertSee('Dendi');
         $response->assertSee('Выйти');
+        $response->assertSee(route('dota.player', ['accountId' => $accountId]), false);
+        $response->assertSee(route('favorites.index'), false);
+        $response->assertSee('Избранное');
         $response->assertDontSee('Войти через Steam');
         $response->assertSee(route('auth.steam.logout'), false);
     }

@@ -7,6 +7,7 @@ use App\Exceptions\ApiUnavailableException;
 use App\Exceptions\ExternalApiException;
 use App\Exceptions\PlayerNotFoundException;
 use App\Models\PlayerSearch;
+use App\Services\Favorites\FavoriteService;
 use App\Services\OpenDota\OpenDotaService;
 use App\Services\Steam\SteamService;
 use App\Support\SteamId;
@@ -19,7 +20,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 class DotaPlayerController extends Controller
 {
-    public function show(int $accountId, OpenDotaService $openDota, SteamService $steam): View|Response
+    public function show(int $accountId, OpenDotaService $openDota, SteamService $steam, FavoriteService $favorites): View|Response
     {
         $player = $this->playerOrError($accountId, $openDota);
 
@@ -35,6 +36,7 @@ class DotaPlayerController extends Controller
 
         $history = $player['match_history'] ?? [];
         $steamId = ($player['steam_id'] ?? '') ?: SteamId::steamId64FromAccountId($accountId);
+        $sessionSteamId = (string) session('steam_id', '');
 
         return view('dota.player', [
             'player' => $player,
@@ -44,6 +46,7 @@ class DotaPlayerController extends Controller
             'heroUsage' => $this->heroUsage(array_slice($history, 0, 25)),
             'rankStats' => $this->rankStats($history),
             'steamProfile' => $steam->summary($steamId),
+            'isFavorite' => SteamId::isSteamId64($sessionSteamId) && $favorites->has($sessionSteamId, $accountId),
         ]);
     }
 
