@@ -119,8 +119,9 @@ class DotaPlayerController extends Controller
     /**
      * Personal records rendered as tiles, backed by a 24-hour Redis cache.
      */
-    public function records(int $accountId, OpenDotaService $openDota, SteamService $steam, FavoriteService $favorites): View|Response
+    public function records(int $accountId, Request $request, OpenDotaService $openDota, SteamService $steam, FavoriteService $favorites): View|Response
     {
+        $recordsScope = $request->query('scope') === 'ranked' ? 'ranked' : 'all';
         $player = $this->playerOrError($accountId, $openDota);
 
         if ($player instanceof Response) {
@@ -138,7 +139,12 @@ class DotaPlayerController extends Controller
             'pageTitle' => $player['nickname'].' - Рекорды - DotaHub',
             'activeTab' => 'records',
             'profileSection' => 'Рекорды',
-            'records' => $openDota->playerRecords($accountId, $player['match_history'] ?? []),
+            'records' => $openDota->playerRecords(
+                $accountId,
+                $player['match_history'] ?? [],
+                $recordsScope === 'ranked',
+            ),
+            'recordsScope' => $recordsScope,
             'steamProfile' => $steam->summary(
                 ($player['steam_id'] ?? '') ?: SteamId::steamId64FromAccountId($accountId)
             ),

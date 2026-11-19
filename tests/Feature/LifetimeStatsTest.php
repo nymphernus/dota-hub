@@ -72,6 +72,9 @@ class LifetimeStatsTest extends TestCase
         $response->assertSee('id="tab-overview"', false);
         $response->assertSee('id="tab-records"', false);
         $response->assertSee('Рекорды');
+        $response->assertSee('Все матчи');
+        $response->assertSee('Только рейтинг');
+        $response->assertViewHas('recordsScope', 'all');
         $response->assertSee('Самый длинный матч');
         $response->assertSee('Наибольшее число убийств');
         $response->assertSee('Максимум GPM');
@@ -127,6 +130,30 @@ class LifetimeStatsTest extends TestCase
                 && $byKey['LONGEST_WIN_STREAK']['value'] === 1
                 && $byKey['LONGEST_LOSS_STREAK']['value'] === 2
                 && $byKey['LONGEST_LOSS_STREAK']['value_label'] === '2 поражения';
+        });
+    }
+
+    public function test_records_page_filters_ranked_scope_by_lobby_type(): void
+    {
+        $this->fakeOpenDota([]);
+
+        $response = $this->get(route('dota.player.records', [
+            'accountId' => self::ACCOUNT_ID,
+            'scope' => 'ranked',
+        ]));
+
+        $response->assertOk();
+        $response->assertSee('Все матчи');
+        $response->assertSee('Только рейтинг');
+        $response->assertSee('lobby_type 7');
+        $response->assertViewHas('recordsScope', 'ranked');
+        $response->assertViewHas('records', function (array $records): bool {
+            $byKey = collect($records)->keyBy('key');
+
+            return $byKey['DURATION']['value'] === 2400
+                && $byKey['SHORTEST_DURATION']['value'] === 1980
+                && $byKey['KILLS']['value'] === 10
+                && $byKey['LONGEST_LOSS_STREAK']['value'] === 1;
         });
     }
 

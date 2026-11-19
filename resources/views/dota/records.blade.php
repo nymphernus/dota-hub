@@ -4,6 +4,8 @@
 @section('description', 'Личные рекорды игрока '.$player['nickname'].' в Dota 2: самый длинный и короткий матч, максимум убийств, урона, GPM и серии побед и поражений.')
 
 @section('profile-content')
+        @php $recordsScope = $recordsScope ?? 'all'; @endphp
+
         <section class="mt-4">
             <div class="flex flex-wrap items-center justify-between gap-2 px-1">
                 <div>
@@ -14,6 +16,32 @@
                     <span class="badge text-mist-400">{{ count($records) }} достижений</span>
                 @endif
             </div>
+
+            <div class="mt-3 inline-flex rounded-lg bg-white/[0.04] p-1" role="tablist" aria-label="Тип рекордов">
+                <a
+                    href="{{ route('dota.player.records', ['accountId' => $player['account_id']]) }}"
+                    role="tab"
+                    aria-selected="{{ $recordsScope === 'all' ? 'true' : 'false' }}"
+                    @class([
+                        'rounded-md px-3 py-2 text-sm font-semibold transition',
+                        'bg-gold-400/15 text-gold-200' => $recordsScope === 'all',
+                        'text-mist-400 hover:text-white' => $recordsScope !== 'all',
+                    ])
+                >Все матчи</a>
+                <a
+                    href="{{ route('dota.player.records', ['accountId' => $player['account_id'], 'scope' => 'ranked']) }}"
+                    role="tab"
+                    aria-selected="{{ $recordsScope === 'ranked' ? 'true' : 'false' }}"
+                    @class([
+                        'rounded-md px-3 py-2 text-sm font-semibold transition',
+                        'bg-gold-400/15 text-gold-200' => $recordsScope === 'ranked',
+                        'text-mist-400 hover:text-white' => $recordsScope !== 'ranked',
+                    ])
+                >Только рейтинг</a>
+            </div>
+            <p class="mt-2 px-1 text-[10px] text-mist-500">
+                {{ $recordsScope === 'ranked' ? 'Учитываются только рейтинговые матчи (lobby_type 7).' : 'Учитываются все сохранённые матчи.' }}
+            </p>
 
             @if ($records === [])
                 <div class="card mt-3 p-10 text-center text-sm text-mist-400">

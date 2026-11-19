@@ -617,6 +617,9 @@ class OpenDotaService
         Cache::forget($this->cacheKey($accountId));
         Cache::forget($this->playerHeaderCacheKey($accountId));
         Cache::forget("opendota:records:v1:{$accountId}");
+        Cache::forget("opendota:records:v2:{$accountId}");
+        Cache::forget("opendota:records:v3:{$accountId}:all");
+        Cache::forget("opendota:records:v3:{$accountId}:ranked");
     }
 
     /**
@@ -900,12 +903,21 @@ class OpenDotaService
      * @param  array<int, array<string, mixed>>  $history
      * @return array<int, array<string, mixed>>
      */
-    public function playerRecords(int $accountId, array $history = []): array
+    public function playerRecords(int $accountId, array $history = [], bool $rankedOnly = false): array
     {
+        $scope = $rankedOnly ? 'ranked' : 'all';
+
+        if ($rankedOnly) {
+            $history = array_values(array_filter(
+                $history,
+                fn (array $match): bool => (int) ($match['lobby_type'] ?? 0) === 7,
+            ));
+        }
+
         $ttl = (int) config('stats.cache.dota_records', 86400);
-        $cacheKey = "opendota:records:v2:{$accountId}";
-        $fingerprint = sha1(implode(':', array_map(
-            fn (array $match) => (string) ($match['match_id'] ?? ''),
+        $cacheKey = "opendota:records:v3:{$accountId}:{$scope}";
+        $fingerprint = sha1($scope.':'.implode(':', array_map(
+            fn (array $match) => (string) ($match['match_id'] ?? '').'@'.(string) ($match['started_at'] ?? ($match['start_time'] ?? '')),
             $history,
         )));
 
@@ -917,6 +929,24 @@ class OpenDotaService
 
         $heroes = [];
         $derived = $history !== [] ? $this->recordsFromHistory($history, $heroes) : [];
+
+        if ($rankedOnly) {
+            try {
+                $heroes = $this->heroStats();
+                $derived = $history !== [] ? $this->recordsFromHistory($history, $heroes) : [];
+            } catch (ApiUnavailableException) {
+                // Hero names are optional; derived values still work.
+            }
+
+            $records = $this->orderRecords($derived);
+
+            Cache::put($cacheKey, [
+                '_fingerprint' => $fingerprint,
+                'records' => $records,
+            ], $ttl);
+
+            return $records;
+        }
 
         try {
             $raw = $this->optionalGet("players/{$accountId}/records");
