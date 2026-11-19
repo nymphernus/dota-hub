@@ -22,7 +22,7 @@ class DotaPlayerController extends Controller
     private const HERO_USAGE_COLORS = [
         '#34d399',
         '#22d3ee',
-        '#a78bfa',
+        '#fb923c',
         '#fbbf24',
         '#fb7185',
         '#f472b6',

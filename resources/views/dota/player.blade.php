@@ -124,7 +124,7 @@
                         <div class="grid aspect-square w-full grid-flow-col grid-rows-7 gap-[3px]" style="grid-template-columns: repeat(13, minmax(0, 1fr));" aria-label="Активность за последние 90 дней">
                             @foreach ($activityHeatmap as $day)
                                 <div
-                                    class="flex aspect-square items-center justify-center rounded-[2px] text-[7px] font-black leading-none {{ $heatmapTones[$day['level']] }} transition hover:scale-125 hover:ring-white/30"
+                                    class="flex aspect-square items-center justify-center rounded-[2px] text-[11px] font-black leading-none {{ $heatmapTones[$day['level']] }} transition hover:scale-125 hover:ring-white/30"
                                     title="{{ $day['label'] }}: {{ $day['count'] }} игр, {{ $day['wins'] }} побед, {{ $day['losses'] }} поражений"
                                     aria-label="{{ $day['label'] }}: {{ $day['count'] }} игр, {{ $day['wins'] }} побед, {{ $day['losses'] }} поражений"
                                     data-date="{{ $day['date'] }}"

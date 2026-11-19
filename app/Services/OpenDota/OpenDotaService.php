@@ -57,7 +57,7 @@ class OpenDotaService
     private const TEAM_CHART_COLORS = [
         '#34d399',
         '#22d3ee',
-        '#a78bfa',
+        '#fb923c',
         '#fbbf24',
         '#fb7185',
     ];

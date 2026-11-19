@@ -54,11 +54,6 @@
                             </span>
                             <span class="text-xs font-bold text-white">{{ $player['rank_label'] ?: 'Без ранга' }}</span>
                         </span>
-                        @if ($player['mmr_estimate'] !== null)
-                            <span class="badge border-amber-500/25 bg-amber-500/10 text-amber-200" title="Оценка MMR">
-                                {{ number_format($player['mmr_estimate'], 0, '.', ' ') }} MMR
-                            </span>
-                        @endif
                         @if ($player['is_offline_cache'] ?? false)
                             <span class="badge border-sky-500/25 bg-sky-500/10 text-sky-300">Данные из кэша (Офлайн)</span>
                         @endif

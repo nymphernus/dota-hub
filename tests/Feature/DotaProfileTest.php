@@ -81,6 +81,10 @@ class DotaProfileTest extends TestCase
         $response->assertSee('id="heroUsageChart"', false);
         $response->assertDontSee('id="winrateChart"', false);
         $response->assertSee('data-count=', false);
+        $this->assertSame(1, substr_count((string) $response->getContent(), '>MMR<'));
+        $response->assertDontSee('Медаль + последние', false);
+        $response->assertDontSee('120 из 200 побед');
+        $response->assertSee('text-[11px]', false);
         $response->assertSee('Blink Dagger');
         $response->assertSee('Нетворс');
         $response->assertSee('90 дней назад');
@@ -477,7 +481,7 @@ class DotaProfileTest extends TestCase
         $response = $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertOk();
-        $response->assertSee('3 199 MMR');
+        $response->assertSee('3 199');
         $response->assertViewHas('player', fn (array $player) => $player['mmr_estimate'] === 3199
             && $player['mmr_is_estimated'] === true
             && $player['mmr_games_considered'] === 4);

@@ -30,7 +30,6 @@
         <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-white/[0.05]">
             <div class="h-full rounded-full {{ ($winrate ?? 0) >= 50 ? 'bg-gradient-to-r from-amber-500 to-amber-300' : 'bg-gradient-to-r from-rose-600 to-rose-400' }}" style="width: {{ $winrate ?? 0 }}%"></div>
         </div>
-        <p class="mt-1.5 text-[10px] text-mist-500">{{ $wins }} из {{ $games }} побед</p>
     </div>
 
     <div class="card min-w-[150px] flex-1 p-3 sm:p-4" role="listitem">

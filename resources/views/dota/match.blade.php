@@ -239,7 +239,7 @@
                                             'Safe' => 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300',
                                             'Mid' => 'border-sky-500/25 bg-sky-500/10 text-sky-300',
                                             'Off' => 'border-amber-500/25 bg-amber-500/10 text-amber-300',
-                                            'Soft' => 'border-violet-500/25 bg-violet-500/10 text-violet-300',
+                                            'Soft' => 'border-orange-500/25 bg-orange-500/10 text-orange-300',
                                             'Hard' => 'border-rose-500/25 bg-rose-500/10 text-rose-300',
                                             default => 'border-white/10 bg-white/5 text-mist-400',
                                         };

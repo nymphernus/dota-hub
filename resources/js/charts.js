@@ -64,32 +64,26 @@ if (payload) {
 
                     const point = arc.tooltipPosition();
                     const angle = arc.endAngle - arc.startAngle;
-                    const midRadius = (arc.innerRadius + arc.outerRadius) / 2;
-                    const arcLength = Math.max(angle * midRadius, 1);
+                    const radius = arc.outerRadius;
+                    const arcLength = Math.max(angle * radius, 1);
 
-                    // Scale with the played share so a 1-game slice stays tiny
-                    // instead of covering its neighbours.
+                    // Square minimap-style icons: the played share sets the
+                    // size directly, so a rarely picked hero stays small.
                     const size = Math.min(
-                        arc.outerRadius * 0.55,
-                        Math.max(10, Math.sqrt(games / maxGames) * arc.outerRadius * 0.7),
+                        radius * (games / maxGames),
+                        arcLength - 4,
                     );
 
-                    // Too narrow for even the smallest badge: leave the sector
-                    // coloured but do not draw an icon over the wheel.
-                    if (size + 6 > arcLength) return;
+                    // Too narrow for a square icon: leave the sector coloured.
+                    if (size < 6) return;
 
-                    const context = instance.ctx;
-
-                    context.save();
-                    context.beginPath();
-                    context.arc(point.x, point.y, (size / 2) + 2, 0, Math.PI * 2);
-                    context.fillStyle = '#0b1220';
-                    context.fill();
-                    context.beginPath();
-                    context.arc(point.x, point.y, size / 2, 0, Math.PI * 2);
-                    context.clip();
-                    context.drawImage(image, point.x - (size / 2), point.y - (size / 2), size, size);
-                    context.restore();
+                    instance.ctx.drawImage(
+                        image,
+                        point.x - (size / 2),
+                        point.y - (size / 2),
+                        size,
+                        size,
+                    );
                 });
             },
         };
