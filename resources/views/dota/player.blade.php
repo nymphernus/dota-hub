@@ -8,15 +8,6 @@
     $heroUsageTotal = array_sum(array_column($heroUsage, 'games'));
     $activityTotal = array_sum(array_column($activityHeatmap['days'], 'count'));
     $chartData = ['heroUsage' => $heroUsage];
-    $heatmapTones = [
-        'future' => 'bg-transparent text-transparent',
-        'empty' => 'bg-white/[0.04] ring-1 ring-inset ring-white/[0.03] text-transparent',
-        'win' => 'bg-emerald-500 ring-1 ring-inset ring-emerald-300/40 text-emerald-950',
-        'loss' => 'bg-rose-500 ring-1 ring-inset ring-rose-300/40 text-rose-950',
-        'loss_majority' => 'bg-orange-500 ring-1 ring-inset ring-orange-300/40 text-orange-950',
-        'win_majority' => 'bg-yellow-400 ring-1 ring-inset ring-yellow-200/50 text-yellow-950',
-        'mixed' => 'bg-amber-400 ring-1 ring-inset ring-amber-200/50 text-amber-950',
-    ];
 @endphp
 
 @section('content')
@@ -131,40 +122,19 @@
                         <div>
                             <h2 class="text-sm font-bold text-white">Активность</h2>
                         </div>
-                        <span class="text-[10px] text-mist-500">{{ number_format($activityTotal, 0, '.', ' ') }} игр</span>
+                        <span id="activity-total" class="text-[10px] text-mist-500">{{ number_format($activityTotal, 0, '.', ' ') }} игр</span>
                     </div>
 
                     <div class="mt-4 flex gap-2" aria-label="Активность за последние 13 недель">
-                        <div class="grid w-7 shrink-0 grid-rows-7 gap-[3px] pt-4 text-[9px] font-semibold leading-none text-mist-500">
+                        <div id="heatmap-weekdays" class="grid w-7 shrink-0 grid-rows-7 gap-[3px] pt-4 text-[9px] font-semibold leading-none text-mist-500" aria-hidden="true">
                             @foreach ($activityHeatmap['weekdays'] as $weekday)
                                 <span class="flex items-center justify-end">{{ $weekday }}</span>
                             @endforeach
                         </div>
 
                         <div class="min-w-0 flex-1">
-                            <div class="mb-1 grid gap-[3px] text-[9px] font-semibold text-mist-400" style="grid-template-columns: repeat(13, minmax(0, 1fr));" aria-hidden="true">
-                                @for ($column = 0; $column < 13; $column++)
-                                    <span>
-                                        @foreach ($activityHeatmap['months'] as $month)
-                                            @if ($month['column'] === $column){{ $month['label'] }}@endif
-                                        @endforeach
-                                    </span>
-                                @endfor
-                            </div>
-
-                            <div class="grid w-full grid-rows-7 gap-[3px]" style="grid-template-columns: repeat(13, minmax(0, 1fr));">
-                                @foreach ($activityHeatmap['weeks'] as $week)
-                                    @foreach ($week as $day)
-                                        <div
-                                            class="flex aspect-square items-center justify-center rounded-[2px] text-[11px] font-black leading-none {{ $heatmapTones[$day['level']] }} transition hover:scale-125 hover:ring-white/30"
-                                            title="{{ $day['label'] }}: {{ $day['count'] }} игр, {{ $day['wins'] }} побед, {{ $day['losses'] }} поражений"
-                                            aria-label="{{ $day['label'] }}: {{ $day['count'] }} игр, {{ $day['wins'] }} побед, {{ $day['losses'] }} поражений"
-                                            data-date="{{ $day['date'] }}"
-                                            data-count="{{ $day['count'] }}"
-                                        >{{ $day['count'] > 0 ? $day['count'] : '' }}</div>
-                                    @endforeach
-                                @endforeach
-                            </div>
+                            <div id="heatmap-months" class="mb-1 grid gap-[3px] text-[9px] font-semibold text-mist-400" aria-hidden="true"></div>
+                            <div id="activity-heatmap" class="grid w-full gap-[3px]" role="grid" aria-label="Дни по неделям"></div>
                         </div>
                     </div>
                     <div class="mt-2 flex items-center justify-between text-[10px] text-mist-500">
@@ -257,5 +227,6 @@
 
 @push('scripts')
     <script type="application/json" id="dotahub-chart-data">@json($chartData)</script>
+    <script type="application/json" id="dotahub-heatmap-data">@json($activityHeatmap)</script>
     @vite('resources/js/charts.js')
 @endpush

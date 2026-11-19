@@ -35,6 +35,43 @@ class UiAssetsTest extends TestCase
         $this->assertStringContainsString('style="position: relative; z-index: 10;"', $view);
     }
 
+    public function test_hero_wheel_follows_the_animated_sector_angle_and_offset(): void
+    {
+        $source = (string) file_get_contents(resource_path('js/charts.js'));
+
+        $this->assertStringContainsString('afterDatasetsDraw', $source);
+        $this->assertStringContainsString('arc.startAngle', $source);
+        $this->assertStringContainsString('arc.endAngle', $source);
+        $this->assertStringContainsString('arc.x', $source);
+        $this->assertStringContainsString('arc.y', $source);
+        $this->assertStringContainsString('ctx.save()', $source);
+        $this->assertStringContainsString('ctx.restore()', $source);
+        $this->assertStringContainsString('hoverOffset: 14', $source);
+        $this->assertStringContainsString('arc.options?.offset', $source);
+        $this->assertStringContainsString('hoverOffset / 4', $source);
+        $this->assertStringContainsString('iconRadius = middleRadius + offset', $source);
+        $this->assertStringContainsString('dataset.iconRadius', $source);
+        $this->assertStringContainsString('dataset.iconOffset', $source);
+        $this->assertStringContainsString('dataset.hoverOffset', $source);
+        $this->assertStringContainsString('transitions:', $source);
+    }
+
+    public function test_heatmap_uses_native_date_to_place_weekdays_and_months(): void
+    {
+        $source = (string) file_get_contents(resource_path('js/charts.js'));
+        $view = (string) file_get_contents(resource_path('views/dota/player.blade.php'));
+
+        $this->assertStringContainsString('new Date(Date.UTC', $source);
+        $this->assertStringContainsString('getUTCDay()', $source);
+        $this->assertStringContainsString("['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']", $source);
+        $this->assertStringContainsString('gridAutoFlow', $source);
+        $this->assertStringContainsString('gridTemplateRows', $source);
+        $this->assertStringContainsString('label.style.gridColumn', $source);
+        $this->assertStringContainsString('id="dotahub-heatmap-data"', $view);
+        $this->assertStringContainsString('id="heatmap-months"', $view);
+        $this->assertStringContainsString('id="activity-heatmap"', $view);
+    }
+
     public function test_hero_wheel_uses_dark_sectors_and_highlights_only_the_first_three(): void
     {
         $source = (string) file_get_contents(resource_path('js/charts.js'));

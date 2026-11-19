@@ -103,7 +103,8 @@ class DotaProfileTest extends TestCase
         $this->assertLessThan($alliesPosition, $activityPosition);
 
         $response->assertDontSee('id="winrateChart"', false);
-        $response->assertSee('data-count=', false);
+        $response->assertSee('id="dotahub-heatmap-data"', false);
+        $response->assertSee('id="activity-heatmap"', false);
         $this->assertSame(1, substr_count((string) $response->getContent(), '>MMR<'));
         $response->assertDontSee('Медаль + последние', false);
         $response->assertDontSee('120 из 200 побед');
@@ -111,6 +112,7 @@ class DotaProfileTest extends TestCase
         $response->assertSee('Blink Dagger');
         $response->assertSee('Нетворс');
         $response->assertSee('90 дней назад');
+        $response->assertSee('id="heatmap-weekdays"', false);
         $response->assertSee('>Пн<', false);
         $response->assertSee('>Вс<', false);
         $response->assertSee('Активность за последние 13 недель', false);
