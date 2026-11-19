@@ -7,11 +7,15 @@
     $topHeroes = $player['top_heroes'] ?? array_slice($player['heroes'], 0, 5);
     $heroUsageTotal = array_sum(array_column($heroUsage, 'games'));
     $activityTotal = array_sum(array_column($activityHeatmap, 'count'));
+    $nameHistory = $player['name_history'] ?? [];
+    $steamCreatedAt = $steamProfile['account_created_at'] ?? null;
+    $winShare = $player['games'] > 0 ? round($player['wins'] / $player['games'] * 100, 1) : 0;
+    $lossShare = $player['games'] > 0 ? round($player['losses'] / $player['games'] * 100, 1) : 0;
     $heatmapTones = [
-        'empty' => 'bg-white/[0.04] ring-1 ring-inset ring-white/[0.03]',
-        'win' => 'bg-emerald-500 ring-1 ring-inset ring-emerald-300/40',
-        'loss' => 'bg-rose-500 ring-1 ring-inset ring-rose-300/40',
-        'mixed' => 'bg-violet-500 ring-1 ring-inset ring-violet-300/40',
+        'empty' => 'bg-white/[0.04] ring-1 ring-inset ring-white/[0.03] text-transparent',
+        'win' => 'bg-emerald-500 ring-1 ring-inset ring-emerald-300/40 text-emerald-950',
+        'loss' => 'bg-rose-500 ring-1 ring-inset ring-rose-300/40 text-rose-950',
+        'mixed' => 'bg-amber-500 ring-1 ring-inset ring-amber-300/40 text-amber-950',
     ];
     $chartData = [
         'heroUsage' => $heroUsage,
@@ -70,23 +74,55 @@
 
                         <div class="min-w-0">
                             <div class="flex flex-wrap items-center gap-2">
-                                <span class="relative inline-flex h-10 w-10 items-center justify-center" title="Ранг: {{ $player['rank_label'] ?: 'Не откалиброван' }}">
-                                    <img src="{{ $rankIcon }}" alt="Иконка ранга {{ $player['rank_label'] ?: 'без ранга' }}" class="h-10 w-10 object-contain">
-                                    @if ($rankStarIcon)
-                                        <img src="{{ $rankStarIcon }}" alt="" class="absolute -bottom-1 left-1/2 h-3 w-8 -translate-x-1/2 object-contain">
-                                    @endif
+                                <span class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-2.5 py-1.5" title="Ранг: {{ $player['rank_label'] ?: 'Не откалиброван' }}">
+                                    <span class="relative inline-flex h-9 w-9 items-center justify-center">
+                                        <img src="{{ $rankIcon }}" alt="Иконка ранга {{ $player['rank_label'] ?: 'без ранга' }}" class="h-9 w-9 object-contain">
+                                        @if ($rankStarIcon)
+                                            <img src="{{ $rankStarIcon }}" alt="" class="absolute -bottom-1 left-1/2 h-3 w-8 -translate-x-1/2 object-contain">
+                                        @endif
+                                    </span>
+                                    <span class="text-xs font-bold text-white">{{ $player['rank_label'] ?: 'Без ранга' }}</span>
                                 </span>
+                                @if ($player['mmr_estimate'] !== null)
+                                    <span class="badge border-amber-500/25 bg-amber-500/10 text-amber-200" title="{{ $player['mmr_is_estimated'] ? 'Оценка по последним рейтинговым матчам' : 'Оценка OpenDota' }}">
+                                        {{ $player['mmr_is_estimated'] ? '~' : '' }}{{ number_format($player['mmr_estimate'], 0, '.', ' ') }} MMR
+                                    </span>
+                                @endif
                                 @if ($player['is_offline_cache'] ?? false)
                                     <span class="badge border-sky-500/25 bg-sky-500/10 text-sky-300">Данные из кэша (Офлайн)</span>
                                 @endif
                             </div>
 
-                            <h1 class="mt-2 truncate text-3xl font-black tracking-tight text-white sm:text-4xl">{{ $player['nickname'] }}</h1>
+                            <div class="mt-2 flex flex-wrap items-center gap-x-2" x-data="{ open: false }">
+                                <h1 class="min-w-0 truncate text-3xl font-black tracking-tight text-white sm:text-4xl">{{ $player['nickname'] }}</h1>
+                                @if ($nameHistory !== [])
+                                    <div class="relative">
+                                        <button type="button" @click="open = !open" class="grid h-7 w-7 place-items-center rounded-lg border border-white/10 bg-white/[0.04] text-mist-400 transition hover:text-white" :aria-expanded="open.toString()" aria-label="История никнеймов">
+                                            <svg class="h-3.5 w-3.5 transition" :class="open ? 'rotate-180' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                                        </button>
+                                        <div x-show="open" x-cloak x-transition.opacity.duration.150ms @click.outside="open = false" class="absolute left-0 top-9 z-20 w-56 rounded-xl border border-white/10 bg-ink-950/95 p-2 shadow-2xl backdrop-blur">
+                                            <p class="px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-mist-500">История никнеймов</p>
+                                            <div class="mt-1 max-h-56 space-y-1 overflow-y-auto">
+                                                @foreach ($nameHistory as $entry)
+                                                    <div class="flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-[11px] hover:bg-white/[0.04]">
+                                                        <span class="truncate font-semibold text-mist-200">{{ $entry['name'] }}</span>
+                                                        <span class="shrink-0 text-[9px] text-mist-500">{{ $entry['changed_at'] ? \Carbon\CarbonImmutable::parse($entry['changed_at'])->format('d.m.y') : '' }}</span>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
 
-                            <div class="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-mist-400">
-                                <span class="font-mono text-mist-500">ID {{ $player['account_id'] }}</span>
+                            <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-mist-500">
+                                <span class="font-mono">Dota ID {{ $player['account_id'] }}</span>
+                                <span class="font-mono">SteamID64 {{ $steamProfile['steam_id'] ?? $player['steam_id'] }}</span>
+                                @if ($steamCreatedAt)
+                                    <span>Регистрация {{ \Carbon\CarbonImmutable::parse($steamCreatedAt)->format('d.m.Y') }}</span>
+                                @endif
                                 <a href="{{ $player['profile_url'] ?: 'https://steamcommunity.com/profiles/'.$player['steam_id'] }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 transition hover:text-radar-300">
-                                    Steam-профиль
+                                    Steam
                                     <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 5h5v5M19 5l-8 8M10 5H5v14h14v-5" stroke-linecap="round" stroke-linejoin="round" /></svg>
                                 </a>
                                 <span>Обновлено {{ \Carbon\CarbonImmutable::parse($player['cached_at'])->diffForHumans(short: true) }}</span>
@@ -95,10 +131,6 @@
                     </div>
 
                     <div class="flex shrink-0 flex-wrap items-center gap-2">
-                        <a href="{{ route('dota.player.matches', ['accountId' => $player['account_id']]) }}" class="btn-ghost !py-2">
-                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01" stroke-linecap="round" /></svg>
-                            Матчи
-                        </a>
                         <form method="POST" action="{{ route('dota.player.refresh', ['accountId' => $player['account_id']]) }}" x-data="{ loading: false }" @submit="loading = true" @pageshow.window="loading = false">
                             @csrf
                             <button type="submit" class="btn-ghost !py-2" :disabled="loading">
@@ -139,8 +171,8 @@
         <div
             class="mt-5"
             x-data="{
-                tabs: ['overview', 'heroes', 'account', 'matches'],
-                tab: ['overview', 'heroes', 'account'].includes(window.location.hash.slice(1))
+                tabs: ['overview', 'matches', 'heroes', 'peers'],
+                tab: ['overview', 'heroes', 'peers'].includes(window.location.hash.slice(1))
                     ? window.location.hash.slice(1)
                     : 'overview',
                 matchesUrl: @js(route('dota.player.matches', ['accountId' => $player['account_id']])),
@@ -168,39 +200,67 @@
                 <button type="button" id="tab-overview" aria-controls="panel-overview" @click="setTab('overview')" :class="{ 'tab-button-active': tab === 'overview' }" class="tab-button" role="tab" :aria-selected="(tab === 'overview').toString()" :tabindex="tab === 'overview' ? 0 : -1">
                     Обзор
                 </button>
+                <a id="tab-matches" href="{{ route('dota.player.matches', ['accountId' => $player['account_id']]) }}" @click.prevent="setTab('matches')" class="tab-button" role="tab" aria-selected="false" tabindex="0">
+                    Матчи
+                </a>
                 <button type="button" id="tab-heroes" aria-controls="panel-heroes" @click="setTab('heroes')" :class="{ 'tab-button-active': tab === 'heroes' }" class="tab-button" role="tab" :aria-selected="(tab === 'heroes').toString()" :tabindex="tab === 'heroes' ? 0 : -1">
                     Герои
                     <span class="rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-bold text-mist-400">{{ count($player['heroes']) }}</span>
                 </button>
-                <button type="button" id="tab-account" aria-controls="panel-account" @click="setTab('account')" :class="{ 'tab-button-active': tab === 'account' }" class="tab-button" role="tab" :aria-selected="(tab === 'account').toString()" :tabindex="tab === 'account' ? 0 : -1">
-                    Аккаунт
+                <button type="button" id="tab-peers" aria-controls="panel-peers" @click="setTab('peers')" :class="{ 'tab-button-active': tab === 'peers' }" class="tab-button" role="tab" :aria-selected="(tab === 'peers').toString()" :tabindex="tab === 'peers' ? 0 : -1">
+                    Товарищи
                 </button>
-                <a id="tab-matches" href="{{ route('dota.player.matches', ['accountId' => $player['account_id']]) }}" @click.prevent="setTab('matches')" class="tab-button" role="tab" aria-selected="false" tabindex="0">
-                    Матчи
-                </a>
             </div>
 
             <div class="mt-4">
                 <div id="panel-overview" aria-labelledby="tab-overview" x-show="tab === 'overview'" x-transition.opacity.duration.200ms role="tabpanel" tabindex="0" aria-label="Обзор">
                     <div class="grid items-start gap-4 lg:grid-cols-[minmax(0,7fr)_minmax(280px,3fr)]">
                         <div class="min-w-0 space-y-4">
-                            <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                                <x-stat label="Матчи" :value="number_format($player['games'], 0, '.', ' ')" :hint="number_format($player['wins'], 0, '.', ' ').' побед · '.number_format($player['losses'], 0, '.', ' ').' поражений'" />
-                                <x-stat label="Винрейт" :value="$winrate !== null ? number_format($winrate, 1, '.', '').'%' : '—'" hint="За всё время" />
+                            <div class="grid gap-3 sm:grid-cols-2">
+                                <section class="card p-4 sm:p-5">
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div>
+                                            <p class="label">Матчи</p>
+                                            <p class="mt-1 text-3xl font-black tracking-tight text-white">{{ number_format($player['games'], 0, '.', ' ') }}</p>
+                                        </div>
+                                        <span class="badge border-amber-500/25 bg-amber-500/10 text-amber-200">Всего игр</span>
+                                    </div>
+                                    <div class="mt-4 flex h-2.5 overflow-hidden rounded-full bg-white/[0.05]">
+                                        <div class="h-full bg-amber-400" style="width: {{ $winShare }}%"></div>
+                                        <div class="h-full bg-rose-500" style="width: {{ $lossShare }}%"></div>
+                                    </div>
+                                    <div class="mt-2 flex items-center justify-between text-[11px]">
+                                        <span class="font-semibold text-amber-300">{{ number_format($player['wins'], 0, '.', ' ') }} побед</span>
+                                        <span class="font-semibold text-rose-300">{{ number_format($player['losses'], 0, '.', ' ') }} поражений</span>
+                                    </div>
+                                </section>
+
+                                <section class="card p-4 sm:p-5">
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div>
+                                            <p class="label">Винрейт</p>
+                                            <p class="mt-1 text-3xl font-black tracking-tight {{ ($winrate ?? 0) >= 50 ? 'text-amber-300' : 'text-rose-300' }}">{{ $winrate !== null ? number_format($winrate, 1, '.', '').'%' : '—' }}</p>
+                                        </div>
+                                        <span class="badge border-white/10 bg-white/5 text-mist-300">За всё время</span>
+                                    </div>
+                                    <div class="mt-4 h-2.5 overflow-hidden rounded-full bg-white/[0.05]">
+                                        <div class="h-full rounded-full {{ ($winrate ?? 0) >= 50 ? 'bg-gradient-to-r from-amber-500 to-amber-300' : 'bg-gradient-to-r from-rose-600 to-rose-400' }}" style="width: {{ $winrate ?? 0 }}%"></div>
+                                    </div>
+                                    <p class="mt-2 text-[11px] text-mist-500">{{ number_format($player['wins'], 0, '.', ' ') }} из {{ number_format($player['games'], 0, '.', ' ') }} игр завершились победой</p>
+                                </section>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3">
                                 <x-stat label="Средний KDA" :value="$player['games'] > 0 ? number_format($player['averages']['kda'] ?? 0, 2, '.', '') : '—'" hint="K + A / D" />
-                                <x-stat label="MMR (оценка)" :value="$player['mmr_estimate'] ? number_format($player['mmr_estimate'], 0, '.', ' ') : '—'" hint="OpenDota estimate" />
+                                <x-stat label="MMR (оценка)" :value="$player['mmr_estimate'] !== null ? ($player['mmr_is_estimated'] ? '~' : '').number_format($player['mmr_estimate'], 0, '.', ' ') : '—'" :hint="$player['mmr_is_estimated'] ? 'Медаль + последние '.$player['mmr_games_considered'].' рейтинговых игр' : 'Данные OpenDota'" />
                             </div>
 
                             <section class="card overflow-hidden">
                                 <div class="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] px-4 py-3 sm:px-5">
                                     <div>
                                         <p class="label">Последние игры</p>
-                                        <h2 class="mt-1 text-base font-bold text-white">Матчи</h2>
+                                        <h2 class="mt-1 text-base font-bold text-white">Лента матчей</h2>
                                     </div>
-                                    <a href="{{ route('dota.player.matches', ['accountId' => $player['account_id']]) }}" class="inline-flex items-center gap-1 rounded-lg border border-radar-500/25 bg-radar-500/10 px-3 py-1.5 text-[11px] font-semibold text-radar-200 transition hover:bg-radar-500/20">
-                                        Матчи
-                                        <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke-linecap="round" /></svg>
-                                    </a>
                                 </div>
 
                                 @if ($recentMatches === [])
@@ -284,7 +344,6 @@
                                             <span class="text-[9px] uppercase tracking-[0.18em] text-mist-500">матчей</span>
                                         </div>
                                     </div>
-                                    <p class="mt-3 text-center text-[10px] leading-relaxed text-mist-500">Наведите на сектор, чтобы увидеть героя, число игр и винрейт.</p>
                                 @endif
                             </section>
 
@@ -333,12 +392,12 @@
                                         <div class="grid aspect-square w-full grid-flow-col grid-rows-7 gap-[3px]" style="grid-template-columns: repeat(13, minmax(0, 1fr));" aria-label="Активность за последние 90 дней">
                                             @foreach ($activityHeatmap as $day)
                                                 <div
-                                                    class="aspect-square rounded-[2px] {{ $heatmapTones[$day['level']] }} transition hover:scale-125 hover:ring-white/30"
+                                                    class="flex aspect-square items-center justify-center rounded-[2px] text-[6px] font-black leading-none {{ $heatmapTones[$day['level']] }} transition hover:scale-125 hover:ring-white/30"
                                                     title="{{ $day['label'] }}: {{ $day['count'] }} игр, {{ $day['wins'] }} побед, {{ $day['losses'] }} поражений"
                                                     aria-label="{{ $day['label'] }}: {{ $day['count'] }} игр, {{ $day['wins'] }} побед, {{ $day['losses'] }} поражений"
                                                     data-date="{{ $day['date'] }}"
                                                     data-count="{{ $day['count'] }}"
-                                                ></div>
+                                                >{{ $day['count'] > 0 ? $day['count'] : '' }}</div>
                                             @endforeach
                                         </div>
                                         <div class="mt-2 flex items-center justify-between text-[10px] text-mist-500">
@@ -441,94 +500,63 @@
                     @endif
                 </div>
 
-                <div id="panel-account" aria-labelledby="tab-account" x-show="tab === 'account'" x-cloak x-transition.opacity.duration.200ms role="tabpanel" tabindex="0" aria-label="Аккаунт">
-                    <div class="grid gap-4 lg:grid-cols-3">
-                        <div class="card p-4 sm:p-5 lg:col-span-2">
-                            <div class="flex flex-col gap-4 sm:flex-row sm:items-center">
-                                <div class="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-ink-800 ring-1 ring-white/10">
-                                    @if ($steamProfile['avatar'] ?? $player['avatar'])
-                                        <img src="{{ $steamProfile['avatar'] ?? $player['avatar'] }}" alt="Аватар {{ $steamProfile['nickname'] ?? $player['nickname'] }}" class="h-full w-full object-cover" loading="lazy">
-                                    @else
-                                        <span class="grid h-full w-full place-items-center text-2xl font-black text-mist-500">{{ mb_strtoupper(mb_substr($steamProfile['nickname'] ?? $player['nickname'], 0, 1)) }}</span>
-                                    @endif
-                                </div>
-                                <div class="min-w-0 flex-1">
-                                    <div class="flex flex-wrap items-center gap-2">
-                                        <span class="badge border-sky-500/25 bg-sky-500/10 text-sky-300">Steam</span>
-                                        @if ($steamAvailable && $steamProfile['status'])
-                                            <span class="badge border-white/10 bg-white/5 text-mist-300">{{ $steamProfile['status'] }}</span>
-                                        @endif
-                                        <span @class(['badge', $steamTone])>{{ $steamProfile['visibility'] ?? 'Неизвестно' }}</span>
-                                    </div>
-                                    <h2 class="mt-2 truncate text-2xl font-black text-white">{{ $steamProfile['nickname'] ?? $player['nickname'] }}</h2>
-                                    <p class="mt-1 text-sm text-mist-400">{{ $steamProfile['real_name'] ?? 'Публичное имя не указано' }}</p>
-                                </div>
+                <div id="panel-peers" aria-labelledby="tab-peers" x-show="tab === 'peers'" x-cloak x-transition.opacity.duration.200ms role="tabpanel" tabindex="0" aria-label="Товарищи">
+                    <div class="card overflow-hidden">
+                        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] px-4 py-4 sm:px-5">
+                            <div>
+                                <p class="label">Совместные матчи</p>
+                                <h2 class="mt-1 text-lg font-bold text-white">Товарищи</h2>
                             </div>
-
-                            @if (! $steamAvailable)
-                                <div class="mt-4 rounded-xl border border-amber-500/20 bg-amber-500/[0.07] px-3.5 py-3 text-xs leading-relaxed text-amber-200/90">
-                                    <p class="font-semibold text-amber-200">Steam API недоступна</p>
-                                    <p class="mt-1">{{ $steamProfile['error'] ?? 'Не удалось получить данные Steam.' }}</p>
-                                    @if (str_contains((string) ($steamProfile['error'] ?? ''), 'STEAM_API_KEY'))
-                                        <p class="mt-1 text-amber-200/60">Добавьте ключ в <code class="rounded bg-ink-950 px-1 py-0.5 font-mono">.env</code>, чтобы видеть статус приватности Steam.</p>
-                                    @endif
-                                </div>
-                            @endif
+                            <span class="badge border-white/10 bg-white/5 text-mist-400">{{ count($player['peers'] ?? []) }}</span>
                         </div>
 
-                        <div class="space-y-4">
-                            <div class="card p-4">
-                                <p class="label">Приватность</p>
-                                <div class="mt-3 space-y-2.5">
-                                    <div class="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-                                        <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-sky-500/10 text-sky-300">◈</span>
-                                        <div><p class="text-xs font-semibold text-white">Steam-сообщество</p><p class="mt-0.5 text-[11px] text-mist-400">{{ $steamProfile['visibility'] ?? 'Неизвестно' }}</p></div>
-                                    </div>
-                                    <div class="flex items-center gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
-                                        <span class="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-radar-500/10 text-radar-300">≡</span>
-                                        <div>
-                                            <p class="text-xs font-semibold text-white">Данные Dota 2</p>
-                                            <p @class(['mt-0.5 text-[11px]', $dotaTone])>{{ $dotaPublic ? 'Публичные матчи доступны' : 'Матчи скрыты или отсутствуют' }}</p>
-                                        </div>
-                                    </div>
-                                </div>
+                        @if (($player['peers'] ?? []) === [])
+                            <div class="p-10 text-center text-sm text-mist-400">OpenDota не нашла игроков, с которыми вы часто играете.</div>
+                        @else
+                            <div class="overflow-x-auto">
+                                <table class="w-full min-w-[680px] text-sm">
+                                    <thead class="table-head">
+                                        <tr>
+                                            <th class="px-4 py-3 font-semibold sm:px-5">Игрок</th>
+                                            <th class="px-4 py-3 font-semibold">Матчи вместе</th>
+                                            <th class="px-4 py-3 font-semibold">Процент побед</th>
+                                            <th class="px-4 py-3 text-right font-semibold sm:px-5">Последний матч</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-white/[0.04]">
+                                        @foreach ($player['peers'] as $peer)
+                                            <tr class="transition hover:bg-white/[0.03]">
+                                                <td class="px-4 py-3 sm:px-5">
+                                                    <a href="{{ route('dota.player', ['accountId' => $peer['account_id']]) }}" class="group flex items-center gap-3">
+                                                        <span class="h-9 w-9 shrink-0 overflow-hidden rounded-lg bg-ink-800 ring-1 ring-white/10">
+                                                            @if ($peer['avatar'])
+                                                                <img src="{{ $peer['avatar'] }}" alt="{{ $peer['nickname'] }}" class="h-full w-full object-cover" loading="lazy">
+                                                            @endif
+                                                        </span>
+                                                        <span class="min-w-0">
+                                                            <span class="flex items-center gap-1.5 truncate text-[13px] font-semibold text-white transition group-hover:text-radar-200">
+                                                                {{ $peer['nickname'] }}
+                                                                @if ($peer['is_private'] ?? false)
+                                                                    <svg class="h-3.5 w-3.5 shrink-0 text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-label="Скрытый профиль" title="Скрытый профиль"><rect x="5" y="10" width="14" height="10" rx="2" /><path d="M8 10V7a4 4 0 018 0v3" stroke-linecap="round" /></svg>
+                                                                @endif
+                                                            </span>
+                                                            @if ($peer['is_private'] ?? false)
+                                                                <span class="text-[9px] text-amber-300/80">Скрытый профиль</span>
+                                                            @endif
+                                                        </span>
+                                                    </a>
+                                                </td>
+                                                <td class="px-4 py-3 font-mono text-[13px] tabular-nums text-mist-300">{{ number_format($peer['games'], 0, '.', ' ') }}</td>
+                                                <td class="px-4 py-3 font-mono text-[13px] tabular-nums {{ ($peer['winrate'] ?? 0) >= 50 ? 'text-emerald-300' : 'text-rose-300' }}">{{ $peer['winrate'] !== null ? number_format($peer['winrate'], 1, '.', '').'%' : '—' }}</td>
+                                                <td class="px-4 py-3 text-right text-[11px] text-mist-400 sm:px-5">
+                                                    {{ $peer['last_played_at'] ? \Carbon\CarbonImmutable::parse($peer['last_played_at'])->format('d.m.Y') : '—' }}
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
                             </div>
-
-                            <div class="card p-4">
-                                <p class="label">Безопасность</p>
-                                @php
-                                    $banLabel = function (?bool $value): string {
-                                        if ($value === null) return 'Неизвестно';
-                                        return $value ? 'Да' : 'Нет';
-                                    };
-                                @endphp
-                                <dl class="mt-3 space-y-2 text-xs">
-                                    <div class="flex items-center justify-between gap-3"><dt class="text-mist-500">VAC-бан</dt><dd class="font-semibold {{ ($steamBans['vac_banned'] ?? null) === true ? 'text-rose-300' : 'text-white' }}">{{ $banLabel($steamBans['vac_banned'] ?? null) }}</dd></div>
-                                    <div class="flex items-center justify-between gap-3"><dt class="text-mist-500">Game Ban</dt><dd class="font-semibold {{ ($steamBans['game_bans'] ?? 0) > 0 ? 'text-rose-300' : 'text-white' }}">{{ $banLabel(($steamBans['game_bans'] ?? null) > 0) }}</dd></div>
-                                    @if (($steamBans['days_since_last_ban'] ?? null) !== null)
-                                        <div class="flex items-center justify-between gap-3"><dt class="text-mist-500">Последний бан</dt><dd class="font-semibold text-white">{{ $steamBans['days_since_last_ban'] }} дн. назад</dd></div>
-                                    @endif
-                                </dl>
-                                @if (! ($steamBans['available'] ?? false))
-                                    <p class="mt-3 text-[10px] text-amber-300/80">Статус банов недоступен: {{ $steamBans['error'] ?? 'нет данных' }}</p>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="card mt-4 p-4 sm:p-5">
-                        <p class="label">Аккаунт</p>
-                        <dl class="mt-3 grid gap-x-6 gap-y-3 text-xs sm:grid-cols-2 lg:grid-cols-3">
-                            <div><dt class="text-mist-500">SteamID64</dt><dd class="mt-1 break-all font-mono font-semibold text-white">{{ $steamProfile['steam_id'] ?? $player['steam_id'] }}</dd></div>
-                            <div><dt class="text-mist-500">Dota ID</dt><dd class="mt-1 font-mono font-semibold text-white">{{ $player['account_id'] }}</dd></div>
-                            <div><dt class="text-mist-500">Страна</dt><dd class="mt-1 font-semibold text-white">{{ $player['country_code'] ? mb_strtoupper($player['country_code']) : '—' }}</dd></div>
-                            <div><dt class="text-mist-500">Дата регистрации</dt><dd class="mt-1 font-semibold text-white">{{ $steamProfile['account_created_at'] ? \Carbon\CarbonImmutable::parse($steamProfile['account_created_at'])->format('d.m.Y') : '—' }}</dd></div>
-                            <div><dt class="text-mist-500">Последний вход</dt><dd class="mt-1 font-semibold text-white">{{ $player['last_login_at'] ? \Carbon\CarbonImmutable::parse($player['last_login_at'])->format('d.m.Y H:i') : '—' }}</dd></div>
-                            <div><dt class="text-mist-500">Steam logoff</dt><dd class="mt-1 font-semibold text-white">{{ $steamProfile['last_logoff_at'] ? \Carbon\CarbonImmutable::parse($steamProfile['last_logoff_at'])->format('d.m.Y H:i') : '—' }}</dd></div>
-                            <div><dt class="text-mist-500">Ранг</dt><dd class="mt-1 font-semibold text-white">{{ $player['rank_label'] ?: 'Не откалиброван' }}</dd></div>
-                            <div><dt class="text-mist-500">Leaderboard</dt><dd class="mt-1 font-semibold text-white">{{ $player['leaderboard_rank'] ? '#'.$player['leaderboard_rank'] : '—' }}</dd></div>
-                            <div><dt class="text-mist-500">Видимость Steam</dt><dd class="mt-1 font-semibold text-white">{{ $steamProfile['visibility'] ?? 'Неизвестно' }}</dd></div>
-                        </dl>
+                        @endif
                     </div>
                 </div>
             </div>

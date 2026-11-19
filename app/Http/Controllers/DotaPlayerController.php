@@ -78,7 +78,6 @@ class DotaPlayerController extends Controller
             'heroUsage' => $this->heroUsage(array_slice($history, 0, 25)),
             'rankStats' => $this->rankStats($history),
             'steamProfile' => $steam->summary($steamId),
-            'steamBans' => $steam->bans($steamId),
         ]);
     }
 
@@ -90,7 +89,8 @@ class DotaPlayerController extends Controller
         $filters = [
             'hero_id' => $request->integer('hero_id') ?: 0,
             'result' => in_array($request->query('result'), ['win', 'loss'], true) ? $request->query('result') : '',
-            'rank' => in_array($request->query('rank'), ['ranked', 'unranked'], true) ? $request->query('rank') : '',
+            'mode' => in_array($request->query('mode'), ['ranked', 'turbo', 'normal'], true) ? $request->query('mode') : '',
+            'role' => in_array($request->query('role'), ['carry', 'mid', 'offlane', 'support', 'hard_support'], true) ? $request->query('role') : '',
         ];
 
         try {
