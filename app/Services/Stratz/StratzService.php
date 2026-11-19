@@ -35,57 +35,86 @@ class StratzService
             return [];
         }
 
-        $cacheKey = "stratz:player:{$accountId}:heroes";
+        $cacheKey = "stratz:player:{$accountId}:heroes:v2";
         $cached = Cache::get($cacheKey);
 
         if (is_array($cached)) {
             return $cached;
         }
 
-        try {
-            $response = $this->http
-                ->withToken((string) config('services.stratz.token'))
-                ->withHeaders(['User-Agent' => 'Stats Radar/1.0'])
-                ->acceptJson()
-                ->timeout(10)
-                ->post((string) config('services.stratz.endpoint', 'https://api.stratz.com/graphql'), [
-                    'query' => <<<'GRAPHQL'
-                        query PlayerHeroes($steamAccountId: Long!) {
-                            player(steamAccountId: $steamAccountId) {
-                                heroes {
-                                    heroId
-                                    gameCount
-                                    winCount
-                                }
-                            }
-                        }
-                    GRAPHQL,
-                    'variables' => ['steamAccountId' => $accountId],
+        // STRATZ has shipped both field names. Ask for the documented
+        // matchCount first and fall back to the older gameCount schema.
+        $queries = [
+            'matchCount' => sprintf(
+                'query { player(steamAccountId: %d) { heroes(take: 20) { heroId matchCount winCount } } }',
+                $accountId
+            ),
+            'gameCount' => sprintf(
+                'query { player(steamAccountId: %d) { heroes(take: 20) { heroId gameCount winCount } } }',
+                $accountId
+            ),
+        ];
+
+        $payload = null;
+        $errors = [];
+
+        foreach ($queries as $countField => $query) {
+            try {
+                $response = $this->http
+                    ->withToken((string) config('services.stratz.token'))
+                    ->withHeaders(['User-Agent' => 'Stats Radar/1.0'])
+                    ->acceptJson()
+                    ->timeout(10)
+                    ->post((string) config('services.stratz.endpoint', 'https://api.stratz.com/graphql'), [
+                        'query' => $query,
+                    ]);
+            } catch (ConnectionException $exception) {
+                Log::warning('STRATZ is unreachable', [
+                    'account_id' => $accountId,
+                    'message' => $exception->getMessage(),
                 ]);
-        } catch (ConnectionException $exception) {
-            Log::warning('STRATZ is unreachable', [
-                'account_id' => $accountId,
-                'message' => $exception->getMessage(),
-            ]);
 
-            return [];
+                return [];
+            }
+
+            if ($response->failed()) {
+                $errors[] = [
+                    'field' => $countField,
+                    'status' => $response->status(),
+                ];
+
+                // A Cloudflare/rate-limit response will not improve on retry.
+                if ($response->status() !== 400) {
+                    break;
+                }
+
+                continue;
+            }
+
+            $candidate = $response->json();
+
+            if (! is_array($candidate)) {
+                break;
+            }
+
+            if (isset($candidate['errors'])) {
+                $errors[] = [
+                    'field' => $countField,
+                    'errors' => $candidate['errors'],
+                ];
+
+                continue;
+            }
+
+            $payload = $candidate;
+
+            break;
         }
 
-        if ($response->failed()) {
-            Log::warning('STRATZ hero request failed', [
+        if ($payload === null) {
+            Log::warning('STRATZ hero query was rejected', [
                 'account_id' => $accountId,
-                'status' => $response->status(),
-            ]);
-
-            return [];
-        }
-
-        $payload = $response->json();
-
-        if (! is_array($payload) || isset($payload['errors'])) {
-            Log::warning('STRATZ returned an invalid hero response', [
-                'account_id' => $accountId,
-                'errors' => is_array($payload['errors'] ?? null) ? $payload['errors'] : null,
+                'attempts' => $errors,
             ]);
 
             return [];
@@ -104,7 +133,7 @@ class StratzService
                 continue;
             }
 
-            $games = (int) ($hero['gameCount'] ?? 0);
+            $games = (int) ($hero['matchCount'] ?? $hero['gameCount'] ?? 0);
 
             if ($games <= 0) {
                 continue;

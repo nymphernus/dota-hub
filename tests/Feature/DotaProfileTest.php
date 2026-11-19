@@ -126,6 +126,27 @@ class DotaProfileTest extends TestCase
         );
     }
 
+    public function test_opendota_api_key_is_only_sent_when_configured(): void
+    {
+        $this->fakeOpenDota();
+
+        $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]))->assertOk();
+
+        Http::assertSent(fn ($request) => str_contains($request->url(), 'api.opendota.com')
+            && ! str_contains($request->url(), 'api_key='));
+
+        Cache::flush();
+        Http::fake();
+        PlayerProfile::query()->delete();
+        config(['services.opendota.api_key' => 'opendota-key']);
+        $this->fakeOpenDota();
+
+        $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]))->assertOk();
+
+        Http::assertSent(fn ($request) => str_contains($request->url(), 'api.opendota.com')
+            && str_contains($request->url(), 'api_key=opendota-key'));
+    }
+
     public function test_profile_is_persisted_in_the_database(): void
     {
         $this->fakeOpenDota();
@@ -468,8 +489,8 @@ class DotaProfileTest extends TestCase
         $this->fakeOpenDota(
             heroesResponse: [],
             stratzHeroes: [
-                ['heroId' => 2, 'gameCount' => 15, 'winCount' => 9],
-                ['heroId' => 1, 'gameCount' => 20, 'winCount' => 11],
+                ['heroId' => 2, 'matchCount' => 15, 'winCount' => 9],
+                ['heroId' => 1, 'matchCount' => 20, 'winCount' => 11],
             ],
         );
 
@@ -482,7 +503,8 @@ class DotaProfileTest extends TestCase
             && $player['heroes'][0]['games'] === 20);
 
         Http::assertSent(fn ($request) => $request->hasHeader('Authorization', 'Bearer test-token')
-            && str_contains($request->body(), 'heroId'));
+            && str_contains($request->body(), 'heroes(take: 20)')
+            && str_contains($request->body(), 'matchCount'));
     }
 
     public function test_heroes_page_renders_full_hero_table(): void

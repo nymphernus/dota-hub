@@ -53,7 +53,8 @@ return [
 
     'opendota' => [
         'base_url' => env('OPENDOTA_BASE_URL', 'https://api.opendota.com/api'),
-        'api_key' => env('OPENDOTA_API_KEY'),
+        // Both spellings are accepted; an empty value means "no api_key query".
+        'api_key' => env('OPEN_DOTA_API_KEY', env('OPENDOTA_API_KEY')),
     ],
 
     'steam' => [

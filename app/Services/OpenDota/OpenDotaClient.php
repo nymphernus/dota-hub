@@ -37,7 +37,9 @@ class OpenDotaClient
 
         $baseUrl = rtrim((string) config('services.opendota.base_url'), '/');
 
-        if ($apiKey = config('services.opendota.api_key')) {
+        $apiKey = trim((string) config('services.opendota.api_key', ''));
+
+        if ($apiKey !== '') {
             $query['api_key'] = $apiKey;
         }
 
