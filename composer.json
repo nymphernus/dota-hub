@@ -1,7 +1,7 @@
 {
     "name": "stats-radar/stats-radar",
     "type": "project",
-    "description": "Stats Radar - Dota 2 player statistics tracker.",
+    "description": "DotaHub - Dota 2 player statistics tracker.",
     "keywords": ["laravel", "dota2", "statistics"],
     "license": "MIT",
     "require": {

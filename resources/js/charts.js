@@ -18,7 +18,7 @@ Chart.defaults.font.family = "Inter, ui-sans-serif, system-ui, -apple-system, 'S
 const HERO_SECTOR_COLOR = '#1e293b';
 const TOP_HERO_SECTOR_COLOR = '#475569';
 
-const payload = document.getElementById('stats-radar-chart-data');
+const payload = document.getElementById('dotahub-chart-data');
 
 if (payload) {
     const data = JSON.parse(payload.textContent);

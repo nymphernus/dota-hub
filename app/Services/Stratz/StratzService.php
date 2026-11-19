@@ -62,7 +62,7 @@ class StratzService
             try {
                 $response = $this->http
                     ->withToken((string) config('services.stratz.token'))
-                    ->withHeaders(['User-Agent' => 'Stats Radar/1.0'])
+                    ->withHeaders(['User-Agent' => 'DotaHub/1.0'])
                     ->acceptJson()
                     ->timeout(10)
                     ->post((string) config('services.stratz.endpoint', 'https://api.stratz.com/graphql'), [
@@ -207,7 +207,7 @@ class StratzService
             try {
                 $response = $this->http
                     ->withToken((string) config('services.stratz.token'))
-                    ->withHeaders(['User-Agent' => 'Stats Radar/1.0'])
+                    ->withHeaders(['User-Agent' => 'DotaHub/1.0'])
                     ->acceptJson()
                     ->timeout(10)
                     ->post((string) config('services.stratz.endpoint', 'https://api.stratz.com/graphql'), [

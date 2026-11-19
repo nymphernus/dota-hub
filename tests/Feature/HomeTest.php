@@ -18,7 +18,7 @@ class HomeTest extends TestCase
         $response = $this->get(route('home'));
 
         $response->assertOk();
-        $response->assertSee('Stats Radar');
+        $response->assertSee('DotaHub');
         $response->assertSee('Статистика игроков Dota 2', false);
         $response->assertDontSee('Последние поиски');
         $response->assertDontSee('Дашборд');
@@ -34,7 +34,7 @@ class HomeTest extends TestCase
         $response->assertOk();
         $response->assertDontSee('Последние поиски');
         $response->assertDontSee('История');
-        $response->assertSee('Stats Radar');
+        $response->assertSee('DotaHub');
     }
 
     public function test_tracking_the_same_player_increments_the_counter(): void

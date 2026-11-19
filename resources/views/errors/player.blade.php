@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', $title.' — Stats Radar')
+@section('title', $title.' — DotaHub')
 
 @section('content')
     <div class="mx-auto flex w-full max-w-3xl flex-col items-center px-4 py-20 text-center sm:px-6 lg:px-8">

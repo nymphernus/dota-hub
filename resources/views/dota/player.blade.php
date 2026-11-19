@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', $player['nickname'].' — Dota 2 — Stats Radar')
+@section('title', $pageTitle ?? ($player['nickname'].' - Обзор - DotaHub'))
 @section('description', 'Статистика Dota 2 игрока '.$player['nickname'].': ранг, винрейт, KDA, GPM, XPM, топ героев и последние матчи.')
 
 @php
@@ -218,6 +218,6 @@
 @endsection
 
 @push('scripts')
-    <script type="application/json" id="stats-radar-chart-data">@json($chartData)</script>
+    <script type="application/json" id="dotahub-chart-data">@json($chartData)</script>
     @vite('resources/js/charts.js')
 @endpush

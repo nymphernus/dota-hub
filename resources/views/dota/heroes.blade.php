@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Герои '.$player['nickname'].' — Dota 2 — Stats Radar')
+@section('title', $pageTitle ?? ($player['nickname'].' - Герои - DotaHub'))
 @section('description', 'Герои игрока '.$player['nickname'].': матчи, винрейт и KDA по каждому герою.')
 
 @section('content')

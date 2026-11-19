@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Матч #'.$match['match_id'].' — Dota 2 — Stats Radar')
+@section('title', $pageTitle ?? ('Матч '.$match['match_id'].' - DotaHub'))
 @section('description', 'Детальная статистика матча Dota 2 #'.$match['match_id'].': счёт, роли, график нетворса, закуп, длительность, герои, K/D/A, GPM, XPM и урон игроков Radiant и Dire.')
 
 @php

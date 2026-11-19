@@ -4,10 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="description" content="@yield('description', 'Stats Radar — быстрая статистика игроков Dota 2. Профили, матчи, герои и активность.')">
+    <meta name="description" content="@yield('description', 'DotaHub — быстрая статистика игроков Dota 2. Профили, матчи, герои и активность.')">
     <meta name="theme-color" content="#05080f">
 
-    <title>@yield('title', 'Stats Radar — статистика игроков Dota 2')</title>
+    <title>@yield('title', 'DotaHub')</title>
 
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23080d18'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%2334d399' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='3' fill='%2334d399'/%3E%3Cpath d='M16 16l6-6' stroke='%2334d399' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
 
@@ -16,7 +16,7 @@
 <body class="flex min-h-screen flex-col">
     <header class="sticky top-0 z-40 border-b border-white/5 bg-ink-950/80 backdrop-blur-xl">
         <div class="mx-auto flex h-16 w-full max-w-7xl items-center px-4 sm:px-6 lg:px-8">
-            <a href="{{ route('home') }}" class="group flex items-center gap-3" aria-label="Stats Radar — на главную">
+            <a href="{{ route('home') }}" class="group flex items-center gap-3" aria-label="DotaHub — на главную">
                 <span class="relative grid h-10 w-10 place-items-center overflow-hidden rounded-xl border border-radar-500/30 bg-radar-500/10">
                     <span class="absolute inset-0 bg-radar-500/10 blur-xl"></span>
                     <svg class="relative h-6 w-6 text-radar-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true">
@@ -27,7 +27,7 @@
                     </svg>
                 </span>
                 <span class="leading-tight">
-                    <span class="block text-sm font-black tracking-[0.14em] text-white transition group-hover:text-radar-200">STATS RADAR</span>
+                    <span class="block text-sm font-black tracking-[0.14em] text-white transition group-hover:text-radar-200">DOTAHUB</span>
                     <span class="block text-[10px] uppercase tracking-[0.28em] text-mist-500">Dota 2</span>
                 </span>
             </a>
@@ -126,12 +126,12 @@
                     </svg>
                 </span>
                 <div>
-                    <p class="text-xs font-semibold text-slate-300">Stats Radar</p>
+                    <p class="text-xs font-semibold text-slate-300">DotaHub</p>
                     <p class="text-[11px] text-mist-500">Данные: OpenDota · Steam Web API</p>
                 </div>
             </div>
 
-            <p class="text-[11px] text-mist-500">&copy; {{ date('Y') }} Stats Radar</p>
+            <p class="text-[11px] text-mist-500">&copy; {{ date('Y') }} DotaHub</p>
         </div>
     </footer>
 

@@ -40,6 +40,7 @@ class DotaPlayerController extends Controller
 
         return view('dota.player', [
             'player' => $player,
+            'pageTitle' => $player['nickname'].' - Обзор - DotaHub',
             'winrate' => $player['winrate'],
             'recentMatches' => array_slice($player['matches'], 0, 25),
             'activityHeatmap' => $this->activityHeatmap($history),
@@ -69,6 +70,7 @@ class DotaPlayerController extends Controller
 
         return view('dota.heroes', [
             'player' => $player,
+            'pageTitle' => $player['nickname'].' - Герои - DotaHub',
             'steamProfile' => $steam->summary(
                 ($player['steam_id'] ?? '') ?: SteamId::steamId64FromAccountId($accountId)
             ),
@@ -94,6 +96,7 @@ class DotaPlayerController extends Controller
 
         return view('dota.peers', [
             'player' => $player,
+            'pageTitle' => $player['nickname'].' - Союзники - DotaHub',
             'steamProfile' => $steam->summary(
                 ($player['steam_id'] ?? '') ?: SteamId::steamId64FromAccountId($accountId)
             ),
@@ -185,6 +188,7 @@ class DotaPlayerController extends Controller
 
         return view('dota.matches', [
             'player' => $result['player'],
+            'pageTitle' => $result['player']['nickname'].' - Матчи - DotaHub',
             'matches' => $matches,
             'heroOptions' => $result['heroes'],
             'filters' => $result['filters'],

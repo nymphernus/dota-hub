@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Stats Radar — статистика игроков Dota 2')
+@section('title', $pageTitle ?? 'DotaHub — статистика игроков Dota 2')
 @section('description', 'Ищите игроков Dota 2 по ссылке на Steam, SteamID64 или никнейму. KDA, GPM, XPM, топ героев, активность и последние матчи.')
 
 @php
@@ -117,7 +117,7 @@
         @else
             <div class="mx-auto w-full max-w-4xl px-4 pb-8 pt-12 text-center sm:px-6 lg:px-8">
                 <h1 class="bg-gradient-to-r from-white via-radar-200 to-cyan-200 bg-clip-text text-5xl font-black tracking-tight text-transparent sm:text-7xl">
-                    Stats Radar
+                    DotaHub
                 </h1>
 
                 <p class="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-mist-400 sm:text-base">

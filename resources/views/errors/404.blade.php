@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Игрок или матч не найден — Stats Radar')
+@section('title', 'Игрок или матч не найден — DotaHub')
 @section('description', 'Запрошенный игрок, матч или страница не найдены.')
 
 @section('content')

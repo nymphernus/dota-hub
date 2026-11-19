@@ -23,6 +23,7 @@ class MatchController extends Controller
 
         return view('dota.match', [
             'match' => $match,
+            'pageTitle' => 'Матч '.$match['match_id'].' - DotaHub',
         ]);
     }
 }
