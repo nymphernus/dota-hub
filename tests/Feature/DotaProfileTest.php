@@ -79,6 +79,22 @@ class DotaProfileTest extends TestCase
             false
         );
         $response->assertSee('id="heroUsageChart"', false);
+        $response->assertSee('Колесо героев');
+        $response->assertDontSee('Hero wheel');
+        $response->assertDontSee('25 МАТЧЕЙ');
+        $response->assertSee('aria-label="Матчей в колесе: 6"', false);
+
+        $content = (string) $response->getContent();
+        $wheelPosition = strpos($content, 'id="heroUsageChart"');
+        $activityPosition = strpos($content, '90 дней назад');
+        $alliesPosition = strpos($content, '>Союзники</h2>');
+
+        $this->assertNotFalse($wheelPosition);
+        $this->assertNotFalse($activityPosition);
+        $this->assertNotFalse($alliesPosition);
+        $this->assertLessThan($activityPosition, $wheelPosition);
+        $this->assertLessThan($alliesPosition, $activityPosition);
+
         $response->assertDontSee('id="winrateChart"', false);
         $response->assertSee('data-count=', false);
         $this->assertSame(1, substr_count((string) $response->getContent(), '>MMR<'));

@@ -114,8 +114,24 @@
                 <section class="card p-4">
                     <div class="flex items-start justify-between gap-2">
                         <div>
-                            <p class="label">Активность</p>
-                            <h2 class="mt-1 text-sm font-bold text-white">Календарь матчей</h2>
+                            <h2 class="text-sm font-bold text-white">Колесо героев</h2>
+                        </div>
+                        <span class="badge border-white/10 bg-white/5 text-mist-400" aria-label="Матчей в колесе: {{ $heroUsageTotal }}">{{ $heroUsageTotal }}</span>
+                    </div>
+
+                    @if ($heroUsage === [])
+                        <div class="mt-4 grid h-48 place-items-center rounded-xl border border-dashed border-white/10 text-xs text-mist-500">Нет данных</div>
+                    @else
+                        <div class="relative mx-auto mt-4 h-56 w-56">
+                            <canvas id="heroUsageChart" role="img" aria-label="Колесо героев за последние 25 матчей"></canvas>
+                        </div>
+                    @endif
+                </section>
+
+                <section class="card p-4">
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <h2 class="text-sm font-bold text-white">Активность</h2>
                         </div>
                         <span class="text-[10px] text-mist-500">{{ number_format($activityTotal, 0, '.', ' ') }} игр</span>
                     </div>
@@ -142,30 +158,7 @@
                 <section class="card p-4">
                     <div class="flex items-start justify-between gap-2">
                         <div>
-                            <p class="label">Hero wheel</p>
-                            <h2 class="mt-1 text-sm font-bold text-white">Герои последних 25 матчей</h2>
-                        </div>
-                        <span class="badge border-white/10 bg-white/5 text-mist-400">{{ count($heroUsage) }}</span>
-                    </div>
-
-                    @if ($heroUsage === [])
-                        <div class="mt-4 grid h-48 place-items-center rounded-xl border border-dashed border-white/10 text-xs text-mist-500">Нет данных</div>
-                    @else
-                        <div class="relative mx-auto mt-4 h-56 w-56">
-                            <canvas id="heroUsageChart" role="img" aria-label="Круговая диаграмма всех героев за последние 25 матчей"></canvas>
-                            <div class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-                                <span class="text-2xl font-black text-white">{{ $heroUsageTotal }}</span>
-                                <span class="text-[9px] uppercase tracking-[0.18em] text-mist-500">матчей</span>
-                            </div>
-                        </div>
-                    @endif
-                </section>
-
-                <section class="card p-4">
-                    <div class="flex items-start justify-between gap-2">
-                        <div>
-                            <p class="label">Frequently played with</p>
-                            <h2 class="mt-1 text-sm font-bold text-white">Союзники</h2>
+                            <h2 class="text-sm font-bold text-white">Союзники</h2>
                         </div>
                         <span class="badge border-white/10 bg-white/5 text-mist-400">{{ min(5, count($player['peers'] ?? [])) }}</span>
                     </div>

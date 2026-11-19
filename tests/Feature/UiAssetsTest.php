@@ -6,13 +6,29 @@ use Tests\TestCase;
 
 class UiAssetsTest extends TestCase
 {
-    public function test_hero_wheel_draws_square_minimap_icons(): void
+    public function test_hero_wheel_draws_square_minimap_icons_inside_each_sector(): void
     {
         $source = (string) file_get_contents(resource_path('js/charts.js'));
 
         $this->assertStringContainsString('radius * (games / maxGames)', $source);
+        $this->assertStringContainsString('band - 8', $source);
+        $this->assertStringContainsString('arcLength - 4', $source);
+        $this->assertStringContainsString('middleRadius', $source);
         $this->assertStringContainsString('drawImage', $source);
         $this->assertStringNotContainsString('context.clip', $source);
         $this->assertStringNotContainsString('context.arc', $source);
+    }
+
+    public function test_hero_wheel_uses_dark_sectors_and_highlights_only_the_first_three(): void
+    {
+        $source = (string) file_get_contents(resource_path('js/charts.js'));
+
+        $this->assertStringContainsString("HERO_SECTOR_COLOR = '#1e293b'", $source);
+        $this->assertStringContainsString("TOP_HERO_SECTOR_COLOR = '#475569'", $source);
+        $this->assertStringContainsString('index < 3', $source);
+        $this->assertStringNotContainsString('hero.color', $source);
+
+        $controller = (string) file_get_contents(app_path('Http/Controllers/DotaPlayerController.php'));
+        $this->assertStringNotContainsString('HERO_USAGE_COLORS', $controller);
     }
 }

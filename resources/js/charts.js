@@ -15,6 +15,9 @@ Chart.defaults.color = '#e2e8f0';
 Chart.defaults.borderColor = '#1e293b';
 Chart.defaults.font.family = "Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif";
 
+const HERO_SECTOR_COLOR = '#1e293b';
+const TOP_HERO_SECTOR_COLOR = '#475569';
+
 const payload = document.getElementById('stats-radar-chart-data');
 
 if (payload) {
@@ -65,22 +68,34 @@ if (payload) {
                     const point = arc.tooltipPosition();
                     const angle = arc.endAngle - arc.startAngle;
                     const radius = arc.outerRadius;
-                    const arcLength = Math.max(angle * radius, 1);
+                    const band = radius - arc.innerRadius;
+                    const middleRadius = (arc.innerRadius + radius) / 2;
+                    const arcLength = Math.max(angle * middleRadius, 1);
 
-                    // Square minimap-style icons: the played share sets the
-                    // size directly, so a rarely picked hero stays small.
-                    const size = Math.min(
+                    // Square minimap-style icons. The played share sets the
+                    // base size, but the doughnut band and sector width keep
+                    // every icon fully inside its slice.
+                    const size = Math.max(0, Math.min(
                         radius * (games / maxGames),
+                        band - 8,
                         arcLength - 4,
-                    );
+                    ));
 
                     // Too narrow for a square icon: leave the sector coloured.
                     if (size < 6) return;
 
+                    const centreX = (instance.chartArea.left + instance.chartArea.right) / 2;
+                    const centreY = (instance.chartArea.top + instance.chartArea.bottom) / 2;
+                    const vectorX = point.x - centreX;
+                    const vectorY = point.y - centreY;
+                    const distance = Math.hypot(vectorX, vectorY) || 1;
+                    const x = centreX + (vectorX / distance) * middleRadius;
+                    const y = centreY + (vectorY / distance) * middleRadius;
+
                     instance.ctx.drawImage(
                         image,
-                        point.x - (size / 2),
-                        point.y - (size / 2),
+                        x - (size / 2),
+                        y - (size / 2),
                         size,
                         size,
                     );
@@ -148,7 +163,9 @@ if (payload) {
                 labels: heroes.map((hero) => hero.name || 'Неизвестный герой'),
                 datasets: [{
                     data: heroes.map((hero) => Number(hero.games) || 0),
-                    backgroundColor: heroes.map((hero) => hero.color || '#64748b'),
+                    backgroundColor: heroes.map((hero, index) => index < 3
+                        ? TOP_HERO_SECTOR_COLOR
+                        : HERO_SECTOR_COLOR),
                     borderColor: '#0b1220',
                     borderWidth: 2,
                     hoverOffset: 6,

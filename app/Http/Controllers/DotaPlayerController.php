@@ -19,19 +19,6 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 class DotaPlayerController extends Controller
 {
-    private const HERO_USAGE_COLORS = [
-        '#34d399',
-        '#22d3ee',
-        '#fb923c',
-        '#fbbf24',
-        '#fb7185',
-        '#f472b6',
-        '#60a5fa',
-        '#facc15',
-        '#4ade80',
-        '#94a3b8',
-    ];
-
     public function show(int $accountId, OpenDotaService $openDota, SteamService $steam): View|Response
     {
         $player = $this->playerOrError($accountId, $openDota);
@@ -304,10 +291,9 @@ class DotaPlayerController extends Controller
 
         $totalGames = array_sum(array_column($rows, 'games'));
 
-        foreach ($rows as $index => &$hero) {
+        foreach ($rows as &$hero) {
             $hero['winrate'] = round($hero['wins'] / max($hero['games'], 1) * 100, 1);
             $hero['share'] = round($hero['games'] / max($totalGames, 1) * 100, 1);
-            $hero['color'] = self::HERO_USAGE_COLORS[$index % count(self::HERO_USAGE_COLORS)];
         }
         unset($hero);
 
