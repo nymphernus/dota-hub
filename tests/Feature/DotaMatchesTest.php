@@ -33,6 +33,12 @@ class DotaMatchesTest extends TestCase
 
         $response->assertOk();
         $response->assertDontSee('Все матчи');
+        $response->assertSee('id="tab-overview"', false);
+        $response->assertSee('id="tab-matches"', false);
+        $response->assertSee('id="tab-heroes"', false);
+        $response->assertSee('id="tab-records"', false);
+        $response->assertSee('data-favorite-star', false);
+        $response->assertSee('aria-current="page"', false);
         $response->assertSee('Anti-Mage');
         $response->assertSee('Blink Dagger');
         $response->assertSee('Ranked');

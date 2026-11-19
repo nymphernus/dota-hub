@@ -634,6 +634,7 @@ class DotaProfileTest extends TestCase
 
         $response->assertOk();
         $response->assertViewIs('dota.heroes');
+        $response->assertSee('id="tab-heroes"', false);
         $response->assertSee('Anti-Mage');
         $response->assertSee('Союзники');
     }
@@ -646,6 +647,7 @@ class DotaProfileTest extends TestCase
 
         $response->assertOk();
         $response->assertViewIs('dota.peers');
+        $response->assertSee('id="tab-peers"', false);
         $response->assertSee('Teammate');
         $response->assertSee('Скрытый профиль');
     }

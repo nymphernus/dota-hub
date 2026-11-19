@@ -45,6 +45,8 @@ class DotaPlayerController extends Controller
         return view('dota.player', [
             'player' => $player,
             'pageTitle' => $player['nickname'].' - Обзор - DotaHub',
+            'activeTab' => 'overview',
+            'profileSection' => 'Обзор',
             'winrate' => $player['winrate'],
             'recentMatches' => array_slice($player['matches'], 0, 25),
             'activityHeatmap' => $this->activityHeatmap($history),
@@ -76,6 +78,8 @@ class DotaPlayerController extends Controller
         return view('dota.heroes', [
             'player' => $player,
             'pageTitle' => $player['nickname'].' - Герои - DotaHub',
+            'activeTab' => 'heroes',
+            'profileSection' => 'Герои',
             'steamProfile' => $steam->summary(
                 ($player['steam_id'] ?? '') ?: SteamId::steamId64FromAccountId($accountId)
             ),
@@ -103,6 +107,8 @@ class DotaPlayerController extends Controller
         return view('dota.peers', [
             'player' => $player,
             'pageTitle' => $player['nickname'].' - Союзники - DotaHub',
+            'activeTab' => 'peers',
+            'profileSection' => 'Союзники',
             'steamProfile' => $steam->summary(
                 ($player['steam_id'] ?? '') ?: SteamId::steamId64FromAccountId($accountId)
             ),
@@ -130,6 +136,8 @@ class DotaPlayerController extends Controller
         return view('dota.records', [
             'player' => $player,
             'pageTitle' => $player['nickname'].' - Рекорды - DotaHub',
+            'activeTab' => 'records',
+            'profileSection' => 'Рекорды',
             'records' => $openDota->playerRecords($accountId, $player['match_history'] ?? []),
             'steamProfile' => $steam->summary(
                 ($player['steam_id'] ?? '') ?: SteamId::steamId64FromAccountId($accountId)
@@ -183,7 +191,7 @@ class DotaPlayerController extends Controller
     /**
      * Paginated, filterable match list for one player.
      */
-    public function matches(int $accountId, Request $request, OpenDotaService $openDota): View|Response
+    public function matches(int $accountId, Request $request, OpenDotaService $openDota, SteamService $steam, FavoriteService $favorites): View|Response
     {
         $filters = [
             'hero_id' => $request->integer('hero_id') ?: 0,
@@ -228,9 +236,16 @@ class DotaPlayerController extends Controller
         );
         $matches->withQueryString();
 
+        $player = $result['player'];
+        $steamId = ($player['steam_id'] ?? '') ?: SteamId::steamId64FromAccountId($accountId);
+
         return view('dota.matches', [
-            'player' => $result['player'],
-            'pageTitle' => $result['player']['nickname'].' - Матчи - DotaHub',
+            'player' => $player,
+            'pageTitle' => $player['nickname'].' - Матчи - DotaHub',
+            'activeTab' => 'matches',
+            'profileSection' => 'Матчи',
+            'steamProfile' => $steam->summary($steamId),
+            'isFavorite' => $this->favoriteState($accountId, $favorites),
             'matches' => $matches,
             'heroOptions' => $result['heroes'],
             'filters' => $result['filters'],

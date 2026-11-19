@@ -69,6 +69,8 @@ class LifetimeStatsTest extends TestCase
 
         $response->assertOk();
         $response->assertViewIs('dota.records');
+        $response->assertSee('id="tab-overview"', false);
+        $response->assertSee('id="tab-records"', false);
         $response->assertSee('Рекорды');
         $response->assertSee('Самый длинный матч');
         $response->assertSee('Наибольшее число убийств');

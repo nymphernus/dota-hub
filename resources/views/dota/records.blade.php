@@ -1,22 +1,9 @@
-@extends('layouts.app')
+@extends('dota.layouts.profile')
 
 @section('title', $pageTitle ?? ($player['nickname'].' - Рекорды - DotaHub'))
 @section('description', 'Личные рекорды игрока '.$player['nickname'].' в Dota 2: самый длинный матч, максимум убийств, GPM и другие достижения.')
 
-@section('content')
-    <div class="mx-auto w-full max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">
-        <nav class="mb-4 flex items-center gap-2 text-[11px] text-mist-500" aria-label="Хлебные крошки">
-            <a href="{{ route('home') }}" class="transition hover:text-white">Главная</a>
-            <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke-linecap="round" /></svg>
-            <a href="{{ route('dota.player', ['accountId' => $player['account_id']]) }}" class="transition hover:text-white">{{ $player['nickname'] }}</a>
-            <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke-linecap="round" /></svg>
-            <span class="text-slate-300">Рекорды</span>
-        </nav>
-
-        <x-player-header :player="$player" :steamProfile="$steamProfile" :isFavorite="$isFavorite ?? false" />
-
-        <x-player-tabs :player="$player" active="records" />
-
+@section('profile-content')
         <section class="mt-4">
             <div class="flex flex-wrap items-center justify-between gap-2 px-1">
                 <div>
@@ -69,5 +56,4 @@
                 </div>
             @endif
         </section>
-    </div>
 @endsection

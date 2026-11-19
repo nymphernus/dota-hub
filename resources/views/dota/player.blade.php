@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('dota.layouts.profile')
 
 @section('title', $pageTitle ?? ($player['nickname'].' - Обзор - DotaHub'))
 @section('description', 'Статистика Dota 2 игрока '.$player['nickname'].': ранг, винрейт, KDA, GPM, XPM, топ героев и последние матчи.')
@@ -10,20 +10,7 @@
     $chartData = ['heroUsage' => $heroUsage];
 @endphp
 
-@section('content')
-    <div class="mx-auto w-full max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">
-        <nav class="mb-4 flex items-center gap-2 text-[11px] text-mist-500" aria-label="Хлебные крошки">
-            <a href="{{ route('home') }}" class="transition hover:text-white">Главная</a>
-            <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke-linecap="round" /></svg>
-            <span class="truncate text-slate-300">{{ $player['nickname'] }}</span>
-        </nav>
-
-        <x-player-header :player="$player" :steamProfile="$steamProfile" :isFavorite="$isFavorite ?? false" />
-
-        <x-player-metrics :player="$player" />
-
-        <x-player-tabs :player="$player" active="overview" />
-
+@section('profile-content')
         @if ($player['is_private'])
             <div class="mt-4 flex items-start gap-3 rounded-2xl border border-amber-500/25 bg-amber-500/[0.08] p-4 text-sm text-amber-100">
                 <svg class="mt-0.5 h-5 w-5 shrink-0 text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2" /><path d="M8 10V7a4 4 0 018 0v3" stroke-linecap="round" /></svg>
@@ -222,7 +209,6 @@
                 </div>
             </section>
         @endif
-    </div>
 @endsection
 
 @push('scripts')
