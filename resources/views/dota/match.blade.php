@@ -197,8 +197,15 @@
                                         'Hard' => 'border-rose-500/25 bg-rose-500/10 text-rose-300',
                                         default => 'border-white/10 bg-white/5 text-mist-400',
                                     };
+                                    $isCurrentPlayer = $profilePlayerId !== null
+                                        && (int) ($player['account_id'] ?? 0) === $profilePlayerId;
+                                    $partyId = $player['party_id'] ?? null;
                                 @endphp
-                                <tr class="transition hover:bg-white/[0.03]">
+                                <tr @class([
+                                    'transition hover:bg-white/[0.03]',
+                                    'bg-sky-500/[0.09] ring-2 ring-inset ring-sky-500/50' => $isCurrentPlayer,
+                                    'border-l-2 border-sky-400/40' => ! $isCurrentPlayer && $partyId,
+                                ])>
                                     <td class="px-4 py-3 sm:px-5">
                                         <div class="flex items-center gap-3">
                                             <div class="h-9 w-16 shrink-0 overflow-hidden rounded-md bg-ink-800 ring-1 ring-white/10">
@@ -218,6 +225,9 @@
                                                     @endif
                                                     @if ($player['level'] > 0)
                                                         <span>ур. {{ $player['level'] }}</span>
+                                                    @endif
+                                                    @if ($partyId)
+                                                        <span class="rounded bg-sky-500/10 px-1 py-0.5 text-[8px] font-bold uppercase tracking-wide text-sky-300">Party</span>
                                                     @endif
                                                 </p>
                                             </div>

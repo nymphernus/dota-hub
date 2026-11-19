@@ -32,14 +32,15 @@ class DotaMatchesTest extends TestCase
         $response = $this->get(route('dota.player.matches', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertOk();
-        $response->assertSee('Все матчи');
+        $response->assertDontSee('Все матчи');
         $response->assertSee('Anti-Mage');
         $response->assertSee('Blink Dagger');
         $response->assertSee('Ranked');
-        $response->assertSee('Unranked');
+        $response->assertSee('Normal');
         $response->assertSee('Все герои');
         $response->assertSee('Победа');
-        $response->assertSee('Рейтинг');
+        $response->assertSee('Режим игры');
+        $response->assertSee('Роль');
         $response->assertViewHas('matches', function (LengthAwarePaginator $matches) {
             $first = $matches->first();
 
@@ -52,16 +53,19 @@ class DotaMatchesTest extends TestCase
                 && $first['net_worth'] === 31200
                 && $first['items'][0]['name'] === 'Blink Dagger'
                 && $first['is_ranked'] === true
-                && $first['party_label'] === 'Solo';
+                && $first['party_label'] === 'Solo'
+                && $matches->getCollection()[1]['party_label'] === 'Party'
+                && $matches->getCollection()[1]['role_key'] === 'mid';
         });
         $response->assertViewHas('filters', [
             'hero_id' => 0,
             'result' => '',
-            'rank' => '',
+            'mode' => '',
+            'role' => '',
         ]);
     }
 
-    public function test_matches_page_filters_by_hero_result_and_rank(): void
+    public function test_matches_page_filters_by_hero_result_and_mode(): void
     {
         $this->fakeOpenDota();
 
@@ -85,10 +89,20 @@ class DotaMatchesTest extends TestCase
 
         $rankedResponse = $this->get(route('dota.player.matches', [
             'accountId' => self::ACCOUNT_ID,
-            'rank' => 'ranked',
+            'mode' => 'ranked',
         ]));
         $rankedResponse->assertOk();
         $rankedResponse->assertViewHas('matches', fn (LengthAwarePaginator $matches) => $matches->total() === 4);
+
+        $roleResponse = $this->get(route('dota.player.matches', [
+            'accountId' => self::ACCOUNT_ID,
+            'role' => 'mid',
+        ]));
+        $roleResponse->assertOk();
+        $roleResponse->assertViewHas('matches', function (LengthAwarePaginator $matches) {
+            return $matches->total() === 2
+                && $matches->every(fn (array $match) => $match['role_key'] === 'mid');
+        });
     }
 
     public function test_matches_page_paginates_the_history(): void
@@ -125,12 +139,12 @@ class DotaMatchesTest extends TestCase
             ]),
             'api.opendota.com/api/players/'.self::ACCOUNT_ID.'/totals*' => Http::response([]),
             'api.opendota.com/api/players/'.self::ACCOUNT_ID.'/matches*' => Http::response([
-                ['match_id' => 9000000001, 'hero_id' => 1, 'player_slot' => 0, 'radiant_win' => true, 'start_time' => now()->subDays(1)->timestamp, 'duration' => 2400, 'kills' => 10, 'deaths' => 2, 'assists' => 15, 'gold_per_min' => 620, 'xp_per_min' => 710, 'lobby_type' => 7, 'game_mode' => 22, 'party_id' => 0],
-                ['match_id' => 9000000002, 'hero_id' => 2, 'player_slot' => 128, 'radiant_win' => true, 'start_time' => now()->subDays(2)->timestamp, 'duration' => 1980, 'kills' => 3, 'deaths' => 8, 'assists' => 6, 'gold_per_min' => 340, 'xp_per_min' => 420, 'lobby_type' => 7, 'game_mode' => 22, 'party_id' => 42],
-                ['match_id' => 9000000003, 'hero_id' => 3, 'player_slot' => 0, 'radiant_win' => true, 'start_time' => now()->subDays(3)->timestamp, 'duration' => 2100, 'kills' => 8, 'deaths' => 4, 'assists' => 11, 'gold_per_min' => 510, 'xp_per_min' => 590, 'lobby_type' => 1, 'game_mode' => 1, 'party_id' => 0],
-                ['match_id' => 9000000004, 'hero_id' => 4, 'player_slot' => 128, 'radiant_win' => true, 'start_time' => now()->subDays(4)->timestamp, 'duration' => 2600, 'kills' => 12, 'deaths' => 6, 'assists' => 9, 'gold_per_min' => 580, 'xp_per_min' => 640, 'lobby_type' => 7, 'game_mode' => 22, 'party_id' => 42],
-                ['match_id' => 9000000005, 'hero_id' => 5, 'player_slot' => 128, 'radiant_win' => false, 'start_time' => now()->subDays(4)->timestamp, 'duration' => 1750, 'kills' => 4, 'deaths' => 9, 'assists' => 7, 'gold_per_min' => 390, 'xp_per_min' => 450, 'lobby_type' => 1, 'game_mode' => 1, 'party_id' => 0],
-                ['match_id' => 9000000006, 'hero_id' => 6, 'player_slot' => 128, 'radiant_win' => true, 'start_time' => now()->subDays(6)->timestamp, 'duration' => 2300, 'kills' => 7, 'deaths' => 5, 'assists' => 13, 'gold_per_min' => 470, 'xp_per_min' => 530, 'lobby_type' => 7, 'game_mode' => 22, 'party_id' => 0],
+                ['match_id' => 9000000001, 'hero_id' => 1, 'player_slot' => 0, 'radiant_win' => true, 'start_time' => now()->subDays(1)->timestamp, 'duration' => 2400, 'kills' => 10, 'deaths' => 2, 'assists' => 15, 'gold_per_min' => 620, 'xp_per_min' => 710, 'lobby_type' => 7, 'game_mode' => 22, 'party_id' => 0, 'party_size' => 1, 'lane_role' => 1],
+                ['match_id' => 9000000002, 'hero_id' => 2, 'player_slot' => 128, 'radiant_win' => true, 'start_time' => now()->subDays(2)->timestamp, 'duration' => 1980, 'kills' => 3, 'deaths' => 8, 'assists' => 6, 'gold_per_min' => 340, 'xp_per_min' => 420, 'lobby_type' => 7, 'game_mode' => 22, 'party_id' => 42, 'party_size' => 2, 'lane_role' => 2],
+                ['match_id' => 9000000003, 'hero_id' => 3, 'player_slot' => 0, 'radiant_win' => true, 'start_time' => now()->subDays(3)->timestamp, 'duration' => 2100, 'kills' => 8, 'deaths' => 4, 'assists' => 11, 'gold_per_min' => 510, 'xp_per_min' => 590, 'lobby_type' => 0, 'game_mode' => 1, 'party_id' => 0, 'party_size' => 1, 'lane_role' => 1],
+                ['match_id' => 9000000004, 'hero_id' => 4, 'player_slot' => 128, 'radiant_win' => true, 'start_time' => now()->subDays(4)->timestamp, 'duration' => 2600, 'kills' => 12, 'deaths' => 6, 'assists' => 9, 'gold_per_min' => 580, 'xp_per_min' => 640, 'lobby_type' => 7, 'game_mode' => 22, 'party_id' => 42, 'party_size' => 2, 'lane_role' => 3],
+                ['match_id' => 9000000005, 'hero_id' => 5, 'player_slot' => 128, 'radiant_win' => false, 'start_time' => now()->subDays(4)->timestamp, 'duration' => 1750, 'kills' => 4, 'deaths' => 9, 'assists' => 7, 'gold_per_min' => 390, 'xp_per_min' => 450, 'lobby_type' => 0, 'game_mode' => 1, 'party_id' => 0, 'party_size' => 1, 'lane_role' => 4],
+                ['match_id' => 9000000006, 'hero_id' => 6, 'player_slot' => 128, 'radiant_win' => true, 'start_time' => now()->subDays(6)->timestamp, 'duration' => 2300, 'kills' => 7, 'deaths' => 5, 'assists' => 13, 'gold_per_min' => 470, 'xp_per_min' => 530, 'lobby_type' => 7, 'game_mode' => 22, 'party_id' => 0, 'party_size' => 1, 'lane_role' => 2],
             ]),
             'api.opendota.com/api/players/'.self::ACCOUNT_ID.'/peers*' => Http::response([]),
             'api.opendota.com/api/constants/items*' => Http::response([

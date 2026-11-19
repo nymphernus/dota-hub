@@ -44,20 +44,50 @@
             x-data="{
                 hero: @js((string) ($filters['hero_id'] ?: '')),
                 result: @js((string) $filters['result']),
-                rank: @js((string) $filters['rank']),
+                mode: @js((string) $filters['mode']),
+                role: @js((string) $filters['role']),
                 apply() {
                     const params = new URLSearchParams();
                     if (this.hero) params.set('hero_id', this.hero);
                     if (this.result) params.set('result', this.result);
-                    if (this.rank) params.set('rank', this.rank);
+                    if (this.mode) params.set('mode', this.mode);
+                    if (this.role) params.set('role', this.role);
                     const query = params.toString();
                     window.location.href = '{{ route('dota.player.matches', ['accountId' => $player['account_id']]) }}' + (query ? '?' + query : '');
                 }
             }"
             aria-label="Фильтры матчей"
         >
-            <div class="flex flex-wrap items-end gap-3">
-                <div class="min-w-[200px] flex-1">
+            <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <div>
+                    <label for="filter-result" class="label mb-1.5 block">Результат</label>
+                    <select id="filter-result" x-model="result" @change="apply()" class="input !py-2.5" data-filter="result">
+                        <option value="">Все результаты</option>
+                        <option value="win" @selected($filters['result'] === 'win')>Победа</option>
+                        <option value="loss" @selected($filters['result'] === 'loss')>Поражение</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="filter-mode" class="label mb-1.5 block">Режим игры</label>
+                    <select id="filter-mode" x-model="mode" @change="apply()" class="input !py-2.5" data-filter="mode">
+                        <option value="">Все режимы</option>
+                        <option value="ranked" @selected($filters['mode'] === 'ranked')>Ranked</option>
+                        <option value="turbo" @selected($filters['mode'] === 'turbo')>Turbo</option>
+                        <option value="normal" @selected($filters['mode'] === 'normal')>Normal</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="filter-role" class="label mb-1.5 block">Роль</label>
+                    <select id="filter-role" x-model="role" @change="apply()" class="input !py-2.5" data-filter="role">
+                        <option value="">Все роли</option>
+                        <option value="carry" @selected($filters['role'] === 'carry')>Carry</option>
+                        <option value="mid" @selected($filters['role'] === 'mid')>Mid</option>
+                        <option value="offlane" @selected($filters['role'] === 'offlane')>Offlane</option>
+                        <option value="support" @selected($filters['role'] === 'support')>Support</option>
+                        <option value="hard_support" @selected($filters['role'] === 'hard_support')>Hard Support</option>
+                    </select>
+                </div>
+                <div>
                     <label for="filter-hero" class="label mb-1.5 block">Герой</label>
                     <select id="filter-hero" x-model="hero" @change="apply()" class="input !py-2.5" data-filter="hero_id">
                         <option value="">Все герои</option>
@@ -68,38 +98,24 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="min-w-[170px]">
-                    <label for="filter-result" class="label mb-1.5 block">Результат</label>
-                    <select id="filter-result" x-model="result" @change="apply()" class="input !py-2.5" data-filter="result">
-                        <option value="">Все результаты</option>
-                        <option value="win" @selected($filters['result'] === 'win')>Победа</option>
-                        <option value="loss" @selected($filters['result'] === 'loss')>Поражение</option>
-                    </select>
-                </div>
-                <div class="min-w-[170px]">
-                    <label for="filter-rank" class="label mb-1.5 block">Тип игры</label>
-                    <select id="filter-rank" x-model="rank" @change="apply()" class="input !py-2.5" data-filter="rank">
-                        <option value="">Рейтинг и обычные</option>
-                        <option value="ranked" @selected($filters['rank'] === 'ranked')>Рейтинг</option>
-                        <option value="unranked" @selected($filters['rank'] === 'unranked')>Обычные</option>
-                    </select>
-                </div>
-                @if ($filters['hero_id'] || $filters['result'] || $filters['rank'])
-                    <a href="{{ route('dota.player.matches', ['accountId' => $player['account_id']]) }}" class="btn-ghost !py-2.5">Сбросить</a>
-                @endif
             </div>
+            @if ($filters['hero_id'] || $filters['result'] || $filters['mode'] || $filters['role'])
+                <div class="mt-3 flex justify-end">
+                    <a href="{{ route('dota.player.matches', ['accountId' => $player['account_id']]) }}" class="btn-ghost !py-2">Сбросить фильтры</a>
+                </div>
+            @endif
         </section>
 
         <section class="card mt-4 overflow-hidden">
             <div class="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] px-4 py-3 sm:px-5">
-                <h2 class="text-base font-bold text-white">Все матчи</h2>
-                <span class="text-[11px] text-mist-500">
+                <p class="text-[11px] text-mist-500">
                     @if ($matches->total() > 0)
-                        {{ $matches->firstItem() }}–{{ $matches->lastItem() }} из {{ $matches->total() }}
+                        Показаны {{ $matches->firstItem() }}–{{ $matches->lastItem() }} из {{ $matches->total() }}
                     @else
                         Ничего не найдено
                     @endif
-                </span>
+                </p>
+                <span class="badge border-white/10 bg-white/5 text-mist-400">{{ number_format($matches->total(), 0, '.', ' ') }} матчей</span>
             </div>
 
             @if ($matches->isEmpty())
@@ -128,7 +144,7 @@
         </section>
 
         @if ($matches->hasPages())
-            <div class="mt-4">{{ $matches->links() }}</div>
+            <div class="mt-4">{{ $matches->links('vendor.pagination.radar') }}</div>
         @endif
     </div>
 @endsection

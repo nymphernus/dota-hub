@@ -29,6 +29,54 @@ if (payload) {
         tooltipElement.className = 'radar-hero-tooltip pointer-events-none absolute z-20 hidden w-52 rounded-xl border border-white/10 bg-ink-950/95 p-2.5 shadow-2xl backdrop-blur';
         parent.appendChild(tooltipElement);
 
+        const imageCache = new Map();
+        let chart = null;
+
+        const heroImage = (src) => {
+            if (!src) return null;
+
+            if (!imageCache.has(src)) {
+                const image = new Image();
+                image.src = src;
+                image.onload = () => chart?.update('none');
+                imageCache.set(src, image);
+            }
+
+            return imageCache.get(src);
+        };
+
+        const heroIcons = {
+            id: 'heroIcons',
+            afterDatasetsDraw(instance) {
+                const meta = instance.getDatasetMeta(0);
+                const dataset = instance.data.datasets[0];
+
+                if (!meta?.data || !dataset) return;
+
+                meta.data.forEach((arc, index) => {
+                    const hero = heroes[index] || {};
+                    const image = heroImage(hero.image);
+
+                    if (!image?.complete || !image.naturalWidth) return;
+
+                    const point = arc.tooltipPosition();
+                    const size = Math.max(16, Math.min(30, arc.outerRadius * 0.38));
+                    const context = instance.ctx;
+
+                    context.save();
+                    context.beginPath();
+                    context.arc(point.x, point.y, (size / 2) + 2, 0, Math.PI * 2);
+                    context.fillStyle = '#0b1220';
+                    context.fill();
+                    context.beginPath();
+                    context.arc(point.x, point.y, size / 2, 0, Math.PI * 2);
+                    context.clip();
+                    context.drawImage(image, point.x - (size / 2), point.y - (size / 2), size, size);
+                    context.restore();
+                });
+            },
+        };
+
         const renderHeroTooltip = (context) => {
             const tooltip = context.tooltip;
 
@@ -83,7 +131,7 @@ if (payload) {
             tooltipElement.classList.remove('hidden');
         };
 
-        const chart = new Chart(canvas, {
+        chart = new Chart(canvas, {
             type: 'doughnut',
             data: {
                 labels: heroes.map((hero) => hero.name || 'Неизвестный герой'),
@@ -95,6 +143,7 @@ if (payload) {
                     hoverOffset: 6,
                 }],
             },
+            plugins: [heroIcons],
             options: {
                 responsive: true,
                 maintainAspectRatio: false,

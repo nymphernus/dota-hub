@@ -48,7 +48,9 @@ class MatchTest extends TestCase
         $response->assertSee('Dire');
         $response->assertDontSee('Вы');
         $response->assertSee('Ranked');
-        $response->assertSee('Ranked All Pick');
+        $response->assertSee('All Pick');
+        $response->assertSee('ring-sky-500/50', false);
+        $response->assertSee('Party');
         $response->assertSee('Safe');
         $response->assertSee('Mid');
         $response->assertSee('Hard');
@@ -125,7 +127,7 @@ class MatchTest extends TestCase
 
         // One match request + hero metadata + item metadata.
         Http::assertSentCount(3);
-        $this->assertTrue(Cache::has('opendota:match:v3:'.self::MATCH_ID));
+        $this->assertTrue(Cache::has('opendota:match:v4:'.self::MATCH_ID));
     }
 
     public function test_unknown_match_redirects_back_with_an_error(): void
@@ -200,6 +202,8 @@ class MatchTest extends TestCase
                         'player_slot' => 0,
                         'hero_id' => 1,
                         'personaname' => 'Dendi',
+                        'party_id' => 7,
+                        'party_size' => 2,
                         'level' => 25,
                         'lane_role' => 1,
                         'position_est' => 1,
@@ -222,6 +226,8 @@ class MatchTest extends TestCase
                         'player_slot' => 1,
                         'hero_id' => 2,
                         'personaname' => 'Teammate',
+                        'party_id' => 7,
+                        'party_size' => 2,
                         'level' => 22,
                         'lane_role' => 2,
                         'kills' => 4,
