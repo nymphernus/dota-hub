@@ -160,6 +160,14 @@
         @apply w-full rounded-lg bg-white/[0.05] px-4 py-3 text-sm text-white placeholder:text-mist-500 transition focus:outline-none focus:ring-2 focus:ring-gold-400/25;
     }
 
+    .select-control {
+        @apply w-full appearance-none rounded-lg bg-ink-900/80 py-2.5 pl-3 pr-9 text-sm font-semibold text-mist-200 ring-1 ring-inset ring-line transition hover:ring-gold-400/40 focus:outline-none focus:ring-2 focus:ring-gold-400/60;
+    }
+
+    .select-control option {
+        @apply bg-ink-800 text-mist-200;
+    }
+
     .table-head {
         @apply border-b border-line bg-white/[0.025] text-left text-[10px] font-semibold uppercase tracking-[0.16em] text-mist-400;
     }

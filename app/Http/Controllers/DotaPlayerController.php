@@ -198,6 +198,7 @@ class DotaPlayerController extends Controller
             'result' => in_array($request->query('result'), ['win', 'loss'], true) ? $request->query('result') : '',
             'mode' => in_array($request->query('mode'), ['ranked', 'turbo', 'normal'], true) ? $request->query('mode') : '',
             'role' => in_array($request->query('role'), ['carry', 'mid', 'offlane', 'support', 'hard_support'], true) ? $request->query('role') : '',
+            'time' => in_array($request->query('time'), ['today', 'week', 'month'], true) ? $request->query('time') : '',
         ];
 
         try {

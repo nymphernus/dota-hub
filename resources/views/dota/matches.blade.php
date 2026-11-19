@@ -4,6 +4,39 @@
 @section('description', 'Полный список матчей игрока '.$player['nickname'].' с фильтрами по герою, результату и типу игры.')
 
 @section('profile-content')
+        @php
+            $heroFilterOptions = ['' => 'Все герои'] + collect($heroOptions)
+                ->mapWithKeys(fn (array $hero) => [
+                    (string) $hero['hero_id'] => ($hero['localized_name'] ?? $hero['name']).' · '.$hero['games'],
+                ])
+                ->all();
+            $resultFilterOptions = [
+                '' => 'Все результаты',
+                'win' => 'Победа',
+                'loss' => 'Поражение',
+            ];
+            $modeFilterOptions = [
+                '' => 'Все режимы',
+                'ranked' => 'Ranked',
+                'turbo' => 'Turbo',
+                'normal' => 'Normal',
+            ];
+            $roleFilterOptions = [
+                '' => 'Все роли',
+                'carry' => 'Carry',
+                'mid' => 'Mid',
+                'offlane' => 'Offlane',
+                'support' => 'Support',
+                'hard_support' => 'Hard Support',
+            ];
+            $timeFilterOptions = [
+                '' => 'Любое время',
+                'today' => 'Сегодня',
+                'week' => 'Неделя',
+                'month' => 'Месяц',
+            ];
+        @endphp
+
         <section
             class="card mt-4 p-4 sm:p-5"
             x-data="{
@@ -11,60 +44,63 @@
                 result: @js((string) $filters['result']),
                 mode: @js((string) $filters['mode']),
                 role: @js((string) $filters['role']),
+                time: @js((string) ($filters['time'] ?? '')),
                 apply() {
                     const params = new URLSearchParams();
                     if (this.hero) params.set('hero_id', this.hero);
                     if (this.result) params.set('result', this.result);
                     if (this.mode) params.set('mode', this.mode);
                     if (this.role) params.set('role', this.role);
+                    if (this.time) params.set('time', this.time);
                     const query = params.toString();
                     window.location.href = '{{ route('dota.player.matches', ['accountId' => $player['account_id']]) }}' + (query ? '?' + query : '');
                 }
             }"
             aria-label="Фильтры матчей"
         >
-            <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                <div>
-                    <label for="filter-result" class="label mb-1.5 block">Результат</label>
-                    <select id="filter-result" x-model="result" @change="apply()" class="input !py-2.5" data-filter="result">
-                        <option value="">Все результаты</option>
-                        <option value="win" @selected($filters['result'] === 'win')>Победа</option>
-                        <option value="loss" @selected($filters['result'] === 'loss')>Поражение</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="filter-mode" class="label mb-1.5 block">Режим игры</label>
-                    <select id="filter-mode" x-model="mode" @change="apply()" class="input !py-2.5" data-filter="mode">
-                        <option value="">Все режимы</option>
-                        <option value="ranked" @selected($filters['mode'] === 'ranked')>Ranked</option>
-                        <option value="turbo" @selected($filters['mode'] === 'turbo')>Turbo</option>
-                        <option value="normal" @selected($filters['mode'] === 'normal')>Normal</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="filter-role" class="label mb-1.5 block">Роль</label>
-                    <select id="filter-role" x-model="role" @change="apply()" class="input !py-2.5" data-filter="role">
-                        <option value="">Все роли</option>
-                        <option value="carry" @selected($filters['role'] === 'carry')>Carry</option>
-                        <option value="mid" @selected($filters['role'] === 'mid')>Mid</option>
-                        <option value="offlane" @selected($filters['role'] === 'offlane')>Offlane</option>
-                        <option value="support" @selected($filters['role'] === 'support')>Support</option>
-                        <option value="hard_support" @selected($filters['role'] === 'hard_support')>Hard Support</option>
-                    </select>
-                </div>
-                <div>
-                    <label for="filter-hero" class="label mb-1.5 block">Герой</label>
-                    <select id="filter-hero" x-model="hero" @change="apply()" class="input !py-2.5" data-filter="hero_id">
-                        <option value="">Все герои</option>
-                        @foreach ($heroOptions as $hero)
-                            <option value="{{ $hero['hero_id'] }}" @selected((int) $filters['hero_id'] === (int) $hero['hero_id'])>
-                                {{ $hero['localized_name'] ?? $hero['name'] }} · {{ $hero['games'] }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
+            <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                @include('dota.partials.filter-select', [
+                    'id' => 'filter-hero',
+                    'label' => 'Герой',
+                    'model' => 'hero',
+                    'filterKey' => 'hero_id',
+                    'selected' => (string) ($filters['hero_id'] ?: ''),
+                    'options' => $heroFilterOptions,
+                ])
+                @include('dota.partials.filter-select', [
+                    'id' => 'filter-result',
+                    'label' => 'Результат',
+                    'model' => 'result',
+                    'filterKey' => 'result',
+                    'selected' => (string) $filters['result'],
+                    'options' => $resultFilterOptions,
+                ])
+                @include('dota.partials.filter-select', [
+                    'id' => 'filter-mode',
+                    'label' => 'Режим игры',
+                    'model' => 'mode',
+                    'filterKey' => 'mode',
+                    'selected' => (string) $filters['mode'],
+                    'options' => $modeFilterOptions,
+                ])
+                @include('dota.partials.filter-select', [
+                    'id' => 'filter-role',
+                    'label' => 'Роль',
+                    'model' => 'role',
+                    'filterKey' => 'role',
+                    'selected' => (string) $filters['role'],
+                    'options' => $roleFilterOptions,
+                ])
+                @include('dota.partials.filter-select', [
+                    'id' => 'filter-time',
+                    'label' => 'Время',
+                    'model' => 'time',
+                    'filterKey' => 'time',
+                    'selected' => (string) ($filters['time'] ?? ''),
+                    'options' => $timeFilterOptions,
+                ])
             </div>
-            @if ($filters['hero_id'] || $filters['result'] || $filters['mode'] || $filters['role'])
+            @if ($filters['hero_id'] || $filters['result'] || $filters['mode'] || $filters['role'] || ($filters['time'] ?? ''))
                 <div class="mt-3 flex justify-end">
                     <a href="{{ route('dota.player.matches', ['accountId' => $player['account_id']]) }}" class="btn-ghost !py-2">Сбросить фильтры</a>
                 </div>

@@ -736,7 +736,7 @@ class OpenDotaService
     /**
      * Full match history for the dedicated matches tab.
      *
-     * @param  array{hero_id?: int, result?: string, mode?: string, role?: string}  $filters
+     * @param  array{hero_id?: int, result?: string, mode?: string, role?: string, time?: string}  $filters
      * @return array{player: array<string, mixed>, rows: array<int, array<string, mixed>>, total: int, heroes: array<int, array<string, mixed>>, filters: array<string, mixed>}
      */
     public function playerMatches(int $accountId, int $page, int $perPage, array $filters = []): array
@@ -792,8 +792,15 @@ class OpenDotaService
         $result = (string) ($filters['result'] ?? '');
         $mode = (string) ($filters['mode'] ?? '');
         $role = (string) ($filters['role'] ?? '');
+        $time = (string) ($filters['time'] ?? '');
+        $timeThreshold = match ($time) {
+            'today' => CarbonImmutable::now('UTC')->startOfDay(),
+            'week' => CarbonImmutable::now('UTC')->startOfWeek(CarbonImmutable::MONDAY),
+            'month' => CarbonImmutable::now('UTC')->startOfMonth(),
+            default => null,
+        };
 
-        $rows = array_values(array_filter($rows, function (array $row) use ($heroId, $result, $mode, $role) {
+        $rows = array_values(array_filter($rows, function (array $row) use ($heroId, $result, $mode, $role, $timeThreshold) {
             if ($heroId > 0 && (int) ($row['hero_id'] ?? 0) !== $heroId) {
                 return false;
             }
@@ -825,6 +832,18 @@ class OpenDotaService
                 return false;
             }
 
+            if ($timeThreshold !== null) {
+                $startedAt = $row['started_at'] ?? null;
+
+                if (! is_string($startedAt) || $startedAt === '') {
+                    return false;
+                }
+
+                if (CarbonImmutable::parse($startedAt)->lessThan($timeThreshold)) {
+                    return false;
+                }
+            }
+
             return true;
         }));
 
@@ -845,6 +864,7 @@ class OpenDotaService
                 'result' => $result,
                 'mode' => $mode,
                 'role' => $role,
+                'time' => $time,
             ],
         ];
     }

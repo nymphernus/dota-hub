@@ -48,6 +48,12 @@ class DotaMatchesTest extends TestCase
         $response->assertSee('Режим игры');
         $response->assertSee('Роль');
         $response->assertDontSee('Нетворс');
+        $response->assertSee('select-control', false);
+        $response->assertSee('id="filter-time"', false);
+        $response->assertSee('Любое время');
+        $response->assertSee('Сегодня');
+        $response->assertSee('Неделя');
+        $response->assertSee('Месяц');
         $response->assertDontSee('bg-blue-600', false);
         $response->assertDontSee('>P1<', false);
         $response->assertViewHas('matches', function (LengthAwarePaginator $matches) {
@@ -71,6 +77,7 @@ class DotaMatchesTest extends TestCase
             'result' => '',
             'mode' => '',
             'role' => '',
+            'time' => '',
         ]);
     }
 
@@ -112,6 +119,20 @@ class DotaMatchesTest extends TestCase
             return $matches->total() === 2
                 && $matches->every(fn (array $match) => $match['role_key'] === 'mid');
         });
+    }
+
+    public function test_matches_page_filters_by_time(): void
+    {
+        $this->fakeOpenDota();
+
+        $response = $this->get(route('dota.player.matches', [
+            'accountId' => self::ACCOUNT_ID,
+            'time' => 'month',
+        ]));
+
+        $response->assertOk();
+        $response->assertViewHas('filters', fn (array $filters): bool => $filters['time'] === 'month');
+        $response->assertViewHas('matches', fn (LengthAwarePaginator $matches): bool => $matches->total() === 6);
     }
 
     public function test_matches_page_paginates_the_history(): void
