@@ -58,6 +58,11 @@ class MatchTest extends TestCase
         $response->assertSee('Black King Bar');
         $response->assertSee('id="radiantNetWorthChart"', false);
         $response->assertSee('id="direNetWorthChart"', false);
+        $response->assertSee('Party #7', false);
+        $response->assertSee('Команда Dire', false);
+        $response->assertSee(route('dota.player', ['accountId' => 123456789]), false);
+        $response->assertSee(route('dota.player', ['accountId' => 987654321]), false);
+        $response->assertDontSee('Данные о нетворсе появятся после парсинга матча');
         $response->assertViewHas('match', function (array $match) {
             $radiantCarry = $match['players']['radiant'][0];
             $radiantSupport = $match['players']['radiant'][1];
@@ -91,6 +96,33 @@ class MatchTest extends TestCase
         $response->assertOk();
         $response->assertDontSee('Вы');
         $response->assertSee('Dendi');
+    }
+
+    public function test_players_without_party_ids_are_grouped_by_team_and_linked(): void
+    {
+        $this->fakeMatch(withParties: false);
+
+        $response = $this->get(route('dota.match', ['matchId' => self::MATCH_ID]));
+
+        $response->assertOk();
+        $response->assertSee('Команда Radiant', false);
+        $response->assertSee('Команда Dire', false);
+        $response->assertDontSee('Party #', false);
+        $response->assertSee(route('dota.player', ['accountId' => 123456789]), false);
+        $response->assertSee(route('dota.player', ['accountId' => 987654321]), false);
+    }
+
+    public function test_unparsed_match_shows_the_net_worth_placeholder(): void
+    {
+        $this->fakeMatch(parsed: false);
+
+        $response = $this->get(route('dota.match', ['matchId' => self::MATCH_ID]));
+
+        $response->assertOk();
+        $response->assertSee('Данные о нетворсе появятся после парсинга матча');
+        $response->assertDontSee('id="radiantNetWorthChart"', false);
+        $response->assertViewHas('match', fn (array $match) => $match['net_worth_chart']['has_data'] === false
+            && $match['net_worth_chart']['radiant']['datasets'] === []);
     }
 
     public function test_stratz_positions_override_opendota_roles_when_token_is_set(): void
@@ -180,7 +212,7 @@ class MatchTest extends TestCase
         );
     }
 
-    private function fakeMatch(bool $withStratz = false): void
+    private function fakeMatch(bool $withStratz = false, bool $parsed = true, bool $withParties = true): void
     {
         if ($withStratz) {
             config(['services.stratz.token' => 'test-token']);
@@ -293,6 +325,25 @@ class MatchTest extends TestCase
                 ],
             ]),
         ];
+
+        $matchKey = 'api.opendota.com/api/matches/'.self::MATCH_ID.'*';
+
+        if (! $parsed || ! $withParties) {
+            $payload = json_decode((string) $fakes[$matchKey]->wait()->getBody(), true);
+
+            foreach ($payload['players'] as &$player) {
+                if (! $parsed) {
+                    unset($player['networth_t'], $player['xp_t']);
+                }
+
+                if (! $withParties) {
+                    unset($player['party_id'], $player['party_size']);
+                }
+            }
+            unset($player);
+
+            $fakes[$matchKey] = Http::response($payload);
+        }
 
         if ($withStratz) {
             $fakes['api.stratz.com/graphql*'] = Http::response([

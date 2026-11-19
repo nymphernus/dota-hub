@@ -23,6 +23,42 @@
             'players' => $match['players']['dire'],
         ],
     ];
+
+    // OpenDota annotates parties only when it knows them. Unknown party ids are
+    // grouped by team instead of dumping every player into one anonymous list.
+    foreach ($teams as $teamKey => $team) {
+        $groups = [];
+        $teamPlayers = [
+            'label' => 'Команда '.$team['label'],
+            'players' => [],
+        ];
+
+        foreach ($team['players'] as $index => $player) {
+            $player['view_index'] = $index;
+            $partyId = $player['party_id'] ?? null;
+
+            if ($partyId) {
+                $groupKey = 'party-'.$partyId;
+
+                if (! isset($groups[$groupKey])) {
+                    $groups[$groupKey] = [
+                        'label' => 'Party #'.$partyId,
+                        'players' => [],
+                    ];
+                }
+
+                $groups[$groupKey]['players'][] = $player;
+            } else {
+                $teamPlayers['players'][] = $player;
+            }
+        }
+
+        if ($teamPlayers['players'] !== []) {
+            $groups['team'] = $teamPlayers;
+        }
+
+        $teams[$teamKey]['groups'] = $groups;
+    }
 @endphp
 
 @section('content')
@@ -111,7 +147,7 @@
                     @if ($hasNetWorth)
                         OpenDota parsed data · Radiant и Dire
                     @else
-                        График появится после парсинга матча
+                        Данные о нетворсе появятся после парсинга матча
                     @endif
                 </span>
             </div>
@@ -140,7 +176,7 @@
                 </div>
             @else
                 <div class="card p-6 text-center text-sm text-mist-400">
-                    OpenDota ещё не распарсила историю нетворса этого матча. Роли и закуп могут быть доступны частично.
+                    Данные о нетворсе появятся после парсинга матча
                 </div>
             @endif
         </section>
@@ -184,132 +220,147 @@
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-white/[0.04]" x-data="{ openPlayer: null }">
-                            @foreach ($team['players'] as $player)
-                                @php
-                                    $roleLabel = $player['role']['label'] ?? null;
-                                    $roleName = $player['role']['name'] ?? null;
-                                    $roleSource = $player['role']['source'] ?? null;
-                                    $roleClasses = match ($roleLabel) {
-                                        'Safe' => 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300',
-                                        'Mid' => 'border-sky-500/25 bg-sky-500/10 text-sky-300',
-                                        'Off' => 'border-amber-500/25 bg-amber-500/10 text-amber-300',
-                                        'Soft' => 'border-violet-500/25 bg-violet-500/10 text-violet-300',
-                                        'Hard' => 'border-rose-500/25 bg-rose-500/10 text-rose-300',
-                                        default => 'border-white/10 bg-white/5 text-mist-400',
-                                    };
-                                    $isCurrentPlayer = $profilePlayerId !== null
-                                        && (int) ($player['account_id'] ?? 0) === $profilePlayerId;
-                                    $partyId = $player['party_id'] ?? null;
-                                @endphp
-                                <tr @class([
-                                    'transition hover:bg-white/[0.03]',
-                                    'bg-sky-500/[0.09] ring-2 ring-inset ring-sky-500/50' => $isCurrentPlayer,
-                                    'border-l-2 border-sky-400/40' => ! $isCurrentPlayer && $partyId,
-                                ])>
-                                    <td class="px-4 py-3 sm:px-5">
-                                        <div class="flex items-center gap-3">
-                                            <div class="h-9 w-16 shrink-0 overflow-hidden rounded-md bg-ink-800 ring-1 ring-white/10">
-                                                @if ($player['hero_image'])
-                                                    <img src="{{ $player['hero_image'] }}" alt="{{ $player['hero_name'] }}" class="h-full w-full object-cover" loading="lazy">
-                                                @else
-                                                    <span class="grid h-full w-full place-items-center text-xs font-bold text-mist-500">
-                                                        {{ mb_strtoupper(mb_substr($player['hero_name'], 0, 1)) }}
-                                                    </span>
-                                                @endif
-                                            </div>
-                                            <div class="min-w-0">
-                                                <p class="truncate text-[13px] font-semibold text-white">{{ $player['hero_name'] }}</p>
-                                                <p class="mt-0.5 flex items-center gap-1.5 truncate text-[10px] text-mist-500">
-                                                    @if ($player['nickname'])
-                                                        <span class="truncate">{{ $player['nickname'] }}</span>
-                                                    @endif
-                                                    @if ($player['level'] > 0)
-                                                        <span>ур. {{ $player['level'] }}</span>
-                                                    @endif
-                                                    @if ($partyId)
-                                                        <span class="rounded bg-sky-500/10 px-1 py-0.5 text-[8px] font-bold uppercase tracking-wide text-sky-300">Party</span>
-                                                    @endif
-                                                </p>
-                                            </div>
+                            @forelse ($team['groups'] as $group)
+                                <tr class="bg-white/[0.02]">
+                                    <td colspan="7" class="border-y border-white/[0.05] px-4 py-2 sm:px-5">
+                                        <div class="flex items-center justify-between gap-2">
+                                            <span class="text-[10px] font-black uppercase tracking-[0.16em] text-radar-300">{{ $group['label'] }}</span>
+                                            <span class="text-[10px] text-mist-500">{{ count($group['players']) }} игроков</span>
                                         </div>
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        @if ($roleLabel)
-                                            <span class="badge !px-2 !py-0.5 !text-[10px] {{ $roleClasses }}" title="{{ $roleName }}{{ $roleSource ? ' · '.$roleSource : '' }}">
-                                                {{ $roleLabel }}
-                                            </span>
-                                            <p class="mt-1 text-[10px] text-mist-500">{{ $roleName }}</p>
-                                            @if (($player['impact'] ?? null) !== null)
-                                                <p class="mt-0.5 text-[10px] font-semibold text-cyan-300/80" title="STRATZ impact">IMP {{ number_format($player['impact'], 1, '.', '') }}</p>
-                                            @endif
-                                        @else
-                                            <span class="text-[11px] text-mist-500">—</span>
-                                        @endif
-                                    </td>
-                                    <td class="px-4 py-3 font-mono text-[13px] tabular-nums">
-                                        <span class="text-emerald-300">{{ $player['kills'] }}</span>
-                                        <span class="text-mist-500/60">/</span>
-                                        <span class="text-rose-300">{{ $player['deaths'] }}</span>
-                                        <span class="text-mist-500/60">/</span>
-                                        <span class="text-sky-300">{{ $player['assists'] }}</span>
-                                        <span class="ml-1.5 text-[10px] text-mist-500">({{ number_format($player['kda'], 2, '.', '') }})</span>
-                                    </td>
-                                    <td class="px-4 py-3 font-mono text-[13px] tabular-nums text-mist-300">{{ number_format($player['gpm'], 0, '.', ' ') }}</td>
-                                    <td class="px-4 py-3 font-mono text-[13px] tabular-nums text-mist-300">{{ number_format($player['xpm'], 0, '.', ' ') }}</td>
-                                    <td class="px-4 py-3 font-mono text-[13px] tabular-nums text-mist-300">{{ number_format($player['hero_damage'], 0, '.', ' ') }}</td>
-                                    <td class="px-4 py-3 text-right sm:px-5">
-                                        @if ($player['purchases'] !== [])
-                                            <button
-                                                type="button"
-                                                class="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-[11px] font-semibold text-mist-300 transition hover:border-radar-500/30 hover:bg-radar-500/10 hover:text-radar-200"
-                                                @click="openPlayer = openPlayer === {{ $loop->index }} ? null : {{ $loop->index }}"
-                                                :aria-expanded="(openPlayer === {{ $loop->index }}).toString()"
-                                                aria-controls="purchases-{{ $teamKey }}-{{ $loop->index }}"
-                                            >
-                                                Закуп
-                                                <span class="rounded bg-white/[0.06] px-1.5 py-0.5 text-[10px] text-mist-400">{{ count($player['purchases']) }}</span>
-                                                <svg class="h-3 w-3 transition" :class="openPlayer === {{ $loop->index }} ? 'rotate-180' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                                            </button>
-                                        @else
-                                            <span class="text-[11px] text-mist-500">—</span>
-                                        @endif
                                     </td>
                                 </tr>
 
-                                @if ($player['purchases'] !== [])
-                                    <tr id="purchases-{{ $teamKey }}-{{ $loop->index }}" x-show="openPlayer === {{ $loop->index }}" x-cloak x-transition.opacity.duration.150ms class="bg-ink-950/60">
-                                        <td colspan="7" class="px-4 pb-4 pt-1 sm:px-5">
-                                            <div class="rounded-xl border border-white/[0.06] bg-ink-900/70 p-3">
-                                                <div class="flex flex-wrap items-center justify-between gap-2">
-                                                    <p class="label">Закуп · {{ $player['hero_name'] }}</p>
-                                                    <p class="text-[10px] text-mist-500">{{ $player['purchase_log_count'] }} покупок · показаны ключевые предметы</p>
+                                @foreach ($group['players'] as $player)
+                                    @php
+                                        $roleLabel = $player['role']['label'] ?? null;
+                                        $roleName = $player['role']['name'] ?? null;
+                                        $roleSource = $player['role']['source'] ?? null;
+                                        $roleClasses = match ($roleLabel) {
+                                            'Safe' => 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300',
+                                            'Mid' => 'border-sky-500/25 bg-sky-500/10 text-sky-300',
+                                            'Off' => 'border-amber-500/25 bg-amber-500/10 text-amber-300',
+                                            'Soft' => 'border-violet-500/25 bg-violet-500/10 text-violet-300',
+                                            'Hard' => 'border-rose-500/25 bg-rose-500/10 text-rose-300',
+                                            default => 'border-white/10 bg-white/5 text-mist-400',
+                                        };
+                                        $isCurrentPlayer = $profilePlayerId !== null
+                                            && (int) ($player['account_id'] ?? 0) === $profilePlayerId;
+                                        $partyId = $player['party_id'] ?? null;
+                                        $playerIndex = $player['view_index'];
+                                        $accountId = (int) ($player['account_id'] ?? 0);
+                                    @endphp
+                                    <tr @class([
+                                        'transition hover:bg-white/[0.03]',
+                                        'bg-sky-500/[0.09] ring-2 ring-inset ring-sky-500/50' => $isCurrentPlayer,
+                                        'border-l-2 border-sky-400/40' => ! $isCurrentPlayer && $partyId,
+                                    ])>
+                                        <td class="px-4 py-3 sm:px-5">
+                                            <div class="flex items-center gap-3">
+                                                <div class="h-9 w-16 shrink-0 overflow-hidden rounded-md bg-ink-800 ring-1 ring-white/10">
+                                                    @if ($player['hero_image'])
+                                                        <img src="{{ $player['hero_image'] }}" alt="{{ $player['hero_name'] }}" class="h-full w-full object-cover" loading="lazy">
+                                                    @else
+                                                        <span class="grid h-full w-full place-items-center text-xs font-bold text-mist-500">
+                                                            {{ mb_strtoupper(mb_substr($player['hero_name'], 0, 1)) }}
+                                                        </span>
+                                                    @endif
                                                 </div>
-                                                <div class="mt-3 flex flex-wrap gap-2">
-                                                    @foreach ($player['purchases'] as $item)
-                                                        <div class="flex items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.025] p-2 pr-3" title="{{ $item['name'] }} · {{ $item['time_label'] }}">
-                                                            <div class="grid h-8 w-10 shrink-0 place-items-center overflow-hidden rounded-md bg-ink-800 ring-1 ring-white/10">
-                                                                <img src="{{ $item['image'] }}" alt="" class="h-full w-full object-contain" loading="lazy" referrerpolicy="no-referrer">
-                                                            </div>
-                                                            <div class="min-w-0">
-                                                                <p class="max-w-40 truncate text-[11px] font-semibold text-mist-300">{{ $item['name'] }}</p>
-                                                                <p class="text-[10px] text-mist-500">
-                                                                    {{ $item['time_label'] }}@if ($item['cost'] > 0) · {{ number_format($item['cost'], 0, '.', ' ') }}@endif
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                    @endforeach
+                                                <div class="min-w-0">
+                                                    <p class="truncate text-[13px] font-semibold text-white">{{ $player['hero_name'] }}</p>
+                                                    <p class="mt-0.5 flex items-center gap-1.5 truncate text-[10px] text-mist-500">
+                                                        @if ($accountId > 0)
+                                                            <a href="{{ route('dota.player', ['accountId' => $accountId]) }}" class="truncate font-semibold text-radar-300 transition hover:text-radar-200 hover:underline">
+                                                                {{ $player['nickname'] ?: 'Игрок '.$accountId }}
+                                                            </a>
+                                                        @else
+                                                            <span class="truncate">{{ $player['nickname'] ?: 'Неизвестный игрок' }}</span>
+                                                        @endif
+                                                        @if ($player['level'] > 0)
+                                                            <span>ур. {{ $player['level'] }}</span>
+                                                        @endif
+                                                        @if ($partyId)
+                                                            <span class="rounded bg-sky-500/10 px-1 py-0.5 text-[8px] font-bold uppercase tracking-wide text-sky-300">Party</span>
+                                                        @endif
+                                                    </p>
                                                 </div>
                                             </div>
                                         </td>
+                                        <td class="px-4 py-3">
+                                            @if ($roleLabel)
+                                                <span class="badge !px-2 !py-0.5 !text-[10px] {{ $roleClasses }}" title="{{ $roleName }}{{ $roleSource ? ' · '.$roleSource : '' }}">
+                                                    {{ $roleLabel }}
+                                                </span>
+                                                <p class="mt-1 text-[10px] text-mist-500">{{ $roleName }}</p>
+                                                @if (($player['impact'] ?? null) !== null)
+                                                    <p class="mt-0.5 text-[10px] font-semibold text-cyan-300/80" title="STRATZ impact">IMP {{ number_format($player['impact'], 1, '.', '') }}</p>
+                                                @endif
+                                            @else
+                                                <span class="text-[11px] text-mist-500">—</span>
+                                            @endif
+                                        </td>
+                                        <td class="px-4 py-3 font-mono text-[13px] tabular-nums">
+                                            <span class="text-emerald-300">{{ $player['kills'] }}</span>
+                                            <span class="text-mist-500/60">/</span>
+                                            <span class="text-rose-300">{{ $player['deaths'] }}</span>
+                                            <span class="text-mist-500/60">/</span>
+                                            <span class="text-sky-300">{{ $player['assists'] }}</span>
+                                            <span class="ml-1.5 text-[10px] text-mist-500">({{ number_format($player['kda'], 2, '.', '') }})</span>
+                                        </td>
+                                        <td class="px-4 py-3 font-mono text-[13px] tabular-nums text-mist-300">{{ number_format($player['gpm'], 0, '.', ' ') }}</td>
+                                        <td class="px-4 py-3 font-mono text-[13px] tabular-nums text-mist-300">{{ number_format($player['xpm'], 0, '.', ' ') }}</td>
+                                        <td class="px-4 py-3 font-mono text-[13px] tabular-nums text-mist-300">{{ number_format($player['hero_damage'], 0, '.', ' ') }}</td>
+                                        <td class="px-4 py-3 text-right sm:px-5">
+                                            @if ($player['purchases'] !== [])
+                                                <button
+                                                    type="button"
+                                                    class="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-[11px] font-semibold text-mist-300 transition hover:border-radar-500/30 hover:bg-radar-500/10 hover:text-radar-200"
+                                                    @click="openPlayer = openPlayer === {{ $playerIndex }} ? null : {{ $playerIndex }}"
+                                                    :aria-expanded="(openPlayer === {{ $playerIndex }}).toString()"
+                                                    aria-controls="purchases-{{ $teamKey }}-{{ $playerIndex }}"
+                                                >
+                                                    Закуп
+                                                    <span class="rounded bg-white/[0.06] px-1.5 py-0.5 text-[10px] text-mist-400">{{ count($player['purchases']) }}</span>
+                                                    <svg class="h-3 w-3 transition" :class="openPlayer === {{ $playerIndex }} ? 'rotate-180' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                                                </button>
+                                            @else
+                                                <span class="text-[11px] text-mist-500">—</span>
+                                            @endif
+                                        </td>
                                     </tr>
-                                @endif
-                            @endforeach
 
-                            @if ($team['players'] === [])
+                                    @if ($player['purchases'] !== [])
+                                        <tr id="purchases-{{ $teamKey }}-{{ $playerIndex }}" x-show="openPlayer === {{ $playerIndex }}" x-cloak x-transition.opacity.duration.150ms class="bg-ink-950/60">
+                                            <td colspan="7" class="px-4 pb-4 pt-1 sm:px-5">
+                                                <div class="rounded-xl border border-white/[0.06] bg-ink-900/70 p-3">
+                                                    <div class="flex flex-wrap items-center justify-between gap-2">
+                                                        <p class="label">Закуп · {{ $player['hero_name'] }}</p>
+                                                        <p class="text-[10px] text-mist-500">{{ $player['purchase_log_count'] }} покупок · показаны ключевые предметы</p>
+                                                    </div>
+                                                    <div class="mt-3 flex flex-wrap gap-2">
+                                                        @foreach ($player['purchases'] as $item)
+                                                            <div class="flex items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.025] p-2 pr-3" title="{{ $item['name'] }} · {{ $item['time_label'] }}">
+                                                                <div class="grid h-8 w-10 shrink-0 place-items-center overflow-hidden rounded-md bg-ink-800 ring-1 ring-white/10">
+                                                                    <img src="{{ $item['image'] }}" alt="" class="h-full w-full object-contain" loading="lazy" referrerpolicy="no-referrer">
+                                                                </div>
+                                                                <div class="min-w-0">
+                                                                    <p class="max-w-40 truncate text-[11px] font-semibold text-mist-300">{{ $item['name'] }}</p>
+                                                                    <p class="text-[10px] text-mist-500">
+                                                                        {{ $item['time_label'] }}@if ($item['cost'] > 0) · {{ number_format($item['cost'], 0, '.', ' ') }}@endif
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endif
+                                @endforeach
+                            @empty
                                 <tr>
                                     <td colspan="7" class="px-4 py-8 text-center text-sm text-mist-400">Нет данных по игрокам.</td>
                                 </tr>
-                            @endif
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
