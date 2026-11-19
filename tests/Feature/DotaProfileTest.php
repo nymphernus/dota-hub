@@ -111,16 +111,24 @@ class DotaProfileTest extends TestCase
         $response->assertSee('Blink Dagger');
         $response->assertSee('Нетворс');
         $response->assertSee('90 дней назад');
+        $response->assertSee('>Пн<', false);
+        $response->assertSee('>Вс<', false);
+        $response->assertSee('Активность за последние 13 недель', false);
         $response->assertDontSee('id="recentMatchesChart"', false);
         $response->assertDontSee('panel-matches', false);
         $response->assertDontSee('Окружение');
         $response->assertSee('SteamID64');
         $response->assertViewHas('steamProfile', fn (array $profile) => $profile['available'] === false);
         $response->assertViewHas('winrate', 60.0);
-        $response->assertViewHas('activityHeatmap', function (array $days) {
+        $response->assertViewHas('activityHeatmap', function (array $heatmap) {
+            $days = $heatmap['days'];
             $levels = array_column($days, 'level');
 
             return count($days) === 91
+                && count($heatmap['weeks']) === 13
+                && count($heatmap['weekdays']) === 7
+                && $heatmap['weekdays'][0] === 'Пн'
+                && $heatmap['months'] !== []
                 && array_sum(array_column($days, 'count')) === 6
                 && array_sum(array_column($days, 'wins')) === 3
                 && in_array('win', $levels, true)

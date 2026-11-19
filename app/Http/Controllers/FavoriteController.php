@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\Favorites\FavoriteService;
 use App\Support\SteamId;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -24,7 +25,7 @@ class FavoriteController extends Controller
         ]);
     }
 
-    public function store(Request $request, FavoriteService $favorites): RedirectResponse
+    public function store(Request $request, FavoriteService $favorites): RedirectResponse|JsonResponse
     {
         $steamId = $this->steamId();
 
@@ -47,10 +48,18 @@ class FavoriteController extends Controller
             filter_var($avatar, FILTER_VALIDATE_URL) ? $avatar : null,
         );
 
+        if ($request->expectsJson()) {
+            return response()->json([
+                'ok' => true,
+                'favorite' => true,
+                'account_id' => (int) $data['account_id'],
+            ]);
+        }
+
         return back()->with('status', 'Игрок добавлен в избранное.');
     }
 
-    public function destroy(int $accountId, FavoriteService $favorites): RedirectResponse
+    public function destroy(Request $request, int $accountId, FavoriteService $favorites): RedirectResponse|JsonResponse
     {
         $steamId = $this->steamId();
 
@@ -59,6 +68,14 @@ class FavoriteController extends Controller
         }
 
         $favorites->remove($steamId, $accountId);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'ok' => true,
+                'favorite' => false,
+                'account_id' => $accountId,
+            ]);
+        }
 
         return back()->with('status', 'Игрок удалён из избранного.');
     }
@@ -70,8 +87,18 @@ class FavoriteController extends Controller
         return SteamId::isSteamId64($steamId) ? $steamId : null;
     }
 
-    private function loginRequired(): RedirectResponse
+    private function loginRequired(): RedirectResponse|JsonResponse
     {
-        return redirect()->route('auth.steam', ['intended' => url()->previous()]);
+        $loginUrl = route('auth.steam', ['intended' => url()->previous()]);
+
+        if (request()->expectsJson()) {
+            return response()->json([
+                'ok' => false,
+                'message' => 'Войдите через Steam, чтобы управлять избранным.',
+                'login_url' => $loginUrl,
+            ], 401);
+        }
+
+        return redirect()->to($loginUrl);
     }
 }

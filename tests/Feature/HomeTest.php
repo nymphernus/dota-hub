@@ -25,6 +25,18 @@ class HomeTest extends TestCase
         $response->assertViewHas('dashboard', null);
     }
 
+    public function test_header_has_a_compact_search_that_posts_to_the_search_route(): void
+    {
+        $response = $this->get(route('home'));
+
+        $response->assertOk();
+        $response->assertSee('class="header-search"', false);
+        $response->assertSee('action="'.route('search').'"', false);
+        $response->assertSee('name="query"', false);
+        $response->assertSee('Поиск игрока', false);
+        $response->assertSee('Steam ID, URL или никнейм', false);
+    }
+
     public function test_guest_home_does_not_show_recent_searches_even_if_they_exist(): void
     {
         PlayerSearch::track('70388657', 'Dendi', 'https://example.com/dendi.jpg');

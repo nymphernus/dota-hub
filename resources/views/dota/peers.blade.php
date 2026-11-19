@@ -13,7 +13,7 @@
             <span class="text-slate-300">Союзники</span>
         </nav>
 
-        <x-player-header :player="$player" :steamProfile="$steamProfile" />
+        <x-player-header :player="$player" :steamProfile="$steamProfile" :isFavorite="$isFavorite ?? false" />
 
         <x-player-tabs :player="$player" active="peers" />
 

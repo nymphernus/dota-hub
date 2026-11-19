@@ -63,7 +63,7 @@ class FavoriteTest extends TestCase
             ->assertSee('Вы ещё не добавили игроков в избранное', false);
     }
 
-    public function test_player_page_shows_favorite_toggle_for_authenticated_user(): void
+    public function test_player_page_shows_favorite_star_for_authenticated_user(): void
     {
         $accountId = 70388657;
         $steamId = '76561198030654385';
@@ -73,6 +73,10 @@ class FavoriteTest extends TestCase
                 ->twice()
                 ->with($accountId)
                 ->andReturn($this->player($accountId));
+            $mock->shouldReceive('lifetimeStats')
+                ->twice()
+                ->with($accountId, [])
+                ->andReturn(['total' => 0, 'groups' => []]);
         });
 
         $this->mock(SteamService::class, function ($mock): void {
@@ -85,8 +89,10 @@ class FavoriteTest extends TestCase
             ->get(route('dota.player', ['accountId' => $accountId]));
 
         $response->assertOk();
-        $response->assertSee('В избранное');
-        $response->assertSee(route('favorites.store'), false);
+        $response->assertSee('data-favorite-star', false);
+        $response->assertSee('favoriteStar({', false);
+        $response->assertSee('active: false', false);
+        $response->assertDontSee('method="POST" action="'.route('favorites.store').'"', false);
 
         $this->withSession(['steam_id' => $steamId])
             ->post(route('favorites.store'), [
@@ -99,8 +105,35 @@ class FavoriteTest extends TestCase
             ->get(route('dota.player', ['accountId' => $accountId]));
 
         $response->assertOk();
-        $response->assertSee('В избранном');
-        $response->assertSee(route('favorites.destroy', ['accountId' => $accountId]), false);
+        $response->assertSee('active: true', false);
+    }
+
+    public function test_favorite_toggle_returns_json_for_ajax_requests(): void
+    {
+        $steamId = '76561198030654385';
+
+        $this->withSession(['steam_id' => $steamId])
+            ->postJson(route('favorites.store'), [
+                'account_id' => 70388657,
+                'nickname' => 'Dendi',
+                'avatar' => 'https://example.com/dendi.jpg',
+            ])
+            ->assertOk()
+            ->assertJson(['ok' => true, 'favorite' => true, 'account_id' => 70388657]);
+
+        $this->withSession(['steam_id' => $steamId])
+            ->deleteJson(route('favorites.destroy', ['accountId' => 70388657]))
+            ->assertOk()
+            ->assertJson(['ok' => true, 'favorite' => false, 'account_id' => 70388657]);
+    }
+
+    public function test_guest_ajax_toggle_returns_login_url_without_redirect(): void
+    {
+        $response = $this->postJson(route('favorites.store'), ['account_id' => 70388657])
+            ->assertUnauthorized()
+            ->assertJsonPath('ok', false);
+
+        $this->assertStringContainsString('/auth/steam', (string) $response->json('login_url'));
     }
 
     /**

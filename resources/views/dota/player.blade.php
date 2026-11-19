@@ -6,9 +6,10 @@
 @php
     $topHeroes = $player['top_heroes'] ?? array_slice($player['heroes'], 0, 5);
     $heroUsageTotal = array_sum(array_column($heroUsage, 'games'));
-    $activityTotal = array_sum(array_column($activityHeatmap, 'count'));
+    $activityTotal = array_sum(array_column($activityHeatmap['days'], 'count'));
     $chartData = ['heroUsage' => $heroUsage];
     $heatmapTones = [
+        'future' => 'bg-transparent text-transparent',
         'empty' => 'bg-white/[0.04] ring-1 ring-inset ring-white/[0.03] text-transparent',
         'win' => 'bg-emerald-500 ring-1 ring-inset ring-emerald-300/40 text-emerald-950',
         'loss' => 'bg-rose-500 ring-1 ring-inset ring-rose-300/40 text-rose-950',
@@ -26,42 +27,11 @@
             <span class="truncate text-slate-300">{{ $player['nickname'] }}</span>
         </nav>
 
-        <x-player-header :player="$player" :steamProfile="$steamProfile" />
+        <x-player-header :player="$player" :steamProfile="$steamProfile" :isFavorite="$isFavorite ?? false" />
 
         <x-player-metrics :player="$player" />
 
         <x-player-tabs :player="$player" active="overview" />
-
-        <div class="mt-4 flex flex-wrap items-center gap-2">
-            @if (session('steam_id'))
-                @if ($isFavorite ?? false)
-                    <form method="POST" action="{{ route('favorites.destroy', ['accountId' => $player['account_id']]) }}">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit" class="btn-ghost !border-amber-500/25 !bg-amber-500/10 !text-amber-200">
-                            <svg class="h-4 w-4 text-amber-300" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.5l6.1-.9L12 3Z"/></svg>
-                            В избранном
-                        </button>
-                    </form>
-                @else
-                    <form method="POST" action="{{ route('favorites.store') }}">
-                        @csrf
-                        <input type="hidden" name="account_id" value="{{ $player['account_id'] }}">
-                        <input type="hidden" name="nickname" value="{{ $player['nickname'] }}">
-                        <input type="hidden" name="avatar" value="{{ $player['avatar'] }}">
-                        <button type="submit" class="btn-ghost">
-                            <svg class="h-4 w-4 text-mist-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.5l6.1-.9L12 3Z" stroke-linejoin="round"/></svg>
-                            В избранное
-                        </button>
-                    </form>
-                @endif
-            @else
-                <a href="{{ route('auth.steam', ['intended' => url()->current()]) }}" class="btn-ghost">
-                    <svg class="h-4 w-4 text-mist-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.5l6.1-.9L12 3Z" stroke-linejoin="round"/></svg>
-                    В избранное
-                </a>
-            @endif
-        </div>
 
         @if ($player['is_private'])
             <div class="mt-4 flex items-start gap-3 rounded-2xl border border-amber-500/25 bg-amber-500/[0.08] p-4 text-sm text-amber-100">
@@ -164,22 +134,42 @@
                         <span class="text-[10px] text-mist-500">{{ number_format($activityTotal, 0, '.', ' ') }} игр</span>
                     </div>
 
-                    <div class="mt-4">
-                        <div class="grid aspect-square w-full grid-flow-col grid-rows-7 gap-[3px]" style="grid-template-columns: repeat(13, minmax(0, 1fr));" aria-label="Активность за последние 90 дней">
-                            @foreach ($activityHeatmap as $day)
-                                <div
-                                    class="flex aspect-square items-center justify-center rounded-[2px] text-[11px] font-black leading-none {{ $heatmapTones[$day['level']] }} transition hover:scale-125 hover:ring-white/30"
-                                    title="{{ $day['label'] }}: {{ $day['count'] }} игр, {{ $day['wins'] }} побед, {{ $day['losses'] }} поражений"
-                                    aria-label="{{ $day['label'] }}: {{ $day['count'] }} игр, {{ $day['wins'] }} побед, {{ $day['losses'] }} поражений"
-                                    data-date="{{ $day['date'] }}"
-                                    data-count="{{ $day['count'] }}"
-                                >{{ $day['count'] > 0 ? $day['count'] : '' }}</div>
+                    <div class="mt-4 flex gap-2" aria-label="Активность за последние 13 недель">
+                        <div class="grid w-7 shrink-0 grid-rows-7 gap-[3px] pt-4 text-[9px] font-semibold leading-none text-mist-500">
+                            @foreach ($activityHeatmap['weekdays'] as $weekday)
+                                <span class="flex items-center justify-end">{{ $weekday }}</span>
                             @endforeach
                         </div>
-                        <div class="mt-2 flex items-center justify-between text-[10px] text-mist-500">
-                            <span>90 дней назад</span>
-                            <span>Сегодня</span>
+
+                        <div class="min-w-0 flex-1">
+                            <div class="mb-1 grid gap-[3px] text-[9px] font-semibold text-mist-400" style="grid-template-columns: repeat(13, minmax(0, 1fr));" aria-hidden="true">
+                                @for ($column = 0; $column < 13; $column++)
+                                    <span>
+                                        @foreach ($activityHeatmap['months'] as $month)
+                                            @if ($month['column'] === $column){{ $month['label'] }}@endif
+                                        @endforeach
+                                    </span>
+                                @endfor
+                            </div>
+
+                            <div class="grid w-full grid-rows-7 gap-[3px]" style="grid-template-columns: repeat(13, minmax(0, 1fr));">
+                                @foreach ($activityHeatmap['weeks'] as $week)
+                                    @foreach ($week as $day)
+                                        <div
+                                            class="flex aspect-square items-center justify-center rounded-[2px] text-[11px] font-black leading-none {{ $heatmapTones[$day['level']] }} transition hover:scale-125 hover:ring-white/30"
+                                            title="{{ $day['label'] }}: {{ $day['count'] }} игр, {{ $day['wins'] }} побед, {{ $day['losses'] }} поражений"
+                                            aria-label="{{ $day['label'] }}: {{ $day['count'] }} игр, {{ $day['wins'] }} побед, {{ $day['losses'] }} поражений"
+                                            data-date="{{ $day['date'] }}"
+                                            data-count="{{ $day['count'] }}"
+                                        >{{ $day['count'] > 0 ? $day['count'] : '' }}</div>
+                                    @endforeach
+                                @endforeach
+                            </div>
                         </div>
+                    </div>
+                    <div class="mt-2 flex items-center justify-between text-[10px] text-mist-500">
+                        <span>90 дней назад</span>
+                        <span>Сегодня</span>
                     </div>
                 </section>
 

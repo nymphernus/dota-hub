@@ -61,6 +61,43 @@
 
                     <div class="mt-2 flex flex-wrap items-center gap-x-2" x-data="{ open: false }">
                         <h1 class="min-w-0 truncate text-3xl font-black tracking-tight text-white sm:text-4xl">{{ $player['nickname'] }}</h1>
+                        @if (session('steam_id'))
+                            <button
+                                type="button"
+                                x-data="favoriteStar({
+                                    accountId: {{ (int) $player['account_id'] }},
+                                    nickname: @js($player['nickname']),
+                                    avatar: @js($player['avatar']),
+                                    active: {{ ($isFavorite ?? false) ? 'true' : 'false' }},
+                                    storeUrl: @js(route('favorites.store')),
+                                    destroyUrl: @js(route('favorites.destroy', ['accountId' => $player['account_id']])),
+                                })"
+                                @click="toggle"
+                                :disabled="loading"
+                                :class="active ? 'border-amber-400/40 bg-amber-400/10 text-amber-300' : 'border-white/10 bg-white/[0.04] text-mist-400 hover:border-amber-400/30 hover:text-amber-200'"
+                                class="grid h-8 w-8 shrink-0 place-items-center rounded-lg border transition disabled:opacity-60"
+                                :aria-label="active ? 'Удалить из избранного' : 'Добавить в избранное'"
+                                :aria-pressed="active.toString()"
+                                :title="active ? 'В избранном' : 'В избранное'"
+                                data-favorite-star
+                            >
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" :fill="active ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                    <path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.5l6.1-.9L12 3Z" stroke-linejoin="round" />
+                                </svg>
+                            </button>
+                        @else
+                            <a
+                                href="{{ route('auth.steam', ['intended' => url()->current()]) }}"
+                                class="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-white/10 bg-white/[0.04] text-mist-400 transition hover:border-amber-400/30 hover:text-amber-200"
+                                aria-label="Добавить в избранное"
+                                title="Добавить в избранное"
+                                data-favorite-star
+                            >
+                                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                    <path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.5l6.1-.9L12 3Z" stroke-linejoin="round" />
+                                </svg>
+                            </a>
+                        @endif
                         @if ($nameHistory !== [])
                             <div class="relative">
                                 <button type="button" @click="open = !open" class="grid h-7 w-7 place-items-center rounded-lg border border-white/10 bg-white/[0.04] text-mist-400 transition hover:text-white" :aria-expanded="open.toString()" aria-label="История никнеймов">

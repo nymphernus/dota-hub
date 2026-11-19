@@ -32,7 +32,47 @@
                 </span>
             </a>
 
-            <div class="ml-auto flex items-center gap-3">
+            <div class="ml-auto flex items-center gap-2 sm:gap-3">
+                <form
+                    method="POST"
+                    action="{{ route('search') }}"
+                    role="search"
+                    class="header-search"
+                    x-data="{ open: false }"
+                    :class="open ? 'is-open' : ''"
+                >
+                    @csrf
+                    <button
+                        type="button"
+                        class="grid h-9 w-9 shrink-0 place-items-center rounded-xl text-mist-400 transition hover:bg-white/5 hover:text-white"
+                        @click="open = !open; if (open) $nextTick(() => $refs.query.focus())"
+                        :aria-expanded="open.toString()"
+                        aria-controls="header-search-query"
+                        aria-label="Поиск игрока"
+                        title="Поиск игрока"
+                    >
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <circle cx="11" cy="11" r="7" />
+                            <path d="m20 20-3.5-3.5" stroke-linecap="round" />
+                        </svg>
+                    </button>
+                    <input
+                        id="header-search-query"
+                        x-ref="query"
+                        type="search"
+                        name="query"
+                        minlength="2"
+                        maxlength="120"
+                        required
+                        autocomplete="off"
+                        placeholder="Steam ID, URL или никнейм"
+                        aria-label="Поиск игрока"
+                        class="h-9 min-w-0 bg-transparent p-0 text-xs text-white placeholder:text-mist-500 transition-all duration-200 focus:outline-none focus:ring-0"
+                        :class="open ? 'w-48 px-1 sm:w-64' : 'pointer-events-none w-0 opacity-0'"
+                        @keydown.escape.window="if (open) { open = false; $refs.query.blur(); }"
+                    >
+                </form>
+
                 @php
                     $steamSessionId = (string) session('steam_id', '');
                     $steamAccountId = \App\Support\SteamId::isSteamId64($steamSessionId)

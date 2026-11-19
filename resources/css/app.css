@@ -75,11 +75,19 @@
 
 @layer components {
     .card {
-        @apply rounded-2xl border border-white/[0.06] bg-ink-900/80 shadow-[0_16px_50px_-24px_rgba(0,0,0,0.9)] backdrop-blur-sm;
+        @apply rounded-2xl bg-ink-900;
     }
 
     .card-hover {
-        @apply transition duration-300 hover:-translate-y-0.5 hover:border-radar-500/25 hover:bg-ink-850/90 hover:shadow-[0_20px_60px_-24px_rgba(16,185,129,0.25)];
+        @apply transition-colors duration-200 hover:bg-ink-850;
+    }
+
+    .header-search {
+        @apply flex items-center rounded-xl border border-transparent transition-colors duration-200;
+    }
+
+    .header-search.is-open {
+        @apply border-white/10 bg-white/[0.04];
     }
 
     .label {
@@ -119,6 +127,6 @@
     }
 
     .tab-button-active {
-        @apply bg-white/[0.07] text-white shadow-sm ring-1 ring-white/10;
+        @apply bg-white/[0.07] text-white;
     }
 }

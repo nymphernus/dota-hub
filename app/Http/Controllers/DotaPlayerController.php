@@ -20,6 +20,11 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 class DotaPlayerController extends Controller
 {
+    private const MONTH_LABELS = [
+        1 => 'Янв', 2 => 'Фев', 3 => 'Мар', 4 => 'Апр', 5 => 'Май', 6 => 'Июн',
+        7 => 'Июл', 8 => 'Авг', 9 => 'Сент', 10 => 'Окт', 11 => 'Ноя', 12 => 'Дек',
+    ];
+
     public function show(int $accountId, OpenDotaService $openDota, SteamService $steam, FavoriteService $favorites): View|Response
     {
         $player = $this->playerOrError($accountId, $openDota);
@@ -36,7 +41,6 @@ class DotaPlayerController extends Controller
 
         $history = $player['match_history'] ?? [];
         $steamId = ($player['steam_id'] ?? '') ?: SteamId::steamId64FromAccountId($accountId);
-        $sessionSteamId = (string) session('steam_id', '');
 
         return view('dota.player', [
             'player' => $player,
@@ -48,14 +52,14 @@ class DotaPlayerController extends Controller
             'lifetimeStats' => $openDota->lifetimeStats($accountId, $history),
             'rankStats' => $this->rankStats($history),
             'steamProfile' => $steam->summary($steamId),
-            'isFavorite' => SteamId::isSteamId64($sessionSteamId) && $favorites->has($sessionSteamId, $accountId),
+            'isFavorite' => $this->favoriteState($accountId, $favorites),
         ]);
     }
 
     /**
      * Full hero pool for the dedicated heroes page.
      */
-    public function heroes(int $accountId, OpenDotaService $openDota, SteamService $steam): View|Response
+    public function heroes(int $accountId, OpenDotaService $openDota, SteamService $steam, FavoriteService $favorites): View|Response
     {
         $player = $this->playerOrError($accountId, $openDota);
 
@@ -75,13 +79,14 @@ class DotaPlayerController extends Controller
             'steamProfile' => $steam->summary(
                 ($player['steam_id'] ?? '') ?: SteamId::steamId64FromAccountId($accountId)
             ),
+            'isFavorite' => $this->favoriteState($accountId, $favorites),
         ]);
     }
 
     /**
      * Frequent teammates for the dedicated allies page.
      */
-    public function peers(int $accountId, OpenDotaService $openDota, SteamService $steam): View|Response
+    public function peers(int $accountId, OpenDotaService $openDota, SteamService $steam, FavoriteService $favorites): View|Response
     {
         $player = $this->playerOrError($accountId, $openDota);
 
@@ -101,13 +106,14 @@ class DotaPlayerController extends Controller
             'steamProfile' => $steam->summary(
                 ($player['steam_id'] ?? '') ?: SteamId::steamId64FromAccountId($accountId)
             ),
+            'isFavorite' => $this->favoriteState($accountId, $favorites),
         ]);
     }
 
     /**
      * Personal records rendered as tiles, backed by a 24-hour Redis cache.
      */
-    public function records(int $accountId, OpenDotaService $openDota, SteamService $steam): View|Response
+    public function records(int $accountId, OpenDotaService $openDota, SteamService $steam, FavoriteService $favorites): View|Response
     {
         $player = $this->playerOrError($accountId, $openDota);
 
@@ -128,7 +134,15 @@ class DotaPlayerController extends Controller
             'steamProfile' => $steam->summary(
                 ($player['steam_id'] ?? '') ?: SteamId::steamId64FromAccountId($accountId)
             ),
+            'isFavorite' => $this->favoriteState($accountId, $favorites),
         ]);
+    }
+
+    private function favoriteState(int $accountId, FavoriteService $favorites): bool
+    {
+        $sessionSteamId = (string) session('steam_id', '');
+
+        return SteamId::isSteamId64($sessionSteamId) && $favorites->has($sessionSteamId, $accountId);
     }
 
     /**
@@ -234,10 +248,13 @@ class DotaPlayerController extends Controller
     }
 
     /**
-     * GitHub-style daily activity for the last 90 days, shown as 13 full weeks.
+     * GitHub-style daily activity for the last 13 weeks.
+     *
+     * Days are aligned to Monday-starting columns so weekday labels can sit
+     * vertically on the left while month labels sit above the columns.
      *
      * @param  array<int, array<string, mixed>>  $matches
-     * @return array<int, array{date: string, label: string, count: int, wins: int, losses: int, level: string}>
+     * @return array{days: array<int, array<string, mixed>>, weeks: array<int, array<int, array<string, mixed>>>, months: array<int, array{column: int, label: string}>, weekdays: array<int, string>}
      */
     private function activityHeatmap(array $matches): array
     {
@@ -260,32 +277,64 @@ class DotaPlayerController extends Controller
         }
 
         $end = CarbonImmutable::now('UTC')->startOfDay();
-        $start = $end->subDays(90);
+        $start = $end->startOfWeek(CarbonImmutable::MONDAY)->subWeeks(12);
         $days = [];
+        $weeks = [];
+        $months = [];
+        $previousMonth = null;
 
-        for ($day = $start; $day->lessThanOrEqualTo($end); $day = $day->addDay()) {
-            $key = $day->toDateString();
-            $row = $byDate[$key] ?? ['count' => 0, 'wins' => 0, 'losses' => 0];
-            $count = (int) $row['count'];
+        for ($weekIndex = 0; $weekIndex < 13; $weekIndex++) {
+            $columnStart = $start->addWeeks($weekIndex);
+            $week = [];
 
-            $days[] = [
-                'date' => $key,
-                'label' => $day->format('d.m.Y'),
-                'count' => $count,
-                'wins' => (int) $row['wins'],
-                'losses' => (int) $row['losses'],
-                'level' => match (true) {
-                    $count === 0 => 'empty',
-                    $row['losses'] === 0 => 'win',
-                    $row['wins'] === 0 => 'loss',
-                    $row['losses'] > $row['wins'] => 'loss_majority',
-                    $row['wins'] > $row['losses'] => 'win_majority',
-                    default => 'mixed',
-                },
-            ];
+            for ($weekday = 0; $weekday < 7; $weekday++) {
+                $day = $columnStart->addDays($weekday);
+                $key = $day->toDateString();
+                $row = $byDate[$key] ?? ['count' => 0, 'wins' => 0, 'losses' => 0];
+                $count = (int) $row['count'];
+                $isFuture = $day->greaterThan($end);
+
+                $cell = [
+                    'date' => $key,
+                    'label' => $day->format('d.m.Y'),
+                    'count' => $isFuture ? 0 : $count,
+                    'wins' => $isFuture ? 0 : (int) $row['wins'],
+                    'losses' => $isFuture ? 0 : (int) $row['losses'],
+                    'level' => $isFuture ? 'future' : match (true) {
+                        $count === 0 => 'empty',
+                        $row['losses'] === 0 => 'win',
+                        $row['wins'] === 0 => 'loss',
+                        $row['losses'] > $row['wins'] => 'loss_majority',
+                        $row['wins'] > $row['losses'] => 'win_majority',
+                        default => 'mixed',
+                    },
+                    'column' => $weekIndex,
+                    'weekday' => $weekday,
+                ];
+
+                $days[] = $cell;
+                $week[] = $cell;
+            }
+
+            $weeks[] = $week;
+
+            $monthKey = $columnStart->format('Y-m');
+
+            if ($monthKey !== $previousMonth) {
+                $months[] = [
+                    'column' => $weekIndex,
+                    'label' => self::MONTH_LABELS[(int) $columnStart->format('n')],
+                ];
+                $previousMonth = $monthKey;
+            }
         }
 
-        return $days;
+        return [
+            'days' => $days,
+            'weeks' => $weeks,
+            'months' => $months,
+            'weekdays' => ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
+        ];
     }
 
     /**
