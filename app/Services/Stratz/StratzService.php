@@ -24,6 +24,111 @@ class StratzService
     }
 
     /**
+     * Aggregated hero statistics for a player, used when OpenDota's heroes
+     * endpoint no longer returns data.
+     *
+     * @return array<int, array{hero_id: int, games: int, win: int}>
+     */
+    public function playerHeroes(int $accountId): array
+    {
+        if (! $this->enabled() || $accountId <= 0) {
+            return [];
+        }
+
+        $cacheKey = "stratz:player:{$accountId}:heroes";
+        $cached = Cache::get($cacheKey);
+
+        if (is_array($cached)) {
+            return $cached;
+        }
+
+        try {
+            $response = $this->http
+                ->withToken((string) config('services.stratz.token'))
+                ->withHeaders(['User-Agent' => 'Stats Radar/1.0'])
+                ->acceptJson()
+                ->timeout(10)
+                ->post((string) config('services.stratz.endpoint', 'https://api.stratz.com/graphql'), [
+                    'query' => <<<'GRAPHQL'
+                        query PlayerHeroes($steamAccountId: Long!) {
+                            player(steamAccountId: $steamAccountId) {
+                                heroes {
+                                    heroId
+                                    gameCount
+                                    winCount
+                                }
+                            }
+                        }
+                    GRAPHQL,
+                    'variables' => ['steamAccountId' => $accountId],
+                ]);
+        } catch (ConnectionException $exception) {
+            Log::warning('STRATZ is unreachable', [
+                'account_id' => $accountId,
+                'message' => $exception->getMessage(),
+            ]);
+
+            return [];
+        }
+
+        if ($response->failed()) {
+            Log::warning('STRATZ hero request failed', [
+                'account_id' => $accountId,
+                'status' => $response->status(),
+            ]);
+
+            return [];
+        }
+
+        $payload = $response->json();
+
+        if (! is_array($payload) || isset($payload['errors'])) {
+            Log::warning('STRATZ returned an invalid hero response', [
+                'account_id' => $accountId,
+                'errors' => is_array($payload['errors'] ?? null) ? $payload['errors'] : null,
+            ]);
+
+            return [];
+        }
+
+        $rawHeroes = $payload['data']['player']['heroes'] ?? null;
+
+        if (! is_array($rawHeroes)) {
+            return [];
+        }
+
+        $heroes = [];
+
+        foreach ($rawHeroes as $hero) {
+            if (! is_array($hero) || empty($hero['heroId'])) {
+                continue;
+            }
+
+            $games = (int) ($hero['gameCount'] ?? 0);
+
+            if ($games <= 0) {
+                continue;
+            }
+
+            $heroes[] = [
+                'hero_id' => (int) $hero['heroId'],
+                'games' => $games,
+                'win' => (int) ($hero['winCount'] ?? 0),
+            ];
+        }
+
+        usort($heroes, fn (array $left, array $right) => [$right['games'], $right['win']] <=> [$left['games'], $left['win']]);
+
+        Cache::put(
+            $cacheKey,
+            $heroes,
+            (int) config('stats.cache.dota_player_hero', 1800)
+        );
+
+        return $heroes;
+    }
+
+    /**
      * @return array<int, array{position: int|null, imp: float|null}>
      */
     public function matchPositions(int $matchId): array

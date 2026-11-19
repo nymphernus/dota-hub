@@ -47,7 +47,7 @@ return [
 
     'stratz' => [
         'endpoint' => env('STRATZ_ENDPOINT', 'https://api.stratz.com/graphql'),
-        'token' => env('STRATZ_TOKEN'),
+        'token' => env('STRATZ_API_KEY', env('STRATZ_TOKEN')),
     ],
 
 ];

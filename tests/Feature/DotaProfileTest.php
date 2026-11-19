@@ -430,11 +430,37 @@ class DotaProfileTest extends TestCase
             && $player['mmr_games_considered'] === 4);
     }
 
+    public function test_hero_stats_fall_back_to_stratz_when_opendota_returns_empty(): void
+    {
+        config(['services.stratz.token' => 'test-token']);
+
+        $this->fakeOpenDota(
+            heroesResponse: [],
+            stratzHeroes: [
+                ['heroId' => 2, 'gameCount' => 15, 'winCount' => 9],
+                ['heroId' => 1, 'gameCount' => 20, 'winCount' => 11],
+            ],
+        );
+
+        $response = $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]));
+
+        $response->assertOk();
+        $response->assertSee('Anti-Mage');
+        $response->assertViewHas('player', fn (array $player) => count($player['heroes']) === 2
+            && $player['heroes'][0]['hero_id'] === 1
+            && $player['heroes'][0]['games'] === 20);
+
+        Http::assertSent(fn ($request) => $request->hasHeader('Authorization', 'Bearer test-token')
+            && str_contains($request->body(), 'heroId'));
+    }
+
     private function fakeOpenDota(
         ?array $steamPlayer = null,
         ?array $steamBans = null,
         ?string $nickname = null,
         array $profileOverrides = [],
+        ?array $heroesResponse = null,
+        ?array $stratzHeroes = null,
     ): void {
         $profileResponse = array_merge([
             'profile' => [
@@ -480,10 +506,12 @@ class DotaProfileTest extends TestCase
                     'start_time' => 1699900000,
                 ],
             ]),
-            'api.opendota.com/api/players/'.self::ACCOUNT_ID.'/heroes*' => Http::response([
-                ['hero_id' => 1, 'games' => 12, 'win' => 8, 'last_played' => 1700000000],
-                ['hero_id' => 2, 'games' => 7, 'win' => 2, 'last_played' => 1699900000],
-            ]),
+            'api.opendota.com/api/players/'.self::ACCOUNT_ID.'/heroes*' => Http::response(
+                $heroesResponse ?? [
+                    ['hero_id' => 1, 'games' => 12, 'win' => 8, 'last_played' => 1700000000],
+                    ['hero_id' => 2, 'games' => 7, 'win' => 2, 'last_played' => 1699900000],
+                ]
+            ),
             'api.opendota.com/api/players/'.self::ACCOUNT_ID.'/totals*' => Http::response([
                 ['field' => 'kills', 'n' => 10, 'sum' => 87],
                 ['field' => 'deaths', 'n' => 10, 'sum' => 52],
@@ -567,6 +595,12 @@ class DotaProfileTest extends TestCase
         if ($steamBans !== null) {
             $fakes['api.steampowered.com/ISteamUser/GetPlayerBans/*'] = Http::response([
                 'response' => ['players' => [$steamBans]],
+            ]);
+        }
+
+        if ($stratzHeroes !== null) {
+            $fakes['api.stratz.com/graphql'] = Http::response([
+                'data' => ['player' => ['heroes' => $stratzHeroes]],
             ]);
         }
 

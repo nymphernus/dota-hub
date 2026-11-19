@@ -368,6 +368,12 @@ class OpenDotaService
         $winLoss = $this->optionalGet('players/'.$accountId.'/wl');
         $recentMatches = $this->optionalGet('players/'.$accountId.'/recentMatches');
         $heroStats = $this->optionalGet('players/'.$accountId.'/heroes');
+
+        // OpenDota's hero endpoint is not always populated. STRATZ exposes the
+        // same aggregate through GraphQL, so use it before showing an empty pool.
+        if ($heroStats === []) {
+            $heroStats = $this->stratz->playerHeroes($accountId);
+        }
         $totals = $this->optionalGet('players/'.$accountId.'/totals');
         $matchHistory = $this->optionalGet('players/'.$accountId.'/matches', [
             'limit' => 500,
