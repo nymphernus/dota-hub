@@ -44,18 +44,7 @@
             @endif
 
             <div class="min-w-0">
-                @php
-                    $partyId = (int) ($match['party_id'] ?? 0);
-                    $partySize = (int) ($match['party_size'] ?? 0);
-                    $partyBadge = $partyId > 0
-                        || (($match['party_label'] ?? null) === 'Party' && $partySize > 1)
-                        ? 'P1'
-                        : null;
-                @endphp
                 <div class="flex items-center gap-2">
-                    @if ($partyBadge)
-                        <span class="rounded bg-blue-600 px-1 text-xs font-bold leading-none text-white">{{ $partyBadge }}</span>
-                    @endif
                     @if ($heroUrl)
                         <a href="{{ $heroUrl }}" onclick="event.stopPropagation()" class="truncate text-[12px] font-bold text-white transition group-hover:text-gold-200">{{ $match['hero_name'] }}</a>
                     @else

@@ -28,22 +28,13 @@
         ],
     ];
 
-    // Every player stays in one table. Party membership is only a small badge
-    // next to the nickname, never a separate group of rows. Raw party IDs can
-    // be huge, so they are mapped to compact P1/P2 labels per team.
-    $partyLabels = [];
+    // One flat scoreboard: both teams live in the same table. Row indexes stay
+    // unique across teams so the purchase toggles never collide.
+    $viewIndex = 0;
 
     foreach ($teams as $teamKey => $team) {
-        $partyNumber = 0;
-
         foreach ($team['players'] as $index => $player) {
-            $teams[$teamKey]['players'][$index]['view_index'] = $index;
-            $partyId = (int) ($player['party_id'] ?? 0);
-
-            if ($partyId > 0 && ! isset($partyLabels[$partyId])) {
-                $partyNumber++;
-                $partyLabels[$partyId] = 'P'.$partyNumber;
-            }
+            $teams[$teamKey]['players'][$index]['view_index'] = $viewIndex++;
         }
     }
 @endphp
@@ -186,51 +177,48 @@
             </section>
         @endif
 
-        @foreach ($teams as $teamKey => $team)
-            <section class="card mt-4 overflow-hidden" aria-label="Состав {{ $team['label'] }}">
-                <div class="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] px-4 py-4 sm:px-5">
-                    <div class="flex items-center gap-3">
-                        <span @class([
-                            'grid h-9 w-9 place-items-center rounded-lg text-[10px] font-black uppercase',
-                            'bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/25' => $teamKey === 'radiant',
-                            'bg-rose-500/15 text-rose-300 ring-1 ring-rose-500/25' => $teamKey === 'dire',
-                        ])>
-                            {{ mb_substr($team['label'], 0, 1) }}
-                        </span>
-                        <div>
-                            <p class="text-[10px] uppercase tracking-[0.18em] text-mist-500">Состав</p>
-                            <h2 class="text-lg font-bold text-white">Команда {{ $team['label'] }}</h2>
-                        </div>
-                    </div>
-                    <span @class([
-                        'badge',
-                        'border-emerald-500/25 bg-emerald-500/10 text-emerald-300' => $team['won'],
-                        'border-rose-500/25 bg-rose-500/10 text-rose-300' => ! $team['won'],
-                    ])>
-                        {{ $team['won'] ? 'Победа' : 'Поражение' }} · {{ $team['score'] }}
-                    </span>
+        <section class="card mt-4 overflow-hidden" aria-label="Составы матча">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-4 sm:px-5">
+                <div>
+                    <p class="text-[10px] uppercase tracking-[0.18em] text-mist-500">Составы</p>
+                    <h2 class="text-lg font-bold text-white">Игроки матча</h2>
                 </div>
+                <span class="badge text-mist-400">
+                    <span class="text-emerald-300">{{ $match['radiant_score'] }}</span>
+                    <span class="text-mist-600">:</span>
+                    <span class="text-rose-300">{{ $match['dire_score'] }}</span>
+                </span>
+            </div>
 
-                <div class="overflow-x-auto">
-                    <table class="w-full min-w-[980px] text-sm">
-                        <thead class="table-head">
-                            <tr>
-                                <th class="px-4 py-3 font-semibold sm:px-5">Герой</th>
-                                <th class="px-4 py-3 font-semibold">Роль</th>
-                                <th class="px-4 py-3 font-semibold">K / D / A</th>
-                                <th class="px-4 py-3 font-semibold">GPM</th>
-                                <th class="px-4 py-3 font-semibold">XPM</th>
-                                <th class="px-4 py-3 font-semibold">Урон</th>
-                                @if ($showTowerDamage)
-                                    <th class="px-4 py-3 font-semibold">Башни</th>
-                                @endif
-                                @if ($showHealing)
-                                    <th class="px-4 py-3 font-semibold">Лечение</th>
-                                @endif
-                                <th class="px-4 py-3 text-right font-semibold sm:px-5">Закуп</th>
+            <div class="overflow-x-auto">
+                <table class="w-full min-w-[980px] text-sm">
+                    <thead class="table-head">
+                        <tr>
+                            <th class="px-4 py-3 font-semibold sm:px-5">Игрок / герой</th>
+                            <th class="px-4 py-3 font-semibold">Роль</th>
+                            <th class="px-4 py-3 font-semibold">K / D / A</th>
+                            <th class="px-4 py-3 font-semibold">GPM</th>
+                            <th class="px-4 py-3 font-semibold">XPM</th>
+                            <th class="px-4 py-3 font-semibold">Урон</th>
+                            @if ($showTowerDamage)
+                                <th class="px-4 py-3 font-semibold">Башни</th>
+                            @endif
+                            @if ($showHealing)
+                                <th class="px-4 py-3 font-semibold">Лечение</th>
+                            @endif
+                            <th class="px-4 py-3 text-right font-semibold sm:px-5">Закуп</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-white/[0.04]" x-data="{ openPlayer: null }">
+                        @foreach ($teams as $teamKey => $team)
+                            <tr class="bg-ink-900/60">
+                                <td colspan="{{ $columnCount }}" class="px-4 py-2 sm:px-5">
+                                    <div class="flex flex-wrap items-center justify-between gap-2">
+                                        <span class="text-[11px] font-black uppercase tracking-[0.16em] {{ $teamKey === 'radiant' ? 'text-emerald-300' : 'text-rose-300' }}">Команда {{ $team['label'] }}</span>
+                                        <span class="text-[10px] font-semibold {{ $team['won'] ? 'text-emerald-300' : 'text-rose-300' }}">{{ $team['won'] ? 'Победа' : 'Поражение' }} · {{ $team['score'] }}</span>
+                                    </div>
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody class="divide-y divide-white/[0.04]" x-data="{ openPlayer: null }">
                             @forelse ($team['players'] as $player)
                                     @php
                                         $roleLabel = $player['role']['label'] ?? null;
@@ -246,7 +234,6 @@
                                         };
                                         $isCurrentPlayer = $profilePlayerId !== null
                                             && (int) ($player['account_id'] ?? 0) === $profilePlayerId;
-                                        $partyId = $player['party_id'] ?? null;
                                         $playerIndex = $player['view_index'];
                                         $accountId = (int) ($player['account_id'] ?? 0);
                                     @endphp
@@ -266,25 +253,17 @@
                                                     @endif
                                                 </div>
                                                 <div class="min-w-0">
-                                                    <p class="truncate text-[13px] font-semibold text-white">{{ $player['hero_name'] }}</p>
-                                                    <p class="mt-0.5 flex flex-wrap items-center gap-1.5 truncate text-[10px] text-mist-500">
+                                                    @if ($accountId > 0)
+                                                        <a href="{{ route('dota.player', ['accountId' => $accountId]) }}" class="block truncate text-lg font-bold text-white transition hover:text-gold-200">
+                                                            {{ $player['nickname'] ?: 'Игрок '.$accountId }}
+                                                        </a>
+                                                    @else
+                                                        <p class="block truncate text-lg font-bold text-white">{{ $player['nickname'] ?: 'Неизвестный игрок' }}</p>
+                                                    @endif
+                                                    <p class="mt-0.5 flex flex-wrap items-center gap-1.5 truncate text-gray-400 text-sm">
+                                                        <span>{{ $player['hero_name'] }}</span>
                                                         @if (! empty($player['rank_label']))
                                                             <span class="rounded bg-amber-500/10 px-1 py-0.5 text-[8px] font-bold uppercase tracking-wide text-amber-300" title="Ранг">{{ $player['rank_label'] }}</span>
-                                                        @endif
-                                                        @if ($accountId > 0)
-                                                            <a href="{{ route('dota.player', ['accountId' => $accountId]) }}" class="truncate font-semibold text-gold-300 transition hover:text-gold-200 hover:underline">
-                                                                @if ($partyId && isset($partyLabels[(int) $partyId]))
-                                                                    <span class="rounded bg-blue-600 px-1 text-xs font-bold leading-none text-white" title="Party {{ $partyId }}">{{ $partyLabels[(int) $partyId] }}</span>
-                                                                @endif
-                                                                {{ $player['nickname'] ?: 'Игрок '.$accountId }}
-                                                            </a>
-                                                        @else
-                                                            <span class="truncate">
-                                                                @if ($partyId && isset($partyLabels[(int) $partyId]))
-                                                                    <span class="rounded bg-blue-600 px-1 text-xs font-bold leading-none text-white" title="Party {{ $partyId }}">{{ $partyLabels[(int) $partyId] }}</span>
-                                                                @endif
-                                                                {{ $player['nickname'] ?: 'Неизвестный игрок' }}
-                                                            </span>
                                                         @endif
                                                         @if ($player['level'] > 0)
                                                             <span>ур. {{ $player['level'] }}</span>
@@ -374,11 +353,11 @@
                                     <td colspan="{{ $columnCount }}" class="px-4 py-8 text-center text-sm text-mist-400">Нет данных по игрокам.</td>
                                 </tr>
                             @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-        @endforeach
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </section>
 
         <div class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-ink-900/60 px-4 py-3 text-[11px] text-mist-500">
             <span>Данные OpenDota · кэш матча 1 час</span>

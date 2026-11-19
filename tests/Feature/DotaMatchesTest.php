@@ -48,8 +48,8 @@ class DotaMatchesTest extends TestCase
         $response->assertSee('Режим игры');
         $response->assertSee('Роль');
         $response->assertDontSee('Нетворс');
-        $response->assertSee('bg-blue-600', false);
-        $response->assertSee('>P1<', false);
+        $response->assertDontSee('bg-blue-600', false);
+        $response->assertDontSee('>P1<', false);
         $response->assertViewHas('matches', function (LengthAwarePaginator $matches) {
             $first = $matches->first();
 

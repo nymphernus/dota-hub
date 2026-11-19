@@ -50,7 +50,7 @@ class MatchTest extends TestCase
         $response->assertSee('Ranked');
         $response->assertSee('All Pick');
         $response->assertSee('ring-sky-500/50', false);
-        $response->assertSee('P1');
+        $response->assertDontSee('P1');
         $response->assertDontSee('Party #', false);
         $response->assertSee('Safe');
         $response->assertSee('Mid');
@@ -61,8 +61,11 @@ class MatchTest extends TestCase
         $response->assertDontSee('id="radiantNetWorthChart"', false);
         $response->assertDontSee('id="direNetWorthChart"', false);
         $response->assertDontSee('>Нетворс<', false);
-        $response->assertSee('bg-blue-600', false);
-        $response->assertSee('>P1<', false);
+        $response->assertDontSee('bg-blue-600', false);
+        $response->assertDontSee('>P1<', false);
+        $response->assertSee('Игрок / герой');
+        $response->assertSee('text-lg font-bold text-white', false);
+        $response->assertSee('text-gray-400 text-sm', false);
         $response->assertSee('Команда Dire', false);
         $response->assertSee('Пики и баны');
         $response->assertSee('Башни');
@@ -73,6 +76,16 @@ class MatchTest extends TestCase
         $response->assertSee(route('dota.player', ['accountId' => 123456789]), false);
         $response->assertSee(route('dota.player', ['accountId' => 987654321]), false);
         $response->assertDontSee('Данные о нетворсе появятся после парсинга матча');
+
+        $content = (string) $response->getContent();
+        $this->assertSame(1, substr_count($content, '<table'));
+
+        $nicknamePosition = strpos($content, 'Dendi');
+        $heroPosition = strpos($content, '<span>Anti-Mage</span>');
+        $this->assertNotFalse($nicknamePosition);
+        $this->assertNotFalse($heroPosition);
+        $this->assertLessThan($heroPosition, $nicknamePosition);
+
         $response->assertViewHas('match', function (array $match) {
             $radiantCarry = $match['players']['radiant'][0];
             $radiantSupport = $match['players']['radiant'][1];
