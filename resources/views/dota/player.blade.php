@@ -7,7 +7,6 @@
     $topHeroes = $player['top_heroes'] ?? array_slice($player['heroes'], 0, 5);
     $heroUsageTotal = array_sum(array_column($heroUsage, 'games'));
     $activityTotal = array_sum(array_column($activityHeatmap['days'], 'count'));
-    $chartData = ['heroUsage' => $heroUsage];
 @endphp
 
 @section('profile-content')
@@ -94,13 +93,7 @@
                         <span class="badge border-white/10 bg-white/5 text-mist-400" aria-label="Матчей в колесе: {{ $heroUsageTotal }}">{{ $heroUsageTotal }}</span>
                     </div>
 
-                    @if ($heroUsage === [])
-                        <div class="mt-4 grid h-48 place-items-center rounded-xl border border-dashed border-white/10 text-xs text-mist-500">Нет данных</div>
-                    @else
-                        <div class="relative z-10 mx-auto mt-4 h-56 w-56" style="position: relative; z-index: 10;">
-                            <canvas id="heroUsageChart" role="img" aria-label="Колесо героев за последние 25 матчей"></canvas>
-                        </div>
-                    @endif
+                    @include('dota.partials.hero-wheel', ['heroes' => $heroUsage])
                 </section>
 
                 <section class="card p-4">
@@ -211,7 +204,6 @@
 @endsection
 
 @push('scripts')
-    <script type="application/json" id="dotahub-chart-data">@json($chartData)</script>
     <script type="application/json" id="dotahub-heatmap-data">@json($activityHeatmap)</script>
-    @vite('resources/js/charts.js')
+    @vite('resources/js/heatmap.js')
 @endpush

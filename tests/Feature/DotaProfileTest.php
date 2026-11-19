@@ -78,7 +78,9 @@ class DotaProfileTest extends TestCase
             route('dota.player.hero', ['accountId' => self::ACCOUNT_ID, 'heroId' => 1]),
             false
         );
-        $response->assertSee('id="heroUsageChart"', false);
+        $response->assertSee('id="hero-wheel"', false);
+        $response->assertSee('<radialGradient', false);
+        $response->assertSee('<image', false);
         $response->assertSee('Колесо героев');
         $response->assertDontSee('Hero wheel');
         $response->assertDontSee('25 МАТЧЕЙ');
@@ -92,7 +94,7 @@ class DotaProfileTest extends TestCase
         $response->assertDontSee('аффилирован');
         $response->assertSee('Самые играемые герои');
 
-        $wheelPosition = strpos($content, 'id="heroUsageChart"');
+        $wheelPosition = strpos($content, 'id="hero-wheel"');
         $activityPosition = strpos($content, '90 дней назад');
         $alliesPosition = strpos($content, '>Союзники</h2>');
 

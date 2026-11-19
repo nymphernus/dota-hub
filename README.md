@@ -272,7 +272,8 @@ docker/                       # Dockerfile, entrypoint, php.ini, nginx
 resources/
   css/app.css                 # тема Tailwind и компоненты
   js/app.js                   # точка входа Alpine.js
-  js/charts.js                # винрейт и использование героев
+  js/heatmap.js               # календарь активности на нативном Date
+  views/dota/partials/         # SVG-колесо героев и строки матчей
   views/                      # layout, home, dota, partials, errors
 routes/web.php
 tests/Feature/                # поиск, профиль Dota, матчи, главная, ошибки
