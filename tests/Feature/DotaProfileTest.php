@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\PlayerProfile;
+use App\Services\OpenDota\OpenDotaService;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
@@ -424,10 +425,38 @@ class DotaProfileTest extends TestCase
         $response = $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertOk();
-        $response->assertSee('~3 150 MMR');
-        $response->assertViewHas('player', fn (array $player) => $player['mmr_estimate'] === 3150
+        $response->assertSee('3 184 MMR');
+        $response->assertViewHas('player', fn (array $player) => $player['mmr_estimate'] === 3184
             && $player['mmr_is_estimated'] === true
             && $player['mmr_games_considered'] === 4);
+    }
+
+    public function test_mmr_table_uses_official_star_values(): void
+    {
+        $service = $this->app->make(OpenDotaService::class);
+        $method = new \ReflectionMethod($service, 'baseMmr');
+
+        $expected = [
+            11 => 0,
+            12 => 154,
+            15 => 616,
+            22 => 924,
+            25 => 1386,
+            33 => 1848,
+            42 => 2464,
+            52 => 3234,
+            55 => 3696,
+            61 => 3850,
+            65 => 4466,
+            71 => 4620,
+            72 => 4820,
+            75 => 5420,
+            80 => 5420,
+        ];
+
+        foreach ($expected as $rankTier => $mmr) {
+            $this->assertSame($mmr, $method->invoke($service, $rankTier), "Rank tier {$rankTier}");
+        }
     }
 
     public function test_hero_stats_fall_back_to_stratz_when_opendota_returns_empty(): void

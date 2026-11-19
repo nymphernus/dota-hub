@@ -38,18 +38,21 @@ class OpenDotaService
 
     private const MMR_LOSS = -25;
 
-    private const RANK_BASE_MMR = [
-        1 => 0,
-        2 => 770,
-        3 => 1540,
-        4 => 2310,
-        5 => 3080,
-        6 => 3850,
-        7 => 4620,
-        8 => 5420,
+    /**
+     * Official rank medal base values: five stars per medal, then Immortal.
+     * Tiers 1-6 add 154 MMR per star, Divine adds 200 MMR per star.
+     */
+    private const RANK_MMR_TABLE = [
+        1 => [0, 154, 308, 462, 616],
+        2 => [770, 924, 1078, 1232, 1386],
+        3 => [1540, 1694, 1848, 2002, 2156],
+        4 => [2310, 2464, 2618, 2772, 2926],
+        5 => [3080, 3234, 3388, 3542, 3696],
+        6 => [3850, 4004, 4158, 4312, 4466],
+        7 => [4620, 4820, 5020, 5220, 5420],
     ];
 
-    private const MMR_PER_STAR = 120;
+    private const IMMORTAL_BASE_MMR = 5420;
 
     private const TEAM_CHART_COLORS = [
         '#34d399',
@@ -270,8 +273,10 @@ class OpenDotaService
             ? (int) $profileResponse['rank_tier']
             : null;
 
+        // Ask for a wider window so the fallback still finds 20 ranked games when
+        // unranked/turbo matches are interleaved.
         $matches = $this->optionalGet("players/{$accountId}/matches", [
-            'limit' => self::MMR_SAMPLE_SIZE,
+            'limit' => 100,
         ]);
 
         return $this->estimateMmr(
@@ -342,10 +347,20 @@ class OpenDotaService
 
     private function baseMmr(int $rankTier): int
     {
-        $tier = max(1, min(8, intdiv($rankTier, 10)));
-        $stars = max(1, min(8, $rankTier % 10));
+        $tier = intdiv($rankTier, 10);
 
-        return (self::RANK_BASE_MMR[$tier] ?? 0) + (($stars - 1) * self::MMR_PER_STAR);
+        if ($tier === 8) {
+            return self::IMMORTAL_BASE_MMR;
+        }
+
+        $table = self::RANK_MMR_TABLE[$tier] ?? null;
+        $stars = $rankTier % 10;
+
+        if ($table === null || $stars < 1 || $stars > 5) {
+            return 0;
+        }
+
+        return $table[$stars - 1];
     }
 
     /**

@@ -85,7 +85,7 @@
                                 </span>
                                 @if ($player['mmr_estimate'] !== null)
                                     <span class="badge border-amber-500/25 bg-amber-500/10 text-amber-200" title="{{ $player['mmr_is_estimated'] ? 'Оценка по последним рейтинговым матчам' : 'Оценка OpenDota' }}">
-                                        {{ $player['mmr_is_estimated'] ? '~' : '' }}{{ number_format($player['mmr_estimate'], 0, '.', ' ') }} MMR
+                                        {{ number_format($player['mmr_estimate'], 0, '.', ' ') }} MMR
                                     </span>
                                 @endif
                                 @if ($player['is_offline_cache'] ?? false)
@@ -252,7 +252,7 @@
 
                             <div class="grid grid-cols-2 gap-3">
                                 <x-stat label="Средний KDA" :value="$player['games'] > 0 ? number_format($player['averages']['kda'] ?? 0, 2, '.', '') : '—'" hint="K + A / D" />
-                                <x-stat label="MMR (оценка)" :value="$player['mmr_estimate'] !== null ? ($player['mmr_is_estimated'] ? '~' : '').number_format($player['mmr_estimate'], 0, '.', ' ') : '—'" :hint="$player['mmr_is_estimated'] ? 'Медаль + последние '.$player['mmr_games_considered'].' рейтинговых игр' : 'Данные OpenDota'" />
+                                <x-stat label="MMR (оценка)" :value="$player['mmr_estimate'] !== null ? number_format($player['mmr_estimate'], 0, '.', ' ') : '—'" :hint="$player['mmr_is_estimated'] ? 'Медаль + последние '.$player['mmr_games_considered'].' рейтинговых игр' : 'Данные OpenDota'" />
                             </div>
 
                             <section class="card overflow-hidden">
