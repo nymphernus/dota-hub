@@ -1,5 +1,25 @@
 <?php
 
+$appUrl = (string) env('APP_URL', 'http://localhost');
+$steamRedirect = (string) env('STEAM_REDIRECT_URI', '/auth/steam/callback');
+$steamRealmUrl = parse_url($steamRedirect, PHP_URL_HOST) ? $steamRedirect : $appUrl;
+$steamRealmHost = parse_url($steamRealmUrl, PHP_URL_HOST) ?: 'localhost';
+$steamRealmPort = parse_url($steamRealmUrl, PHP_URL_PORT);
+$steamRealmPath = parse_url($steamRealmUrl, PHP_URL_PATH) ?: '';
+// Steam accepts the callback path as the realm. A bare host is rejected with
+// "Access Denied" for local/public HTTP callbacks.
+$steamRealm = $steamRealmHost
+    .($steamRealmPort && ! in_array((int) $steamRealmPort, [80, 443], true) ? ':'.$steamRealmPort : '')
+    .rtrim($steamRealmPath, '/');
+$steamAllowedHosts = array_values(array_unique(array_filter([
+    parse_url($appUrl, PHP_URL_HOST),
+    parse_url($steamRedirect, PHP_URL_HOST),
+])));
+
+if ($steamAllowedHosts === []) {
+    $steamAllowedHosts = ['localhost'];
+}
+
 return [
 
     /*
@@ -39,7 +59,15 @@ return [
     'steam' => [
         'client_id' => env('STEAM_CLIENT_ID', env('STEAM_API_KEY')),
         'client_secret' => env('STEAM_API_KEY'),
-        'redirect' => env('STEAM_REDIRECT_URI', '/auth/steam/callback'),
+        'redirect' => $steamRedirect,
+        // Steam rejects a login when openid.realm does not match return_to.
+        'realm' => env('STEAM_REALM') ?: $steamRealm,
+        // The provider recomputes the default realm from the resolved redirect
+        // URL so relative STEAM_REDIRECT_URI values keep the callback path.
+        'realm_is_default' => ! env('STEAM_REALM'),
+        'force_https' => env('STEAM_FORCE_HTTPS', parse_url($steamRedirect, PHP_URL_SCHEME) === 'https'),
+        // Socialite checks the parsed return_to host against this list.
+        'allowed_hosts' => $steamAllowedHosts,
         'base_url' => env('STEAM_BASE_URL', 'https://api.steampowered.com'),
         'api_key' => env('STEAM_API_KEY'),
         'community_url' => env('STEAM_COMMUNITY_URL', 'https://steamcommunity.com'),

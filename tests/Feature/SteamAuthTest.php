@@ -41,7 +41,49 @@ class SteamAuthTest extends TestCase
         $location = $response->headers->get('Location');
         $this->assertStringContainsString('https://steamcommunity.com/openid/login', $location);
         $this->assertStringContainsString('openid.mode=checkid_setup', $location);
-        $this->assertStringContainsString(urlencode('openid.return_to').'='.urlencode(url('/auth/steam/callback')), $location);
+
+        parse_str((string) parse_url($location, PHP_URL_QUERY), $params);
+
+        // parse_str() replaces dots in parameter names with underscores.
+        $this->assertSame(url('/auth/steam/callback'), $params['openid_return_to'] ?? null);
+
+        $returnTo = (string) ($params['openid_return_to'] ?? '');
+
+        // Steam rejects a bare host realm with "Access Denied"; the callback
+        // URL itself is a realm Valve accepts.
+        $this->assertSame($returnTo, $params['openid_realm'] ?? null);
+    }
+
+    public function test_steam_allowed_hosts_include_the_application_host(): void
+    {
+        $allowedHosts = config('services.steam.allowed_hosts');
+        $appHost = parse_url((string) config('app.url'), PHP_URL_HOST);
+
+        $this->assertIsArray($allowedHosts);
+        $this->assertContains($appHost, $allowedHosts);
+        $this->assertNotEmpty(config('services.steam.realm'));
+
+        foreach ($allowedHosts as $host) {
+            $this->assertStringNotContainsString('://', (string) $host);
+        }
+    }
+
+    public function test_full_redirect_uri_is_used_verbatim(): void
+    {
+        config([
+            'services.steam.redirect' => 'https://example.test/auth/steam/callback',
+            'services.steam.realm' => 'example.test',
+            'services.steam.realm_is_default' => false,
+            'services.steam.force_https' => true,
+        ]);
+
+        $response = $this->get(route('auth.steam'));
+
+        $response->assertRedirect();
+        parse_str((string) parse_url((string) $response->headers->get('Location'), PHP_URL_QUERY), $params);
+
+        $this->assertSame('https://example.test/auth/steam/callback', $params['openid_return_to'] ?? null);
+        $this->assertSame('https://example.test', $params['openid_realm'] ?? null);
     }
 
     public function test_callback_stores_steam_id_in_the_session(): void
