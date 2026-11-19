@@ -9,9 +9,9 @@
     $activityTotal = array_sum(array_column($activityHeatmap, 'count'));
     $heatmapTones = [
         'empty' => 'bg-white/[0.04] ring-1 ring-inset ring-white/[0.03]',
-        'low' => 'bg-emerald-300 ring-1 ring-inset ring-emerald-200/30',
-        'mid' => 'bg-emerald-500 ring-1 ring-inset ring-emerald-400/30',
-        'high' => 'bg-emerald-800 ring-1 ring-inset ring-emerald-700/40',
+        'win' => 'bg-emerald-500 ring-1 ring-inset ring-emerald-300/40',
+        'loss' => 'bg-rose-500 ring-1 ring-inset ring-rose-300/40',
+        'mixed' => 'bg-violet-500 ring-1 ring-inset ring-violet-300/40',
     ];
     $chartData = [
         'heroUsage' => $heroUsage,
@@ -320,37 +320,32 @@
                             </section>
 
                             <section class="card p-4">
-                                <div class="flex flex-wrap items-start justify-between gap-3">
+                                <div class="flex items-start justify-between gap-2">
                                     <div>
                                         <p class="label">Активность</p>
                                         <h2 class="mt-1 text-sm font-bold text-white">Календарь матчей</h2>
                                     </div>
-                                    <div class="flex flex-wrap items-center gap-3 text-[10px] text-mist-500">
-                                        <span class="font-semibold text-mist-300">{{ number_format($activityTotal, 0, '.', ' ') }} матчей за 6 месяцев</span>
-                                        <span class="inline-flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-[2px] bg-white/[0.04] ring-1 ring-inset ring-white/[0.03]"></span>0</span>
-                                        <span class="inline-flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-[2px] bg-emerald-300"></span>1–2</span>
-                                        <span class="inline-flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-[2px] bg-emerald-500"></span>3–4</span>
-                                        <span class="inline-flex items-center gap-1"><span class="h-2.5 w-2.5 rounded-[2px] bg-emerald-800"></span>5+</span>
-                                    </div>
+                                    <span class="text-[10px] text-mist-500">{{ number_format($activityTotal, 0, '.', ' ') }} игр</span>
                                 </div>
 
-                                <div class="mt-4 overflow-x-auto pb-1">
-                                    <div class="grid w-max grid-flow-col grid-rows-7 gap-[3px]" aria-label="Активность за последние 6 месяцев">
-                                        @foreach ($activityHeatmap as $day)
-                                            <div
-                                                class="h-[11px] w-[11px] rounded-[2px] {{ $heatmapTones[$day['level']] }} transition hover:scale-125 hover:ring-white/30"
-                                                title="{{ $day['label'] }}: {{ $day['count'] }} игр, {{ $day['wins'] }} побед, {{ $day['losses'] }} поражений"
-                                                aria-label="{{ $day['label'] }}: {{ $day['count'] }} игр, {{ $day['wins'] }} побед, {{ $day['losses'] }} поражений"
-                                                data-date="{{ $day['date'] }}"
-                                                data-count="{{ $day['count'] }}"
-                                            ></div>
-                                        @endforeach
+                                <div class="mt-4 flex justify-center">
+                                    <div class="w-full max-w-[220px]">
+                                        <div class="grid aspect-square w-full grid-flow-col grid-rows-7 gap-[3px]" style="grid-template-columns: repeat(13, minmax(0, 1fr));" aria-label="Активность за последние 90 дней">
+                                            @foreach ($activityHeatmap as $day)
+                                                <div
+                                                    class="aspect-square rounded-[2px] {{ $heatmapTones[$day['level']] }} transition hover:scale-125 hover:ring-white/30"
+                                                    title="{{ $day['label'] }}: {{ $day['count'] }} игр, {{ $day['wins'] }} побед, {{ $day['losses'] }} поражений"
+                                                    aria-label="{{ $day['label'] }}: {{ $day['count'] }} игр, {{ $day['wins'] }} побед, {{ $day['losses'] }} поражений"
+                                                    data-date="{{ $day['date'] }}"
+                                                    data-count="{{ $day['count'] }}"
+                                                ></div>
+                                            @endforeach
+                                        </div>
+                                        <div class="mt-2 flex items-center justify-between text-[10px] text-mist-500">
+                                            <span>90 дней назад</span>
+                                            <span>Сегодня</span>
+                                        </div>
                                     </div>
-                                </div>
-
-                                <div class="mt-2 flex items-center justify-between text-[10px] text-mist-500">
-                                    <span>6 месяцев назад</span>
-                                    <span>Сегодня</span>
                                 </div>
                             </section>
                         </aside>

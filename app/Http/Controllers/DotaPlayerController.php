@@ -148,7 +148,7 @@ class DotaPlayerController extends Controller
     }
 
     /**
-     * GitHub-style daily activity for the last six months.
+     * GitHub-style daily activity for the last 90 days, shown as 13 full weeks.
      *
      * @param  array<int, array<string, mixed>>  $matches
      * @return array<int, array{date: string, label: string, count: int, wins: int, losses: int, level: string}>
@@ -174,7 +174,7 @@ class DotaPlayerController extends Controller
         }
 
         $end = CarbonImmutable::now('UTC')->startOfDay();
-        $start = $end->subMonths(6)->startOfWeek(CarbonImmutable::MONDAY);
+        $start = $end->subDays(90);
         $days = [];
 
         for ($day = $start; $day->lessThanOrEqualTo($end); $day = $day->addDay()) {
@@ -190,9 +190,9 @@ class DotaPlayerController extends Controller
                 'losses' => (int) $row['losses'],
                 'level' => match (true) {
                     $count === 0 => 'empty',
-                    $count <= 2 => 'low',
-                    $count <= 4 => 'mid',
-                    default => 'high',
+                    $row['wins'] > 0 && $row['losses'] > 0 => 'mixed',
+                    $row['wins'] > 0 => 'win',
+                    default => 'loss',
                 },
             ];
         }

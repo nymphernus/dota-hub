@@ -91,9 +91,14 @@ class DotaProfileTest extends TestCase
         $response->assertViewHas('steamProfile', fn (array $profile) => $profile['available'] === false);
         $response->assertViewHas('winrate', 60.0);
         $response->assertViewHas('activityHeatmap', function (array $days) {
-            return count($days) >= 180
+            $levels = array_column($days, 'level');
+
+            return count($days) === 91
                 && array_sum(array_column($days, 'count')) === 6
-                && array_sum(array_column($days, 'wins')) === 3;
+                && array_sum(array_column($days, 'wins')) === 3
+                && in_array('win', $levels, true)
+                && in_array('loss', $levels, true)
+                && in_array('mixed', $levels, true);
         });
         $response->assertViewHas('heroUsage', function (array $rows) {
             return count($rows) === 6
