@@ -132,13 +132,18 @@ class UiAssetsTest extends TestCase
         $this->assertStringContainsString('--color-gold-400: #e2b02b', $css);
         $this->assertStringContainsString('--color-accent-400: #3b82f6', $css);
         $this->assertStringContainsString('--color-mist-200: #e2e8f0', $css);
+        $this->assertStringContainsString('--color-mist-400: #8b94a5', $css);
+        $this->assertStringContainsString('--color-line: #2a3042', $css);
+        $this->assertStringContainsString('--color-win: #10b981', $css);
+        $this->assertStringContainsString('--color-loss: #ef4444', $css);
         $this->assertStringContainsString("--font-sans: 'Inter'", $css);
-        $this->assertStringContainsString('@apply rounded-lg bg-ink-800;', $css);
-        $this->assertStringContainsString('border-b border-white/[0.06]', $css);
+        $this->assertStringContainsString('@apply rounded-xl bg-ink-800 shadow-lg shadow-black/25;', $css);
+        $this->assertStringContainsString('border-b border-line', $css);
         $this->assertStringNotContainsString('--color-radar-', $css);
 
         $this->assertStringContainsString('fonts.googleapis.com/css2?family=Inter', $layout);
         $this->assertStringContainsString('<span class="text-gold-400">D</span>otaHub', $layout);
+        $this->assertStringNotContainsString('uppercase tracking-[0.2em] text-mist-500 sm:block', $layout);
         $this->assertStringContainsString('content="#0f111a"', $layout);
         $this->assertStringNotContainsString('radar', $layout);
         $this->assertStringNotContainsString('circle cx="12" cy="12" r="8.25"', $layout);

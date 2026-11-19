@@ -18,13 +18,12 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="flex min-h-screen flex-col">
-    <header class="sticky top-0 z-40 border-b border-white/5 bg-ink-950/80 backdrop-blur-xl">
+    <header class="sticky top-0 z-40 border-b border-line bg-ink-950/90 shadow-lg shadow-black/20 backdrop-blur-xl">
         <div class="mx-auto flex h-16 w-full max-w-7xl items-center px-4 sm:px-6 lg:px-8">
             <a href="{{ route('home') }}" class="group flex items-center" aria-label="DotaHub — на главную">
-                <span class="text-2xl font-black tracking-tight text-white transition group-hover:text-gold-200">
+                <span class="text-2xl font-black tracking-tight text-white">
                     <span class="text-gold-400">D</span>otaHub
                 </span>
-                <span class="ml-2 hidden text-[10px] font-bold uppercase tracking-[0.2em] text-mist-500 sm:block">Dota 2</span>
             </a>
 
             <div class="ml-auto flex items-center gap-2 sm:gap-3">
