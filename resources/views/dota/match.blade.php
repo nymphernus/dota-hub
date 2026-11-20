@@ -45,7 +45,7 @@
 @endphp
 
 @section('content')
-    <div class="mx-auto w-full max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">
+    <div class="mx-auto w-full max-w-7xl px-4 pt-6 lg:px-8">
         <section class="relative py-2">
             <div class="relative px-0 py-1">
                 <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
@@ -54,8 +54,8 @@
                             <span class="badge border-dota-500/25 bg-dota-500/10 text-dota-300">Dota 2</span>
                             <span @class([
                                 'badge',
-                                'border-emerald-500/25 bg-emerald-500/10 text-emerald-300' => $radiantWin,
-                                'border-rose-500/25 bg-rose-500/10 text-rose-300' => ! $radiantWin,
+                                'border-green-500/25 bg-green-500/10 text-green-500' => $radiantWin,
+                                'border-red-500/25 bg-red-500/10 text-red-500' => ! $radiantWin,
                             ])>
                                 Победа {{ $winner }}
                             </span>
@@ -91,14 +91,14 @@
                     </div>
 
                     <div class="flex shrink-0 items-center gap-3">
-                        <div class="rounded-none border border-emerald-500/15 bg-emerald-500/[0.07] px-4 py-2 text-center">
-                            <p class="text-[10px] uppercase tracking-wider text-emerald-300/70">Radiant</p>
-                            <p class="text-xl font-semibold text-emerald-300">{{ $match['radiant_score'] }}</p>
+                        <div class="rounded-none border border-green-500/15 bg-green-500/[0.07] px-4 py-2 text-center">
+                            <p class="text-[10px] uppercase tracking-wider text-green-500/70">Radiant</p>
+                            <p class="text-xl font-semibold text-green-500">{{ $match['radiant_score'] }}</p>
                         </div>
                         <span class="text-xs font-bold text-mist-500">:</span>
-                        <div class="rounded-none border border-rose-500/15 bg-rose-500/[0.07] px-4 py-2 text-center">
-                            <p class="text-[10px] uppercase tracking-wider text-rose-300/70">Dire</p>
-                            <p class="text-xl font-semibold text-rose-300">{{ $match['dire_score'] }}</p>
+                        <div class="rounded-none border border-red-500/15 bg-red-500/[0.07] px-4 py-2 text-center">
+                            <p class="text-[10px] uppercase tracking-wider text-red-500/70">Dire</p>
+                            <p class="text-xl font-semibold text-red-500">{{ $match['dire_score'] }}</p>
                         </div>
                     </div>
                 </div>
@@ -106,23 +106,23 @@
         </section>
 
         <section class="card mt-4 overflow-hidden" aria-label="Составы матча">
-            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-4 sm:px-5">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-4">
                 <div>
                     <p class="text-[10px] uppercase tracking-[0.18em] text-mist-500">Составы</p>
                     <h2 class="section-heading">Игроки матча</h2>
                 </div>
                 <span class="badge text-mist-400">
-                    <span class="text-emerald-300">{{ $match['radiant_score'] }}</span>
+                    <span class="text-green-500">{{ $match['radiant_score'] }}</span>
                     <span class="text-mist-500">:</span>
-                    <span class="text-rose-300">{{ $match['dire_score'] }}</span>
+                    <span class="text-red-500">{{ $match['dire_score'] }}</span>
                 </span>
             </div>
 
-            <div class="overflow-x-auto">
-                <table class="w-full min-w-[980px] text-sm">
+            <div>
+                <table class="w-full text-sm">
                     <thead class="table-head">
                         <tr>
-                            <th class="px-2 py-1 font-semibold sm:px-5">Игрок / герой</th>
+                            <th class="px-2 py-1 font-semibold">Игрок / герой</th>
                             <th class="px-2 py-1 font-semibold">IMP</th>
                             <th class="px-2 py-1 font-semibold">K / D / A</th>
                             <th class="px-2 py-1 font-semibold">GPM</th>
@@ -132,10 +132,10 @@
                                 <th class="px-2 py-1 font-semibold">Башни</th>
                             @endif
                             @if ($showHealing)
-                                <th class="px-2 py-1 font-semibold">Лечение</th>
+                                <th class="px-2 py-1 font-semibold">HEAL</th>
                             @endif
                             @if ($showPurchases)
-                                <th class="px-2 py-1 text-right font-semibold sm:px-5">Закуп</th>
+                                <th class="px-2 py-1 text-right font-semibold">Закуп</th>
                             @endif
                         </tr>
                     </thead>
@@ -143,13 +143,13 @@
                         @foreach ($teams as $teamKey => $team)
                             <tr @class([
                                 'border-l-4',
-                                'border-emerald-500 bg-emerald-500/10' => $teamKey === 'radiant',
-                                'border-rose-500 bg-rose-500/10' => $teamKey === 'dire',
+                                'border-green-500 bg-green-500/10' => $teamKey === 'radiant',
+                                'border-red-500 bg-red-500/10' => $teamKey === 'dire',
                             ])>
-                                <td colspan="{{ $columnCount }}" class="px-4 py-2 sm:px-5">
+                                <td colspan="{{ $columnCount }}" class="px-2 py-1">
                                     <div class="flex flex-wrap items-center justify-between gap-2">
-                                        <span class="text-[11px] font-semibold uppercase tracking-[0.16em] {{ $teamKey === 'radiant' ? 'text-emerald-300' : 'text-rose-300' }}">Команда {{ $team['label'] }}</span>
-                                        <span class="text-[10px] font-semibold {{ $team['won'] ? 'text-emerald-300' : 'text-rose-300' }}">{{ $team['won'] ? 'Победа' : 'Поражение' }} · {{ $team['score'] }}</span>
+                                        <span class="text-[11px] font-semibold uppercase tracking-[0.16em] {{ $teamKey === 'radiant' ? 'text-green-500' : 'text-red-500' }}">Команда {{ $team['label'] }}</span>
+                                        <span class="text-[10px] font-semibold {{ $team['won'] ? 'text-green-500' : 'text-red-500' }}">{{ $team['won'] ? 'Победа' : 'Поражение' }} · {{ $team['score'] }}</span>
                                     </div>
                                 </td>
                             </tr>
@@ -159,11 +159,11 @@
                                         $roleName = $player['role']['name'] ?? null;
                                         $roleSource = $player['role']['source'] ?? null;
                                         $roleClasses = match ($roleLabel) {
-                                            'Safe' => 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300',
+                                            'Safe' => 'border-green-500/25 bg-green-500/10 text-green-500',
                                             'Mid' => 'border-line bg-[#2d313e] text-mist-300',
                                             'Off' => 'border-accent-500/25 bg-accent-500/10 text-accent-300',
                                             'Soft' => 'border-accent-500/25 bg-accent-500/10 text-accent-300',
-                                            'Hard' => 'border-rose-500/25 bg-rose-500/10 text-rose-300',
+                                            'Hard' => 'border-red-500/25 bg-red-500/10 text-red-500',
                                             default => 'border-line bg-ink-900/50 text-mist-400',
                                         };
                                         $isCurrentPlayer = $profilePlayerId !== null
@@ -176,7 +176,7 @@
                                         'odd:bg-[#1c1e26] even:bg-[#111318]',
                                         'bg-ink-700/60' => $isCurrentPlayer,
                                     ])>
-                                        <td class="px-2 py-1 sm:px-5">
+                                        <td class="px-2 py-1">
                                             <div class="flex items-center gap-3">
                                                 <div class="h-9 w-16 shrink-0 overflow-hidden rounded-none bg-ink-800  ">
                                                     @if ($player['hero_image'])
@@ -214,9 +214,9 @@
                                             {{ $showImpact && ($player['impact'] ?? null) !== null ? number_format($player['impact'], 1, '.', '') : '—' }}
                                         </td>
                                         <td class="px-2 py-1 font-mono text-[13px] tabular-nums">
-                                            <span class="text-emerald-300">{{ $player['kills'] }}</span>
+                                            <span class="text-green-500">{{ $player['kills'] }}</span>
                                             <span class="text-mist-500/60">/</span>
-                                            <span class="text-rose-300">{{ $player['deaths'] }}</span>
+                                            <span class="text-red-500">{{ $player['deaths'] }}</span>
                                             <span class="text-mist-500/60">/</span>
                                             <span class="text-mist-400">{{ $player['assists'] }}</span>
                                             <span class="ml-1.5 text-[10px] text-mist-500">({{ number_format($player['kda'], 2, '.', '') }})</span>
@@ -231,7 +231,7 @@
                                             <td class="px-2 py-1 font-mono text-[13px] tabular-nums text-mist-300">{{ isset($player['hero_healing']) ? number_format((int) $player['hero_healing'], 0, '.', ' ') : '—' }}</td>
                                         @endif
                                         @if ($showPurchases)
-                                            <td class="px-2 py-1 text-right sm:px-5">
+                                            <td class="px-2 py-1 text-right">
                                                 @if ($player['purchases'] !== [])
                                                     <button
                                                         type="button"
@@ -253,7 +253,7 @@
 
                                     @if ($showPurchases && $player['purchases'] !== [])
                                         <tr id="purchases-{{ $teamKey }}-{{ $playerIndex }}" x-show="openPlayer === {{ $playerIndex }}" x-cloak x-transition.opacity.duration.150ms class="bg-ink-950/60">
-                                            <td colspan="{{ $columnCount }}" class="px-4 pb-4 pt-1 sm:px-5">
+                                            <td colspan="{{ $columnCount }}" class="px-2 py-1">
                                                 <div class="rounded-none bg-ink-900/70 p-3">
                                                     <div class="flex flex-wrap items-center justify-between gap-2">
                                                         <p class="label">Закуп · {{ $player['hero_name'] }}</p>

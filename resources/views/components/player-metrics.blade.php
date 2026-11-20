@@ -12,22 +12,22 @@
         <p class="label">Матчи</p>
         <p class="mt-1 text-xl font-semibold tracking-tight text-mist-200 sm:text-2xl">{{ number_format($games, 0, '.', ' ') }}</p>
         <div class="mt-2 flex h-1.5 overflow-hidden rounded-none bg-ink-900/50">
-            <div class="h-full bg-accent-400" style="width: {{ $winShare }}%"></div>
-            <div class="h-full bg-rose-500" style="width: {{ $lossShare }}%"></div>
+            <div class="h-full bg-green-500" style="width: {{ $winShare }}%"></div>
+            <div class="h-full bg-red-500" style="width: {{ $lossShare }}%"></div>
         </div>
         <div class="mt-1.5 flex items-center justify-between text-[10px]">
-            <span class="font-semibold text-accent-300">{{ number_format($wins, 0, '.', ' ') }} побед</span>
-            <span class="font-semibold text-rose-300">{{ number_format($losses, 0, '.', ' ') }} поражений</span>
+            <span class="font-semibold text-green-500">{{ number_format($wins, 0, '.', ' ') }} побед</span>
+            <span class="font-semibold text-red-500">{{ number_format($losses, 0, '.', ' ') }} поражений</span>
         </div>
     </div>
 
     <div class="card min-w-[150px] flex-1 p-3 sm:p-4" role="listitem">
         <p class="label">Винрейт</p>
-        <p class="mt-1 text-xl font-semibold tracking-tight sm:text-2xl {{ ($winrate ?? 0) >= 50 ? 'text-accent-300' : 'text-rose-300' }}">
+        <p class="mt-1 text-xl font-semibold tracking-tight sm:text-2xl {{ ($winrate ?? 0) >= 50 ? 'text-green-500' : 'text-red-500' }}">
             {{ $winrate !== null ? number_format($winrate, 1, '.', '').'%' : '—' }}
         </p>
         <div class="mt-2 h-1.5 overflow-hidden rounded-none bg-ink-900/50">
-            <div class="h-full rounded-none {{ ($winrate ?? 0) >= 50 ? 'bg-win' : 'bg-loss' }}" style="width: {{ $winrate ?? 0 }}%"></div>
+            <div class="h-full rounded-none {{ ($winrate ?? 0) >= 50 ? 'bg-green-500' : 'bg-red-500' }}" style="width: {{ $winrate ?? 0 }}%"></div>
         </div>
     </div>
 

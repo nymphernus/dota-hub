@@ -66,7 +66,7 @@ class DotaPlayerController extends Controller
     /**
      * Full hero pool for the dedicated heroes page.
      */
-    public function heroes(int $accountId, OpenDotaService $openDota, SteamService $steam, FavoriteService $favorites): View|Response
+    public function heroes(int $accountId, Request $request, OpenDotaService $openDota, SteamService $steam, FavoriteService $favorites): View|Response
     {
         $player = $this->playerOrError($accountId, $openDota);
 
@@ -80,6 +80,40 @@ class DotaPlayerController extends Controller
             $player['avatar'],
         );
 
+        $filters = [
+            'hero_id' => $request->integer('hero_id') ?: 0,
+            'result' => in_array($request->query('result'), ['win', 'loss'], true) ? $request->query('result') : '',
+            'mode' => in_array($request->query('mode'), ['ranked', 'turbo', 'normal'], true) ? $request->query('mode') : '',
+            'role' => in_array($request->query('role'), ['carry', 'mid', 'offlane', 'support', 'hard_support'], true) ? $request->query('role') : '',
+            'date' => $this->validDate($request->query('date')),
+        ];
+
+        $heroes = collect($player['heroes'] ?? []);
+        if ($filters['hero_id'] > 0) {
+            $heroes = $heroes->where('hero_id', $filters['hero_id']);
+        }
+
+        $heroes = $heroes->sortByDesc('games')->values();
+        $perPage = min(50, max(5, $request->integer('per_page') ?: 25));
+        $page = max(1, $request->integer('page') ?: 1);
+        $total = $heroes->count();
+        $rows = $heroes->forPage($page, $perPage)->values()->all();
+
+        $paginator = new LengthAwarePaginator($rows, $total, $perPage, $page, ['path' => $request->url()]);
+        $paginator->withQueryString();
+
+        $heroOptions = collect($player['heroes'] ?? [])
+            ->map(fn (array $hero) => [
+                'hero_id' => (int) ($hero['hero_id'] ?? 0),
+                'localized_name' => $hero['localized_name'] ?? $hero['name'] ?? 'Герой',
+                'name' => $hero['name'] ?? $hero['localized_name'] ?? 'Герой',
+                'icon' => $hero['icon'] ?? null,
+                'image' => $hero['image'] ?? null,
+            ])
+            ->sortBy(fn (array $hero) => $hero['localized_name'])
+            ->values()
+            ->all();
+
         return view('dota.heroes', [
             'player' => $player,
             'pageTitle' => $player['nickname'].' - Герои - DotaHub',
@@ -89,6 +123,9 @@ class DotaPlayerController extends Controller
                 ($player['steam_id'] ?? '') ?: SteamId::steamId64FromAccountId($accountId)
             ),
             'isFavorite' => $this->favoriteState($accountId, $favorites),
+            'heroes' => $paginator,
+            'heroOptions' => $heroOptions,
+            'filters' => $filters,
         ]);
     }
 

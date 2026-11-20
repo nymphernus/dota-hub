@@ -1,197 +1,179 @@
-@php
+﻿@php
     $playerId = (int) ($playerId ?? 0);
     $cx = 120.0;
     $cy = 120.0;
     $outerRadius = 110.0;
     $innerRadius = 58.0;
 
-    $buildWheel = static function (array $heroes, string $gamesKey, string $winsKey, ?string $lossesKey) use ($cx, $cy, $outerRadius, $innerRadius): array {
-        $items = [];
-        $totalGames = 0;
-        $totalWins = 0;
+    $items = [];
+    $totalGames = 0;
+    $totalWins = 0;
 
-        foreach ($heroes as $hero) {
-            if (! is_array($hero)) {
-                continue;
-            }
-
-            $games = max(0, (int) ($hero[$gamesKey] ?? 0));
-
-            if ($games === 0) {
-                continue;
-            }
-
-            $wins = max(0, (int) ($hero[$winsKey] ?? 0));
-            $losses = $lossesKey !== null
-                ? max(0, (int) ($hero[$lossesKey] ?? 0))
-                : max(0, $games - $wins);
-
-            $items[] = [
-                'hero_id' => (int) ($hero['hero_id'] ?? $hero['id'] ?? 0),
-                'name' => $hero['name'] ?? $hero['localized_name'] ?? 'Герой',
-                'icon' => $hero['icon'] ?? ($hero['image'] ?? ''),
-                'games' => $games,
-                'wins' => $wins,
-                'losses' => $losses,
-                'winrate' => round($wins / $games * 100, 1),
-            ];
-
-            $totalGames += $games;
-            $totalWins += $wins;
+    foreach ($allHeroes as $hero) {
+        if (! is_array($hero)) {
+            continue;
         }
 
-        if ($items === []) {
-            return ['sectors' => [], 'winrate' => 0];
+        $games = max(0, (int) ($hero['games'] ?? 0));
+        if ($games === 0) {
+            continue;
         }
 
-        $wheelTotal = max(1, $totalGames);
-        $wheelMax = max([1, ...array_column($items, 'games')]);
-        $wheelGap = count($items) > 1 ? 1.4 : 0;
-        $wheelCursor = -90.0;
-        $sectors = [];
+        $wins = max(0, (int) ($hero['wins'] ?? 0));
+        $losses = max(0, $games - $wins);
+        $winrate = $games > 0 ? round($wins / $games * 100, 1) : 0.0;
 
-        $point = static function (float $radius, float $angle) use ($cx, $cy): string {
-            $radians = deg2rad($angle);
-
-            return sprintf('%.2f %.2f', $cx + $radius * cos($radians), $cy + $radius * sin($radians));
-        };
-
-        foreach ($items as $index => $hero) {
-            $sweep = ($hero['games'] / $wheelTotal) * 360;
-            $start = $wheelCursor + $wheelGap / 2;
-            $end = $wheelCursor + $sweep - $wheelGap / 2;
-            $wheelCursor += $sweep;
-
-            if ($end <= $start) {
-                continue;
-            }
-
-            $largeArc = ($end - $start) > 180 ? 1 : 0;
-            $sectorPath = sprintf(
-                'M %s A %.2f %.2f 0 %d 1 %s L %s A %.2f %.2f 0 %d 0 %s Z',
-                $point($outerRadius, $start),
-                $outerRadius,
-                $outerRadius,
-                $largeArc,
-                $point($outerRadius, $end),
-                $point($innerRadius, $end),
-                $innerRadius,
-                $innerRadius,
-                $largeArc,
-                $point($innerRadius, $start),
-            );
-
-            $middleAngle = ($start + $end) / 2;
-            $iconRadius = ($innerRadius + $outerRadius) / 2;
-            $iconSize = max(13.0, min(34.0, 14.0 + ($hero['games'] / $wheelMax) * 20.0));
-            $iconRadians = deg2rad($middleAngle);
-
-            $sectors[] = $hero + [
-                'index' => $index,
-                'path' => $sectorPath,
-                'x' => sprintf('%.2f', $cx + $iconRadius * cos($iconRadians) - $iconSize / 2),
-                'y' => sprintf('%.2f', $cy + $iconRadius * sin($iconRadians) - $iconSize / 2),
-                'size' => sprintf('%.2f', $iconSize),
-            ];
-        }
-
-        return [
-            'sectors' => $sectors,
-            'winrate' => $totalGames > 0 ? round($totalWins / $totalGames * 100, 1) : 0,
+        $items[] = [
+            'hero_id' => (int) ($hero['hero_id'] ?? $hero['id'] ?? 0),
+            'name' => $hero['name'] ?? $hero['localized_name'] ?? 'Герой',
+            'icon' => $hero['icon'] ?? $hero['image'] ?? null,
+            'games' => $games,
+            'wins' => $wins,
+            'losses' => $losses,
+            'winrate' => $winrate,
         ];
-    };
 
-    $wheelHeroes = is_array($heroes ?? null) ? $heroes : [];
-    $allWheel = $buildWheel($wheelHeroes, 'games', 'wins', null);
-    $rankedWheel = $buildWheel($wheelHeroes, 'ranked_games', 'ranked_wins', 'ranked_losses');
-    $overallWinrate = $allWheel['winrate'];
+        $totalGames += $games;
+        $totalWins += $wins;
+    }
+
+    usort($items, fn (array $a, array $b) => [$b['games'], $b['winrate']] <=> [$a['games'], $a['winrate']]);
+
+    $topItems = array_slice($items, 0, 20);
+    $tailItems = array_slice($items, 20);
+    $tailGames = array_sum(array_column($tailItems, 'games'));
+    $tailWins = array_sum(array_column($tailItems, 'wins'));
+
+    if ($tailGames > 0) {
+        $topItems[] = [
+            'hero_id' => 0,
+            'name' => 'Другие',
+            'icon' => null,
+            'games' => $tailGames,
+            'wins' => $tailWins,
+            'losses' => max(0, $tailGames - $tailWins),
+            'winrate' => round($tailWins / $tailGames * 100, 1),
+        ];
+    }
+
+    $palette = ['#34d399', '#22d3ee', '#818cf8', '#fb923c', '#fbbf24', '#fb7185', '#a78bfa', '#38bdf8'];
+    $sectors = [];
+    $currentAngle = -M_PI_2;
+    $effectiveTotal = array_sum(array_column($topItems, 'games'));
+
+    foreach ($topItems as $index => $item) {
+        $fraction = $effectiveTotal > 0 ? ($item['games'] / $effectiveTotal) : 0;
+        $angle = $fraction * M_PI * 2;
+
+        if ($effectiveTotal > 0 && $index === count($topItems) - 1) {
+            $endAngle = 1.5 * M_PI;
+        } else {
+            $endAngle = $currentAngle + $angle;
+        }
+
+        $gap = 0.012;
+        $sectorStart = $currentAngle + $gap;
+        $sectorEnd = max($sectorStart, $endAngle - $gap);
+        $largeArc = ($sectorEnd - $sectorStart) > M_PI ? 1 : 0;
+
+        $x1 = $cx + $outerRadius * cos($sectorStart);
+        $y1 = $cy + $outerRadius * sin($sectorStart);
+        $x2 = $cx + $outerRadius * cos($sectorEnd);
+        $y2 = $cy + $outerRadius * sin($sectorEnd);
+        $x3 = $cx + $innerRadius * cos($sectorEnd);
+        $y3 = $cy + $innerRadius * sin($sectorEnd);
+        $x4 = $cx + $innerRadius * cos($sectorStart);
+        $y4 = $cy + $innerRadius * sin($sectorStart);
+
+        $path = sprintf(
+            'M %.4f %.4f A %.4f %.4f 0 %d 1 %.4f %.4f L %.4f %.4f A %.4f %.4f 0 %d 0 %.4f %.4f Z',
+            $x1, $y1,
+            $outerRadius, $outerRadius, $largeArc, $x2, $y2,
+            $x3, $y3,
+            $innerRadius, $innerRadius, $largeArc, $x4, $y4,
+        );
+
+        $midAngle = ($sectorStart + $sectorEnd) / 2;
+        $iconRadius = ($outerRadius + $innerRadius) / 2;
+        $iconSize = min(20, max(14, ($outerRadius - $innerRadius) * 0.55));
+
+        $sectors[] = [
+            'path' => $path,
+            'color' => $palette[$index % count($palette)],
+            'name' => $item['name'],
+            'icon' => $item['icon'],
+            'hero_id' => $item['hero_id'],
+            'games' => $item['games'],
+            'wins' => $item['wins'],
+            'losses' => $item['losses'],
+            'winrate' => $item['winrate'],
+            'icon_x' => round($cx + $iconRadius * cos($midAngle) - ($iconSize / 2), 2),
+            'icon_y' => round($cy + $iconRadius * sin($midAngle) - ($iconSize / 2), 2),
+            'icon_size' => round($iconSize, 2),
+        ];
+
+        $currentAngle = $endAngle;
+    }
+
+    $overallWinrate = $totalGames > 0 ? round($totalWins / $totalGames * 100, 1) : 0.0;
 @endphp
 
-<div id="wheel-tooltip" class="hidden fixed z-50 bg-[#1c1e26] border border-[#2d313e] rounded p-2 text-white shadow-xl flex items-center gap-3"></div>
+@if ($sectors !== [])
+    <script type="application/json" id="hero-wheel-sectors-data">@json($sectors)</script>
+    <div
+        id="hero-wheel-data"
+        class="hidden"
+        data-url-template="{{ route('dota.player.hero', ['accountId' => $playerId, 'heroId' => '__HERO__']) }}"
+        data-overall-winrate="{{ $overallWinrate }}"
+    ></div>
 
-<script id="hero-wheel-all-data" type="application/json">@js($allWheel['sectors'])</script>
-<script id="hero-wheel-ranked-data" type="application/json">@js($rankedWheel['sectors'])</script>
-<div
-    id="hero-wheel-data"
-    class="hidden"
-    data-url-template="{{ route('dota.player.hero', ['accountId' => $playerId, 'heroId' => '__HERO__']) }}"
-    data-all-winrate="{{ $allWheel['winrate'] }}"
-    data-ranked-winrate="{{ $rankedWheel['winrate'] }}"
-></div>
-
-<div class="mt-3" x-data="heroWheel()">
-    <label class="inline-flex cursor-pointer items-center gap-2 text-xs font-semibold text-mist-300">
-        <input type="checkbox" x-model="rankedOnly" class="h-4 w-4 border-line bg-ink-900 accent-yellow-500 ring-0">
-        Только рейтинг
-    </label>
-
-    @if ($allWheel['sectors'] === [] && $rankedWheel['sectors'] === [])
-        <div class="mt-4 grid h-48 place-items-center rounded-none border border-dashed border-line text-xs text-mist-400">
-            Нет данных
-        </div>
-    @else
-        <div class="relative mx-auto mt-3 h-56 w-56 max-w-full" x-show="sectors.length > 0">
-            <svg
-                id="hero-wheel"
-                class="hero-wheel mx-auto block h-56 w-56 max-w-full"
-                viewBox="0 0 240 240"
-                role="img"
-                aria-label="Колесо героев"
-                xmlns="http://www.w3.org/2000/svg"
-            >
-                <title>Колесо героев</title>
-
-                <circle cx="120" cy="120" r="112" fill="#111318" />
-
-                <template x-for="sector in sectors" :key="sector.hero_id">
-                    <a
-                        :href="heroUrl(sector.hero_id)"
-                        class="cursor-pointer hover:opacity-80 focus:outline-none outline-none ring-0"
-                        tabindex="0"
-                        role="link"
-                        :aria-label="sector.name + ': ' + sector.games + ' игр, ' + sector.winrate + '% побед'"
-                    >
-                        <g
-                            class="hero-wheel__slice"
-                            role="img"
-                            :aria-label="sector.name + ': ' + sector.games + ' игр, ' + sector.winrate + '% побед'"
-                            data-wheel-tooltip
-                            :data-hero-name="sector.name"
-                            :data-hero-image="sector.icon"
-                            :data-hero-games="sector.games"
-                            :data-hero-wins="sector.wins"
-                            :data-hero-losses="sector.losses"
-                            :data-hero-winrate="sector.winrate"
-                        >
-                            <title x-text="sector.name + ': ' + sector.games + ' игр, ' + sector.winrate + '% побед'"></title>
+    <div
+        class="relative flex flex-col items-center justify-center py-2"
+        x-data="heroWheel()"
+    >
+        <div class="relative">
+            <svg viewBox="0 0 240 240" class="w-full max-w-[240px] drop-shadow-2xl" role="img" aria-label="Герои игрока по количеству игр">
+                <template x-for="(sector, index) in sectors" :key="index">
+                    <g class="transition-opacity duration-150 hover:opacity-90">
+                        <title x-text="sector.name"></title>
+                        <a :href="sector.hero_id ? sectorUrl(sector.hero_id) : null" :aria-label="sector.name">
                             <path
-                                class="hero-wheel__sector"
                                 :d="sector.path"
-                                fill="#1c1e26"
-                                stroke="#2d313e"
+                                :fill="sector.color"
+                                stroke="#15171e"
                                 stroke-width="1.5"
                             />
-                            <image
-                                class="hero-wheel__icon"
-                                :x="sector.x"
-                                :y="sector.y"
-                                :width="sector.size"
-                                :height="sector.size"
-                                :href="sector.icon"
-                                preserveAspectRatio="xMidYMid slice"
-                            />
-                        </g>
-                    </a>
+                            <template x-if="sector.icon">
+                                <image
+                                    :href="sector.icon"
+                                    :x="sector.icon_x"
+                                    :y="sector.icon_y"
+                                    :width="sector.icon_size"
+                                    :height="sector.icon_size"
+                                    preserveAspectRatio="xMidYMid slice"
+                                    clip-path="circle(50%)"
+                                    pointer-events="none"
+                                />
+                            </template>
+                        </a>
+                    </g>
                 </template>
-
-                <circle class="hero-wheel__hub" cx="120" cy="120" r="45" fill="#1c1e26" stroke="#2d313e" stroke-width="1" />
             </svg>
 
-            <div class="pointer-events-none absolute inset-0 grid place-items-center">
-                <div class="text-2xl font-bold" x-text="overallWinrate + '%'">{{ $overallWinrate }}%</div>
+            <div class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                <span class="text-[9px] font-bold uppercase tracking-widest text-mist-500">Общий WR</span>
+                <span class="text-xl font-black leading-none tracking-tight text-mist-200" x-text="centerWinrate"></span>
             </div>
         </div>
 
-        <p class="mt-2 text-center text-[11px] text-mist-500" x-show="sectors.length === 0" x-cloak>Нет ranked-игр</p>
-    @endif
-</div>
+        <div class="mt-2 grid w-full grid-cols-2 gap-x-3 gap-y-1">
+            <template x-for="(sector, index) in sectors.slice(0, 8)" :key="'legend-'+index">
+                <div class="flex items-center gap-1.5">
+                    <span class="h-2 w-2 shrink-0 rounded-full" :style="'background-color:' + sector.color"></span>
+                    <span class="truncate text-[10px] leading-tight text-mist-300" x-text="sector.name"></span>
+                    <span class="ml-auto font-mono text-[10px] text-mist-500" x-text="sector.games"></span>
+                </div>
+            </template>
+        </div>
+    </div>
+@endif

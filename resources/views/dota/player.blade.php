@@ -30,16 +30,15 @@
                     @if ($recentMatches === [])
                         <div class="p-4 text-center text-xs text-mist-400">Матчи не найдены. Возможно, у игрока пока мало игр или данные ещё не проиндексированы.</div>
                     @else
-                        <div class="overflow-x-auto">
-                            <table class="w-full min-w-[820px] text-sm">
+                        <table class="w-full text-sm">
                                 <thead class="table-head">
                                     <tr>
-                                        <th class="px-3 py-1 text-left font-semibold sm:px-4">Герой / режим</th>
+                                        <th class="px-2 py-1 text-left font-semibold">Герой / режим</th>
                                         <th class="px-2 py-1 text-left font-semibold">Роль</th>
                                         <th class="px-2 py-1 text-left font-semibold">K / D / A</th>
                                         <th class="px-2 py-1 text-left font-semibold">GPM / XPM</th>
                                         <th class="px-2 py-1 text-left font-semibold">Предметы</th>
-                                        <th class="px-3 py-1 text-right font-semibold sm:px-4">Дата</th>
+                                        <th class="px-2 py-1 text-right font-semibold">Дата</th>
                                     </tr>
                                 </thead>
                                 <tbody class="table-rows">
@@ -47,8 +46,7 @@
                                         @include('dota.partials.match-row', ['match' => $match, 'accountId' => $player['account_id']])
                                     @endforeach
                                 </tbody>
-                            </table>
-                        </div>
+                        </table>
                     @endif
                 </section>
 
@@ -75,7 +73,7 @@
                                         <span class="block truncate text-[12px] font-bold text-mist-200 transition group-hover:text-accent-300">{{ $hero['name'] }}</span>
                                         <span class="block text-[10px] text-mist-500">{{ $hero['games'] }} игр</span>
                                     </span>
-                                    <span class="font-mono text-[12px] font-bold {{ ($hero['winrate'] ?? 0) >= 50 ? 'text-emerald-300' : 'text-rose-300' }}">
+                                    <span class="font-mono text-[12px] font-bold {{ ($hero['winrate'] ?? 0) >= 50 ? 'text-green-500' : 'text-red-500' }}">
                                         {{ $hero['winrate'] !== null ? number_format($hero['winrate'], 1, '.', '').'%' : '—' }}
                                     </span>
                                 </a>
@@ -92,7 +90,7 @@
                         <span class="badge border-line bg-ink-900/50 text-mist-400" aria-label="Матчей в колесе: {{ $heroUsageTotal }}">{{ $heroUsageTotal }}</span>
                     </div>
 
-                    @include('dota.partials.hero-wheel', ['heroes' => $heroUsage, 'playerId' => $player['account_id']])
+                    @include('dota.partials.hero-wheel', ['allHeroes' => $heroUsage, 'playerId' => $player['account_id']])
                 </section>
 
                 <section class="border border-[#2d313e] bg-[#1c1e26] p-3 rounded-none">
@@ -158,7 +156,7 @@
                                                         <tr>
                                                             <td class="px-2 py-1 font-semibold text-mist-200">{{ $row['label'] }}</td>
                                                             <td class="px-2 py-1 text-right font-mono text-mist-200">{{ $row['games'] }}</td>
-                                                            <td class="px-2 py-1 text-right font-mono {{ ($row['winrate'] ?? 0) >= 50 ? 'text-emerald-300' : 'text-rose-300' }}">
+                                                            <td class="px-2 py-1 text-right font-mono {{ ($row['winrate'] ?? 0) >= 50 ? 'text-green-500' : 'text-red-500' }}">
                                                                 {{ $row['winrate'] !== null ? number_format($row['winrate'], 1, '.', '').'%' : '—' }}
                                                             </td>
                                                         </tr>

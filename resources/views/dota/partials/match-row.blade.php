@@ -31,8 +31,8 @@
     @endif
 >
     <td @class([
-        'px-3 py-1 sm:px-4',
-        'border-l-4 border-yellow-500' => $match['win'],
+        'px-2 py-1',
+        'border-l-4 border-green-500' => $match['win'],
         'border-l-4 border-red-500' => ! $match['win'],
     ])>
         <div class="flex items-center gap-2.5">
@@ -60,8 +60,8 @@
                     @endif
                     <span @class([
                         'rounded px-1.5 py-0.5 text-[9px] font-semibold tracking-wide',
-                        'bg-emerald-500/15 text-emerald-300' => $match['win'],
-                        'bg-rose-500/15 text-rose-300' => ! $match['win'],
+                        'bg-green-500/15 text-green-500' => $match['win'],
+                        'bg-red-500/15 text-red-500' => ! $match['win'],
                     ])>{{ $match['win'] ? 'W' : 'L' }}</span>
                 </div>
                 <div class="mt-1 flex flex-wrap items-center gap-1.5 text-[9px] text-mist-500">
@@ -91,7 +91,7 @@
     </td>
 
     <td class="px-2 py-1 font-mono text-[12px] tabular-nums">
-        <span class="text-emerald-300">{{ $match['kills'] }}</span><span class="text-mist-500/60">/</span><span class="text-rose-300">{{ $match['deaths'] }}</span><span class="text-mist-500/60">/</span><span class="text-mist-400">{{ $match['assists'] }}</span>
+        <span class="text-green-500">{{ $match['kills'] }}</span><span class="text-mist-500/60">/</span><span class="text-red-500">{{ $match['deaths'] }}</span><span class="text-mist-500/60">/</span><span class="text-mist-400">{{ $match['assists'] }}</span>
         <p class="mt-0.5 text-[9px] text-mist-500">KDA {{ $match['kda'] ?? '—' }}</p>
     </td>
 
@@ -117,7 +117,7 @@
         </div>
     </td>
 
-    <td class="px-3 py-1 text-right text-[10px] text-mist-400 sm:px-4">
+    <td class="px-2 py-1 text-right text-[10px] text-mist-400">
         @if ($startedAt)
             <time datetime="{{ $match['started_at'] }}" title="{{ $startedAt->format('d.m.Y H:i') }}">
                 <span class="block font-mono text-[12px] text-mist-200">{{ $startedAt->format('H:i') }}</span>

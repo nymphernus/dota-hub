@@ -6,8 +6,6 @@
 
         <x-player-metrics :player="$player" />
 
-        <x-player-tabs :player="$player" :active="$activeTab" />
-
         @yield('profile-content')
     </div>
 @endsection

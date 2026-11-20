@@ -7,8 +7,8 @@
     $backUrl = route('dota.player', ['accountId' => $player['account_id']]);
     $toneClasses = [
         'emerald' => [
-            'badge' => 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300',
-            'text' => 'text-emerald-300',
+            'badge' => 'border-green-500/25 bg-green-500/10 text-green-500',
+            'text' => 'text-green-500',
             'marker' => 'bg-emerald-300 ',
         ],
         'sky' => [
@@ -27,8 +27,8 @@
             'marker' => 'bg-accent-300 ',
         ],
         'rose' => [
-            'badge' => 'border-rose-500/25 bg-rose-500/10 text-rose-300',
-            'text' => 'text-rose-300',
+            'badge' => 'border-red-500/25 bg-red-500/10 text-red-500',
+            'text' => 'text-red-500',
             'marker' => 'bg-rose-300 ',
         ],
     ];
@@ -109,7 +109,7 @@
         </div>
 
         <section class="mt-4 card overflow-hidden">
-            <div class="flex flex-wrap items-start justify-between gap-3 border-b border-line px-4 py-4 sm:px-5">
+            <div class="flex flex-wrap items-start justify-between gap-3 border-b border-line px-4 py-3">
                 <div>
                     <h2 class="section-heading">Бенчмарки</h2>
                     <p class="mt-1 text-[11px] leading-relaxed text-mist-500">
@@ -193,11 +193,11 @@
         </section>
 
         <section class="mt-4 card overflow-hidden">
-            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-4 sm:px-5">
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3">
                 <h2 class="section-heading">История матчей</h2>
                 <div class="flex items-center gap-3 text-[11px]">
-                    <span class="inline-flex items-center gap-1.5 text-emerald-300"><span class="h-2 w-2 rounded-none bg-emerald-400"></span> Победа</span>
-                    <span class="inline-flex items-center gap-1.5 text-rose-300"><span class="h-2 w-2 rounded-none bg-rose-400"></span> Поражение</span>
+                    <span class="inline-flex items-center gap-1.5 text-green-500"><span class="h-2 w-2 rounded-none bg-green-500"></span> Победа</span>
+                    <span class="inline-flex items-center gap-1.5 text-red-500"><span class="h-2 w-2 rounded-none bg-red-500"></span> Поражение</span>
                 </div>
             </div>
 
@@ -210,8 +210,8 @@
                     </a>
                 </div>
             @else
-                <div class="overflow-x-auto">
-                    <table class="w-full min-w-[980px] text-sm">
+                <div>
+                    <table class="w-full text-sm">
                         <thead class="table-head">
                             <tr>
                                 <th class="px-2 py-1 text-left font-semibold sm:px-3">Результат</th>
@@ -220,8 +220,8 @@
                                 <th class="px-2 py-1 text-left font-semibold">GPM</th>
                                 <th class="px-2 py-1 text-left font-semibold">XPM</th>
                                 <th class="px-2 py-1 text-left font-semibold">Нетворс</th>
-                                <th class="px-2 py-1 text-left font-semibold">Урон</th>
-                                <th class="px-2 py-1 text-left font-semibold">Длительность</th>
+                                <th class="px-2 py-1 text-left font-semibold">DMG</th>
+                                <th class="px-2 py-1 text-left font-semibold">Длит.</th>
                                 <th class="px-2 py-1 text-right font-semibold sm:px-3">Дата</th>
                             </tr>
                         </thead>
@@ -246,22 +246,22 @@
                                     @endif
                                 >
                                     <td @class([
-                                        'px-2 py-1 sm:px-3',
+                                        'px-2 py-1',
                                         'border-l-4 border-green-500' => $match['win'],
                                         'border-l-4 border-red-500' => ! $match['win'],
                                     ])>
                                         <span @class([
                                             'badge !px-1.5 !py-0 !text-[9px]',
-                                            'border-emerald-500/25 bg-emerald-500/10 text-emerald-300' => $match['win'],
-                                            'border-rose-500/25 bg-rose-500/10 text-rose-300' => ! $match['win'],
+                                            'border-green-500/25 bg-green-500/10 text-green-500' => $match['win'],
+                                            'border-red-500/25 bg-red-500/10 text-red-500' => ! $match['win'],
                                         ])>
                                             {{ $match['win'] ? 'WIN' : 'LOSS' }}
                                         </span>
                                     </td>
                                     <td class="px-2 py-1 font-mono text-[12px] tabular-nums">
-                                        <span class="text-emerald-300">{{ $match['kills'] }}</span>
+                                        <span class="text-green-500">{{ $match['kills'] }}</span>
                                         <span class="text-mist-500/60">/</span>
-                                        <span class="text-rose-300">{{ $match['deaths'] }}</span>
+                                        <span class="text-red-500">{{ $match['deaths'] }}</span>
                                         <span class="text-mist-500/60">/</span>
                                         <span class="text-mist-400">{{ $match['assists'] }}</span>
                                     </td>

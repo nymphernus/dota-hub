@@ -16,21 +16,21 @@
                 @php
                     $showWinrate = collect($player['peers'])->contains(fn (array $peer) => ($peer['winrate'] ?? null) !== null);
                 @endphp
-                <div class="overflow-x-auto">
-                    <table class="w-full min-w-[680px] text-sm">
+                <div>
+                    <table class="w-full text-sm">
                         <thead class="table-head">
                             <tr>
-                                <th class="px-2 py-1 font-semibold sm:px-5">Игрок</th>
+                                <th class="px-2 py-1 font-semibold">Игрок</th>
                                 <th class="px-2 py-1 font-semibold">Матчи вместе</th>
                                 @if ($showWinrate)
-                                    <th class="px-2 py-1 font-semibold sm:px-5">Винрейт вместе</th>
+                                    <th class="px-2 py-1 font-semibold">Винрейт вместе</th>
                                 @endif
                             </tr>
                         </thead>
                         <tbody class="table-rows">
                             @foreach ($player['peers'] as $peer)
                                 <tr class="transition hover:bg-ink-900/30">
-                                    <td class="px-2 py-1 sm:px-5">
+                                    <td class="px-2 py-1">
                                         <a href="{{ route('dota.player', ['accountId' => $peer['account_id']]) }}" class="group flex items-center gap-3">
                                             <span class="h-9 w-9 shrink-0 overflow-hidden rounded-none bg-ink-800  ">
                                                 @if ($peer['avatar'])
@@ -52,7 +52,7 @@
                                     </td>
                                     <td class="px-2 py-1 font-mono text-[13px] tabular-nums text-mist-300">{{ number_format($peer['games'], 0, '.', ' ') }}</td>
                                     @if ($showWinrate)
-                                        <td class="px-2 py-1 font-mono text-[13px] tabular-nums sm:px-5 {{ ($peer['winrate'] ?? 0) >= 50 ? 'text-emerald-300' : 'text-rose-300' }}">{{ $peer['winrate'] !== null ? number_format($peer['winrate'], 1, '.', '').'%' : '—' }}</td>
+                                        <td class="px-2 py-1 font-mono text-[13px] tabular-nums {{ ($peer['winrate'] ?? 0) >= 50 ? 'text-green-500' : 'text-red-500' }}">{{ $peer['winrate'] !== null ? number_format($peer['winrate'], 1, '.', '').'%' : '—' }}</td>
                                     @endif
                                 </tr>
                             @endforeach

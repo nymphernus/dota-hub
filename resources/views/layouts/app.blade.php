@@ -22,79 +22,76 @@
         $navRoute = request()->route()?->getName();
         $navPlayer = $player ?? null;
         $navHero = $hero ?? null;
-        $navNickname = $navPlayer['nickname'] ?? 'Профиль';
-        $navAccountId = (int) ($navPlayer['account_id'] ?? request()->route('accountId') ?? request()->query('player_id') ?? 0);
-
-        $dotahubRecent = match ($navRoute) {
-            'dota.player' => ['url' => url()->current(), 'label' => $navNickname.' · Обзор'],
-            'dota.player.matches' => ['url' => url()->current(), 'label' => $navNickname.' · Матчи'],
-            'dota.player.heroes' => ['url' => url()->current(), 'label' => $navNickname.' · Герои'],
-            'dota.player.records' => ['url' => url()->current(), 'label' => $navNickname.' · Рекорды'],
-            'dota.player.peers' => ['url' => url()->current(), 'label' => $navNickname.' · Союзники'],
-            'dota.player.hero' => ['url' => url()->current(), 'label' => ($navHero['name'] ?? 'Герой').' · '.$navNickname],
-            'dota.match' => ['url' => url()->current(), 'label' => 'Матч #'.request()->route('matchId')],
-            default => null,
-        };
+        $navNickname = $navPlayer['nickname'] ?? null;
+        $navAccountId = (int) ($navPlayer['account_id'] ?? request()->route('accountId') ?? 0);
+        $showProfileNav = $navAccountId > 0 && $navNickname;
     @endphp
-    <script id="dotahub-recent-data" type="application/json">@json($dotahubRecent)</script>
-
-    <header class="sticky top-0 z-40 border-b border-[#2d313e] bg-[#111318]/90 backdrop-blur-md">
+    <header class="border-b border-[#2d313e] bg-[#111318]/90 backdrop-blur-md">
         <div class="mx-auto flex h-16 w-full max-w-7xl items-center px-4 sm:px-6 lg:px-8">
-            <a href="/" class="bg-[#d32f2f] px-2 py-1 text-2xl leading-none tracking-tighter text-white" aria-label="DOTAHUB — на главную">DOTAHUB</a>
+            <div class="flex min-w-0 items-center">
+                <a href="/" class="bg-[#d32f2f] px-2 py-1 text-2xl leading-none tracking-tighter text-white" aria-label="dotahub — на главную">dotahub</a>
+                @if ($showProfileNav && $navNickname)
+                    <span class="ml-1 hidden min-w-0 items-center sm:inline-flex">
+                        <span class="mx-2 text-gray-400">/</span>
+                        <span class="truncate font-bold text-white">{{ $navNickname }}</span>
+                    </span>
+                @endif
+            </div>
 
-            <div class="ml-auto flex items-center gap-2 sm:gap-3">
+            <div class="ml-auto flex items-center gap-4">
                 <form
-                    method="POST"
-                    action="{{ route('search') }}"
-                    role="search"
-                    class="header-search"
                     x-data="{ open: false }"
-                    :class="open ? 'is-open' : ''"
+                    x-cloak
+                    @click.outside="open = false"
+                    @keydown.escape.window="open = false"
+                    action="{{ route('dota.search') }}"
+                    method="GET"
+                    role="search"
+                    class="flex items-center"
                 >
-                    @csrf
                     <button
                         type="button"
-                        class="grid h-9 w-9 shrink-0 place-items-center rounded-none text-mist-400 transition hover:bg-ink-700 hover:text-mist-200"
-                        @click="open = !open; if (open) $nextTick(() => $refs.query.focus())"
+                        @click="open = !open; if (open) { $nextTick(() => $refs.query.focus()) }"
+                        class="grid h-9 w-9 shrink-0 place-items-center rounded-none text-mist-400 transition hover:bg-ink-700 hover:text-white"
                         :aria-expanded="open.toString()"
                         aria-controls="header-search-query"
                         aria-label="Поиск игрока"
                         title="Поиск игрока"
                     >
                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                            <circle cx="11" cy="11" r="7" />
-                            <path d="m20 20-3.5-3.5" stroke-linecap="round" />
+                            <circle cx="11" cy="11" r="7"></circle>
+                            <path d="m20 20-3.5-3.5" stroke-linecap="round"></path>
                         </svg>
                     </button>
+
                     <input
-                        id="header-search-query"
                         x-ref="query"
-                        type="search"
-                        name="query"
-                        minlength="2"
-                        maxlength="120"
+                        id="header-search-query"
+                        type="text"
+                        name="q"
+                        value="{{ request('q', '') }}"
                         required
                         autocomplete="off"
                         placeholder="Steam ID, URL или никнейм"
                         aria-label="Поиск игрока"
-                        class="h-9 min-w-0 bg-transparent p-0 text-xs text-mist-200 placeholder:text-mist-500 transition-all duration-200 focus:outline-none "
+                        class="h-9 min-w-0 bg-transparent p-0 text-xs text-mist-200 placeholder:text-mist-500 transition-all duration-200 focus:outline-none"
                         :class="open ? 'w-48 px-1 sm:w-64' : 'pointer-events-none w-0 opacity-0'"
-                        @keydown.escape.window="if (open) { open = false; $refs.query.blur(); }"
+                        :tabindex="open ? 0 : -1"
                     >
                 </form>
 
                 @php
-                    $steamSessionId = (string) session('steam_id', '');
-                    $steamAccountId = \App\Support\SteamId::isSteamId64($steamSessionId)
-                        ? \App\Support\SteamId::accountIdFromSteamId64($steamSessionId)
-                        : null;
+                    $steamId = (string) session('steam_id', '');
+                    $steamAccountId = null;
+                    if (preg_match('/^\d{17}$/', $steamId) === 1) {
+                        $steamAccountId = (string) ((int) $steamId - 76561197960265728);
+                    }
                 @endphp
-
                 @if ($steamAccountId)
                     <div class="flex items-center gap-2.5">
                         <a href="{{ route('dota.player', ['accountId' => $steamAccountId]) }}" class="group flex items-center gap-2.5 rounded-none px-1 py-1 transition hover:bg-ink-700" aria-label="Открыть мой профиль">
                             @if (session('steam_avatar'))
-                                <img src="{{ session('steam_avatar') }}" alt="Аватар Steam" class="h-8 w-8 rounded-none object-cover   transition ">
+                                <img src="{{ session('steam_avatar') }}" alt="Аватар Steam" class="h-8 w-8 rounded-none object-cover transition">
                             @endif
                             <span class="hidden max-w-[140px] truncate text-xs font-semibold text-mist-200 transition group-hover:text-mist-200 sm:block">
                                 {{ session('steam_nickname') ?: 'Steam аккаунт' }}
@@ -106,14 +103,14 @@
                             <span class="hidden sm:inline">Избранное</span>
                         </a>
 
-                        <form method="POST" action="{{ route('auth.steam.logout') }}">
+                        <form action="{{ route('auth.steam.logout') }}" method="POST">
                             @csrf
                             <input type="hidden" name="intended" value="{{ url()->current() }}">
                             <button type="submit" class="btn-ghost !py-2">Выйти</button>
                         </form>
                     </div>
                 @else
-                    <a href="{{ route('auth.steam', ['intended' => url()->current()]) }}" class="btn-ghost !py-2">
+                    <a href="{{ route('auth.steam.redirect', ['intended' => url()->current()]) }}" class="btn-primary">
                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                             <path d="M12 2a10 10 0 0 0-9.97 9.24l5.35 2.21a2.8 2.8 0 0 1 1.6-.49l2.37-3.43v-.5a3.74 3.74 0 1 1 3.74 3.74h-.1l-3.37 2.42c0 .07.01.14.01.21a2.8 2.8 0 0 1-5.58.37l-3.83-1.58A10 10 0 1 0 12 2Zm-5.6 15.08 1.2-.5a2.1 2.1 0 1 0-1.2.5Zm11.16-8.13a2.5 2.5 0 1 0-4.98.2 2.5 2.5 0 0 0 4.98-.2Z"/>
                         </svg>
@@ -122,93 +119,53 @@
                 @endif
             </div>
         </div>
+
+        @if ($showProfileNav)
+            <nav class="border-t border-[#2d313e] bg-[#1c1e26]" aria-label="Основная навигация">
+                <div class="mx-auto flex w-full max-w-7xl items-center gap-1 overflow-x-auto px-4 sm:px-6 lg:px-8">
+                    @foreach ([
+                        'dota.player' => ['dota.player', 'Обзор'],
+                        'dota.player.matches' => ['dota.player.matches', 'Матчи'],
+                        'dota.player.heroes' => ['dota.player.heroes', 'Герои'],
+                        'dota.player.records' => ['dota.player.records', 'Рекорды'],
+                        'dota.player.peers' => ['dota.player.peers', 'Союзники'],
+                    ] as $itemRoute => $item)
+                        <a
+                            href="{{ route($item[0], ['accountId' => $navAccountId]) }}"
+                            @class([
+                                'shrink-0 px-3 py-2 text-xs font-semibold transition',
+                                'bg-[#2d313e] text-white' => $navRoute === $itemRoute,
+                                'text-mist-400 hover:text-mist-200' => $navRoute !== $itemRoute,
+                            ])
+                            @if ($navRoute === $itemRoute) aria-current="page" @endif
+                        >{{ $item[1] }}</a>
+                    @endforeach
+
+                    @if (in_array($navRoute, ['dota.match', 'dota.player.hero'], true))
+                        <span class="shrink-0 bg-[#2d313e] px-3 py-2 text-xs font-semibold text-white" aria-current="page">
+                            {{ $navRoute === 'dota.match' ? 'Матч #'.request()->route('matchId') : ($navHero['name'] ?? 'Герой') }}
+                        </span>
+                    @endif
+                </div>
+            </nav>
+        @endif
     </header>
 
-    <nav class="border-b border-[#2d313e] bg-[#1c1e26]" aria-label="Основная навигация">
-        <div class="mx-auto flex w-full max-w-7xl items-center gap-1 overflow-x-auto px-4 sm:px-6 lg:px-8">
-            <a
-                href="{{ route('home') }}"
-                class="shrink-0 px-3 py-2 text-xs font-semibold transition {{ $navRoute === 'home' ? 'bg-[#2d313e] text-white' : 'text-gray-400 hover:bg-[#111318] hover:text-white' }}"
-                @if ($navRoute === 'home') aria-current="page" @endif
-            >Главная</a>
-
-            @if ($navAccountId > 0)
-                @foreach ([
-                    'dota.player' => ['dota.player', 'Профиль'],
-                    'dota.player.matches' => ['dota.player.matches', 'Матчи'],
-                    'dota.player.heroes' => ['dota.player.heroes', 'Герои'],
-                    'dota.player.records' => ['dota.player.records', 'Рекорды'],
-                    'dota.player.peers' => ['dota.player.peers', 'Союзники'],
-                ] as $itemRoute => $item)
-                    <a
-                        href="{{ route($item[0], ['accountId' => $navAccountId]) }}"
-                        class="shrink-0 px-3 py-2 text-xs font-semibold transition {{ $navRoute === $itemRoute ? 'bg-[#2d313e] text-white' : 'text-gray-400 hover:bg-[#111318] hover:text-white' }}"
-                        @if ($navRoute === $itemRoute) aria-current="page" @endif
-                    >{{ $item[1] }}</a>
-                @endforeach
-            @endif
-
-            @if (in_array($navRoute, ['dota.match', 'dota.player.hero'], true) && $dotahubRecent)
-                <span class="shrink-0 bg-[#2d313e] px-3 py-2 text-xs font-semibold text-white" aria-current="page">{{ $dotahubRecent['label'] }}</span>
-            @endif
-
-            @if ($dotahubRecent)
-                <span class="shrink-0 px-1 text-line" aria-hidden="true">|</span>
-                <div class="relative shrink-0" x-data="recentLinks()">
-                    <button
-                        type="button"
-                        class="flex items-center gap-1 px-3 py-2 text-xs font-semibold text-gray-400 transition hover:bg-[#111318] hover:text-white"
-                        @click="open = !open"
-                        :aria-expanded="open.toString()"
-                        aria-label="Недавние страницы"
-                    >
-                        Недавние
-                        <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                    </button>
-                    <div x-show="open" @click.outside="open = false" class="absolute left-0 top-full z-50 mt-1 w-64 border border-[#2d313e] bg-[#1c1e26] p-1" x-cloak>
-                        <template x-for="item in items" :key="item.url">
-                            <a :href="item.url" class="block truncate px-2 py-1.5 text-xs text-mist-300 transition hover:bg-[#2d313e] hover:text-white" x-text="item.label"></a>
-                        </template>
-                        <p x-show="items.length === 0" class="px-2 py-2 text-xs text-mist-500">Нет недавних страниц</p>
-                    </div>
-                </div>
-            @endif
-        </div>
-    </nav>
-
-    <main class="flex-1 pb-20">
+    <main id="main-content" class="flex-1" tabindex="-1">
         @if (session('status'))
-            <div class="mx-auto mt-4 w-full max-w-7xl px-4 sm:px-6 lg:px-8" x-data="{ visible: true }">
-                <div x-show="visible" x-transition class="flex items-start justify-between gap-4 rounded-none border border-accent-500/25 bg-accent-500/10 px-4 py-3 text-sm text-accent-300">
-                    <div class="flex items-start gap-3">
-                        <svg class="mt-0.5 h-5 w-5 shrink-0 text-accent-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                            <path d="M5 12.5l4.5 4.5L19 7" stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
+            <div class="mx-auto mt-4 w-full max-w-7xl px-4 sm:px-6 lg:px-8" role="status" aria-live="polite">
+                <div
+                    x-data="{ visible: true }"
+                    x-show="visible"
+                    x-transition.opacity.duration.250ms
+                    class="flex items-center justify-between gap-3 border border-accent-500/25 bg-accent-500/10 px-4 py-3 text-sm text-accent-300"
+                >
+                    <div class="flex items-center gap-2.5">
+                        <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 8v4M12 16h.01" stroke-linecap="round" /></svg>
                         <p>{{ session('status') }}</p>
                     </div>
                     <button type="button" @click="visible = false" class="rounded-none p-1 text-accent-300/70 transition hover:bg-ink-700 hover:text-mist-200" aria-label="Закрыть уведомление">
-                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                            <path d="M6 6l12 12M18 6L6 18" stroke-linecap="round" />
-                        </svg>
-                    </button>
-                </div>
-            </div>
-        @endif
-
-        @if (session('error'))
-            <div class="mx-auto mt-4 w-full max-w-7xl px-4 sm:px-6 lg:px-8" x-data="{ visible: true }">
-                <div x-show="visible" x-transition class="flex items-start justify-between gap-4 rounded-none border border-rose-500/25 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
-                    <div class="flex items-start gap-3">
-                        <svg class="mt-0.5 h-5 w-5 shrink-0 text-rose-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                            <circle cx="12" cy="12" r="9" />
-                            <path d="M12 8v5M12 16.5v.01" stroke-linecap="round" />
-                        </svg>
-                        <p>{{ session('error') }}</p>
-                    </div>
-                    <button type="button" @click="visible = false" class="rounded-none p-1 text-rose-300/70 transition hover:bg-ink-700 hover:text-mist-200" aria-label="Закрыть уведомление">
-                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                            <path d="M6 6l12 12M18 6L6 18" stroke-linecap="round" />
-                        </svg>
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke-linecap="round" /></svg>
                     </button>
                 </div>
             </div>
@@ -217,14 +174,10 @@
         @yield('content')
     </main>
 
-    <footer class="border-t border-line bg-ink-950/60">
-        <div class="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
-            <div>
-                <p class="text-sm font-semibold text-mist-200">dotahub</p>
-                <p class="text-[11px] text-mist-500">Данные: OpenDota · Steam Web API</p>
-            </div>
-
-            <p class="text-[11px] text-mist-500">&copy; {{ date('Y') }} dotahub</p>
+    <footer class="mt-16 border-t border-line">
+        <div class="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+            <span class="text-xs font-semibold tracking-tight text-mist-400">dotahub</span>
+            <span class="text-[10px] text-mist-500">&copy; {{ date('Y') }} &middot; OpenDota &middot; Steam Web API</span>
         </div>
     </footer>
 
