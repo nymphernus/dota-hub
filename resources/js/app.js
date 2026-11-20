@@ -57,46 +57,46 @@ Alpine.data('heroWheel', () => ({
     },
 }));
 
-const TAB_STORAGE_KEY = 'dotahub.tabs.v1';
+const RECENT_STORAGE_KEY = 'dotahub.recent.v1';
 
 /**
- * Browser-like tabs. The current page is injected by the layout as JSON and is
- * added to a session-scoped list; closing the active tab navigates to a sibling
- * tab or back to the home page.
+ * Simple horizontal navigation. The current page is added to a small
+ * session-scoped "Недавние" menu; there are no closeable browser-style tabs.
  */
-Alpine.data('tabs', () => ({
-    tabs: [],
+Alpine.data('recentLinks', () => ({
+    open: false,
+    items: [],
     current: null,
 
     init() {
-        this.current = this.readCurrentTab();
-        this.tabs = this.readStoredTabs();
+        this.current = this.readCurrent();
+        this.items = this.readStored();
 
         if (this.current) {
-            this.addTab(this.current);
+            this.addCurrent(this.current);
         }
     },
 
-    readCurrentTab() {
-        const node = document.getElementById('dotahub-tab-data');
+    readCurrent() {
+        const node = document.getElementById('dotahub-recent-data');
 
         if (! node) {
             return null;
         }
 
         try {
-            const tab = JSON.parse(node.textContent);
-            return tab && tab.url && tab.label ? tab : null;
+            const item = JSON.parse(node.textContent);
+            return item && item.url && item.label ? item : null;
         } catch (error) {
             return null;
         }
     },
 
-    readStoredTabs() {
+    readStored() {
         try {
-            const stored = JSON.parse(sessionStorage.getItem(TAB_STORAGE_KEY) || '[]');
+            const stored = JSON.parse(sessionStorage.getItem(RECENT_STORAGE_KEY) || '[]');
             return Array.isArray(stored)
-                ? stored.filter((tab) => tab && typeof tab.url === 'string' && typeof tab.label === 'string')
+                ? stored.filter((item) => item && typeof item.url === 'string' && typeof item.label === 'string')
                 : [];
         } catch (error) {
             return [];
@@ -105,50 +105,18 @@ Alpine.data('tabs', () => ({
 
     persist() {
         try {
-            sessionStorage.setItem(TAB_STORAGE_KEY, JSON.stringify(this.tabs));
+            sessionStorage.setItem(RECENT_STORAGE_KEY, JSON.stringify(this.items));
         } catch (error) {
-            // Storage can be disabled; tabs still work for this page view.
+            // Storage can be disabled; the dropdown still works for this view.
         }
     },
 
-    addTab(tab) {
-        const index = this.tabs.findIndex((item) => item.url === tab.url);
+    addCurrent(current) {
+        const items = [current, ...this.items.filter((item) => item.url !== current.url)].slice(0, 6);
 
-        if (index === -1) {
-            this.tabs = [...this.tabs, tab];
+        if (JSON.stringify(items) !== JSON.stringify(this.items)) {
+            this.items = items;
             this.persist();
-            return;
-        }
-
-        if (this.tabs[index].label !== tab.label) {
-            const tabs = this.tabs.slice();
-            tabs[index] = { ...tabs[index], label: tab.label };
-            this.tabs = tabs;
-            this.persist();
-        }
-    },
-
-    isActive(tab) {
-        return Boolean(this.current && this.current.url === tab.url);
-    },
-
-    close(tab, event) {
-        event.preventDefault();
-        event.stopPropagation();
-
-        const index = this.tabs.findIndex((item) => item.url === tab.url);
-
-        if (index === -1) {
-            return;
-        }
-
-        const remaining = this.tabs.filter((item) => item.url !== tab.url);
-        this.tabs = remaining;
-        this.persist();
-
-        if (this.isActive(tab)) {
-            const fallback = remaining[index] || remaining[index - 1];
-            window.location.href = fallback ? fallback.url : '/';
         }
     },
 }));

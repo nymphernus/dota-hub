@@ -77,8 +77,9 @@ class MatchTest extends TestCase
         $response->assertSee(route('dota.player', ['accountId' => 123456789]), false);
         $response->assertSee(route('dota.player', ['accountId' => 987654321]), false);
         $response->assertDontSee('Данные о нетворсе появятся после парсинга матча');
-        $response->assertSee('id="dotahub-tab-data"', false);
-        $response->assertSee('x-data="tabs()"', false);
+        $response->assertSee('id="dotahub-recent-data"', false);
+        $response->assertSee('x-data="recentLinks()"', false);
+        $response->assertSee('aria-label="Основная навигация"', false);
         $response->assertDontSee('aria-label="Хлебные крошки"', false);
         $response->assertDontSee('Профиль игрока');
         $response->assertDontSee('card relative overflow-hidden', false);

@@ -176,9 +176,9 @@ class DotaProfileTest extends TestCase
                 && $peers[1]['is_private'] === true;
         });
         $response->assertSee('OtherPeer');
-        $response->assertSee('id="dotahub-tab-data"', false);
-        $response->assertSee('x-data="tabs()"', false);
-        $response->assertSee('aria-label="Навигация по вкладкам"', false);
+        $response->assertSee('id="dotahub-recent-data"', false);
+        $response->assertSee('x-data="recentLinks()"', false);
+        $response->assertSee('aria-label="Основная навигация"', false);
         $response->assertDontSee('aria-label="Хлебные крошки"', false);
         $response->assertViewHas(
             'recentMatches',

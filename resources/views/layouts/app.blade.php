@@ -19,23 +19,24 @@
 </head>
 <body class="flex min-h-screen flex-col">
     @php
-        $tabRoute = request()->route()?->getName();
-        $tabPlayer = $player ?? null;
-        $tabHero = $hero ?? null;
-        $tabNickname = $tabPlayer['nickname'] ?? 'Профиль';
+        $navRoute = request()->route()?->getName();
+        $navPlayer = $player ?? null;
+        $navHero = $hero ?? null;
+        $navNickname = $navPlayer['nickname'] ?? 'Профиль';
+        $navAccountId = (int) ($navPlayer['account_id'] ?? request()->route('accountId') ?? request()->query('player_id') ?? 0);
 
-        $dotahubTab = match ($tabRoute) {
-            'dota.player' => ['url' => url()->current(), 'label' => $tabNickname.' · Обзор'],
-            'dota.player.matches' => ['url' => url()->current(), 'label' => $tabNickname.' · Матчи'],
-            'dota.player.heroes' => ['url' => url()->current(), 'label' => $tabNickname.' · Герои'],
-            'dota.player.records' => ['url' => url()->current(), 'label' => $tabNickname.' · Рекорды'],
-            'dota.player.peers' => ['url' => url()->current(), 'label' => $tabNickname.' · Союзники'],
-            'dota.player.hero' => ['url' => url()->current(), 'label' => ($tabHero['name'] ?? 'Герой').' · '.$tabNickname],
+        $dotahubRecent = match ($navRoute) {
+            'dota.player' => ['url' => url()->current(), 'label' => $navNickname.' · Обзор'],
+            'dota.player.matches' => ['url' => url()->current(), 'label' => $navNickname.' · Матчи'],
+            'dota.player.heroes' => ['url' => url()->current(), 'label' => $navNickname.' · Герои'],
+            'dota.player.records' => ['url' => url()->current(), 'label' => $navNickname.' · Рекорды'],
+            'dota.player.peers' => ['url' => url()->current(), 'label' => $navNickname.' · Союзники'],
+            'dota.player.hero' => ['url' => url()->current(), 'label' => ($navHero['name'] ?? 'Герой').' · '.$navNickname],
             'dota.match' => ['url' => url()->current(), 'label' => 'Матч #'.request()->route('matchId')],
             default => null,
         };
     @endphp
-    <script id="dotahub-tab-data" type="application/json">@json($dotahubTab)</script>
+    <script id="dotahub-recent-data" type="application/json">@json($dotahubRecent)</script>
 
     <header class="sticky top-0 z-40 border-b border-[#2d313e] bg-[#111318]/90 backdrop-blur-md">
         <div class="mx-auto flex h-16 w-full max-w-7xl items-center px-4 sm:px-6 lg:px-8">
@@ -123,29 +124,57 @@
         </div>
     </header>
 
-    <div class="border-b border-[#2d313e] bg-[#1c1e26]" x-data="tabs()" aria-label="Навигация по вкладкам">
-        <div class="mx-auto flex w-full max-w-7xl items-end gap-1 overflow-x-auto px-4 sm:px-6 lg:px-8">
-            <template x-for="tab in tabs" :key="tab.url">
-                <div
-                    class="group flex min-w-0 shrink-0 items-center border-r border-[#2d313e]"
-                    :class="isActive(tab) ? 'bg-[#2d313e] text-white' : 'text-gray-400'"
-                >
-                    <a :href="tab.url" class="flex min-w-0 items-center gap-2 px-3 py-2 text-xs font-semibold transition hover:text-white" :aria-current="isActive(tab) ? 'page' : null">
-                        <span class="h-2 w-2 shrink-0 bg-dota-500" aria-hidden="true"></span>
-                        <span class="max-w-[180px] truncate" x-text="tab.label"></span>
-                    </a>
+    <nav class="border-b border-[#2d313e] bg-[#1c1e26]" aria-label="Основная навигация">
+        <div class="mx-auto flex w-full max-w-7xl items-center gap-1 overflow-x-auto px-4 sm:px-6 lg:px-8">
+            <a
+                href="{{ route('home') }}"
+                class="shrink-0 px-3 py-2 text-xs font-semibold transition {{ $navRoute === 'home' ? 'bg-[#2d313e] text-white' : 'text-gray-400 hover:bg-[#111318] hover:text-white' }}"
+                @if ($navRoute === 'home') aria-current="page" @endif
+            >Главная</a>
+
+            @if ($navAccountId > 0)
+                @foreach ([
+                    'dota.player' => ['dota.player', 'Профиль'],
+                    'dota.player.matches' => ['dota.player.matches', 'Матчи'],
+                    'dota.player.heroes' => ['dota.player.heroes', 'Герои'],
+                    'dota.player.records' => ['dota.player.records', 'Рекорды'],
+                    'dota.player.peers' => ['dota.player.peers', 'Союзники'],
+                ] as $itemRoute => $item)
+                    <a
+                        href="{{ route($item[0], ['accountId' => $navAccountId]) }}"
+                        class="shrink-0 px-3 py-2 text-xs font-semibold transition {{ $navRoute === $itemRoute ? 'bg-[#2d313e] text-white' : 'text-gray-400 hover:bg-[#111318] hover:text-white' }}"
+                        @if ($navRoute === $itemRoute) aria-current="page" @endif
+                    >{{ $item[1] }}</a>
+                @endforeach
+            @endif
+
+            @if (in_array($navRoute, ['dota.match', 'dota.player.hero'], true) && $dotahubRecent)
+                <span class="shrink-0 bg-[#2d313e] px-3 py-2 text-xs font-semibold text-white" aria-current="page">{{ $dotahubRecent['label'] }}</span>
+            @endif
+
+            @if ($dotahubRecent)
+                <span class="shrink-0 px-1 text-line" aria-hidden="true">|</span>
+                <div class="relative shrink-0" x-data="recentLinks()">
                     <button
                         type="button"
-                        class="grid h-7 w-7 shrink-0 place-items-center text-base leading-none text-gray-400 transition hover:bg-[#111318] hover:text-white"
-                        @click="close(tab, $event)"
-                        :aria-label="'Закрыть вкладку ' + tab.label"
-                        title="Закрыть вкладку"
-                    >×</button>
+                        class="flex items-center gap-1 px-3 py-2 text-xs font-semibold text-gray-400 transition hover:bg-[#111318] hover:text-white"
+                        @click="open = !open"
+                        :aria-expanded="open.toString()"
+                        aria-label="Недавние страницы"
+                    >
+                        Недавние
+                        <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                    </button>
+                    <div x-show="open" @click.outside="open = false" class="absolute left-0 top-full z-50 mt-1 w-64 border border-[#2d313e] bg-[#1c1e26] p-1" x-cloak>
+                        <template x-for="item in items" :key="item.url">
+                            <a :href="item.url" class="block truncate px-2 py-1.5 text-xs text-mist-300 transition hover:bg-[#2d313e] hover:text-white" x-text="item.label"></a>
+                        </template>
+                        <p x-show="items.length === 0" class="px-2 py-2 text-xs text-mist-500">Нет недавних страниц</p>
+                    </div>
                 </div>
-            </template>
-            <a href="{{ route('home') }}" class="grid h-8 w-8 shrink-0 place-items-center text-lg leading-none text-gray-400 transition hover:bg-[#111318] hover:text-white" aria-label="Новая вкладка" title="Новая вкладка">+</a>
+            @endif
         </div>
-    </div>
+    </nav>
 
     <main class="flex-1 pb-20">
         @if (session('status'))
