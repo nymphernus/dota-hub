@@ -642,6 +642,29 @@ class DotaProfileTest extends TestCase
             && str_contains($request->body(), 'matchCount'));
     }
 
+    public function test_hero_stats_fall_back_to_match_history_when_stratz_is_disabled(): void
+    {
+        config(['services.stratz.token' => null]);
+
+        $this->fakeOpenDota(heroesResponse: []);
+
+        $response = $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]));
+
+        $response->assertOk();
+        $response->assertSee('Самые играемые герои');
+        $response->assertSee('Anti-Mage');
+        $response->assertViewHas('player', function (array $player): bool {
+            return count($player['heroes']) === 6
+                && $player['heroes'][0]['hero_id'] === 1
+                && $player['heroes'][0]['games'] === 1
+                && $player['heroes'][0]['wins'] === 1;
+        });
+
+        $this->assertTrue(collect(Http::recorded())->every(
+            fn (array $exchange) => ! str_contains($exchange[0]->url(), 'api.stratz.com')
+        ));
+    }
+
     public function test_heroes_page_renders_full_hero_table(): void
     {
         $this->fakeOpenDota();

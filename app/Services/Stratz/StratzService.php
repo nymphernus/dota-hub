@@ -35,7 +35,7 @@ class StratzService
             return [];
         }
 
-        $cacheKey = "stratz:player:{$accountId}:heroes:v3";
+        $cacheKey = "stratz:player:{$accountId}:heroes:v4";
         $cached = Cache::get($cacheKey);
 
         if (is_array($cached)) {
@@ -55,10 +55,9 @@ class StratzService
             ),
         ];
 
-        $payload = null;
-        $errors = [];
+        $attempts = [];
 
-        foreach ($queries as $countField => $query) {
+        foreach ($queries as $field => $query) {
             try {
                 $response = $this->http
                     ->withToken((string) config('services.stratz.token'))
@@ -77,11 +76,20 @@ class StratzService
                 return [];
             }
 
+            $payload = $response->json();
+
+            // Log the unmodified payload so an empty hero pool can be traced to
+            // the exact GraphQL response (including Cloudflare HTML on 403).
+            Log::info('STRATZ hero response', [
+                'account_id' => $accountId,
+                'field' => $field,
+                'status' => $response->status(),
+                'json' => is_array($payload) ? $payload : null,
+                'raw_response' => $response->body(),
+            ]);
+
             if ($response->failed()) {
-                $errors[] = [
-                    'field' => $countField,
-                    'status' => $response->status(),
-                ];
+                $attempts[] = ['field' => $field, 'status' => $response->status()];
 
                 // A Cloudflare/rate-limit response will not improve on retry.
                 if ($response->status() !== 400) {
@@ -91,45 +99,57 @@ class StratzService
                 continue;
             }
 
-            $candidate = $response->json();
-
-            if (! is_array($candidate)) {
-                break;
-            }
-
-            if (isset($candidate['errors'])) {
-                $errors[] = [
-                    'field' => $countField,
-                    'errors' => $candidate['errors'],
-                ];
+            if (! is_array($payload)) {
+                $attempts[] = ['field' => $field, 'reason' => 'invalid_json'];
 
                 continue;
             }
 
-            $payload = $candidate;
+            // GraphQL returns partial data together with `errors` for optional
+            // fields such as `names`. Do not discard a usable hero list because
+            // of an unrelated error — that was the empty-h heroes bug.
+            $rawHeroes = $payload['data']['player']['heroesPerformance']
+                ?? ($payload['data']['player']['heroes'] ?? null);
 
-            break;
+            $heroes = $this->parseHeroRows($rawHeroes);
+
+            if ($heroes !== []) {
+                Cache::put(
+                    $cacheKey,
+                    $heroes,
+                    (int) config('stats.cache.dota_player_hero', 1800)
+                );
+
+                return $heroes;
+            }
+
+            $attempts[] = [
+                'field' => $field,
+                'errors' => $payload['errors'] ?? null,
+            ];
         }
 
-        if ($payload === null) {
-            Log::warning('STRATZ hero query was rejected', [
-                'account_id' => $accountId,
-                'attempts' => $errors,
-            ]);
+        Log::warning('STRATZ hero query returned no usable data', [
+            'account_id' => $accountId,
+            'attempts' => $attempts,
+        ]);
 
-            return [];
-        }
+        return [];
+    }
 
-        $rawHeroes = $payload['data']['player']['heroesPerformance']
-            ?? ($payload['data']['player']['heroes'] ?? null);
-
-        if (! is_array($rawHeroes)) {
+    /**
+     * @param  mixed  $rows
+     * @return array<int, array{hero_id: int, games: int, win: int}>
+     */
+    private function parseHeroRows(mixed $rows): array
+    {
+        if (! is_array($rows)) {
             return [];
         }
 
         $heroes = [];
 
-        foreach ($rawHeroes as $hero) {
+        foreach ($rows as $hero) {
             if (! is_array($hero) || empty($hero['heroId'])) {
                 continue;
             }
@@ -148,12 +168,6 @@ class StratzService
         }
 
         usort($heroes, fn (array $left, array $right) => [$right['games'], $right['win']] <=> [$left['games'], $left['win']]);
-
-        Cache::put(
-            $cacheKey,
-            $heroes,
-            (int) config('stats.cache.dota_player_hero', 1800)
-        );
 
         return $heroes;
     }

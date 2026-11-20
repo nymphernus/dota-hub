@@ -418,17 +418,24 @@ class OpenDotaService
         $winLoss = $this->optionalGet('players/'.$accountId.'/wl');
         $recentMatches = $this->optionalGet('players/'.$accountId.'/recentMatches');
         $heroStats = $this->optionalGet('players/'.$accountId.'/heroes');
+        $totals = $this->optionalGet('players/'.$accountId.'/totals');
+        $matchHistory = $this->optionalGet('players/'.$accountId.'/matches', [
+            'limit' => 500,
+            'date' => self::HISTORY_DAYS,
+        ]);
 
         // OpenDota's hero endpoint is not always populated. STRATZ exposes the
         // same aggregate through GraphQL, so use it before showing an empty pool.
         if ($heroStats === []) {
             $heroStats = $this->stratz->playerHeroes($accountId);
         }
-        $totals = $this->optionalGet('players/'.$accountId.'/totals');
-        $matchHistory = $this->optionalGet('players/'.$accountId.'/matches', [
-            'limit' => 500,
-            'date' => self::HISTORY_DAYS,
-        ]);
+
+        // If STRATZ is blocked (403 Cloudflare) or returns no rows, aggregate the
+        // cached match history instead of leaving "Самые играемые герои" empty.
+        if ($heroStats === []) {
+            $heroStats = $this->heroesFromHistory($matchHistory);
+        }
+
         $peers = $recentMatches === []
             ? []
             : $this->optionalGet('players/'.$accountId.'/peers');
@@ -2360,6 +2367,50 @@ class OpenDotaService
         } catch (\Throwable) {
             return null;
         }
+    }
+
+    /**
+     * Last-resort hero aggregate built from matches already fetched from
+     * OpenDota. This is real history data, not invented placeholder rows, and
+     * keeps the hero block useful when both hero endpoints fail.
+     *
+     * @param  array<int, mixed>  $matches
+     * @return array<int, array{hero_id: int, games: int, win: int, last_played: int}>
+     */
+    private function heroesFromHistory(array $matches): array
+    {
+        $aggregated = [];
+
+        foreach ($matches as $match) {
+            if (! is_array($match)) {
+                continue;
+            }
+
+            $heroId = (int) ($match['hero_id'] ?? 0);
+
+            if ($heroId <= 0) {
+                continue;
+            }
+
+            $isRadiant = (int) ($match['player_slot'] ?? 0) < 128;
+            $win = (bool) ($match['radiant_win'] ?? false) === $isRadiant;
+            $playedAt = (int) ($match['start_time'] ?? 0);
+
+            $aggregated[$heroId] ??= [
+                'hero_id' => $heroId,
+                'games' => 0,
+                'win' => 0,
+                'last_played' => 0,
+            ];
+            $aggregated[$heroId]['games']++;
+            $aggregated[$heroId]['win'] += (int) $win;
+            $aggregated[$heroId]['last_played'] = max($aggregated[$heroId]['last_played'], $playedAt);
+        }
+
+        $rows = array_values($aggregated);
+        usort($rows, fn (array $left, array $right) => [$right['games'], $right['win']] <=> [$left['games'], $left['win']]);
+
+        return $rows;
     }
 
     /**

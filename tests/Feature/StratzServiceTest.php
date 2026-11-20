@@ -54,6 +54,36 @@ class StratzServiceTest extends TestCase
             && str_contains($request->body(), '70388657'));
     }
 
+    public function test_player_heroes_accepts_partial_data_with_errors_and_logs_the_raw_response(): void
+    {
+        config(['services.stratz.token' => 'test-token']);
+        Cache::flush();
+
+        Http::fake([
+            'api.stratz.com/graphql' => Http::response([
+                'errors' => [['message' => "Cannot query field 'names' on type 'PlayerType'."]],
+                'data' => ['player' => ['heroesPerformance' => [
+                    ['heroId' => 128, 'matchCount' => 2, 'winCount' => 1],
+                ]]],
+            ]),
+        ]);
+
+        Log::shouldReceive('info')->once()->withArgs(function (string $message, array $context): bool {
+            return $message === 'STRATZ hero response'
+                && $context['account_id'] === 70388657
+                && $context['status'] === 200
+                && str_contains($context['raw_response'], 'heroesPerformance')
+                && isset($context['json']['data']['player']['heroesPerformance']);
+        });
+
+        $heroes = $this->app->make(StratzService::class)->playerHeroes(70388657);
+
+        $this->assertSame([
+            ['hero_id' => 128, 'games' => 2, 'win' => 1],
+        ], $heroes);
+        Http::assertSentCount(1);
+    }
+
     public function test_player_heroes_falls_back_to_the_legacy_heroes_field(): void
     {
         config(['services.stratz.token' => 'test-token']);
