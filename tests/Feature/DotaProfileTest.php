@@ -86,6 +86,9 @@ class DotaProfileTest extends TestCase
         $response->assertDontSee('<radialGradient', false);
         $response->assertDontSee('>героев</text>', false);
         $response->assertSee('Колесо героев');
+        $response->assertSee('id="wheel-tooltip"', false);
+        $response->assertSee('data-wheel-tooltip', false);
+        $response->assertSee('data-hero-image=', false);
         $response->assertDontSee('Hero wheel');
         $response->assertDontSee('25 МАТЧЕЙ');
         $response->assertSee('aria-label="Матчей в колесе: 6"', false);

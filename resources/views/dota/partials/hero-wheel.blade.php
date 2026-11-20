@@ -81,6 +81,8 @@
     }
 @endphp
 
+<div id="wheel-tooltip" class="hidden fixed z-50 bg-[#1c1e26] border border-[#2d313e] rounded p-2 text-white shadow-xl flex items-center gap-3"></div>
+
 @if ($sectors === [])
     <div class="mt-4 grid h-48 place-items-center rounded-none border border-dashed border-line text-xs text-mist-400">
         Нет данных
@@ -107,7 +109,16 @@
                 role="link"
                 aria-label="{{ $sector['name'] }}: {{ $sector['games'] }} игр, {{ $sector['winrate'] }}% побед"
             >
-                <g class="hero-wheel__slice" role="img" aria-label="{{ $sector['name'] }}: {{ $sector['games'] }} игр, {{ $sector['winrate'] }}% побед">
+                <g
+                    class="hero-wheel__slice"
+                    role="img"
+                    aria-label="{{ $sector['name'] }}: {{ $sector['games'] }} игр, {{ $sector['winrate'] }}% побед"
+                    data-wheel-tooltip
+                    data-hero-name="{{ $sector['name'] }}"
+                    data-hero-image="{{ $sector['icon'] }}"
+                    data-hero-games="{{ $sector['games'] }}"
+                    data-hero-winrate="{{ $sector['winrate'] }}"
+                >
                     <title>{{ $sector['name'] }}: {{ $sector['games'] }} игр, {{ $sector['winrate'] }}% побед</title>
                     <path
                         class="hero-wheel__sector"

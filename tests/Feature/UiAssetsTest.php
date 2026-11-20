@@ -10,6 +10,7 @@ class UiAssetsTest extends TestCase
     {
         $source = (string) file_get_contents(resource_path('views/dota/partials/hero-wheel.blade.php'));
         $css = (string) file_get_contents(resource_path('css/app.css'));
+        $javascript = (string) file_get_contents(resource_path('js/heatmap.js'));
 
         $this->assertStringContainsString('<svg', $source);
         $this->assertStringContainsString('<image', $source);
@@ -30,7 +31,7 @@ class UiAssetsTest extends TestCase
 
         // The icon lives in the same group as the sector, and the group itself
         // is transformed so both move together on hover.
-        $slicePosition = strpos($source, '<g class="hero-wheel__slice"');
+        $slicePosition = strpos($source, "class=\"hero-wheel__slice\"");
         $imagePosition = strpos($source, '<image');
         $groupEndPosition = strpos($source, '</g>', $slicePosition);
         $this->assertNotFalse($slicePosition);
@@ -54,6 +55,20 @@ class UiAssetsTest extends TestCase
         $this->assertStringNotContainsString('<canvas', $source);
         $this->assertStringNotContainsString('chart.js', $source);
         $this->assertStringNotContainsString('drawImage', $source);
+
+        $this->assertStringContainsString('id="wheel-tooltip" class="hidden fixed z-50 bg-[#1c1e26] border border-[#2d313e] rounded p-2 text-white shadow-xl flex items-center gap-3"', $source);
+        $this->assertStringContainsString('data-wheel-tooltip', $source);
+        $this->assertStringContainsString('data-hero-image="{{ $sector[\'icon\'] }}"', $source);
+        $this->assertStringContainsString('data-hero-games="{{ $sector[\'games\'] }}"', $source);
+        $this->assertStringContainsString('data-hero-winrate="{{ $sector[\'winrate\'] }}"', $source);
+        $this->assertStringContainsString("document.getElementById('wheel-tooltip')", $javascript);
+        $this->assertStringContainsString("image.className = 'w-10 h-10 object-cover'", $javascript);
+        $this->assertStringContainsString("name.className = 'font-bold'", $javascript);
+        $this->assertStringContainsString("details.className = 'text-sm text-gray-400'", $javascript);
+        $this->assertStringContainsString(' игр, ${', $javascript);
+        $this->assertStringContainsString("addEventListener('mouseenter'", $javascript);
+        $this->assertStringContainsString("addEventListener('mousemove'", $javascript);
+        $this->assertStringContainsString("addEventListener('mouseleave'", $javascript);
     }
 
     public function test_heatmap_uses_native_date_for_weekdays_months_and_columns(): void
@@ -142,7 +157,12 @@ class UiAssetsTest extends TestCase
             $source = (string) file_get_contents($file);
 
             $this->assertDoesNotMatchRegularExpression('/\brounded-(xl|2xl|3xl|full)\b/', $source, $file);
-            $this->assertDoesNotMatchRegularExpression('/\b(?:[a-z-]+:)*shadow(?:-[^\s"\']+)?\b/', $source, $file);
+
+            // The rich wheel tooltip is the one intentionally elevated layer.
+            $shadowSource = str_ends_with($file, 'hero-wheel.blade.php')
+                ? str_replace('shadow-xl', '', $source)
+                : $source;
+            $this->assertDoesNotMatchRegularExpression('/\b(?:[a-z-]+:)*shadow(?:-[^\s"\']+)?\b/', $shadowSource, $file);
 
             preg_match_all('/\b(?:[a-z-]+:)*ring(?:-[^\s"\']+)?\b/', $source, $ringMatches);
 
