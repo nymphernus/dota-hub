@@ -89,11 +89,15 @@ class UiAssetsTest extends TestCase
         $this->assertStringContainsString('border-bottom: 1px solid #2a3042;', $css);
         $this->assertStringContainsString('box-shadow: none !important', $css);
         $this->assertStringContainsString('border-radius: 8px !important', $css);
-        $this->assertStringContainsString('font-weight: 600 !important', $css);
+        $this->assertStringContainsString('font-weight: 700 !important', $css);
+        $this->assertStringContainsString('color: #ffffff !important', $css);
+        $this->assertStringContainsString('--color-green-500: #10b981', $css);
+        $this->assertStringContainsString('--color-red-500: #ef4444', $css);
         $this->assertStringNotContainsString('radial-gradient', $css);
         $this->assertStringNotContainsString('--color-radar-', $css);
 
         $this->assertStringContainsString('fonts.googleapis.com/css2?family=Inter', $layout);
+        $this->assertStringContainsString('border-b border-[#2a3042] bg-[#1b1f2e]/90 backdrop-blur-md', $layout);
         $this->assertStringContainsString('bg-[#1b1f2e] border border-[#2a3042] px-3 py-1.5 rounded-md flex items-center gap-2', $layout);
         $this->assertStringContainsString('font-sans font-bold text-xl tracking-tighter text-white">dotahub</span>', $layout);
         $this->assertStringNotContainsString('>DotaHub</span>', $layout);
@@ -130,5 +134,20 @@ class UiAssetsTest extends TestCase
             $this->assertStringNotContainsString('blur-3xl', $source, $file);
             $this->assertStringNotContainsString('bg-gradient', $source, $file);
         }
+    }
+
+    public function test_match_rows_use_dense_zebra_striping_with_result_borders(): void
+    {
+        $source = (string) file_get_contents(resource_path('views/dota/partials/match-row.blade.php'));
+        $matches = (string) file_get_contents(resource_path('views/dota/matches.blade.php'));
+
+        $this->assertStringContainsString('odd:bg-[#1b1f2e] even:bg-[#0f111a]', $source);
+        $this->assertStringContainsString('border-l-4 border-green-500', $source);
+        $this->assertStringContainsString('border-l-4 border-red-500', $source);
+        $this->assertStringContainsString('px-3 py-1.5 sm:px-4', $source);
+        $this->assertStringNotContainsString('bg-emerald-500/[0.055]', $source);
+        $this->assertStringNotContainsString('bg-rose-500/[0.055]', $source);
+        $this->assertStringNotContainsString('py-2.5', $source);
+        $this->assertStringNotContainsString('py-2.5', $matches);
     }
 }

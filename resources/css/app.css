@@ -31,6 +31,8 @@
 
     --color-win: #10b981;
     --color-loss: #ef4444;
+    --color-green-500: #10b981;
+    --color-red-500: #ef4444;
 
     --color-dota-300: #ef4444;
     --color-dota-400: #ef4444;
@@ -94,9 +96,9 @@
     h2,
     h3,
     h4 {
-        font-weight: 600 !important;
+        font-weight: 700 !important;
         letter-spacing: 0.025em !important;
-        color: #e2e8f0 !important;
+        color: #ffffff !important;
     }
 
     :where(a, button, [tabindex]):focus-visible {

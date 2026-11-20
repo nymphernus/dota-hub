@@ -18,7 +18,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="flex min-h-screen flex-col">
-    <header class="sticky top-0 z-40 border-b border-line bg-ink-950/90 ">
+    <header class="sticky top-0 z-40 border-b border-[#2a3042] bg-[#1b1f2e]/90 backdrop-blur-md">
         <div class="mx-auto flex h-16 w-full max-w-7xl items-center px-4 sm:px-6 lg:px-8">
             <a href="{{ route('home') }}" class="bg-[#1b1f2e] border border-[#2a3042] px-3 py-1.5 rounded-md flex items-center gap-2" aria-label="dotahub — на главную">
                 <span class="font-sans font-bold text-xl tracking-tighter text-white">dotahub</span>

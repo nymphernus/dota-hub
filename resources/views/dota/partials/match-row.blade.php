@@ -16,9 +16,7 @@
     $roleTitle = $laneLabels[$laneRole] ?? ($roleLabel ? ucfirst((string) $roleLabel) : 'Роль не определена');
 @endphp
 <tr @class([
-    'group transition',
-    'bg-emerald-500/[0.055] hover:bg-emerald-500/[0.10]' => $match['win'],
-    'bg-rose-500/[0.055] hover:bg-rose-500/[0.10]' => ! $match['win'],
+    'group transition odd:bg-[#1b1f2e] even:bg-[#0f111a] hover:bg-ink-700/60',
 ])
     @if ($matchUrl)
         data-href="{{ $matchUrl }}"
@@ -29,9 +27,9 @@
     @endif
 >
     <td @class([
-        'px-3 py-2.5 sm:px-4',
-        'border-l-2 border-emerald-400/70' => $match['win'],
-        'border-l-2 border-rose-400/70' => ! $match['win'],
+        'px-3 py-1.5 sm:px-4',
+        'border-l-4 border-green-500' => $match['win'],
+        'border-l-4 border-red-500' => ! $match['win'],
     ])>
         <div class="flex items-center gap-2.5">
             @if ($heroUrl)
@@ -77,7 +75,7 @@
         </div>
     </td>
 
-    <td class="px-2 py-2.5">
+    <td class="px-2 py-1.5">
         @if ($roleLabel)
             <span class="inline-flex items-center rounded bg-ink-900/40 px-1.5 py-1 text-[10px] font-semibold text-mist-200" title="{{ $roleTitle }}">
                 {{ $laneLabels[$laneRole] ?? ucfirst((string) $roleLabel) }}
@@ -87,17 +85,17 @@
         @endif
     </td>
 
-    <td class="px-2 py-2.5 font-mono text-[12px] tabular-nums">
+    <td class="px-2 py-1.5 font-mono text-[12px] tabular-nums">
         <span class="text-emerald-300">{{ $match['kills'] }}</span><span class="text-mist-500/60">/</span><span class="text-rose-300">{{ $match['deaths'] }}</span><span class="text-mist-500/60">/</span><span class="text-sky-300">{{ $match['assists'] }}</span>
         <p class="mt-0.5 text-[9px] text-mist-500">KDA {{ $match['kda'] ?? '—' }}</p>
     </td>
 
-    <td class="px-2 py-2.5 font-mono text-[12px] tabular-nums text-mist-300">
+    <td class="px-2 py-1.5 font-mono text-[12px] tabular-nums text-mist-300">
         {{ $match['gpm'] ?: '—' }} <span class="text-mist-500/60">/</span> {{ $match['xpm'] ?: '—' }}
         <p class="mt-0.5 text-[9px] text-mist-500">GPM / XPM</p>
     </td>
 
-    <td class="px-2 py-2.5">
+    <td class="px-2 py-1.5">
         <div class="flex items-center gap-0.5">
             @for ($slot = 0; $slot < 6; $slot++)
                 @php $item = $match['items'][$slot] ?? null; @endphp
@@ -114,7 +112,7 @@
         </div>
     </td>
 
-    <td class="px-3 py-2.5 text-right text-[10px] text-mist-400 sm:px-4">
+    <td class="px-3 py-1.5 text-right text-[10px] text-mist-400 sm:px-4">
         @if ($startedAt)
             <time datetime="{{ $match['started_at'] }}" title="{{ $startedAt->format('d.m.Y H:i') }}">
                 <span class="block font-mono text-[12px] text-mist-200">{{ $startedAt->format('H:i') }}</span>
