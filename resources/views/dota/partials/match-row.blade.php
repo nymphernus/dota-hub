@@ -35,7 +35,7 @@
     ])>
         <div class="flex items-center gap-2.5">
             @if ($heroUrl)
-                <a href="{{ $heroUrl }}" class="relative block h-10 w-16 shrink-0 overflow-hidden rounded-md bg-ink-800 ring-1 ring-white/10 transition group-hover:ring-gold-400/60" onclick="event.stopPropagation()" aria-label="Статистика героя {{ $match['hero_name'] }}">
+                <a href="{{ $heroUrl }}" class="relative block h-10 w-16 shrink-0 overflow-hidden rounded-md bg-ink-800   transition " onclick="event.stopPropagation()" aria-label="Статистика героя {{ $match['hero_name'] }}">
                     @if ($match['hero_image'])
                         <img src="{{ $match['hero_image'] }}" alt="{{ $match['hero_name'] }}" class="h-full w-full object-cover" loading="lazy">
                     @else
@@ -46,31 +46,31 @@
                     @endif
                 </a>
             @else
-                <div class="h-10 w-16 shrink-0 overflow-hidden rounded-md bg-ink-800 ring-1 ring-white/10"></div>
+                <div class="h-10 w-16 shrink-0 overflow-hidden rounded-md bg-ink-800  "></div>
             @endif
 
             <div class="min-w-0">
                 <div class="flex items-center gap-2">
                     @if ($heroUrl)
-                        <a href="{{ $heroUrl }}" onclick="event.stopPropagation()" class="truncate text-[12px] font-bold text-white transition group-hover:text-gold-200">{{ $match['hero_name'] }}</a>
+                        <a href="{{ $heroUrl }}" onclick="event.stopPropagation()" class="truncate text-[12px] font-bold text-mist-200 transition group-hover:text-gold-200">{{ $match['hero_name'] }}</a>
                     @else
-                        <span class="truncate text-[12px] font-bold text-white">{{ $match['hero_name'] }}</span>
+                        <span class="truncate text-[12px] font-bold text-mist-200">{{ $match['hero_name'] }}</span>
                     @endif
                     <span @class([
-                        'rounded px-1.5 py-0.5 text-[9px] font-black tracking-wide',
+                        'rounded px-1.5 py-0.5 text-[9px] font-semibold tracking-wide',
                         'bg-emerald-500/15 text-emerald-300' => $match['win'],
                         'bg-rose-500/15 text-rose-300' => ! $match['win'],
                     ])>{{ $match['win'] ? 'W' : 'L' }}</span>
                 </div>
                 <div class="mt-1 flex flex-wrap items-center gap-1.5 text-[9px] text-mist-500">
                     <span class="font-mono">{{ $match['duration_label'] ?? '—' }}</span>
-                    <span class="text-mist-600">·</span>
+                    <span class="text-mist-500">·</span>
                     @php $modeLabel = $match['game_mode_label'] ?? null; @endphp
                     <span class="{{ ($match['match_type_label'] ?? '') === 'Ranked' ? 'font-semibold text-amber-300' : (($match['match_type_label'] ?? '') === 'Turbo' ? 'font-semibold text-accent-300' : '') }}">
                         {{ $match['match_type_label'] ?? 'Normal' }}
                     </span>
                     @if ($modeLabel && $modeLabel !== 'All Pick' && $modeLabel !== ($match['match_type_label'] ?? null))
-                        <span class="text-mist-600">·</span>
+                        <span class="text-mist-500">·</span>
                         <span>{{ $modeLabel }}</span>
                     @endif
                 </div>
@@ -80,7 +80,7 @@
 
     <td class="px-2 py-2.5">
         @if ($roleLabel)
-            <span class="inline-flex items-center rounded bg-white/[0.04] px-1.5 py-1 text-[10px] font-semibold text-mist-200" title="{{ $roleTitle }}">
+            <span class="inline-flex items-center rounded bg-ink-900/40 px-1.5 py-1 text-[10px] font-semibold text-mist-200" title="{{ $roleTitle }}">
                 {{ $laneLabels[$laneRole] ?? ucfirst((string) $roleLabel) }}
             </span>
         @else
@@ -103,13 +103,13 @@
             @for ($slot = 0; $slot < 6; $slot++)
                 @php $item = $match['items'][$slot] ?? null; @endphp
                 @if ($item && $item['image'])
-                    <span class="block h-6 w-6 overflow-hidden rounded bg-ink-800 ring-1 ring-white/10" title="{{ $item['name'] }}">
+                    <span class="block h-6 w-6 overflow-hidden rounded bg-ink-800  " title="{{ $item['name'] }}">
                         <img src="{{ $item['image'] }}" alt="{{ $item['name'] }}" class="h-full w-full object-cover" loading="lazy">
                     </span>
                 @elseif ($item)
-                    <span class="grid h-6 w-6 place-items-center rounded bg-ink-800 text-[8px] font-bold text-mist-400 ring-1 ring-white/10" title="{{ $item['name'] }}">?</span>
+                    <span class="grid h-6 w-6 place-items-center rounded bg-ink-800 text-[8px] font-bold text-mist-400  " title="{{ $item['name'] }}">?</span>
                 @else
-                    <span class="block h-6 w-6 rounded border border-dashed border-white/[0.08] bg-white/[0.015]"></span>
+                    <span class="block h-6 w-6 rounded border border-dashed border-line bg-ink-900/15"></span>
                 @endif
             @endfor
         </div>

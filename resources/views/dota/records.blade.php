@@ -13,7 +13,7 @@
             <span class="badge text-mist-400" x-text="tab === 'ranked' ? '{{ count($rankedRecords) }} достижений' : '{{ count($records) }} достижений'"></span>
         </div>
 
-        <div class="mt-3 inline-flex rounded-lg bg-white/[0.04] p-1" role="tablist" aria-label="Тип рекордов">
+        <div class="mt-3 inline-flex rounded-lg bg-ink-900/40 p-1" role="tablist" aria-label="Тип рекордов">
             <button
                 type="button"
                 role="tab"

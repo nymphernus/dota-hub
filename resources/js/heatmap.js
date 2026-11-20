@@ -15,12 +15,12 @@ if (heatmapPayload && heatmapRoot) {
     const monthLabels = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сент', 'Окт', 'Ноя', 'Дек'];
     const tones = {
         future: 'bg-transparent text-transparent',
-        empty: 'bg-white/[0.04] ring-1 ring-inset ring-white/[0.03] text-transparent',
-        win: 'bg-emerald-500 ring-1 ring-inset ring-emerald-300/40 text-emerald-950',
-        loss: 'bg-rose-500 ring-1 ring-inset ring-rose-300/40 text-rose-950',
-        loss_majority: 'bg-orange-500 ring-1 ring-inset ring-orange-300/40 text-orange-950',
-        win_majority: 'bg-yellow-400 ring-1 ring-inset ring-yellow-200/50 text-yellow-950',
-        mixed: 'bg-amber-400 ring-1 ring-inset ring-amber-200/50 text-amber-950',
+        empty: 'bg-ink-900/40    text-transparent',
+        win: 'bg-emerald-500    text-emerald-950',
+        loss: 'bg-rose-500    text-rose-950',
+        loss_majority: 'bg-orange-500    text-orange-950',
+        win_majority: 'bg-yellow-400    text-yellow-950',
+        mixed: 'bg-amber-400    text-amber-950',
     };
     const DAY_MS = 86400000;
 
@@ -88,7 +88,7 @@ if (heatmapPayload && heatmapRoot) {
             column.forEach((day, row) => {
                 if (! day) {
                     const empty = document.createElement('span');
-                    empty.className = 'aspect-square rounded-[2px] bg-white/[0.04] ring-1 ring-inset ring-white/[0.03]';
+                    empty.className = 'aspect-square rounded-[2px] bg-ink-900/40   ';
                     empty.setAttribute('aria-hidden', 'true');
                     cells.push(empty);
                     return;
@@ -97,7 +97,7 @@ if (heatmapPayload && heatmapRoot) {
                 const count = Number(day.count) || 0;
                 const title = `${day.label}: ${count} игр, ${Number(day.wins) || 0} побед, ${Number(day.losses) || 0} поражений`;
                 const cell = document.createElement('div');
-                cell.className = `flex aspect-square items-center justify-center rounded-[2px] text-[11px] font-black leading-none transition hover:scale-125 hover:ring-white/30 ${tones[day.level] || tones.empty}`;
+                cell.className = `flex aspect-square items-center justify-center rounded-[2px] text-[11px] font-semibold leading-none transition hover:scale-125  ${tones[day.level] || tones.empty}`;
                 cell.dataset.date = day.date;
                 cell.dataset.count = String(count);
                 cell.dataset.weekday = weekdayLabels[row];

@@ -49,7 +49,7 @@ class MatchTest extends TestCase
         $response->assertDontSee('Вы');
         $response->assertSee('Ranked');
         $response->assertSee('All Pick');
-        $response->assertSee('ring-sky-500/50', false);
+        $response->assertSee('bg-ink-700/60', false);
         $response->assertDontSee('P1');
         $response->assertDontSee('Party #', false);
         $response->assertSee('Safe');
@@ -64,7 +64,7 @@ class MatchTest extends TestCase
         $response->assertDontSee('bg-blue-600', false);
         $response->assertDontSee('>P1<', false);
         $response->assertSee('Игрок / герой');
-        $response->assertSee('text-lg font-bold text-white', false);
+        $response->assertSee('text-lg font-bold text-mist-200', false);
         $response->assertSee('text-gray-400 text-sm', false);
         $response->assertSee('Команда Dire', false);
         $response->assertSee('Пики и баны');

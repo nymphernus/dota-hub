@@ -82,8 +82,12 @@ class UiAssetsTest extends TestCase
         $this->assertStringContainsString('--color-win: #10b981', $css);
         $this->assertStringContainsString('--color-loss: #ef4444', $css);
         $this->assertStringContainsString("--font-sans: 'Inter'", $css);
-        $this->assertStringContainsString('@apply rounded-xl bg-ink-800 shadow-lg shadow-black/25;', $css);
-        $this->assertStringContainsString('border-b border-line', $css);
+        $this->assertStringContainsString('@apply rounded-lg border border-line bg-ink-800;', $css);
+        $this->assertStringContainsString('border-bottom: 1px solid #2a3042;', $css);
+        $this->assertStringContainsString('box-shadow: none !important', $css);
+        $this->assertStringContainsString('border-radius: 8px !important', $css);
+        $this->assertStringContainsString('font-weight: 600 !important', $css);
+        $this->assertStringNotContainsString('radial-gradient', $css);
         $this->assertStringNotContainsString('--color-radar-', $css);
 
         $this->assertStringContainsString('fonts.googleapis.com/css2?family=Inter', $layout);
@@ -97,5 +101,28 @@ class UiAssetsTest extends TestCase
         $this->assertStringContainsString('resources/js/heatmap.js', $vite);
         $this->assertStringNotContainsString('resources/js/charts.js', $vite);
         $this->assertStringNotContainsString('chart.js', $package);
+    }
+
+    public function test_all_views_use_flat_eight_pixel_radius_and_no_shadows(): void
+    {
+        $files = glob(resource_path('views/*/*.blade.php'));
+        $files = array_merge($files, glob(resource_path('views/*.blade.php')));
+        $files = array_merge($files, glob(resource_path('views/components/*.blade.php')));
+        $files = array_merge($files, glob(resource_path('views/errors/*.blade.php')));
+        $files = array_merge($files, glob(resource_path('views/dota/partials/*.blade.php')));
+        $files = array_merge($files, glob(resource_path('views/vendor/pagination/*.blade.php')));
+        $files = array_unique($files);
+
+        $this->assertNotSame([], $files);
+
+        foreach ($files as $file) {
+            $source = (string) file_get_contents($file);
+
+            $this->assertDoesNotMatchRegularExpression('/\brounded-(xl|2xl|3xl|full)\b/', $source, $file);
+            $this->assertDoesNotMatchRegularExpression('/\b(?:[a-z-]+:)*(?:shadow|ring)(?:-[^\s"\']+)?/', $source, $file);
+            $this->assertDoesNotMatchRegularExpression('/\bborder-white(?:\/|\b)/', $source, $file);
+            $this->assertStringNotContainsString('blur-3xl', $source, $file);
+            $this->assertStringNotContainsString('bg-gradient', $source, $file);
+        }
     }
 }

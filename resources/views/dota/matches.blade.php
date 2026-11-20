@@ -108,7 +108,7 @@
         </section>
 
         <section class="card mt-4 overflow-hidden">
-            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] px-4 py-3 sm:px-5">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3 sm:px-5">
                 <p class="text-[11px] text-mist-500">
                     @if ($matches->total() > 0)
                         Показаны {{ $matches->firstItem() }}–{{ $matches->lastItem() }} из {{ $matches->total() }}
@@ -116,7 +116,7 @@
                         Ничего не найдено
                     @endif
                 </p>
-                <span class="badge border-white/10 bg-white/5 text-mist-400">{{ number_format($matches->total(), 0, '.', ' ') }} матчей</span>
+                <span class="badge border-line bg-ink-900/50 text-mist-400">{{ number_format($matches->total(), 0, '.', ' ') }} матчей</span>
             </div>
 
             @if ($matches->isEmpty())
@@ -134,7 +134,7 @@
                                 <th class="px-3 py-2.5 text-right font-semibold sm:px-4">Дата</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-white/[0.04]">
+                        <tbody class="table-rows">
                             @foreach ($matches as $match)
                                 @include('dota.partials.match-row', ['match' => $match, 'accountId' => $player['account_id']])
                             @endforeach

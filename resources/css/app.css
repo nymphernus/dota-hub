@@ -16,6 +16,7 @@
     --color-mist-300: #cbd5e1;
     --color-mist-400: #8b94a5;
     --color-mist-500: #64748b;
+    --color-mist-600: #64748b;
 
     --color-gold-100: #fdf3d3;
     --color-gold-200: #f7e3a1;
@@ -34,6 +35,31 @@
     --color-dota-300: #ef4444;
     --color-dota-400: #ef4444;
     --color-dota-500: #ef4444;
+
+    /* Legacy utility names are mapped onto the flat Dotabuff palette so old
+       colour classes cannot reintroduce off-brand blues, greens or oranges. */
+    --color-emerald-300: #10b981;
+    --color-emerald-400: #10b981;
+    --color-emerald-500: #10b981;
+    --color-emerald-600: #10b981;
+    --color-rose-200: #ef4444;
+    --color-rose-300: #ef4444;
+    --color-rose-400: #ef4444;
+    --color-rose-500: #ef4444;
+    --color-rose-600: #ef4444;
+    --color-sky-300: #3b82f6;
+    --color-sky-400: #3b82f6;
+    --color-sky-500: #3b82f6;
+    --color-amber-300: #e2b02b;
+    --color-amber-400: #e2b02b;
+    --color-amber-500: #e2b02b;
+    --color-orange-300: #e2b02b;
+    --color-orange-400: #e2b02b;
+    --color-orange-500: #e2b02b;
+    --color-slate-300: #e2e8f0;
+    --color-slate-400: #8b94a5;
+    --color-slate-500: #64748b;
+    --color-slate-600: #64748b;
 }
 
 @layer base {
@@ -44,12 +70,38 @@
 
     body {
         @apply bg-ink-900 font-sans text-mist-200 antialiased;
-        background-image:
-            radial-gradient(52% 34% at 50% -8%, rgba(226, 176, 43, 0.1), transparent 70%),
-            radial-gradient(38% 26% at 92% 4%, rgba(59, 130, 246, 0.07), transparent 70%),
-            radial-gradient(34% 24% at 4% 32%, rgba(239, 68, 68, 0.04), transparent 70%);
-        background-attachment: fixed;
         min-height: 100vh;
+    }
+
+    /* Flat design guardrails: no shadows, no radius above 8px, no gradient text. */
+    *,
+    *::before,
+    *::after {
+        box-shadow: none !important;
+        text-shadow: none !important;
+    }
+
+    :where(
+        [class*="rounded-xl"],
+        [class*="rounded-2xl"],
+        [class*="rounded-3xl"],
+        [class*="rounded-full"]
+    ) {
+        border-radius: 8px !important;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4 {
+        font-weight: 600 !important;
+        letter-spacing: 0.025em !important;
+        color: #e2e8f0 !important;
+    }
+
+    :where(a, button, [tabindex]):focus-visible {
+        outline: 2px solid #e2b02b;
+        outline-offset: 2px;
     }
 
     [x-cloak] {
@@ -57,7 +109,7 @@
     }
 
     ::selection {
-        @apply bg-gold-400/30 text-white;
+        @apply bg-gold-400/30 text-mist-200;
     }
 
     ::-webkit-scrollbar {
@@ -71,7 +123,7 @@
 
     ::-webkit-scrollbar-thumb {
         background: #30374c;
-        border-radius: 999px;
+        border-radius: 8px;
     }
 
     ::-webkit-scrollbar-thumb:hover {
@@ -85,7 +137,7 @@
 
 @layer components {
     .card {
-        @apply rounded-xl bg-ink-800 shadow-lg shadow-black/25;
+        @apply rounded-lg border border-line bg-ink-800;
     }
 
     .card-hover {
@@ -97,7 +149,7 @@
     }
 
     .header-search.is-open {
-        @apply bg-white/[0.05];
+        @apply bg-ink-900/50;
     }
 
     .label {
@@ -105,19 +157,19 @@
     }
 
     .btn {
-        @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold transition duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-900 disabled:cursor-not-allowed disabled:opacity-60;
+        @apply inline-flex items-center justify-center gap-2 rounded-lg border border-line px-4 py-2.5 text-sm font-semibold transition duration-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60;
     }
 
     .btn-primary {
-        @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-ink-950 transition duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-300/70 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-900 disabled:cursor-not-allowed disabled:opacity-60 bg-gold-400 shadow-[0_10px_30px_-12px_rgba(226,176,43,0.9)] hover:bg-gold-300 active:bg-gold-500;
+        @apply inline-flex items-center justify-center gap-2 rounded-lg border border-gold-500 px-4 py-2.5 text-sm font-semibold text-ink-950 transition duration-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 bg-gold-400 hover:bg-gold-300 active:bg-gold-500;
     }
 
     .btn-ghost {
-        @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-mist-200 transition duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-900 disabled:cursor-not-allowed disabled:opacity-60 bg-white/[0.04] hover:bg-white/[0.09];
+        @apply inline-flex items-center justify-center gap-2 rounded-lg border border-line px-4 py-2.5 text-sm font-semibold text-mist-200 transition duration-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 bg-ink-900/40 hover:bg-ink-700;
     }
 
     .badge {
-        @apply inline-flex items-center gap-1.5 rounded-md bg-white/[0.05] px-2 py-1 text-[11px] font-semibold;
+        @apply inline-flex items-center gap-1.5 rounded-md border border-line bg-ink-900/50 px-2 py-1 text-[11px] font-semibold text-mist-400;
     }
 
     .hero-wheel__slice {
@@ -139,11 +191,11 @@
     }
 
     .input {
-        @apply w-full rounded-lg bg-white/[0.05] px-4 py-3 text-sm text-white placeholder:text-mist-500 transition focus:outline-none focus:ring-2 focus:ring-gold-400/25;
+        @apply w-full rounded-lg border border-line bg-ink-900/50 px-4 py-3 text-sm text-mist-200 placeholder:text-mist-500 transition focus:outline-none;
     }
 
     .select-control {
-        @apply w-full appearance-none rounded-lg bg-ink-900/80 py-2.5 pl-3 pr-9 text-sm font-semibold text-mist-200 ring-1 ring-inset ring-line transition hover:ring-gold-400/40 focus:outline-none focus:ring-2 focus:ring-gold-400/60;
+        @apply w-full appearance-none rounded-lg border border-line bg-ink-900/80 py-2.5 pl-3 pr-9 text-sm font-semibold text-mist-200 transition focus:outline-none;
     }
 
     .select-control option {
@@ -151,15 +203,19 @@
     }
 
     .table-head {
-        @apply border-b border-line bg-white/[0.025] text-left text-[10px] font-semibold uppercase tracking-[0.16em] text-mist-400;
+        @apply border-b border-line bg-ink-900/25 text-left text-[10px] font-semibold uppercase tracking-[0.16em] text-mist-400;
+    }
+
+    .table-rows tr {
+        border-bottom: 1px solid #2a3042;
     }
 
     .nav-link {
-        @apply rounded-lg px-3 py-2 text-sm font-medium text-mist-300 transition hover:bg-white/5 hover:text-white;
+        @apply rounded-lg px-3 py-2 text-sm font-medium text-mist-300 transition hover:bg-ink-700 hover:text-mist-200;
     }
 
     .tab-button {
-        @apply inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-mist-400 transition hover:bg-white/[0.05] hover:text-white;
+        @apply inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-mist-400 transition hover:bg-ink-900/50 hover:text-mist-200;
     }
 
     .tab-button-active {

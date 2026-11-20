@@ -42,21 +42,18 @@
 @section('content')
     <div class="mx-auto w-full max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">
         <nav class="mb-4 flex items-center gap-2 text-[11px] text-mist-500" aria-label="Хлебные крошки">
-            <a href="{{ route('home') }}" class="transition hover:text-white">Главная</a>
+            <a href="{{ route('home') }}" class="transition hover:text-mist-200">Главная</a>
             <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke-linecap="round" /></svg>
             <span class="text-mist-400">Dota 2</span>
             @if ($profilePlayerId)
                 <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke-linecap="round" /></svg>
-                <a href="{{ route('dota.player', ['accountId' => $profilePlayerId]) }}" class="transition hover:text-white">Профиль игрока</a>
+                <a href="{{ route('dota.player', ['accountId' => $profilePlayerId]) }}" class="transition hover:text-mist-200">Профиль игрока</a>
             @endif
             <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke-linecap="round" /></svg>
             <span class="truncate text-slate-300">Матч #{{ $match['match_id'] }}</span>
         </nav>
 
         <section class="card relative overflow-hidden">
-            <div class="absolute inset-x-0 top-0 h-32 bg-gradient-to-r {{ $radiantWin ? 'from-emerald-500/25 via-ink-800/40' : 'from-rose-500/25 via-ink-800/40' }} to-accent-500/10" aria-hidden="true"></div>
-            <div class="absolute -right-16 -top-24 h-64 w-64 rounded-full {{ $radiantWin ? 'bg-emerald-500/10' : 'bg-rose-500/10' }} blur-3xl" aria-hidden="true"></div>
-
             <div class="relative px-4 pb-6 pt-14 sm:px-6 lg:px-8">
                 <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
                     <div class="min-w-0">
@@ -75,14 +72,14 @@
                                     Ranked
                                 </span>
                             @elseif ($match['lobby_type_label'])
-                                <span class="badge border-white/10 bg-white/5 text-mist-300">{{ $match['lobby_type_label'] }}</span>
+                                <span class="badge border-line bg-ink-900/50 text-mist-300">{{ $match['lobby_type_label'] }}</span>
                             @endif
                             @if ($match['game_mode_label'])
-                                <span class="badge border-white/10 bg-white/5 text-mist-300">{{ $match['game_mode_label'] }}</span>
+                                <span class="badge border-line bg-ink-900/50 text-mist-300">{{ $match['game_mode_label'] }}</span>
                             @endif
                         </div>
 
-                        <h1 class="mt-3 text-3xl font-black tracking-tight text-white sm:text-4xl">
+                        <h1 class="mt-3 text-3xl font-semibold tracking-tight text-mist-200 sm:text-4xl">
                             Матч <span class="font-mono text-2xl text-mist-300 sm:text-3xl">#{{ $match['match_id'] }}</span>
                         </h1>
 
@@ -101,14 +98,14 @@
                     </div>
 
                     <div class="flex shrink-0 items-center gap-3">
-                        <div class="rounded-xl border border-emerald-500/15 bg-emerald-500/[0.07] px-4 py-2 text-center">
+                        <div class="rounded-lg border border-emerald-500/15 bg-emerald-500/[0.07] px-4 py-2 text-center">
                             <p class="text-[10px] uppercase tracking-wider text-emerald-300/70">Radiant</p>
-                            <p class="text-xl font-black text-emerald-300">{{ $match['radiant_score'] }}</p>
+                            <p class="text-xl font-semibold text-emerald-300">{{ $match['radiant_score'] }}</p>
                         </div>
                         <span class="text-xs font-bold text-mist-500">:</span>
-                        <div class="rounded-xl border border-rose-500/15 bg-rose-500/[0.07] px-4 py-2 text-center">
+                        <div class="rounded-lg border border-rose-500/15 bg-rose-500/[0.07] px-4 py-2 text-center">
                             <p class="text-[10px] uppercase tracking-wider text-rose-300/70">Dire</p>
-                            <p class="text-xl font-black text-rose-300">{{ $match['dire_score'] }}</p>
+                            <p class="text-xl font-semibold text-rose-300">{{ $match['dire_score'] }}</p>
                         </div>
                     </div>
                 </div>
@@ -118,7 +115,7 @@
         @if ($picksBans->isNotEmpty())
             <section class="mt-4 card p-4 sm:p-5" aria-label="Пики и баны">
                 <div class="flex flex-wrap items-end justify-between gap-2">
-                    <h2 class="text-lg font-bold text-white">Пики и баны</h2>
+                    <h2 class="text-lg font-bold text-mist-200">Пики и баны</h2>
                     <span class="text-[11px] text-mist-500">Порядок драфта</span>
                 </div>
 
@@ -129,8 +126,8 @@
                             $picks = $teamEntries->where('is_pick', true)->values();
                             $bans = $teamEntries->where('is_pick', false)->values();
                         @endphp
-                        <div class="rounded-xl bg-white/[0.03] p-3">
-                            <p class="text-[11px] font-black uppercase tracking-[0.14em] {{ $teamId === 0 ? 'text-emerald-300' : 'text-rose-300' }}">{{ $teamLabel }}</p>
+                        <div class="rounded-lg bg-ink-900/30 p-3">
+                            <p class="text-[11px] font-semibold uppercase tracking-[0.14em] {{ $teamId === 0 ? 'text-emerald-300' : 'text-rose-300' }}">{{ $teamLabel }}</p>
 
                             @if ($picks->isNotEmpty())
                                 <div class="mt-3">
@@ -138,7 +135,7 @@
                                     <div class="mt-2 flex flex-wrap gap-2">
                                         @foreach ($picks as $entry)
                                             <div class="flex items-center gap-2 rounded-lg bg-ink-900/60 px-2 py-1.5" title="{{ $entry['hero_name'] }}">
-                                                <span class="h-7 w-12 overflow-hidden rounded bg-ink-800 ring-1 ring-white/10">
+                                                <span class="h-7 w-12 overflow-hidden rounded bg-ink-800  ">
                                                     @if (! empty($entry['hero_image']))
                                                         <img src="{{ $entry['hero_image'] }}" alt="{{ $entry['hero_name'] }}" class="h-full w-full object-cover" loading="lazy">
                                                     @endif
@@ -156,7 +153,7 @@
                                     <div class="mt-2 flex flex-wrap gap-2">
                                         @foreach ($bans as $entry)
                                             <div class="flex items-center gap-2 rounded-lg border border-rose-500/15 bg-rose-500/[0.05] px-2 py-1.5 opacity-80" title="{{ $entry['hero_name'] }}">
-                                                <span class="h-7 w-12 overflow-hidden rounded bg-ink-800 ring-1 ring-rose-500/20 grayscale">
+                                                <span class="h-7 w-12 overflow-hidden rounded bg-ink-800   grayscale">
                                                     @if (! empty($entry['hero_image']))
                                                         <img src="{{ $entry['hero_image'] }}" alt="{{ $entry['hero_name'] }}" class="h-full w-full object-cover" loading="lazy">
                                                     @endif
@@ -181,11 +178,11 @@
             <div class="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-4 sm:px-5">
                 <div>
                     <p class="text-[10px] uppercase tracking-[0.18em] text-mist-500">Составы</p>
-                    <h2 class="text-lg font-bold text-white">Игроки матча</h2>
+                    <h2 class="text-lg font-bold text-mist-200">Игроки матча</h2>
                 </div>
                 <span class="badge text-mist-400">
                     <span class="text-emerald-300">{{ $match['radiant_score'] }}</span>
-                    <span class="text-mist-600">:</span>
+                    <span class="text-mist-500">:</span>
                     <span class="text-rose-300">{{ $match['dire_score'] }}</span>
                 </span>
             </div>
@@ -209,12 +206,12 @@
                             <th class="px-4 py-3 text-right font-semibold sm:px-5">Закуп</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-white/[0.04]" x-data="{ openPlayer: null }">
+                    <tbody class="table-rows" x-data="{ openPlayer: null }">
                         @foreach ($teams as $teamKey => $team)
                             <tr class="bg-ink-900/60">
                                 <td colspan="{{ $columnCount }}" class="px-4 py-2 sm:px-5">
                                     <div class="flex flex-wrap items-center justify-between gap-2">
-                                        <span class="text-[11px] font-black uppercase tracking-[0.16em] {{ $teamKey === 'radiant' ? 'text-emerald-300' : 'text-rose-300' }}">Команда {{ $team['label'] }}</span>
+                                        <span class="text-[11px] font-semibold uppercase tracking-[0.16em] {{ $teamKey === 'radiant' ? 'text-emerald-300' : 'text-rose-300' }}">Команда {{ $team['label'] }}</span>
                                         <span class="text-[10px] font-semibold {{ $team['won'] ? 'text-emerald-300' : 'text-rose-300' }}">{{ $team['won'] ? 'Победа' : 'Поражение' }} · {{ $team['score'] }}</span>
                                     </div>
                                 </td>
@@ -230,7 +227,7 @@
                                             'Off' => 'border-amber-500/25 bg-amber-500/10 text-amber-300',
                                             'Soft' => 'border-orange-500/25 bg-orange-500/10 text-orange-300',
                                             'Hard' => 'border-rose-500/25 bg-rose-500/10 text-rose-300',
-                                            default => 'border-white/10 bg-white/5 text-mist-400',
+                                            default => 'border-line bg-ink-900/50 text-mist-400',
                                         };
                                         $isCurrentPlayer = $profilePlayerId !== null
                                             && (int) ($player['account_id'] ?? 0) === $profilePlayerId;
@@ -238,12 +235,12 @@
                                         $accountId = (int) ($player['account_id'] ?? 0);
                                     @endphp
                                     <tr @class([
-                                        'transition hover:bg-white/[0.03]',
-                                        'bg-sky-500/[0.09] ring-2 ring-inset ring-sky-500/50' => $isCurrentPlayer,
+                                        'transition hover:bg-ink-900/30',
+                                        'bg-ink-700/60' => $isCurrentPlayer,
                                     ])>
                                         <td class="px-4 py-3 sm:px-5">
                                             <div class="flex items-center gap-3">
-                                                <div class="h-9 w-16 shrink-0 overflow-hidden rounded-md bg-ink-800 ring-1 ring-white/10">
+                                                <div class="h-9 w-16 shrink-0 overflow-hidden rounded-md bg-ink-800  ">
                                                     @if ($player['hero_image'])
                                                         <img src="{{ $player['hero_image'] }}" alt="{{ $player['hero_name'] }}" class="h-full w-full object-cover" loading="lazy">
                                                     @else
@@ -254,11 +251,11 @@
                                                 </div>
                                                 <div class="min-w-0">
                                                     @if ($accountId > 0)
-                                                        <a href="{{ route('dota.player', ['accountId' => $accountId]) }}" class="block truncate text-lg font-bold text-white transition hover:text-gold-200">
+                                                        <a href="{{ route('dota.player', ['accountId' => $accountId]) }}" class="block truncate text-lg font-bold text-mist-200 transition hover:text-gold-200">
                                                             {{ $player['nickname'] ?: 'Игрок '.$accountId }}
                                                         </a>
                                                     @else
-                                                        <p class="block truncate text-lg font-bold text-white">{{ $player['nickname'] ?: 'Неизвестный игрок' }}</p>
+                                                        <p class="block truncate text-lg font-bold text-mist-200">{{ $player['nickname'] ?: 'Неизвестный игрок' }}</p>
                                                     @endif
                                                     <p class="mt-0.5 flex flex-wrap items-center gap-1.5 truncate text-gray-400 text-sm">
                                                         <span>{{ $player['hero_name'] }}</span>
@@ -306,7 +303,7 @@
                                             @if ($player['purchases'] !== [])
                                                 <button
                                                     type="button"
-                                                    class="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-[11px] font-semibold text-mist-300 transition hover:border-gold-500/30 hover:bg-gold-500/10 hover:text-gold-200"
+                                                    class="inline-flex items-center gap-1.5 rounded-lg border border-line bg-ink-900/40 px-2.5 py-1.5 text-[11px] font-semibold text-mist-300 transition hover:border-gold-500/30 hover:bg-gold-500/10 hover:text-gold-200"
                                                     @click="openPlayer = openPlayer === {{ $playerIndex }} ? null : {{ $playerIndex }}"
                                                     :aria-expanded="(openPlayer === {{ $playerIndex }}).toString()"
                                                     aria-controls="purchases-{{ $teamKey }}-{{ $playerIndex }}"
@@ -331,8 +328,8 @@
                                                     </div>
                                                     <div class="mt-3 flex flex-wrap gap-2">
                                                         @foreach ($player['purchases'] as $item)
-                                                            <div class="flex items-center gap-2 rounded-lg bg-white/[0.03] p-2 pr-3" title="{{ $item['name'] }} · {{ $item['time_label'] }}">
-                                                                <div class="grid h-8 w-10 shrink-0 place-items-center overflow-hidden rounded-md bg-ink-800 ring-1 ring-white/10">
+                                                            <div class="flex items-center gap-2 rounded-lg bg-ink-900/30 p-2 pr-3" title="{{ $item['name'] }} · {{ $item['time_label'] }}">
+                                                                <div class="grid h-8 w-10 shrink-0 place-items-center overflow-hidden rounded-md bg-ink-800  ">
                                                                     <img src="{{ $item['image'] }}" alt="" class="h-full w-full object-contain" loading="lazy" referrerpolicy="no-referrer">
                                                                 </div>
                                                                 <div class="min-w-0">
@@ -368,7 +365,7 @@
                         Вернуться к профилю
                     </a>
                 @endif
-                <a href="{{ route('home') }}" class="font-semibold text-mist-400 transition hover:text-white">На главную</a>
+                <a href="{{ route('home') }}" class="font-semibold text-mist-400 transition hover:text-mist-200">На главную</a>
             </div>
         </div>
     </div>

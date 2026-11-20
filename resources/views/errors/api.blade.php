@@ -6,23 +6,21 @@
 @section('content')
     <div class="relative overflow-hidden">
         <div class="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
-            <div class="absolute left-1/2 top-1/3 h-[34rem] w-[34rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-sky-500/[0.08] blur-3xl"></div>
-            <div class="absolute right-[-8rem] bottom-0 h-72 w-72 rounded-full bg-accent-500/[0.05] blur-3xl"></div>
         </div>
 
         <div class="mx-auto flex min-h-[calc(100vh-8rem)] w-full max-w-3xl flex-col items-center justify-center px-4 py-20 text-center sm:px-6 lg:px-8">
-            <span class="inline-flex items-center gap-2 rounded-full border border-sky-500/25 bg-sky-500/[0.08] px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-300">
+            <span class="inline-flex items-center gap-2 rounded-lg border border-sky-500/25 bg-sky-500/[0.08] px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-300">
                 Ошибка сети · 502
             </span>
 
-            <span class="mt-6 grid h-16 w-16 place-items-center rounded-2xl border border-sky-500/20 bg-sky-500/[0.07] text-sky-300">
+            <span class="mt-6 grid h-16 w-16 place-items-center rounded-lg border border-sky-500/20 bg-sky-500/[0.07] text-sky-300">
                 <svg class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
                     <path d="M7 18h10a4 4 0 0 0 .7-7.9A6 6 0 0 0 6.1 8.3 4.5 4.5 0 0 0 7 18z" stroke-linecap="round" stroke-linejoin="round" />
                     <path d="M9 9l6 6M15 9l-6 6" stroke-linecap="round" />
                 </svg>
             </span>
 
-            <h1 class="mt-6 text-balance text-3xl font-black tracking-tight text-white sm:text-4xl">
+            <h1 class="mt-6 text-balance text-3xl font-semibold tracking-tight text-mist-200 sm:text-4xl">
                 Не удалось загрузить данные
             </h1>
             <p class="mt-3 max-w-xl text-sm leading-relaxed text-mist-300">

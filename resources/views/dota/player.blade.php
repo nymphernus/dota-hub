@@ -11,7 +11,7 @@
 
 @section('profile-content')
         @if ($player['is_private'])
-            <div class="mt-4 flex items-start gap-3 rounded-2xl border border-amber-500/25 bg-amber-500/[0.08] p-4 text-sm text-amber-100">
+            <div class="mt-4 flex items-start gap-3 rounded-lg border border-amber-500/25 bg-amber-500/[0.08] p-4 text-sm text-amber-100">
                 <svg class="mt-0.5 h-5 w-5 shrink-0 text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2" /><path d="M8 10V7a4 4 0 018 0v3" stroke-linecap="round" /></svg>
                 <div>
                     <p class="font-semibold">Профиль игрока скрыт. Данные недоступны.</p>
@@ -23,7 +23,7 @@
         <div class="mt-5 grid items-start gap-4 lg:grid-cols-[minmax(0,7fr)_minmax(280px,3fr)]">
             <div class="min-w-0 space-y-4">
                 <section class="card overflow-hidden">
-                    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] px-4 py-3 sm:px-5">
+                    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3 sm:px-5">
                         <p class="label uppercase tracking-[0.16em]">Последние игры</p>
                     </div>
 
@@ -42,7 +42,7 @@
                                         <th class="px-3 py-2.5 text-right font-semibold sm:px-4">Дата</th>
                                     </tr>
                                 </thead>
-                                <tbody class="divide-y divide-white/[0.04]">
+                                <tbody class="table-rows">
                                     @foreach ($recentMatches as $match)
                                         @include('dota.partials.match-row', ['match' => $match, 'accountId' => $player['account_id']])
                                     @endforeach
@@ -53,9 +53,9 @@
                 </section>
 
                 <section class="card overflow-hidden">
-                    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] px-4 py-3 sm:px-5">
-                        <h2 class="text-base font-bold text-white">Самые играемые герои</h2>
-                        <span class="badge border-white/10 bg-white/5 text-mist-400">За всё время</span>
+                    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3 sm:px-5">
+                        <h2 class="text-base font-bold text-mist-200">Самые играемые герои</h2>
+                        <span class="badge border-line bg-ink-900/50 text-mist-400">За всё время</span>
                     </div>
 
                     @if ($topHeroes === [])
@@ -64,15 +64,15 @@
                         <div class="grid gap-2 p-3 sm:grid-cols-2 sm:p-4">
                             @foreach ($topHeroes as $index => $hero)
                                 @php $heroUrl = route('dota.player.hero', ['accountId' => $player['account_id'], 'heroId' => $hero['hero_id']]); @endphp
-                                <a href="{{ $heroUrl }}" class="group flex items-center gap-3 rounded-xl bg-white/[0.03] p-2 transition hover:border-gold-500/30 hover:bg-gold-500/[0.06]">
+                                <a href="{{ $heroUrl }}" class="group flex items-center gap-3 rounded-lg bg-ink-900/30 p-2 transition hover:border-gold-500/30 hover:bg-gold-500/[0.06]">
                                     <span class="w-4 text-center font-mono text-[10px] text-mist-500">{{ $index + 1 }}</span>
-                                    <span class="h-9 w-16 shrink-0 overflow-hidden rounded-md bg-ink-800 ring-1 ring-white/10 transition group-hover:ring-gold-400/50">
+                                    <span class="h-9 w-16 shrink-0 overflow-hidden rounded-md bg-ink-800   transition ">
                                         @if ($hero['image'])
                                             <img src="{{ $hero['image'] }}" alt="{{ $hero['name'] }}" class="h-full w-full object-cover" loading="lazy">
                                         @endif
                                     </span>
                                     <span class="min-w-0 flex-1">
-                                        <span class="block truncate text-[12px] font-bold text-white transition group-hover:text-gold-200">{{ $hero['name'] }}</span>
+                                        <span class="block truncate text-[12px] font-bold text-mist-200 transition group-hover:text-gold-200">{{ $hero['name'] }}</span>
                                         <span class="block text-[10px] text-mist-500">{{ $hero['games'] }} игр</span>
                                     </span>
                                     <span class="font-mono text-[12px] font-bold {{ ($hero['winrate'] ?? 0) >= 50 ? 'text-emerald-300' : 'text-rose-300' }}">
@@ -89,9 +89,9 @@
                 <section class="card p-4">
                     <div class="flex items-start justify-between gap-2">
                         <div>
-                            <h2 class="text-sm font-bold text-white">Колесо героев</h2>
+                            <h2 class="text-sm font-bold text-mist-200">Колесо героев</h2>
                         </div>
-                        <span class="badge border-white/10 bg-white/5 text-mist-400" aria-label="Матчей в колесе: {{ $heroUsageTotal }}">{{ $heroUsageTotal }}</span>
+                        <span class="badge border-line bg-ink-900/50 text-mist-400" aria-label="Матчей в колесе: {{ $heroUsageTotal }}">{{ $heroUsageTotal }}</span>
                     </div>
 
                     @include('dota.partials.hero-wheel', ['heroes' => $heroUsage])
@@ -100,7 +100,7 @@
                 <section class="card p-4">
                     <div class="flex items-start justify-between gap-2">
                         <div>
-                            <h2 class="text-sm font-bold text-white">Активность</h2>
+                            <h2 class="text-sm font-bold text-mist-200">Активность</h2>
                         </div>
                         <span id="activity-total" class="text-[10px] text-mist-500">{{ number_format($activityTotal, 0, '.', ' ') }} игр</span>
                     </div>
@@ -126,25 +126,25 @@
                 <section class="card p-4">
                     <div class="flex items-start justify-between gap-2">
                         <div>
-                            <h2 class="text-sm font-bold text-white">Союзники</h2>
+                            <h2 class="text-sm font-bold text-mist-200">Союзники</h2>
                         </div>
-                        <span class="badge border-white/10 bg-white/5 text-mist-400">{{ min(5, count($player['peers'] ?? [])) }}</span>
+                        <span class="badge border-line bg-ink-900/50 text-mist-400">{{ min(5, count($player['peers'] ?? [])) }}</span>
                     </div>
 
                     @php $topPeers = array_slice($player['peers'] ?? [], 0, 5); @endphp
                     @if ($topPeers === [])
-                        <div class="mt-3 rounded-xl border border-dashed border-white/10 px-3 py-5 text-center text-[11px] text-mist-500">Нет данных о совместных матчах</div>
+                        <div class="mt-3 rounded-lg border border-dashed border-line px-3 py-5 text-center text-[11px] text-mist-500">Нет данных о совместных матчах</div>
                     @else
                         <div class="mt-3 space-y-2">
                             @foreach ($topPeers as $peer)
-                                <a href="{{ route('dota.player', ['accountId' => $peer['account_id']]) }}" class="group flex items-center gap-2.5 rounded-xl bg-white/[0.03] p-2 transition hover:border-gold-500/30 hover:bg-gold-500/[0.06]">
-                                    <span class="h-8 w-8 shrink-0 overflow-hidden rounded-lg bg-ink-800 ring-1 ring-white/10">
+                                <a href="{{ route('dota.player', ['accountId' => $peer['account_id']]) }}" class="group flex items-center gap-2.5 rounded-lg bg-ink-900/30 p-2 transition hover:border-gold-500/30 hover:bg-gold-500/[0.06]">
+                                    <span class="h-8 w-8 shrink-0 overflow-hidden rounded-lg bg-ink-800  ">
                                         @if ($peer['avatar'])
                                             <img src="{{ $peer['avatar'] }}" alt="{{ $peer['nickname'] }}" class="h-full w-full object-cover" loading="lazy">
                                         @endif
                                     </span>
                                     <span class="min-w-0 flex-1">
-                                        <span class="block truncate text-[11px] font-bold text-white transition group-hover:text-gold-200">{{ $peer['nickname'] }}</span>
+                                        <span class="block truncate text-[11px] font-bold text-mist-200 transition group-hover:text-gold-200">{{ $peer['nickname'] }}</span>
                                         <span class="block text-[9px] text-mist-500">{{ $peer['games'] }} совм. игр · {{ $peer['winrate'] !== null ? number_format($peer['winrate'], 1, '.', '').'%' : '—' }}</span>
                                     </span>
                                 </a>
@@ -157,12 +157,12 @@
 
         @if (($lifetimeStats['total'] ?? 0) > 0)
             <section class="card mt-4 overflow-hidden">
-                <div class="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] px-4 py-3 sm:px-5">
+                <div class="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3 sm:px-5">
                     <div>
-                        <h2 class="text-base font-bold text-white">Lifetime Stats</h2>
+                        <h2 class="text-base font-bold text-mist-200">Lifetime Stats</h2>
                         <p class="mt-0.5 text-[11px] text-mist-500">Сводка по {{ number_format($lifetimeStats['total'], 0, '.', ' ') }} матчам за всё время</p>
                     </div>
-                    <span class="badge border-white/10 bg-white/5 text-mist-400">
+                    <span class="badge border-line bg-ink-900/50 text-mist-400">
                         Винрейт {{ $lifetimeStats['winrate'] !== null ? number_format($lifetimeStats['winrate'], 1, '.', '').'%' : '—' }}
                     </span>
                 </div>
@@ -183,11 +183,11 @@
                                                 <th class="px-3 py-2 text-right font-semibold">Винрейт</th>
                                             </tr>
                                         </thead>
-                                        <tbody class="divide-y divide-white/[0.04]">
+                                        <tbody class="table-rows">
                                             @foreach ($group['rows'] as $row)
                                                 <tr>
                                                     <td class="px-3 py-2 font-semibold text-mist-200">{{ $row['label'] }}</td>
-                                                    <td class="px-2 py-2 text-right font-mono text-white">{{ $row['games'] }}</td>
+                                                    <td class="px-2 py-2 text-right font-mono text-mist-200">{{ $row['games'] }}</td>
                                                     <td class="px-3 py-2 text-right font-mono {{ ($row['winrate'] ?? 0) >= 50 ? 'text-emerald-300' : 'text-rose-300' }}">
                                                         {{ $row['winrate'] !== null ? number_format($row['winrate'], 1, '.', '').'%' : '—' }}
                                                     </td>

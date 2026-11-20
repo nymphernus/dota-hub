@@ -5,9 +5,9 @@
 
 @section('profile-content')
         <div class="card mt-4 overflow-hidden">
-            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] px-4 py-4 sm:px-5">
-                <h2 class="text-lg font-bold text-white">Союзники</h2>
-                <span class="badge border-white/10 bg-white/5 text-mist-400">{{ count($player['peers'] ?? []) }}</span>
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-4 sm:px-5">
+                <h2 class="text-lg font-bold text-mist-200">Союзники</h2>
+                <span class="badge border-line bg-ink-900/50 text-mist-400">{{ count($player['peers'] ?? []) }}</span>
             </div>
 
             @if (($player['peers'] ?? []) === [])
@@ -23,18 +23,18 @@
                                 <th class="px-4 py-3 text-right font-semibold sm:px-5">Последний матч</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-white/[0.04]">
+                        <tbody class="table-rows">
                             @foreach ($player['peers'] as $peer)
-                                <tr class="transition hover:bg-white/[0.03]">
+                                <tr class="transition hover:bg-ink-900/30">
                                     <td class="px-4 py-3 sm:px-5">
                                         <a href="{{ route('dota.player', ['accountId' => $peer['account_id']]) }}" class="group flex items-center gap-3">
-                                            <span class="h-9 w-9 shrink-0 overflow-hidden rounded-lg bg-ink-800 ring-1 ring-white/10">
+                                            <span class="h-9 w-9 shrink-0 overflow-hidden rounded-lg bg-ink-800  ">
                                                 @if ($peer['avatar'])
                                                     <img src="{{ $peer['avatar'] }}" alt="{{ $peer['nickname'] }}" class="h-full w-full object-cover" loading="lazy">
                                                 @endif
                                             </span>
                                             <span class="min-w-0">
-                                                <span class="flex items-center gap-1.5 truncate text-[13px] font-semibold text-white transition group-hover:text-gold-200">
+                                                <span class="flex items-center gap-1.5 truncate text-[13px] font-semibold text-mist-200 transition group-hover:text-gold-200">
                                                     {{ $peer['nickname'] }}
                                                     @if ($peer['is_private'] ?? false)
                                                         <svg class="h-3.5 w-3.5 shrink-0 text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-label="Скрытый профиль" title="Скрытый профиль"><rect x="5" y="10" width="14" height="10" rx="2" /><path d="M8 10V7a4 4 0 018 0v3" stroke-linecap="round" /></svg>

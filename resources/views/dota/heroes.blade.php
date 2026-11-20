@@ -41,8 +41,8 @@
                     return this.sortDir === 'asc' ? '▲' : '▼';
                 }
             }">
-                <div class="flex flex-col gap-3 border-b border-white/[0.06] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-                    <h2 class="text-lg font-bold text-white">Герои</h2>
+                <div class="flex flex-col gap-3 border-b border-line px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+                    <h2 class="text-lg font-bold text-mist-200">Герои</h2>
                     <div class="relative w-full sm:w-72">
                         <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-mist-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="6.5" /><path d="M16 16l4.5 4.5" stroke-linecap="round" /></svg>
                         <input type="search" x-model="search" class="input !py-2.5 !pl-10" placeholder="Поиск героя..." aria-label="Поиск героя по имени" autocomplete="off">
@@ -55,25 +55,25 @@
                             <tr>
                                 <th class="px-4 py-3 font-semibold sm:px-5">Герой</th>
                                 <th class="px-4 py-3 font-semibold" :aria-sort="sortKey === 'games' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'">
-                                    <button type="button" @click="sortBy('games')" class="inline-flex items-center gap-1 uppercase tracking-[0.16em] transition hover:text-white">Матчи <span class="text-[10px]" x-text="indicator('games')"></span></button>
+                                    <button type="button" @click="sortBy('games')" class="inline-flex items-center gap-1 uppercase tracking-[0.16em] transition hover:text-mist-200">Матчи <span class="text-[10px]" x-text="indicator('games')"></span></button>
                                 </th>
                                 <th class="px-4 py-3 font-semibold" :aria-sort="sortKey === 'win_rate' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'">
-                                    <button type="button" @click="sortBy('win_rate')" class="inline-flex items-center gap-1 uppercase tracking-[0.16em] transition hover:text-white">Винрейт <span class="text-[10px]" x-text="indicator('win_rate')"></span></button>
+                                    <button type="button" @click="sortBy('win_rate')" class="inline-flex items-center gap-1 uppercase tracking-[0.16em] transition hover:text-mist-200">Винрейт <span class="text-[10px]" x-text="indicator('win_rate')"></span></button>
                                 </th>
                                 <th class="px-4 py-3 text-right font-semibold sm:px-5" :aria-sort="sortKey === 'kda' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'">
-                                    <button type="button" @click="sortBy('kda')" class="ml-auto inline-flex items-center gap-1 uppercase tracking-[0.16em] transition hover:text-white">KDA <span class="text-[10px]" x-text="indicator('kda')"></span></button>
+                                    <button type="button" @click="sortBy('kda')" class="ml-auto inline-flex items-center gap-1 uppercase tracking-[0.16em] transition hover:text-mist-200">KDA <span class="text-[10px]" x-text="indicator('kda')"></span></button>
                                 </th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-white/[0.04]">
+                        <tbody class="table-rows">
                             <template x-for="hero in filteredHeroes" :key="hero.hero_id">
-                                <tr class="transition hover:bg-white/[0.03]">
+                                <tr class="transition hover:bg-ink-900/30">
                                     <td class="px-4 py-2.5 sm:px-5">
                                         <a :href="heroUrl(hero.hero_id)" class="group flex items-center gap-3" :aria-label="'Статистика героя ' + hero.localized_name">
-                                            <span class="h-9 w-16 shrink-0 overflow-hidden rounded-md bg-ink-800 ring-1 ring-white/10 transition group-hover:ring-gold-400/50">
+                                            <span class="h-9 w-16 shrink-0 overflow-hidden rounded-md bg-ink-800   transition ">
                                                 <img :src="hero.image" :alt="hero.localized_name" class="h-full w-full object-cover" loading="lazy" x-show="hero.image">
                                             </span>
-                                            <span class="truncate text-[13px] font-semibold text-white transition group-hover:text-gold-200" x-text="hero.localized_name"></span>
+                                            <span class="truncate text-[13px] font-semibold text-mist-200 transition group-hover:text-gold-200" x-text="hero.localized_name"></span>
                                         </a>
                                     </td>
                                     <td class="px-4 py-2.5 font-mono text-[13px] tabular-nums text-mist-300" x-text="hero.games"></td>

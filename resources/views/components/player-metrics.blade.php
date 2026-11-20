@@ -10,8 +10,8 @@
 <div class="mt-4 flex flex-wrap gap-2" role="list" aria-label="Ключевая статистика">
     <div class="card min-w-[150px] flex-1 p-3 sm:p-4" role="listitem">
         <p class="label">Матчи</p>
-        <p class="mt-1 text-xl font-black tracking-tight text-white sm:text-2xl">{{ number_format($games, 0, '.', ' ') }}</p>
-        <div class="mt-2 flex h-1.5 overflow-hidden rounded-full bg-white/[0.05]">
+        <p class="mt-1 text-xl font-semibold tracking-tight text-mist-200 sm:text-2xl">{{ number_format($games, 0, '.', ' ') }}</p>
+        <div class="mt-2 flex h-1.5 overflow-hidden rounded-lg bg-ink-900/50">
             <div class="h-full bg-amber-400" style="width: {{ $winShare }}%"></div>
             <div class="h-full bg-rose-500" style="width: {{ $lossShare }}%"></div>
         </div>
@@ -23,17 +23,17 @@
 
     <div class="card min-w-[150px] flex-1 p-3 sm:p-4" role="listitem">
         <p class="label">Винрейт</p>
-        <p class="mt-1 text-xl font-black tracking-tight sm:text-2xl {{ ($winrate ?? 0) >= 50 ? 'text-amber-300' : 'text-rose-300' }}">
+        <p class="mt-1 text-xl font-semibold tracking-tight sm:text-2xl {{ ($winrate ?? 0) >= 50 ? 'text-amber-300' : 'text-rose-300' }}">
             {{ $winrate !== null ? number_format($winrate, 1, '.', '').'%' : '—' }}
         </p>
-        <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-white/[0.05]">
-            <div class="h-full rounded-full {{ ($winrate ?? 0) >= 50 ? 'bg-gradient-to-r from-amber-500 to-amber-300' : 'bg-gradient-to-r from-rose-600 to-rose-400' }}" style="width: {{ $winrate ?? 0 }}%"></div>
+        <div class="mt-2 h-1.5 overflow-hidden rounded-lg bg-ink-900/50">
+            <div class="h-full rounded-lg {{ ($winrate ?? 0) >= 50 ? 'bg-win' : 'bg-loss' }}" style="width: {{ $winrate ?? 0 }}%"></div>
         </div>
     </div>
 
     <div class="card min-w-[150px] flex-1 p-3 sm:p-4" role="listitem">
         <p class="label">MMR</p>
-        <p class="mt-1 text-xl font-black tracking-tight text-white sm:text-2xl">
+        <p class="mt-1 text-xl font-semibold tracking-tight text-mist-200 sm:text-2xl">
             {{ $player['mmr_estimate'] !== null ? number_format($player['mmr_estimate'], 0, '.', ' ') : '—' }}
         </p>
         <p class="mt-2 text-[10px] text-mist-500">

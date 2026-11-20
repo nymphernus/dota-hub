@@ -21,7 +21,7 @@
     $steamTone = match (true) {
         $steamPublic === true => 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300',
         $steamPublic === false => 'border-rose-500/25 bg-rose-500/10 text-rose-300',
-        default => 'border-white/10 bg-white/5 text-mist-300',
+        default => 'border-line bg-ink-900/50 text-mist-300',
     };
     $dotaTone = $dotaPublic
         ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300'
@@ -29,30 +29,27 @@
 @endphp
 
 <section class="card relative overflow-hidden">
-    <div class="absolute inset-x-0 top-0 h-32 bg-gradient-to-r from-dota-500/20 via-ink-800/40 to-accent-500/10" aria-hidden="true"></div>
-    <div class="absolute -right-16 -top-24 h-64 w-64 rounded-full bg-dota-500/10 blur-3xl" aria-hidden="true"></div>
-
     <div class="relative px-4 pb-5 pt-8 sm:px-6 lg:px-8">
         <div class="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div class="flex min-w-0 items-center gap-4">
-                <div class="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-ink-800 shadow-2xl ring-4 ring-ink-900 sm:h-24 sm:w-24">
+                <div class="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-ink-800    sm:h-24 sm:w-24">
                     @if ($player['avatar'])
                         <img src="{{ $player['avatar'] }}" alt="Аватар {{ $player['nickname'] }}" class="h-full w-full object-cover" loading="eager">
                     @else
-                        <span class="grid h-full w-full place-items-center text-3xl font-black text-mist-500">{{ mb_strtoupper(mb_substr($player['nickname'], 0, 1)) }}</span>
+                        <span class="grid h-full w-full place-items-center text-3xl font-semibold text-mist-500">{{ mb_strtoupper(mb_substr($player['nickname'], 0, 1)) }}</span>
                     @endif
                 </div>
 
                 <div class="min-w-0">
                     <div class="flex flex-wrap items-center gap-2">
-                        <span class="inline-flex items-center gap-2 rounded-xl bg-white/[0.04] px-2.5 py-1.5" title="Ранг: {{ $player['rank_label'] ?: 'Не откалиброван' }}">
+                        <span class="inline-flex items-center gap-2 rounded-lg bg-ink-900/40 px-2.5 py-1.5" title="Ранг: {{ $player['rank_label'] ?: 'Не откалиброван' }}">
                             <span class="relative inline-flex h-9 w-9 items-center justify-center">
                                 <img src="{{ $rankIcon }}" alt="Иконка ранга {{ $player['rank_label'] ?: 'без ранга' }}" class="h-9 w-9 object-contain">
                                 @if ($rankStarIcon)
                                     <img src="{{ $rankStarIcon }}" alt="" class="absolute -bottom-1 left-1/2 h-3 w-8 -translate-x-1/2 object-contain">
                                 @endif
                             </span>
-                            <span class="text-xs font-bold text-white">{{ $player['rank_label'] ?: 'Без ранга' }}</span>
+                            <span class="text-xs font-bold text-mist-200">{{ $player['rank_label'] ?: 'Без ранга' }}</span>
                         </span>
                         @if ($player['is_offline_cache'] ?? false)
                             <span class="badge border-sky-500/25 bg-sky-500/10 text-sky-300">Данные из кэша (Офлайн)</span>
@@ -60,7 +57,7 @@
                     </div>
 
                     <div class="mt-2 flex flex-wrap items-center gap-x-2" x-data="{ open: false }">
-                        <h1 class="min-w-0 truncate text-3xl font-black tracking-tight text-white sm:text-4xl">{{ $player['nickname'] }}</h1>
+                        <h1 class="min-w-0 truncate text-3xl font-semibold tracking-tight text-mist-200 sm:text-4xl">{{ $player['nickname'] }}</h1>
                         @if (session('steam_id'))
                             <button
                                 type="button"
@@ -74,7 +71,7 @@
                                 })"
                                 @click="toggle"
                                 :disabled="loading"
-                                :class="active ? 'border-amber-400/40 bg-amber-400/10 text-amber-300' : 'border-white/10 bg-white/[0.04] text-mist-400 hover:border-amber-400/30 hover:text-amber-200'"
+                                :class="active ? 'border-amber-400/40 bg-amber-400/10 text-amber-300' : 'border-line bg-ink-900/40 text-mist-400 hover:border-amber-400/30 hover:text-amber-200'"
                                 class="grid h-8 w-8 shrink-0 place-items-center rounded-lg border transition disabled:opacity-60"
                                 :aria-label="active ? 'Удалить из избранного' : 'Добавить в избранное'"
                                 :aria-pressed="active.toString()"
@@ -88,7 +85,7 @@
                         @else
                             <a
                                 href="{{ route('auth.steam', ['intended' => url()->current()]) }}"
-                                class="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-white/10 bg-white/[0.04] text-mist-400 transition hover:border-amber-400/30 hover:text-amber-200"
+                                class="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-line bg-ink-900/40 text-mist-400 transition hover:border-amber-400/30 hover:text-amber-200"
                                 aria-label="Добавить в избранное"
                                 title="Добавить в избранное"
                                 data-favorite-star
@@ -100,14 +97,14 @@
                         @endif
                         @if ($nameHistory !== [])
                             <div class="relative">
-                                <button type="button" @click="open = !open" class="grid h-7 w-7 place-items-center rounded-lg border border-white/10 bg-white/[0.04] text-mist-400 transition hover:text-white" :aria-expanded="open.toString()" aria-label="История никнеймов">
+                                <button type="button" @click="open = !open" class="grid h-7 w-7 place-items-center rounded-lg border border-line bg-ink-900/40 text-mist-400 transition hover:text-mist-200" :aria-expanded="open.toString()" aria-label="История никнеймов">
                                     <svg class="h-3.5 w-3.5 transition" :class="open ? 'rotate-180' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round" /></svg>
                                 </button>
-                                <div x-show="open" x-cloak x-transition.opacity.duration.150ms @click.outside="open = false" class="absolute left-0 top-9 z-20 w-56 rounded-xl border border-white/10 bg-ink-950/95 p-2 shadow-2xl backdrop-blur">
+                                <div x-show="open" x-cloak x-transition.opacity.duration.150ms @click.outside="open = false" class="absolute left-0 top-9 z-20 w-56 rounded-lg border border-line bg-ink-950/95 p-2 ">
                                     <p class="px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-mist-500">История никнеймов</p>
                                     <div class="mt-1 max-h-56 space-y-1 overflow-y-auto">
                                         @foreach ($nameHistory as $entry)
-                                            <div class="flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-[11px] hover:bg-white/[0.04]">
+                                            <div class="flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-[11px] hover:bg-ink-900/40">
                                                 <span class="truncate font-semibold text-mist-200">{{ $entry['name'] }}</span>
                                                 <span class="shrink-0 text-[9px] text-mist-500">{{ $entry['changed_at'] ? \Carbon\CarbonImmutable::parse($entry['changed_at'])->format('d.m.y') : '' }}</span>
                                             </div>
