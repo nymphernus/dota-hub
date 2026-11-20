@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Services\OpenDota\OpenDotaService;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
@@ -146,6 +147,44 @@ class LifetimeStatsTest extends TestCase
                 && $byKey['LONGEST_LOSS_STREAK']['value'] === 2
                 && $byKey['LONGEST_LOSS_STREAK']['value_label'] === '2 поражения';
         });
+    }
+
+    public function test_ranked_records_use_lobby_type_seven_not_ranked_game_modes(): void
+    {
+        $this->fakeOpenDota();
+
+        $history = [
+            [
+                'match_id' => 9100000010,
+                'hero_id' => 1,
+                'hero_name' => 'Anti-Mage',
+                'win' => true,
+                'started_at' => '2026-11-15T12:00:00+00:00',
+                'lobby_type' => 7,
+                'game_mode' => 1,
+                'duration' => 3000,
+                'kills' => 10,
+            ],
+            [
+                'match_id' => 9100000011,
+                'hero_id' => 2,
+                'hero_name' => 'Axe',
+                'win' => false,
+                'started_at' => '2026-11-14T12:00:00+00:00',
+                'lobby_type' => 0,
+                'game_mode' => 22,
+                'duration' => 9000,
+                'kills' => 99,
+            ],
+        ];
+
+        $records = app(OpenDotaService::class)->playerRecords(self::ACCOUNT_ID, $history, true);
+        $byKey = collect($records)->keyBy('key');
+
+        $this->assertSame(3000, $byKey['DURATION']['value']);
+        $this->assertSame(10, $byKey['KILLS']['value']);
+        $this->assertTrue(Cache::has("opendota:records:v6:".self::ACCOUNT_ID.":ranked"));
+        $this->assertFalse(Cache::has("opendota:records:v5:".self::ACCOUNT_ID.":ranked"));
     }
 
     public function test_records_page_loads_both_tab_payloads_without_a_second_request(): void

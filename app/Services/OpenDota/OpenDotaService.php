@@ -26,11 +26,13 @@ class OpenDotaService
 
     private const ITEM_STATS_CACHE_KEY = 'opendota:item-stats:v2';
 
-    private const HISTORY_DAYS = 182;
+    private const HISTORY_PAGE_SIZE = 500;
+
+    private const MAX_HISTORY_PAGES = 20;
 
     private const RECENT_MATCH_DETAILS = 10;
 
-    private const PROFILE_SCHEMA_VERSION = 4;
+    private const PROFILE_SCHEMA_VERSION = 5;
 
     /**
      * Human-readable labels for OpenDota /players/{id}/records keys.
@@ -419,10 +421,7 @@ class OpenDotaService
         $recentMatches = $this->optionalGet('players/'.$accountId.'/recentMatches');
         $heroStats = $this->optionalGet('players/'.$accountId.'/heroes');
         $totals = $this->optionalGet('players/'.$accountId.'/totals');
-        $matchHistory = $this->optionalGet('players/'.$accountId.'/matches', [
-            'limit' => 500,
-            'date' => self::HISTORY_DAYS,
-        ]);
+        $matchHistory = $this->fetchMatchHistory($accountId);
 
         // OpenDota's hero endpoint is not always populated. STRATZ exposes the
         // same aggregate through GraphQL, so use it before showing an empty pool.
@@ -683,6 +682,10 @@ class OpenDotaService
         Cache::forget("opendota:records:v2:{$accountId}");
         Cache::forget("opendota:records:v4:{$accountId}:all");
         Cache::forget("opendota:records:v4:{$accountId}:ranked");
+        Cache::forget("opendota:records:v5:{$accountId}:all");
+        Cache::forget("opendota:records:v5:{$accountId}:ranked");
+        Cache::forget("opendota:records:v6:{$accountId}:all");
+        Cache::forget("opendota:records:v6:{$accountId}:ranked");
     }
 
     /**
@@ -802,7 +805,7 @@ class OpenDotaService
     /**
      * Full match history for the dedicated matches tab.
      *
-     * @param  array{hero_id?: int, result?: string, mode?: string, role?: string, time?: string}  $filters
+     * @param  array{hero_id?: int, result?: string, mode?: string, role?: string, date?: string}  $filters
      * @return array{player: array<string, mixed>, rows: array<int, array<string, mixed>>, total: int, heroes: array<int, array<string, mixed>>, filters: array<string, mixed>}
      */
     public function playerMatches(int $accountId, int $page, int $perPage, array $filters = []): array
@@ -813,13 +816,7 @@ class OpenDotaService
 
         if ($rows === [] && ! $servedFromFreshDb) {
             $heroes = $this->heroStats();
-            $rows = $this->transformHistory(
-                $this->optionalGet('players/'.$accountId.'/matches', [
-                    'limit' => 500,
-                    'date' => self::HISTORY_DAYS,
-                ]),
-                $heroes,
-            );
+            $rows = $this->transformHistory($this->fetchMatchHistory($accountId), $heroes);
         }
 
         $known = [];
@@ -972,12 +969,12 @@ class OpenDotaService
         if ($rankedOnly) {
             $history = array_values(array_filter(
                 $history,
-                fn (array $match): bool => $this->isRankedMode((int) ($match['game_mode'] ?? 0)),
+                fn (array $match): bool => (int) ($match['lobby_type'] ?? 0) === 7,
             ));
         }
 
         $ttl = (int) config('stats.cache.dota_records', 86400);
-        $cacheKey = "opendota:records:v5:{$accountId}:{$scope}";
+        $cacheKey = "opendota:records:v6:{$accountId}:{$scope}";
         $fingerprint = sha1($scope.':'.implode(':', array_map(
             fn (array $match) => (string) ($match['match_id'] ?? '').'@'.(string) ($match['started_at'] ?? ($match['start_time'] ?? '')),
             $history,
@@ -1389,6 +1386,75 @@ class OpenDotaService
         }
 
         return [];
+    }
+
+    /**
+     * OpenDota caps a single match-history response at 500 rows. Follow its
+     * `less_than_match_id` cursor until a short page arrives so profiles with
+     * more than 500 games keep their full history.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function fetchMatchHistory(int $accountId): array
+    {
+        $matches = [];
+        $seen = [];
+        $cursor = null;
+
+        for ($page = 1; $page <= self::MAX_HISTORY_PAGES; $page++) {
+            $query = ['limit' => self::HISTORY_PAGE_SIZE];
+
+            if ($cursor !== null) {
+                $query['less_than_match_id'] = $cursor;
+            }
+
+            try {
+                $batch = $this->optionalGet("players/{$accountId}/matches", $query);
+            } catch (ApiUnavailableException) {
+                break;
+            }
+
+            if ($batch === []) {
+                break;
+            }
+
+            $nextCursor = null;
+
+            foreach ($batch as $match) {
+                if (! is_array($match)) {
+                    continue;
+                }
+
+                $matchId = isset($match['match_id']) && is_numeric($match['match_id'])
+                    ? (int) $match['match_id']
+                    : 0;
+
+                if ($matchId > 0) {
+                    if (isset($seen[$matchId])) {
+                        continue;
+                    }
+
+                    $seen[$matchId] = true;
+                    $nextCursor = $nextCursor === null ? $matchId : min($nextCursor, $matchId);
+                }
+
+                $matches[] = $match;
+            }
+
+            if (count($batch) < self::HISTORY_PAGE_SIZE) {
+                break;
+            }
+
+            // Stop instead of looping if the API ignores the cursor or returns
+            // a page without usable match ids.
+            if ($nextCursor === null || ($cursor !== null && $nextCursor >= $cursor)) {
+                break;
+            }
+
+            $cursor = $nextCursor;
+        }
+
+        return $matches;
     }
 
     /**
@@ -2229,7 +2295,7 @@ class OpenDotaService
             return null;
         }
 
-        $cacheKey = "opendota:match-player:v2:{$matchId}:{$accountId}";
+        $cacheKey = "opendota:match-player:v3:{$matchId}:{$accountId}";
         $cached = Cache::get($cacheKey);
 
         if (is_array($cached)) {

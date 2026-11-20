@@ -6,6 +6,8 @@ use App\Models\PlayerProfile;
 use App\Services\OpenDota\OpenDotaService;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -225,6 +227,7 @@ class DotaProfileTest extends TestCase
         $this->assertNotNull($record);
         $this->assertSame('Dendi', $record->data['nickname']);
         $this->assertSame(120, $record->data['wins']);
+        $this->assertSame(5, $record->data['schema_version']);
     }
 
     public function test_second_visit_is_served_from_the_database(): void
@@ -289,6 +292,52 @@ class DotaProfileTest extends TestCase
         $response->assertSee('Dendi');
         $response->assertSee('Данные из кэша (Офлайн)');
         $response->assertViewHas('player', fn (array $player) => ($player['is_offline_cache'] ?? false) === true);
+    }
+
+    public function test_match_history_is_paginated_with_a_less_than_match_id_cursor(): void
+    {
+        $page = static fn (int $startId, int $count): array => array_map(
+            static fn (int $index): array => [
+                'match_id' => $startId - $index,
+                'hero_id' => 1 + ($index % 6),
+                'player_slot' => $index % 2 === 0 ? 0 : 128,
+                'radiant_win' => $index % 2 === 0,
+                'start_time' => 1700000000 - (9100003000 - ($startId - $index)),
+                'duration' => 1800 + $index,
+                'kills' => $index % 20,
+                'deaths' => $index % 8,
+                'assists' => $index % 15,
+                'gold_per_min' => 400 + $index,
+                'xp_per_min' => 450 + $index,
+                'lobby_type' => $index % 2 === 0 ? 7 : 0,
+                'game_mode' => $index % 3 === 0 ? 23 : 1,
+            ],
+            range(0, $count - 1),
+        );
+
+        $this->fakeOpenDota(matchHistoryResponse: Http::sequence()
+            ->push($page(9100003000, 500))
+            ->push($page(9100002500, 500))
+            ->push($page(9100002000, 2)));
+
+        $response = $this->get(route('dota.player.matches', ['accountId' => self::ACCOUNT_ID]));
+
+        $response->assertOk();
+        $response->assertViewHas('matches', fn (LengthAwarePaginator $matches): bool => $matches->total() === 1002);
+
+        $requests = collect(Http::recorded())
+            ->map(fn (array $record): Request => $record[0])
+            ->filter(fn (Request $request): bool => str_contains(
+                $request->url(),
+                '/players/'.self::ACCOUNT_ID.'/matches',
+            ))
+            ->values();
+
+        $this->assertCount(3, $requests);
+        $this->assertSame('500', (string) $requests[0]['limit']);
+        $this->assertArrayNotHasKey('date', $requests[0]->data());
+        $this->assertSame('9100002501', (string) $requests[1]['less_than_match_id']);
+        $this->assertSame('9100002001', (string) $requests[2]['less_than_match_id']);
     }
 
     public function test_refresh_forgets_the_profile_cache_and_rebuilds_it(): void
@@ -719,6 +768,7 @@ class DotaProfileTest extends TestCase
         array $profileOverrides = [],
         ?array $heroesResponse = null,
         ?array $stratzHeroes = null,
+        mixed $matchHistoryResponse = null,
     ): void {
         $profileResponse = array_merge([
             'profile' => [
@@ -779,7 +829,7 @@ class DotaProfileTest extends TestCase
                 ['field' => 'gold_per_min', 'n' => 10, 'sum' => 4980],
                 ['field' => 'xp_per_min', 'n' => 10, 'sum' => 5610],
             ]),
-            'api.opendota.com/api/players/'.self::ACCOUNT_ID.'/matches*' => Http::response([
+            'api.opendota.com/api/players/'.self::ACCOUNT_ID.'/matches*' => $matchHistoryResponse ?? Http::response([
                 ['match_id' => 9000000001, 'hero_id' => 1, 'player_slot' => 0, 'radiant_win' => true, 'start_time' => now()->subDays(1)->timestamp, 'duration' => 2400, 'kills' => 10, 'deaths' => 2, 'assists' => 15, 'gold_per_min' => 620, 'xp_per_min' => 710, 'lobby_type' => 7, 'game_mode' => 22, 'party_id' => 0],
                 ['match_id' => 9000000002, 'hero_id' => 2, 'player_slot' => 128, 'radiant_win' => true, 'start_time' => now()->subDays(2)->timestamp, 'duration' => 1980, 'kills' => 3, 'deaths' => 8, 'assists' => 6, 'gold_per_min' => 340, 'xp_per_min' => 420, 'lobby_type' => 7, 'game_mode' => 22, 'party_id' => 42],
                 ['match_id' => 9000000003, 'hero_id' => 3, 'player_slot' => 0, 'radiant_win' => true, 'start_time' => now()->subDays(3)->timestamp, 'duration' => 2100, 'kills' => 8, 'deaths' => 4, 'assists' => 11, 'gold_per_min' => 510, 'xp_per_min' => 590, 'lobby_type' => 1, 'game_mode' => 1, 'party_id' => 0],
