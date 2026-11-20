@@ -6,17 +6,15 @@ use Tests\TestCase;
 
 class UiAssetsTest extends TestCase
 {
-    public function test_hero_wheel_is_svg_with_gradients_images_and_hover_growth(): void
+    public function test_hero_wheel_is_flat_svg_with_images_and_group_hover_growth(): void
     {
         $source = (string) file_get_contents(resource_path('views/dota/partials/hero-wheel.blade.php'));
         $css = (string) file_get_contents(resource_path('css/app.css'));
 
         $this->assertStringContainsString('<svg', $source);
-        $this->assertStringContainsString('<defs>', $source);
-        $this->assertStringContainsString('<radialGradient', $source);
         $this->assertStringContainsString('<image', $source);
         $this->assertStringContainsString('xlink:href', $source);
-        $this->assertStringContainsString('url(#hero-wheel-gradient-', $source);
+        $this->assertStringContainsString('fill="#1b1f2e"', $source);
         $this->assertStringContainsString('$wheelTotal', $source);
         $this->assertStringContainsString('* 360', $source);
         $this->assertStringContainsString('$iconSize', $source);
@@ -24,11 +22,29 @@ class UiAssetsTest extends TestCase
         $this->assertStringContainsString('hero-wheel__slice', $source);
         $this->assertStringContainsString('hero-wheel__sector', $source);
 
-        $this->assertStringContainsString('.hero-wheel__sector', $css);
-        $this->assertStringContainsString('transform-origin: 120px 120px', $css);
-        $this->assertStringContainsString('.hero-wheel__slice:hover .hero-wheel__sector', $css);
-        $this->assertStringContainsString('transform: scale(1.05)', $css);
+        // The icon lives in the same group as the sector, and the group itself
+        // is transformed so both move together on hover.
+        $slicePosition = strpos($source, '<g class="hero-wheel__slice"');
+        $imagePosition = strpos($source, '<image');
+        $groupEndPosition = strpos($source, '</g>', $slicePosition);
+        $this->assertNotFalse($slicePosition);
+        $this->assertNotFalse($imagePosition);
+        $this->assertNotFalse($groupEndPosition);
+        $this->assertGreaterThan($slicePosition, $imagePosition);
+        $this->assertLessThan($groupEndPosition, $imagePosition);
 
+        $this->assertStringContainsString('.hero-wheel__slice {', $css);
+        $this->assertStringContainsString('transform-origin: 120px 120px', $css);
+        $this->assertStringContainsString('.hero-wheel__slice:hover,', $css);
+        $this->assertStringContainsString('transform: scale(1.05)', $css);
+        $this->assertStringNotContainsString('.hero-wheel__slice:hover .hero-wheel__sector', $css);
+
+        $this->assertStringNotContainsString('<defs>', $source);
+        $this->assertStringNotContainsString('<radialGradient', $source);
+        $this->assertStringNotContainsString('url(#hero-wheel-gradient-', $source);
+        $this->assertStringNotContainsString('hero-wheel__hub-value', $source);
+        $this->assertStringNotContainsString('hero-wheel__hub-label', $source);
+        $this->assertStringNotContainsString('героев</text>', $source);
         $this->assertStringNotContainsString('<canvas', $source);
         $this->assertStringNotContainsString('chart.js', $source);
         $this->assertStringNotContainsString('drawImage', $source);
@@ -71,7 +87,9 @@ class UiAssetsTest extends TestCase
         $this->assertStringNotContainsString('--color-radar-', $css);
 
         $this->assertStringContainsString('fonts.googleapis.com/css2?family=Inter', $layout);
-        $this->assertStringContainsString('<span class="text-gold-400">D</span>otaHub', $layout);
+        $this->assertStringContainsString('font-sans font-bold tracking-tight text-2xl leading-none text-white">DotaHub</span>', $layout);
+        $this->assertStringNotContainsString('text-gold-400', $layout);
+        $this->assertStringNotContainsString('>Dota 2</', $layout);
         $this->assertStringNotContainsString('uppercase tracking-[0.2em] text-mist-500 sm:block', $layout);
         $this->assertStringContainsString('content="#0f111a"', $layout);
         $this->assertStringNotContainsString('radar', $layout);

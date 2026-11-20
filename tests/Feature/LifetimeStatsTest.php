@@ -73,8 +73,12 @@ class LifetimeStatsTest extends TestCase
         $response->assertSee('id="tab-records"', false);
         $response->assertSee('Рекорды');
         $response->assertSee('Все матчи');
-        $response->assertSee('Только рейтинг');
-        $response->assertViewHas('recordsScope', 'all');
+        $response->assertSee('Рейтинг');
+        $response->assertDontSee('Только рейтинг');
+        $response->assertSee('x-data="{ tab: \'all\' }"', false);
+        $response->assertSee('x-show="tab === \'all\'"', false);
+        $response->assertSee('x-show="tab === \'ranked\'"', false);
+        $response->assertViewHas('rankedRecords');
         $response->assertSee('Самый длинный матч');
         $response->assertSee('Наибольшее число убийств');
         $response->assertSee('Максимум GPM');
@@ -133,21 +137,29 @@ class LifetimeStatsTest extends TestCase
         });
     }
 
-    public function test_records_page_filters_ranked_scope_by_lobby_type(): void
+    public function test_records_page_loads_both_tab_payloads_without_a_second_request(): void
     {
         $this->fakeOpenDota([]);
 
-        $response = $this->get(route('dota.player.records', [
-            'accountId' => self::ACCOUNT_ID,
-            'scope' => 'ranked',
-        ]));
+        $response = $this->get(route('dota.player.records', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertOk();
         $response->assertSee('Все матчи');
-        $response->assertSee('Только рейтинг');
+        $response->assertSee('Рейтинг');
+        $response->assertDontSee('Только рейтинг');
         $response->assertSee('lobby_type 7');
-        $response->assertViewHas('recordsScope', 'ranked');
+
+        // Both panels are rendered in the initial HTML; Alpine only toggles
+        // visibility, so clicking a tab never reopens the records endpoint.
+        $this->assertSame(2, substr_count((string) $response->getContent(), 'Самый длинный матч'));
+
         $response->assertViewHas('records', function (array $records): bool {
+            $byKey = collect($records)->keyBy('key');
+
+            return $byKey['DURATION']['value'] === 2400
+                && $byKey['SHORTEST_DURATION']['value'] === 1500;
+        });
+        $response->assertViewHas('rankedRecords', function (array $records): bool {
             $byKey = collect($records)->keyBy('key');
 
             return $byKey['DURATION']['value'] === 2400

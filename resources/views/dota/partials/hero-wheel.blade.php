@@ -75,7 +75,7 @@
 @endphp
 
 @if ($sectors === [])
-    <div class="mt-4 grid h-48 place-items-center rounded-xl border border-dashed border-line text-xs text-mist-500">
+    <div class="mt-4 grid h-48 place-items-center rounded-lg border border-dashed border-line text-xs text-mist-400">
         Нет данных
     </div>
 @else
@@ -90,26 +90,6 @@
     >
         <title>Колесо героев</title>
 
-        <defs>
-            @foreach ($sectors as $sector)
-                <radialGradient id="hero-wheel-gradient-{{ $sector['index'] }}" cx="50%" cy="50%" r="62%">
-                    @if ($sector['index'] < 3)
-                        <stop offset="0%" stop-color="#e2b02b" stop-opacity="0.75" />
-                        <stop offset="55%" stop-color="#3b82f6" stop-opacity="0.85" />
-                    @else
-                        <stop offset="0%" stop-color="#2a3042" />
-                        <stop offset="55%" stop-color="#1b1f2e" />
-                    @endif
-                    <stop offset="100%" stop-color="#0f111a" />
-                </radialGradient>
-            @endforeach
-
-            <radialGradient id="hero-wheel-hub" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stop-color="#1b1f2e" />
-                <stop offset="100%" stop-color="#0f111a" />
-            </radialGradient>
-        </defs>
-
         <circle cx="120" cy="120" r="112" fill="#0f111a" />
 
         @foreach ($sectors as $sector)
@@ -118,8 +98,8 @@
                 <path
                     class="hero-wheel__sector"
                     d="{{ $sector['path'] }}"
-                    fill="url(#hero-wheel-gradient-{{ $sector['index'] }})"
-                    stroke="#0f111a"
+                    fill="#1b1f2e"
+                    stroke="#2a3042"
                     stroke-width="1.5"
                 />
                 @if ($sector['icon'] !== '')
@@ -137,8 +117,6 @@
             </g>
         @endforeach
 
-        <circle class="hero-wheel__hub" cx="120" cy="120" r="45" fill="url(#hero-wheel-hub)" stroke="#2a3042" stroke-width="1" />
-        <text class="hero-wheel__hub-value" x="120" y="116" text-anchor="middle">{{ count($sectors) }}</text>
-        <text class="hero-wheel__hub-label" x="120" y="132" text-anchor="middle">героев</text>
+        <circle class="hero-wheel__hub" cx="120" cy="120" r="45" fill="#1b1f2e" stroke="#2a3042" stroke-width="1" />
     </svg>
 @endif

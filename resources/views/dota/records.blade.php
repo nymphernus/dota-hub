@@ -4,85 +4,47 @@
 @section('description', 'Личные рекорды игрока '.$player['nickname'].' в Dota 2: самый длинный и короткий матч, максимум убийств, урона, GPM и серии побед и поражений.')
 
 @section('profile-content')
-        @php $recordsScope = $recordsScope ?? 'all'; @endphp
-
-        <section class="mt-4">
-            <div class="flex flex-wrap items-center justify-between gap-2 px-1">
-                <div>
-                    <h2 class="text-lg font-bold text-white">Рекорды</h2>
-                    <p class="mt-0.5 text-[11px] text-mist-500">Лучшие результаты игрока в отдельных матчах</p>
-                </div>
-                @if ($records !== [])
-                    <span class="badge text-mist-400">{{ count($records) }} достижений</span>
-                @endif
+    <section class="mt-4" x-data="{ tab: 'all' }">
+        <div class="flex flex-wrap items-center justify-between gap-2 px-1">
+            <div>
+                <h2 class="text-lg font-semibold tracking-wide text-mist-200">Рекорды</h2>
+                <p class="mt-0.5 text-[11px] text-mist-400">Лучшие результаты игрока в отдельных матчах</p>
             </div>
+            <span class="badge text-mist-400" x-text="tab === 'ranked' ? '{{ count($rankedRecords) }} достижений' : '{{ count($records) }} достижений'"></span>
+        </div>
 
-            <div class="mt-3 inline-flex rounded-lg bg-white/[0.04] p-1" role="tablist" aria-label="Тип рекордов">
-                <a
-                    href="{{ route('dota.player.records', ['accountId' => $player['account_id']]) }}"
-                    role="tab"
-                    aria-selected="{{ $recordsScope === 'all' ? 'true' : 'false' }}"
-                    @class([
-                        'rounded-md px-3 py-2 text-sm font-semibold transition',
-                        'bg-gold-400/15 text-gold-200' => $recordsScope === 'all',
-                        'text-mist-400 hover:text-white' => $recordsScope !== 'all',
-                    ])
-                >Все матчи</a>
-                <a
-                    href="{{ route('dota.player.records', ['accountId' => $player['account_id'], 'scope' => 'ranked']) }}"
-                    role="tab"
-                    aria-selected="{{ $recordsScope === 'ranked' ? 'true' : 'false' }}"
-                    @class([
-                        'rounded-md px-3 py-2 text-sm font-semibold transition',
-                        'bg-gold-400/15 text-gold-200' => $recordsScope === 'ranked',
-                        'text-mist-400 hover:text-white' => $recordsScope !== 'ranked',
-                    ])
-                >Только рейтинг</a>
-            </div>
-            <p class="mt-2 px-1 text-[10px] text-mist-500">
-                {{ $recordsScope === 'ranked' ? 'Учитываются только рейтинговые матчи (lobby_type 7).' : 'Учитываются все сохранённые матчи.' }}
-            </p>
+        <div class="mt-3 inline-flex rounded-lg bg-white/[0.04] p-1" role="tablist" aria-label="Тип рекордов">
+            <button
+                type="button"
+                role="tab"
+                aria-controls="records-all"
+                :aria-selected="(tab === 'all').toString()"
+                @click="tab = 'all'"
+                class="rounded-md px-3 py-2 text-sm font-semibold transition"
+                :class="tab === 'all' ? 'bg-gold-400/15 text-gold-200' : 'text-mist-400 hover:text-mist-200'"
+            >Все матчи</button>
+            <button
+                type="button"
+                role="tab"
+                aria-controls="records-ranked"
+                :aria-selected="(tab === 'ranked').toString()"
+                @click="tab = 'ranked'"
+                class="rounded-md px-3 py-2 text-sm font-semibold transition"
+                :class="tab === 'ranked' ? 'bg-gold-400/15 text-gold-200' : 'text-mist-400 hover:text-mist-200'"
+            >Рейтинг</button>
+        </div>
 
-            @if ($records === [])
-                <div class="card mt-3 p-10 text-center text-sm text-mist-400">
-                    Рекорды пока недоступны. Данные OpenDota могут отсутствовать для этого игрока.
-                </div>
-            @else
-                <div class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    @foreach ($records as $record)
-                        <article class="card relative overflow-hidden p-4">
-                            <span class="absolute inset-y-0 left-0 w-0.5 bg-gold-400/70" aria-hidden="true"></span>
-                            <div class="flex items-start justify-between gap-3">
-                                <div class="min-w-0">
-                                    <p class="label uppercase tracking-[0.14em] text-mist-500">{{ $record['label'] }}</p>
-                                    <p class="mt-2 text-2xl font-black tracking-tight text-white">{{ $record['value_label'] }}</p>
-                                </div>
-                                @if ($record['hero_image'] || $record['hero_icon'])
-                                    <span class="h-12 w-20 shrink-0 overflow-hidden rounded-lg bg-ink-800 ring-1 ring-white/10">
-                                        <img src="{{ $record['hero_image'] ?? $record['hero_icon'] }}" alt="{{ $record['hero_name'] ?? 'Герой' }}" class="h-full w-full object-cover" loading="lazy">
-                                    </span>
-                                @endif
-                            </div>
+        <p
+            class="mt-2 px-1 text-[10px] text-mist-400"
+            x-text="tab === 'ranked' ? 'Учитываются только рейтинговые матчи (lobby_type 7).' : 'Учитываются все сохранённые матчи.'"
+        ></p>
 
-                            <div class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-mist-500">
-                                @if ($record['hero_name'])
-                                    <span class="font-semibold text-mist-300">{{ $record['hero_name'] }}</span>
-                                @endif
-                                @if ($record['played_at'])
-                                    <span>{{ \Carbon\CarbonImmutable::parse($record['played_at'])->format('d.m.Y') }}</span>
-                                @endif
-                                @if ($record['match_id'])
-                                    <a href="{{ route('dota.match', ['matchId' => $record['match_id']]) }}" class="transition hover:text-gold-300">
-                                        Матч #{{ $record['match_id'] }}
-                                    </a>
-                                @endif
-                                @if ($record['is_team'])
-                                    <span class="badge text-mist-400">Командный</span>
-                                @endif
-                            </div>
-                        </article>
-                    @endforeach
-                </div>
-            @endif
-        </section>
+        <div id="records-all" role="tabpanel" x-show="tab === 'all'" x-cloak>
+            @include('dota.partials.records-grid', ['records' => $records])
+        </div>
+
+        <div id="records-ranked" role="tabpanel" x-show="tab === 'ranked'" x-cloak>
+            @include('dota.partials.records-grid', ['records' => $rankedRecords])
+        </div>
+    </section>
 @endsection

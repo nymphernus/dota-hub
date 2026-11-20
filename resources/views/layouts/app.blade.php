@@ -13,17 +13,15 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230f111a'/%3E%3Ctext x='16' y='23' font-family='Arial,Helvetica,sans-serif' font-size='22' font-weight='900' fill='%23e2b02b' text-anchor='middle'%3ED%3C/text%3E%3C/svg%3E">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext x='16' y='24' font-family='Arial,Helvetica,sans-serif' font-size='24' font-weight='700' fill='%23e2e8f0' text-anchor='middle'%3ED%3C/text%3E%3C/svg%3E">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="flex min-h-screen flex-col">
     <header class="sticky top-0 z-40 border-b border-line bg-ink-950/90 shadow-lg shadow-black/20 backdrop-blur-xl">
         <div class="mx-auto flex h-16 w-full max-w-7xl items-center px-4 sm:px-6 lg:px-8">
-            <a href="{{ route('home') }}" class="group flex items-center" aria-label="DotaHub — на главную">
-                <span class="text-2xl font-black tracking-tight text-white">
-                    <span class="text-gold-400">D</span>otaHub
-                </span>
+            <a href="{{ route('home') }}" class="flex items-center" aria-label="DotaHub — на главную">
+                <span class="font-sans font-bold tracking-tight text-2xl leading-none text-white">DotaHub</span>
             </a>
 
             <div class="ml-auto flex items-center gap-2 sm:gap-3">
@@ -152,7 +150,7 @@
     <footer class="border-t border-white/5 bg-ink-950/60">
         <div class="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
             <div>
-                <p class="text-sm font-black tracking-tight text-white"><span class="text-gold-400">D</span>otaHub</p>
+                <p class="text-sm font-bold tracking-tight text-white">DotaHub</p>
                 <p class="text-[11px] text-mist-500">Данные: OpenDota · Steam Web API</p>
             </div>
 
