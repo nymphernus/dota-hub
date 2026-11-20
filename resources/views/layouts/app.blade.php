@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-    <link rel="icon" href="/favicon.ico">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='32' fill='%23dc2626'/%3E%3Ctext x='32' y='44' font-family='Arial,sans-serif' font-size='36' font-weight='bold' fill='white' text-anchor='middle'%3ED%3C/text%3E%3C/svg%3E">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -26,7 +26,7 @@
         $navAccountId = (int) ($navPlayer['account_id'] ?? request()->route('accountId') ?? 0);
         $showProfileNav = $navAccountId > 0 && $navNickname;
     @endphp
-    <header class="border-b border-[#2d313e] bg-[#111318]/90 backdrop-blur-md">
+    <header class="sticky top-0 z-50 border-b border-[#2d313e] bg-[#111318]/90 backdrop-blur-md">
         <div class="mx-auto flex h-16 w-full max-w-7xl items-center px-4 sm:px-6 lg:px-8">
             <div class="flex min-w-0 items-center">
                 <a href="/" class="bg-[#d32f2f] px-2 py-1 text-2xl leading-none tracking-tighter text-white" aria-label="dotahub — на главную">dotahub</a>
@@ -44,11 +44,12 @@
                     x-cloak
                     @click.outside="open = false"
                     @keydown.escape.window="open = false"
-                    action="{{ route('dota.search') }}"
-                    method="GET"
+                    action="{{ route('search') }}"
+                    method="POST"
                     role="search"
                     class="flex items-center"
                 >
+                    @csrf
                     <button
                         type="button"
                         @click="open = !open; if (open) { $nextTick(() => $refs.query.focus()) }"
@@ -68,8 +69,8 @@
                         x-ref="query"
                         id="header-search-query"
                         type="text"
-                        name="q"
-                        value="{{ request('q', '') }}"
+                        name="query"
+                        value="{{ old('query', request('q', '')) }}"
                         required
                         autocomplete="off"
                         placeholder="Steam ID, URL или никнейм"
@@ -110,7 +111,7 @@
                         </form>
                     </div>
                 @else
-                    <a href="{{ route('auth.steam.redirect', ['intended' => url()->current()]) }}" class="btn-primary">
+                    <a href="{{ route('auth.steam', ['intended' => url()->current()]) }}" class="btn-primary">
                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                             <path d="M12 2a10 10 0 0 0-9.97 9.24l5.35 2.21a2.8 2.8 0 0 1 1.6-.49l2.37-3.43v-.5a3.74 3.74 0 1 1 3.74 3.74h-.1l-3.37 2.42c0 .07.01.14.01.21a2.8 2.8 0 0 1-5.58.37l-3.83-1.58A10 10 0 1 0 12 2Zm-5.6 15.08 1.2-.5a2.1 2.1 0 1 0-1.2.5Zm11.16-8.13a2.5 2.5 0 1 0-4.98.2 2.5 2.5 0 0 0 4.98-.2Z"/>
                         </svg>
