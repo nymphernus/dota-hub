@@ -113,6 +113,13 @@ class StratzService
 
             $heroes = $this->parseHeroRows($rawHeroes);
 
+            Log::info('STRATZ hero rows parsed', [
+                'account_id' => $accountId,
+                'field' => $field,
+                'rows' => count($heroes),
+                'hero_ids' => array_column($heroes, 'hero_id'),
+            ]);
+
             if ($heroes !== []) {
                 Cache::put(
                     $cacheKey,

@@ -68,12 +68,17 @@ class StratzServiceTest extends TestCase
             ]),
         ]);
 
-        Log::shouldReceive('info')->once()->withArgs(function (string $message, array $context): bool {
-            return $message === 'STRATZ hero response'
-                && $context['account_id'] === 70388657
-                && $context['status'] === 200
-                && str_contains($context['raw_response'], 'heroesPerformance')
-                && isset($context['json']['data']['player']['heroesPerformance']);
+        Log::shouldReceive('info')->twice()->withArgs(function (string $message, array $context): bool {
+            if ($message === 'STRATZ hero response') {
+                return $context['account_id'] === 70388657
+                    && $context['status'] === 200
+                    && str_contains($context['raw_response'], 'heroesPerformance')
+                    && isset($context['json']['data']['player']['heroesPerformance']);
+            }
+
+            return $message === 'STRATZ hero rows parsed'
+                && $context['rows'] === 1
+                && $context['hero_ids'] === [128];
         });
 
         $heroes = $this->app->make(StratzService::class)->playerHeroes(70388657);

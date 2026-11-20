@@ -43,9 +43,9 @@ class DotaPlayerController extends Controller
         $steamId = ($player['steam_id'] ?? '') ?: SteamId::steamId64FromAccountId($accountId);
 
         // The heatmap is a lifetime-activity view: it must receive every cached
-        // match, including normal/turbo games. Ranked-only filtering belongs to
-        // the records page and is applied there, not here.
-        $heatmapMatches = $history;
+        // match, including normal/turbo games. No lobby_type filter is applied
+        // here — ranked-only filtering belongs to the records page alone.
+        $heatmapMatches = array_values($history);
 
         return view('dota.player', [
             'player' => $player,
@@ -275,6 +275,9 @@ class DotaPlayerController extends Controller
 
     /**
      * GitHub-style daily activity for the last 13 weeks.
+     *
+     * Every supplied match is counted; there is deliberately no lobby_type or
+     * is_ranked check in this method.
      *
      * Days are aligned to Monday-starting columns so weekday labels can sit
      * vertically on the left while month labels sit above the columns.
