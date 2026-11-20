@@ -127,14 +127,14 @@ class UiAssetsTest extends TestCase
         $this->assertStringContainsString('fonts.googleapis.com/css2?family=Inter', $layout);
         $this->assertStringContainsString('border-b border-[#2d313e] bg-[#111318]/90 backdrop-blur-md', $layout);
         $this->assertStringContainsString('bg-[#d32f2f] px-2 py-1 text-2xl leading-none tracking-tighter text-white', $layout);
-        $this->assertStringContainsString('>dotahub</a>', $layout);
+        $this->assertStringContainsString('>DOTAHUB</a>', $layout);
         $this->assertStringNotContainsString('font-black', $layout);
         $this->assertStringNotContainsString('font-normal', $layout);
         $this->assertStringNotContainsString('font-light', $layout);
         $this->assertStringNotContainsString('rounded-sm', $layout);
         $this->assertStringNotContainsString('>dotahub</span>', $layout);
         $this->assertStringNotContainsString('gold-', $layout);
-        $this->assertStringContainsString('rel="icon" type="image/x-icon" href="{{ asset(\'favicon.ico\') }}"', $layout);
+        $this->assertStringContainsString('<link rel="icon" href="/favicon.ico">', $layout);
         $this->assertStringContainsString('>dotahub</p>', $layout);
         $this->assertStringContainsString('&copy; {{ date(\'Y\') }} dotahub', $layout);
         $this->assertFileExists(public_path('favicon.ico'));
@@ -236,7 +236,7 @@ class UiAssetsTest extends TestCase
         $this->assertLessThan($allies, $lifetime);
     }
 
-    public function test_hero_filters_use_icon_pickers_and_hero_grid_matches_match_pagination(): void
+    public function test_filters_use_a_hero_modal_a_custom_calendar_and_heroes_use_a_dense_table(): void
     {
         $matches = (string) file_get_contents(resource_path('views/dota/matches.blade.php'));
         $heroes = (string) file_get_contents(resource_path('views/dota/heroes.blade.php'));
@@ -244,6 +244,7 @@ class UiAssetsTest extends TestCase
         $heroPagination = (string) file_get_contents(resource_path('views/dota/partials/hero-pagination.blade.php'));
 
         $this->assertStringContainsString('id="filter-hero"', $matches);
+        $this->assertStringContainsString('>Выбрать героя</span>', $matches);
         $this->assertStringContainsString('id="filter-hero-grid"', $matches);
         $this->assertStringContainsString('heroPickerHeroes', $matches);
         $this->assertStringContainsString("hero.icon || hero.image", $matches);
@@ -251,14 +252,27 @@ class UiAssetsTest extends TestCase
         $this->assertStringNotContainsString("'id' => 'filter-hero'", $matches);
         $this->assertStringContainsString('bg-[#1c1e26] text-white border-[#2d313e] rounded px-3 py-2', $matches);
 
+        $this->assertStringContainsString('id="filter-calendar"', $matches);
+        $this->assertStringContainsString('aria-label="Календарь"', $matches);
+        $this->assertStringContainsString('calendarDays', $matches);
+        $this->assertStringContainsString('shiftMonth(', $matches);
+        $this->assertStringContainsString('chooseDate(day.iso)', $matches);
+        $this->assertStringContainsString('За всё время', $matches);
+        $this->assertStringNotContainsString('type="date"', $matches);
+
         $this->assertStringContainsString('perPage: 24', $heroes);
-        $this->assertStringContainsString('grid grid-cols-2 gap-2 p-3 md:grid-cols-4 lg:grid-cols-6', $heroes);
+        $this->assertStringContainsString('<th class="px-2 py-1 text-left font-semibold sm:px-5">ГЕРОЙ</th>', $heroes);
+        $this->assertStringContainsString('<th class="px-2 py-1 text-left font-semibold">МАТЧИ</th>', $heroes);
+        $this->assertStringContainsString('<th class="px-2 py-1 text-left font-semibold">ПРОЦЕНТ ПОБЕД</th>', $heroes);
+        $this->assertStringContainsString('<th class="px-2 py-1 text-left font-semibold">KDA</th>', $heroes);
+        $this->assertStringContainsString('odd:bg-[#1b1f2e] even:bg-[#0f111a]', $heroes);
+        $this->assertStringContainsString('class="px-2 py-1 sm:px-5"', $heroes);
+        $this->assertStringNotContainsString('grid grid-cols-2 gap-2 p-3 md:grid-cols-4 lg:grid-cols-6', $heroes);
         $this->assertStringContainsString('id="heroes-hero-filter"', $heroes);
         $this->assertStringContainsString('id="heroes-hero-grid"', $heroes);
         $this->assertStringContainsString('heroPickerQuery', $heroes);
         $this->assertStringContainsString('filteredHeroPickerHeroes', $heroes);
         $this->assertStringContainsString("hero.icon || hero.image", $heroes);
-        $this->assertStringContainsString('Винрейт', $heroes);
 
         $sharedClasses = [
             'grid h-9 min-w-9 place-items-center rounded-none border border-line bg-ink-900/40 px-3 text-xs font-semibold text-mist-300 transition hover:border-accent-400 hover:bg-accent-400/10 hover:text-mist-200',
@@ -274,6 +288,21 @@ class UiAssetsTest extends TestCase
 
         $this->assertStringContainsString('aria-label="Пагинация"', $matchPagination);
         $this->assertStringContainsString('aria-label="Пагинация"', $heroPagination);
+    }
+
+    public function test_match_details_use_the_flat_striped_table_without_draft_or_back_links(): void
+    {
+        $source = (string) file_get_contents(resource_path('views/dota/match.blade.php'));
+
+        $this->assertStringContainsString('<th class="px-2 py-1 font-semibold">IMP</th>', $source);
+        $this->assertStringContainsString('odd:bg-[#1c1e26] even:bg-[#111318]', $source);
+        $this->assertStringContainsString("'border-emerald-500 bg-emerald-500/10' => \$teamKey === 'radiant'", $source);
+        $this->assertStringContainsString("'border-rose-500 bg-rose-500/10' => \$teamKey === 'dire'", $source);
+        $this->assertStringContainsString('number_format($player[\'impact\'], 1, \'.\', \'\')', $source);
+        $this->assertStringNotContainsString('Пики и баны', $source);
+        $this->assertStringNotContainsString('picks_bans', $source);
+        $this->assertStringNotContainsString('Вернуться к профилю', $source);
+        $this->assertStringNotContainsString('На главную', $source);
     }
 
     public function test_no_gold_accents_remain_in_assets(): void

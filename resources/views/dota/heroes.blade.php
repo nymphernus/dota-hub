@@ -104,24 +104,32 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-2 p-3 md:grid-cols-4 lg:grid-cols-6">
-                    <template x-for="hero in pagedHeroes" :key="hero.hero_id">
-                        <a :href="heroUrl(hero.hero_id)" class="group block min-w-0 border border-line bg-ink-900/30 transition hover:border-accent-400 hover:bg-accent-400/10" :aria-label="'Статистика героя ' + (hero.localized_name || hero.name)">
-                            <span class="flex items-center gap-2 p-2">
-                                <span class="h-10 w-10 shrink-0 overflow-hidden bg-ink-800">
-                                    <img :src="hero.icon || hero.image" :alt="hero.localized_name || hero.name" class="h-full w-full object-cover" loading="lazy">
-                                </span>
-                                <span class="min-w-0 flex-1">
-                                    <span class="block truncate text-[12px] font-semibold text-mist-200 transition group-hover:text-white" x-text="hero.localized_name || hero.name"></span>
-                                    <span class="mt-0.5 block font-mono text-[10px] text-mist-500" x-text="hero.games + ' игр'"></span>
-                                </span>
-                            </span>
-                            <span class="flex items-center justify-between border-t border-line px-2 py-1 text-[10px] text-mist-500">
-                                <span>Винрейт</span>
-                                <span class="font-mono font-semibold" :class="hero.win_rate == null ? 'text-mist-500' : (hero.win_rate >= 50 ? 'text-emerald-300' : 'text-rose-300')" x-text="hero.win_rate == null ? '—' : hero.win_rate.toFixed(1) + '%'"></span>
-                            </span>
-                        </a>
-                    </template>
+                <div class="overflow-x-auto">
+                    <table class="w-full min-w-[620px] text-sm">
+                        <thead class="table-head">
+                            <tr>
+                                <th class="px-2 py-1 text-left font-semibold sm:px-5">ГЕРОЙ</th>
+                                <th class="px-2 py-1 text-left font-semibold">МАТЧИ</th>
+                                <th class="px-2 py-1 text-left font-semibold">ПРОЦЕНТ ПОБЕД</th>
+                                <th class="px-2 py-1 text-left font-semibold">KDA</th>
+                            </tr>
+                        </thead>
+                        <tbody class="table-rows">
+                            <template x-for="hero in pagedHeroes" :key="hero.hero_id">
+                                <tr class="odd:bg-[#1b1f2e] even:bg-[#0f111a]">
+                                    <td class="px-2 py-1 sm:px-5">
+                                        <a :href="heroUrl(hero.hero_id)" class="group flex items-center gap-2" :aria-label="'Статистика героя ' + (hero.localized_name || hero.name)">
+                                            <img :src="hero.icon || hero.image" :alt="hero.localized_name || hero.name" class="h-6 w-6 shrink-0 object-cover" loading="lazy">
+                                            <span class="truncate text-[12px] font-semibold text-mist-200 transition group-hover:text-white" x-text="hero.localized_name || hero.name"></span>
+                                        </a>
+                                    </td>
+                                    <td class="px-2 py-1 font-mono text-[12px] tabular-nums text-mist-300" x-text="hero.games"></td>
+                                    <td class="px-2 py-1 font-mono text-[12px] font-semibold tabular-nums" :class="hero.win_rate == null ? 'text-mist-500' : (hero.win_rate >= 50 ? 'text-emerald-300' : 'text-rose-300')" x-text="hero.win_rate == null ? '—' : hero.win_rate.toFixed(1) + '%'"></td>
+                                    <td class="px-2 py-1 font-mono text-[12px] tabular-nums text-mist-300" x-text="hero.kda == null ? '—' : Number(hero.kda).toFixed(2)"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
                 </div>
 
                 <div x-show="filteredHeroes.length === 0" class="px-4 py-10 text-center text-sm text-mist-400" x-cloak>Герои с таким именем не найдены.</div>

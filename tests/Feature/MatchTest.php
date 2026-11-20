@@ -68,7 +68,8 @@ class MatchTest extends TestCase
         $response->assertSee('text-lg font-bold text-mist-200', false);
         $response->assertSee('text-gray-400 text-sm', false);
         $response->assertSee('Команда Dire', false);
-        $response->assertSee('Пики и баны');
+        $response->assertDontSee('Пики и баны');
+        $response->assertDontSee('Баны');
         $response->assertSee('Башни');
         $response->assertSee('Лечение');
         $response->assertDontSee('31 200');
@@ -77,6 +78,9 @@ class MatchTest extends TestCase
         $response->assertSee(route('dota.player', ['accountId' => 123456789]), false);
         $response->assertSee(route('dota.player', ['accountId' => 987654321]), false);
         $response->assertDontSee('Данные о нетворсе появятся после парсинга матча');
+        $response->assertDontSee('Вернуться к профилю');
+        $response->assertDontSee('На главную');
+        $response->assertSee('>IMP</th>', false);
         $response->assertSee('id="dotahub-recent-data"', false);
         $response->assertSee('x-data="recentLinks()"', false);
         $response->assertSee('aria-label="Основная навигация"', false);
@@ -192,7 +196,7 @@ class MatchTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Hard');
-        $response->assertSee('IMP 7.5');
+        $response->assertSee('7.5');
         $response->assertSee('STRATZ');
         $response->assertSee('Immortal');
         $response->assertViewHas('match', function (array $match) {

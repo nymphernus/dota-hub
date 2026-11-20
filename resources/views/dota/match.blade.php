@@ -16,8 +16,8 @@
     $showTowerDamage = $allPlayers->contains(fn (array $player) => (int) ($player['tower_damage'] ?? 0) > 0);
     $showHealing = $allPlayers->contains(fn (array $player) => (int) ($player['hero_healing'] ?? 0) > 0);
     $showPurchases = $allPlayers->contains(fn (array $player) => ! empty($player['purchases']));
-    $picksBans = collect($match['picks_bans'] ?? []);
-    $columnCount = 6 + ($showTowerDamage ? 1 : 0) + ($showHealing ? 1 : 0) + ($showPurchases ? 1 : 0);
+    $showImpact = $allPlayers->contains(fn (array $player) => ($player['impact'] ?? null) !== null);
+    $columnCount = 7 + ($showTowerDamage ? 1 : 0) + ($showHealing ? 1 : 0) + ($showPurchases ? 1 : 0);
     $teams = [
         'radiant' => [
             'label' => 'Radiant',
@@ -105,68 +105,6 @@
             </div>
         </section>
 
-        @if ($picksBans->isNotEmpty())
-            <section class="mt-3" aria-label="Пики и баны">
-                <div class="flex flex-wrap items-end justify-between gap-2">
-                    <h2 class="section-heading">Пики и баны</h2>
-                    <span class="text-[11px] text-mist-500">Порядок драфта</span>
-                </div>
-
-                <div class="mt-4 grid gap-4 lg:grid-cols-2">
-                    @foreach (['Radiant' => 0, 'Dire' => 1] as $teamLabel => $teamId)
-                        @php
-                            $teamEntries = $picksBans->where('team', $teamId);
-                            $picks = $teamEntries->where('is_pick', true)->values();
-                            $bans = $teamEntries->where('is_pick', false)->values();
-                        @endphp
-                        <div class="rounded-none bg-ink-900/30 p-3">
-                            <p class="text-[11px] font-semibold uppercase tracking-[0.14em] {{ $teamId === 0 ? 'text-emerald-300' : 'text-rose-300' }}">{{ $teamLabel }}</p>
-
-                            @if ($picks->isNotEmpty())
-                                <div class="mt-3">
-                                    <p class="text-[10px] uppercase tracking-[0.14em] text-mist-500">Пики</p>
-                                    <div class="mt-2 flex flex-wrap gap-2">
-                                        @foreach ($picks as $entry)
-                                            <div class="flex items-center gap-2 rounded-none bg-ink-900/60 px-2 py-1.5" title="{{ $entry['hero_name'] }}">
-                                                <span class="h-7 w-12 overflow-hidden rounded bg-ink-800  ">
-                                                    @if (! empty($entry['hero_image']))
-                                                        <img src="{{ $entry['hero_image'] }}" alt="{{ $entry['hero_name'] }}" class="h-full w-full object-cover" loading="lazy">
-                                                    @endif
-                                                </span>
-                                                <span class="max-w-28 truncate text-[11px] font-semibold text-mist-200">{{ $entry['hero_name'] }}</span>
-                                            </div>
-                                        @endforeach
-                                    </div>
-                                </div>
-                            @endif
-
-                            @if ($bans->isNotEmpty())
-                                <div class="mt-3">
-                                    <p class="text-[10px] uppercase tracking-[0.14em] text-mist-500">Баны</p>
-                                    <div class="mt-2 flex flex-wrap gap-2">
-                                        @foreach ($bans as $entry)
-                                            <div class="flex items-center gap-2 rounded-none border border-rose-500/15 bg-rose-500/[0.05] px-2 py-1.5 opacity-80" title="{{ $entry['hero_name'] }}">
-                                                <span class="h-7 w-12 overflow-hidden rounded bg-ink-800   grayscale">
-                                                    @if (! empty($entry['hero_image']))
-                                                        <img src="{{ $entry['hero_image'] }}" alt="{{ $entry['hero_name'] }}" class="h-full w-full object-cover" loading="lazy">
-                                                    @endif
-                                                </span>
-                                                <span class="max-w-28 truncate text-[11px] font-semibold text-mist-300">{{ $entry['hero_name'] }}</span>
-                                            </div>
-                                        @endforeach
-                                    </div>
-                                </div>
-                            @endif
-
-                            @if ($picks->isEmpty() && $bans->isEmpty())
-                                <p class="mt-3 text-[11px] text-mist-500">Нет данных по драфту.</p>
-                            @endif
-                        </div>
-                    @endforeach
-                </div>
-            </section>
-        @endif
-
         <section class="card mt-4 overflow-hidden" aria-label="Составы матча">
             <div class="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-4 sm:px-5">
                 <div>
@@ -185,6 +123,7 @@
                     <thead class="table-head">
                         <tr>
                             <th class="px-2 py-1 font-semibold sm:px-5">Игрок / герой</th>
+                            <th class="px-2 py-1 font-semibold">IMP</th>
                             <th class="px-2 py-1 font-semibold">K / D / A</th>
                             <th class="px-2 py-1 font-semibold">GPM</th>
                             <th class="px-2 py-1 font-semibold">XPM</th>
@@ -202,7 +141,11 @@
                     </thead>
                     <tbody class="table-rows" x-data="{ openPlayer: null }">
                         @foreach ($teams as $teamKey => $team)
-                            <tr class="bg-ink-900/60">
+                            <tr @class([
+                                'border-l-4',
+                                'border-emerald-500 bg-emerald-500/10' => $teamKey === 'radiant',
+                                'border-rose-500 bg-rose-500/10' => $teamKey === 'dire',
+                            ])>
                                 <td colspan="{{ $columnCount }}" class="px-4 py-2 sm:px-5">
                                     <div class="flex flex-wrap items-center justify-between gap-2">
                                         <span class="text-[11px] font-semibold uppercase tracking-[0.16em] {{ $teamKey === 'radiant' ? 'text-emerald-300' : 'text-rose-300' }}">Команда {{ $team['label'] }}</span>
@@ -230,6 +173,7 @@
                                     @endphp
                                     <tr @class([
                                         'transition hover:bg-ink-900/30',
+                                        'odd:bg-[#1c1e26] even:bg-[#111318]',
                                         'bg-ink-700/60' => $isCurrentPlayer,
                                     ])>
                                         <td class="px-2 py-1 sm:px-5">
@@ -262,12 +206,12 @@
                                                         @if ($roleLabel)
                                                             <span class="badge !px-1.5 !py-0.5 !text-[9px] {{ $roleClasses }}" title="{{ $roleName }}{{ $roleSource ? ' · '.$roleSource : '' }}">{{ $roleLabel }}</span>
                                                         @endif
-                                                        @if (($player['impact'] ?? null) !== null)
-                                                            <span class="font-semibold text-accent-300/80" title="STRATZ impact">IMP {{ number_format($player['impact'], 1, '.', '') }}</span>
-                                                        @endif
                                                     </p>
                                                 </div>
                                             </div>
+                                        </td>
+                                        <td class="px-2 py-1 font-mono text-[13px] tabular-nums text-mist-300">
+                                            {{ $showImpact && ($player['impact'] ?? null) !== null ? number_format($player['impact'], 1, '.', '') : '—' }}
                                         </td>
                                         <td class="px-2 py-1 font-mono text-[13px] tabular-nums">
                                             <span class="text-emerald-300">{{ $player['kills'] }}</span>
@@ -345,17 +289,6 @@
             </div>
         </section>
 
-        <div class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-none bg-ink-900/60 px-2 py-1 text-[11px] text-mist-500">
-            <span>Данные OpenDota · кэш матча 1 час</span>
-            <div class="flex items-center gap-3">
-                @if ($profilePlayerId)
-                    <a href="{{ route('dota.player', ['accountId' => $profilePlayerId]) }}" class="inline-flex items-center gap-1 font-semibold text-accent-300 transition hover:text-accent-300">
-                        <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 5l-7 7 7 7" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                        Вернуться к профилю
-                    </a>
-                @endif
-                <a href="{{ route('home') }}" class="font-semibold text-mist-400 transition hover:text-mist-200">На главную</a>
-            </div>
-        </div>
+        <p class="mt-4 text-[11px] text-mist-500">Данные OpenDota · кэш матча 1 час</p>
     </div>
 @endsection

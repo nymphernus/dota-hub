@@ -749,7 +749,9 @@ class DotaProfileTest extends TestCase
         $response->assertSee('По винрейту');
         $response->assertSee('По KDA');
         $response->assertSee('perPage: 24', false);
-        $response->assertSee('grid grid-cols-2 gap-2 p-3 md:grid-cols-4 lg:grid-cols-6', false);
+        $response->assertSee('<th class="px-2 py-1 text-left font-semibold sm:px-5">ГЕРОЙ</th>', false);
+        $response->assertSee('odd:bg-[#1b1f2e] even:bg-[#0f111a]', false);
+        $response->assertDontSee('grid grid-cols-2 gap-2 p-3 md:grid-cols-4 lg:grid-cols-6', false);
         $response->assertSee('id="heroes-hero-filter"', false);
         $response->assertSee('id="heroes-hero-grid"', false);
         $response->assertSee('heroPickerQuery', false);

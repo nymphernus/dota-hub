@@ -46,7 +46,7 @@ class DotaMatchesTest extends TestCase
         $response->assertSee('All Pick');
         $response->assertSee('Ranked');
         $response->assertSee('Normal');
-        $response->assertSee('Все герои');
+        $response->assertSee('Выбрать героя');
         $response->assertSee('id="filter-hero"', false);
         $response->assertSee('id="filter-hero-grid"', false);
         $response->assertSee('heroPickerHeroes', false);
@@ -60,9 +60,9 @@ class DotaMatchesTest extends TestCase
         $response->assertDontSee('Нетворс');
         $response->assertSee('select-control', false);
         $response->assertSee('id="filter-date"', false);
-        $response->assertSee('name="date"', false);
-        $response->assertSee('type="date"', false);
+        $response->assertSee('id="filter-calendar"', false);
         $response->assertSee('bg-[#1c1e26] text-white border-[#2d313e] rounded px-3 py-2', false);
+        $response->assertDontSee('type="date"', false);
         $response->assertSee('Дата');
         $response->assertDontSee('id="filter-time"', false);
         $response->assertDontSee('Любое время');

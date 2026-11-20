@@ -37,6 +37,55 @@
                 heroPickerOpen: false,
                 heroPickerQuery: '',
                 heroPickerHeroes: @js($heroOptions),
+                calendarOpen: false,
+                calendarMonth: new Date(),
+                init() {
+                    if (this.date) {
+                        const parts = this.date.split('-').map(Number);
+                        this.calendarMonth = new Date(parts[0], parts[1] - 1, 1);
+                    }
+                },
+                get monthLabel() {
+                    return this.calendarMonth.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
+                },
+                get calendarDays() {
+                    const first = new Date(this.calendarMonth.getFullYear(), this.calendarMonth.getMonth(), 1);
+                    const offset = (first.getDay() + 6) % 7;
+                    const days = [];
+
+                    for (let index = 0; index < 42; index++) {
+                        const day = new Date(first);
+                        day.setDate(1 - offset + index);
+                        const iso = [
+                            day.getFullYear(),
+                            String(day.getMonth() + 1).padStart(2, '0'),
+                            String(day.getDate()).padStart(2, '0'),
+                        ].join('-');
+
+                        days.push({
+                            iso,
+                            number: day.getDate(),
+                            inMonth: day.getMonth() === first.getMonth(),
+                            selected: iso === this.date,
+                        });
+                    }
+
+                    return days;
+                },
+                toggleCalendar() { this.calendarOpen = ! this.calendarOpen; },
+                shiftMonth(step) {
+                    this.calendarMonth = new Date(this.calendarMonth.getFullYear(), this.calendarMonth.getMonth() + step, 1);
+                },
+                chooseDate(day) {
+                    this.date = day;
+                    this.calendarOpen = false;
+                    this.apply();
+                },
+                clearDate() {
+                    this.date = '';
+                    this.calendarOpen = false;
+                    this.apply();
+                },
                 get selectedHeroName() {
                     if (! this.hero) return 'Все герои';
                     const hero = this.heroPickerHeroes.find((item) => String(item.hero_id) === String(this.hero));
@@ -76,7 +125,8 @@
                         aria-controls="filter-hero-grid"
                         @click="heroPickerOpen = true"
                     >
-                        <span class="truncate" x-text="selectedHeroName">Все герои</span>
+                        <span class="truncate">Выбрать героя</span>
+                        <span class="max-w-[120px] truncate text-[10px] text-mist-500" x-text="selectedHeroName">Все герои</span>
                         <svg class="h-4 w-4 shrink-0 text-mist-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round" /></svg>
                     </button>
                 </div>
@@ -104,18 +154,54 @@
                     'selected' => (string) $filters['role'],
                     'options' => $roleFilterOptions,
                 ])
-                <div>
+                <div class="relative" @click.outside="calendarOpen = false" @keydown.escape.window="calendarOpen = false">
                     <label for="filter-date" class="label mb-1.5 block">Дата</label>
-                    <input
+                    <button
                         id="filter-date"
+                        type="button"
                         name="date"
-                        type="date"
-                        x-model="date"
-                        @change="apply()"
-                        value="{{ $filters['date'] ?? '' }}"
-                        class="w-full appearance-none bg-[#1c1e26] text-white border-[#2d313e] rounded px-3 py-2 focus:outline-none"
+                        @click="toggleCalendar()"
+                        :aria-expanded="calendarOpen.toString()"
+                        aria-controls="filter-calendar"
+                        class="flex w-full items-center justify-between bg-[#1c1e26] text-white border-[#2d313e] rounded px-3 py-2"
                         data-filter="date"
                     >
+                        <span x-text="date || 'За всё время'">{{ $filters['date'] ?? 'За всё время' }}</span>
+                        <svg class="h-4 w-4 text-mist-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="4" y="5" width="16" height="15" /><path d="M8 3v4M16 3v4M4 10h16" stroke-linecap="round" /></svg>
+                    </button>
+
+                    <div
+                        id="filter-calendar"
+                        x-show="calendarOpen"
+                        x-cloak
+                        class="absolute left-0 top-full z-40 mt-1 w-64 border border-[#2d313e] bg-[#1c1e26] p-2"
+                        role="dialog"
+                        aria-label="Календарь"
+                    >
+                        <div class="flex items-center justify-between gap-2 border-b border-line pb-2">
+                            <button type="button" class="grid h-7 w-7 place-items-center text-mist-400 transition hover:bg-[#2d313e] hover:text-white" @click="shiftMonth(-1)" aria-label="Предыдущий месяц">‹</button>
+                            <span class="text-xs font-semibold capitalize text-mist-200" x-text="monthLabel"></span>
+                            <button type="button" class="grid h-7 w-7 place-items-center text-mist-400 transition hover:bg-[#2d313e] hover:text-white" @click="shiftMonth(1)" aria-label="Следующий месяц">›</button>
+                        </div>
+                        <div class="mt-2 grid grid-cols-7 gap-0.5 text-center text-[9px] font-semibold uppercase text-mist-500">
+                            <template x-for="weekday in ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']" :key="weekday">
+                                <span x-text="weekday"></span>
+                            </template>
+                        </div>
+                        <div class="mt-1 grid grid-cols-7 gap-0.5">
+                            <template x-for="day in calendarDays" :key="day.iso">
+                                <button
+                                    type="button"
+                                    class="grid h-8 place-items-center text-[11px] transition"
+                                    :class="day.selected ? 'bg-[#2d313e] text-white' : (day.inMonth ? 'text-mist-300 hover:bg-[#2d313e] hover:text-white' : 'text-mist-600 hover:bg-[#2d313e]/60')"
+                                    @click="chooseDate(day.iso)"
+                                    :aria-label="day.iso"
+                                    x-text="day.number"
+                                ></button>
+                            </template>
+                        </div>
+                        <button type="button" class="mt-2 w-full border-t border-line pt-2 text-[11px] font-semibold text-mist-400 transition hover:text-white" @click="clearDate()">За всё время</button>
+                    </div>
                 </div>
             </div>
 

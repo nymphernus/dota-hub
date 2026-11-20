@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    <link rel="icon" href="/favicon.ico">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -40,7 +40,7 @@
 
     <header class="sticky top-0 z-40 border-b border-[#2d313e] bg-[#111318]/90 backdrop-blur-md">
         <div class="mx-auto flex h-16 w-full max-w-7xl items-center px-4 sm:px-6 lg:px-8">
-            <a href="/" class="bg-[#d32f2f] px-2 py-1 text-2xl leading-none tracking-tighter text-white" aria-label="dotahub — на главную">dotahub</a>
+            <a href="/" class="bg-[#d32f2f] px-2 py-1 text-2xl leading-none tracking-tighter text-white" aria-label="DOTAHUB — на главную">DOTAHUB</a>
 
             <div class="ml-auto flex items-center gap-2 sm:gap-3">
                 <form
