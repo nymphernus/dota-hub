@@ -6,7 +6,7 @@
 @php
     $topHeroes = $player['top_heroes'] ?? array_slice($player['heroes'], 0, 5);
     $heroUsageTotal = array_sum(array_column($heroUsage, 'games'));
-    $activityTotal = array_sum(array_column($activityHeatmap['days'], 'count'));
+    $activityTotal = (int) ($player['games'] ?? 0);
 @endphp
 
 @section('profile-content')

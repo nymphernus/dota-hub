@@ -378,19 +378,23 @@ class DotaPlayerController extends Controller
                 $count = (int) $row['count'];
                 $isFuture = $day->greaterThan($end);
 
+                $wins = (int) $row['wins'];
+                $losses = (int) $row['losses'];
+
                 $cell = [
                     'date' => $key,
                     'label' => $day->format('d.m.Y'),
                     'count' => $isFuture ? 0 : $count,
-                    'wins' => $isFuture ? 0 : (int) $row['wins'],
-                    'losses' => $isFuture ? 0 : (int) $row['losses'],
+                    'wins' => $isFuture ? 0 : $wins,
+                    'losses' => $isFuture ? 0 : $losses,
                     'level' => $isFuture ? 'future' : match (true) {
                         $count === 0 => 'empty',
-                        $row['losses'] === 0 => 'win',
-                        $row['wins'] === 0 => 'loss',
-                        $row['losses'] > $row['wins'] => 'loss_majority',
-                        $row['wins'] > $row['losses'] => 'win_majority',
-                        default => 'mixed',
+                        $count === 1 => 'single',
+                        $wins === $count => 'win',
+                        $losses === $count => 'loss',
+                        $wins > $losses => 'more_wins',
+                        $losses > $wins => 'more_losses',
+                        default => 'more_wins',
                     },
                     'column' => $weekIndex,
                     'weekday' => $weekday,
