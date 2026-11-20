@@ -1,238 +1,192 @@
-@extends('dota.layouts.profile')
+﻿@extends('dota.layouts.profile')
 
 @section('title', $pageTitle ?? ($player['nickname'].' - Матчи - DotaHub'))
-@section('description', 'Полный список матчей игрока '.$player['nickname'].' с фильтрами по герою, результату и типу игры.')
+@section('description', 'Полный список матчей игрока '.$player['nickname'].' с фильтрами по герою, результату, режиму, роли и дате.')
 
 @section('profile-content')
-        @php
-            $resultFilterOptions = [
-                '' => 'Все результаты',
-                'win' => 'Победа',
-                'loss' => 'Поражение',
-            ];
-            $modeFilterOptions = [
-                '' => 'Все режимы',
-                'ranked' => 'Ranked',
-                'turbo' => 'Turbo',
-                'normal' => 'Normal',
-            ];
-            $roleFilterOptions = [
-                '' => 'Все роли',
-                'carry' => 'Carry',
-                'mid' => 'Mid',
-                'offlane' => 'Offlane',
-                'support' => 'Support',
-                'hard_support' => 'Hard Support',
-            ];
-        @endphp
+@php
+    $resultFilterOptions = [
+        '' => 'Все результаты',
+        'win' => 'Победа',
+        'loss' => 'Поражение',
+    ];
+    $modeFilterOptions = [
+        '' => 'Все режимы',
+        'ranked' => 'Ranked',
+        'turbo' => 'Turbo',
+        'normal' => 'Normal',
+    ];
+    $roleFilterOptions = [
+        '' => 'Все роли',
+        'carry' => 'Carry',
+        'mid' => 'Mid',
+        'offlane' => 'Offlane',
+        'support' => 'Support',
+        'hard_support' => 'Hard Support',
+    ];
+@endphp
 
-        <section
-            class="card mt-4 p-4 sm:p-5"
-            x-data="{
-                hero: @js((string) ($filters['hero_id'] ?: '')),
-                result: @js((string) $filters['result']),
-                mode: @js((string) $filters['mode']),
-                role: @js((string) $filters['role']),
-                date: @js((string) ($filters['date'] ?? '')),
-                heroPickerOpen: false,
-                heroPickerQuery: '',
-                heroPickerHeroes: @js($heroOptions),
-                apply() {
-                    const params = new URLSearchParams();
-                    if (this.hero) params.set('hero_id', this.hero);
-                    if (this.result) params.set('result', this.result);
-                    if (this.mode) params.set('mode', this.mode);
-                    if (this.role) params.set('role', this.role);
-                    if (this.date) params.set('date', this.date);
-                    params.delete('page');
-                    const query = params.toString();
-                    window.location.href = '{{ route('dota.player.matches', ['accountId' => $player['account_id']]) }}' + (query ? '?' + query : '');
-                },
-                get filteredHeroPickerHeroes() {
-                    const query = this.heroPickerQuery.trim().toLowerCase();
-                    return this.heroPickerHeroes.filter((hero) => (hero.localized_name || hero.name || '').toLowerCase().includes(query));
-                },
-                selectHero(heroId) {
-                    this.hero = heroId ? String(heroId) : '';
-                    this.heroPickerQuery = '';
-                    this.heroPickerOpen = false;
-                    this.apply();
-                }
-            }"
-            aria-label="Фильтры матчей"
-        >
-            <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-                <div>
-                    <span class="label mb-1.5 block">Герой</span>
-                    <button
-                        type="button"
-                        id="filter-hero"
-                        data-filter="hero_id"
-                        class="select-control flex w-full items-center justify-between gap-2 text-left"
-                        :aria-expanded="heroPickerOpen.toString()"
-                        aria-controls="filter-hero-grid"
-                        @click="heroPickerOpen = true"
-                    >
-                        <span class="truncate" x-text="hero ? 'Герой выбран' : 'Все герои'">Все герои</span>
-                        <svg class="h-4 w-4 shrink-0 text-mist-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                    </button>
-                </div>
-                @include('dota.partials.filter-select', [
-                    'id' => 'filter-result',
-                    'label' => 'Результат',
-                    'model' => 'result',
-                    'filterKey' => 'result',
-                    'selected' => (string) $filters['result'],
-                    'options' => $resultFilterOptions,
-                ])
-                @include('dota.partials.filter-select', [
-                    'id' => 'filter-mode',
-                    'label' => 'Режим игры',
-                    'model' => 'mode',
-                    'filterKey' => 'mode',
-                    'selected' => (string) $filters['mode'],
-                    'options' => $modeFilterOptions,
-                ])
-                @include('dota.partials.filter-select', [
-                    'id' => 'filter-role',
-                    'label' => 'Роль',
-                    'model' => 'role',
-                    'filterKey' => 'role',
-                    'selected' => (string) $filters['role'],
-                    'options' => $roleFilterOptions,
-                ])
-                <div>
-                    <label for="filter-date" class="label mb-1.5 block">Дата</label>
-                    <div class="relative">
-                        <input
-                            id="filter-date"
-                            type="date"
-                            x-model="date"
-                            @change="apply()"
-                            class="w-full bg-[#1c1e26] border border-[#2d313e] rounded px-3 py-2.5 pr-9 text-sm text-white focus:outline-none"
-                            data-filter="date"
-                        >
-                        <svg class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-mist-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="4" y="5" width="16" height="15" /><path d="M8 3v4M16 3v4M4 10h16" stroke-linecap="round" /></svg>
-                    </div>
-                </div>
-            </div>
+<section class="card mt-4 p-4 sm:p-5">
+    <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <div>
+            <h2 class="section-heading">Матчи</h2>
+            <p class="mt-1 text-sm text-mist-400">История игр с фильтрами по герою, результату, режиму, роли и дате.</p>
+        </div>
+        <span class="badge border-line bg-ink-900/50 text-mist-400">{{ $matches->total() }} матчей</span>
+    </div>
 
-            <div
-                x-show="heroPickerOpen"
-                x-cloak
-                x-transition.opacity.duration.100ms
-                class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
-                @click.self="heroPickerOpen = false"
-                @keydown.escape.window="heroPickerOpen = false"
-                role="dialog"
-                aria-modal="true"
-                aria-label="Выбор героя"
-            >
-                <div class="w-full max-w-3xl border border-line bg-[#1c1e26]">
-                    <div class="flex items-center justify-between gap-3 border-b border-line px-4 py-2">
-                        <h3 class="section-heading">Выберите героя</h3>
-                        <button type="button" class="btn-ghost !px-2 !py-1" @click="heroPickerOpen = false" aria-label="Закрыть выбор героя">✕</button>
-                    </div>
-                    <div class="border-b border-line p-3">
-                        <input
-                            type="search"
-                            x-model="heroPickerQuery"
-                            class="input !py-1.5 !pl-8 !text-[12px]"
-                            placeholder="Поиск героя..."
-                            aria-label="Поиск героя"
-                            autocomplete="off"
-                        >
-                        <svg class="pointer-events-none absolute left-6 top-[74px] h-3.5 w-3.5 text-mist-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="6.5" /><path d="M16 16l4.5 4.5" stroke-linecap="round" /></svg>
-                    </div>
-                    <div id="filter-hero-grid" class="grid max-h-[60vh] grid-cols-8 gap-2 overflow-y-auto p-3 sm:grid-cols-10 lg:grid-cols-12">
-                        <button
-                            type="button"
-                            class="grid h-8 w-8 place-items-center border border-line bg-ink-900/40 text-[10px] font-semibold text-mist-400 transition hover:border-accent-400 hover:text-white"
-                            :class="!hero ? 'border-accent-400 bg-accent-400/10 text-white' : ''"
-                            @click="selectHero(0)"
-                            title="Все герои"
-                        >ALL</button>
-                        <template x-for="heroOption in filteredHeroPickerHeroes" :key="heroOption.hero_id">
-                            <button
-                                type="button"
-                                class="h-8 w-8 overflow-hidden border border-line bg-ink-900/40 transition hover:border-accent-400"
-                                :class="String(heroOption.hero_id) === String(hero) ? 'border-accent-400 bg-accent-400/10' : ''"
-                                :title="heroOption.localized_name || heroOption.name"
-                                @click="selectHero(heroOption.hero_id)"
-                            >
-                                <img :src="heroOption.icon || heroOption.image" :alt="heroOption.localized_name || heroOption.name" class="h-full w-full object-cover" loading="lazy">
-                            </button>
-                        </template>
-                    </div>
-                </div>
-            </div>
+    <form method="GET" action="{{ route('dota.player.matches', ['accountId' => $player['account_id']]) }}" class="flex flex-row flex-wrap items-end gap-2">
+        <label class="min-w-[140px] flex-1">
+            <span class="label mb-1 block">Герой</span>
+            <select name="hero_id" class="h-10 w-full rounded border border-[#2d313e] bg-[#1c1e26] px-3 text-sm text-mist-200 focus:border-accent-400/50 focus:outline-none">
+                <option value="0">Все герои</option>
+                @foreach (($heroOptions ?? []) as $hero)
+                    <option value="{{ $hero['hero_id'] }}" @selected((int) ($filters['hero_id'] ?? 0) === (int) $hero['hero_id'])>{{ $hero['localized_name'] ?? $hero['name'] ?? 'Герой' }}</option>
+                @endforeach
+            </select>
+        </label>
 
-            @if ($filters['hero_id'] || $filters['result'] || $filters['mode'] || $filters['role'] || ($filters['date'] ?? ''))
-                <div class="mt-3 flex justify-end">
-                    <a href="{{ route('dota.player.matches', ['accountId' => $player['account_id']]) }}" class="btn-ghost !py-2">Сбросить фильтры</a>
-                </div>
+        <label class="min-w-[140px] flex-1">
+            <span class="label mb-1 block">Результат</span>
+            <select name="result" class="h-10 w-full rounded border border-[#2d313e] bg-[#1c1e26] px-3 text-sm text-mist-200 focus:border-accent-400/50 focus:outline-none">
+                @foreach ($resultFilterOptions as $value => $label)
+                    <option value="{{ $value }}" @selected(($filters['result'] ?? '') === $value)>{{ $label }}</option>
+                @endforeach
+            </select>
+        </label>
+
+        <label class="min-w-[140px] flex-1">
+            <span class="label mb-1 block">Режим</span>
+            <select name="mode" class="h-10 w-full rounded border border-[#2d313e] bg-[#1c1e26] px-3 text-sm text-mist-200 focus:border-accent-400/50 focus:outline-none">
+                @foreach ($modeFilterOptions as $value => $label)
+                    <option value="{{ $value }}" @selected(($filters['mode'] ?? '') === $value)>{{ $label }}</option>
+                @endforeach
+            </select>
+        </label>
+
+        <label class="min-w-[140px] flex-1">
+            <span class="label mb-1 block">Роль</span>
+            <select name="role" class="h-10 w-full rounded border border-[#2d313e] bg-[#1c1e26] px-3 text-sm text-mist-200 focus:border-accent-400/50 focus:outline-none">
+                @foreach ($roleFilterOptions as $value => $label)
+                    <option value="{{ $value }}" @selected(($filters['role'] ?? '') === $value)>{{ $label }}</option>
+                @endforeach
+            </select>
+        </label>
+
+        <label class="min-w-[150px] flex-1">
+            <span class="label mb-1 block">Дата</span>
+            <input type="date" name="date" value="{{ $filters['date'] ?? '' }}" class="h-10 w-full rounded border border-[#2d313e] bg-[#1c1e26] px-3 text-sm text-mist-200 focus:border-accent-400/50 focus:outline-none" />
+        </label>
+
+        <div class="flex items-end gap-2">
+            <button type="submit" class="button-primary h-10 px-4">Применить</button>
+            @if (($filters['hero_id'] ?? 0) > 0 || ($filters['result'] ?? '') !== '' || ($filters['mode'] ?? '') !== '' || ($filters['role'] ?? '') !== '' || ($filters['date'] ?? '') !== '')
+                <a href="{{ route('dota.player.matches', ['accountId' => $player['account_id']]) }}" class="button-ghost h-10 px-4">Сбросить</a>
             @endif
-        </section>
+        </div>
+    </form>
 
-        <section class="card mt-4 overflow-hidden">
-            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-3 sm:px-5">
-                <p class="text-[11px] text-mist-500">
-                    @if ($matches->total() > 0)
-                        Показаны {{ $matches->firstItem() }}–{{ $matches->lastItem() }} из {{ $matches->total() }}
-                    @else
-                        Ничего не найдено
-                    @endif
-                </p>
-                <span class="badge border-line bg-ink-900/50 text-mist-400">{{ number_format($matches->total(), 0, '.', ' ') }} матчей</span>
-            </div>
-
-            @if ($matches->isEmpty())
-                <div class="p-10 text-center text-sm text-mist-400">По выбранным фильтрам матчи не найдены.</div>
-            @else
-                <table class="w-full text-sm">
-                    <thead class="table-head">
-                        <tr>
-                            <th class="px-2 py-1 text-left font-semibold">Герой</th>
-                            <th class="px-2 py-1 text-left font-semibold">Результат</th>
-                            <th class="px-2 py-1 text-left font-semibold">K/D/A</th>
-                            <th class="px-2 py-1 text-left font-semibold">KDA</th>
-                            <th class="px-2 py-1 text-left font-semibold">Длит.</th>
-                            <th class="px-2 py-1 text-left font-semibold">Режим</th>
-                            <th class="px-2 py-1 text-left font-semibold">Дата</th>
+    @if ($matches->isEmpty())
+        <div class="mt-6 p-10 text-center text-sm text-mist-400">Матчи не найдены по текущим фильтрам.</div>
+    @else
+        <div class="mt-4 overflow-hidden border border-[#2d313e] bg-[#1c1e26]">
+            <table class="w-full text-sm">
+                <thead class="table-head">
+                    <tr>
+                        <th class="px-2 py-1 text-left font-semibold">Герой</th>
+                        <th class="px-2 py-1 text-left font-semibold">KDA</th>
+                        <th class="px-2 py-1 text-left font-semibold">GPM</th>
+                        <th class="px-2 py-1 text-left font-semibold">Предметы</th>
+                    </tr>
+                </thead>
+                <tbody class="table-rows">
+                    @foreach ($matches as $match)
+                        @php
+                            $matchUrl = ! empty($match['match_id'])
+                                ? route('dota.match', ['matchId' => $match['match_id'], 'player_id' => $player['account_id']])
+                                : null;
+                            $heroUrl = ! empty($match['hero_id'])
+                                ? route('dota.player.hero', ['accountId' => $player['account_id'], 'heroId' => $match['hero_id']])
+                                : null;
+                            $items = $match['items'] ?? [];
+                        @endphp
+                        <tr class="group transition odd:bg-[#1c1e26] even:bg-[#111318] hover:bg-ink-700/60"
+                            @if ($matchUrl)
+                                data-href="{{ $matchUrl }}"
+                                onclick="window.location.href = this.dataset.href"
+                                tabindex="0"
+                            @endif
+                        >
+                            <td @class([
+                                'px-2 py-1',
+                                'border-l-4 border-green-500' => $match['win'] ?? false,
+                                'border-l-4 border-red-500' => ! ($match['win'] ?? false),
+                            ])>
+                                <div class="flex items-center gap-2">
+                                    @if ($heroUrl)
+                                        <a href="{{ $heroUrl }}" onclick="event.stopPropagation()" class="h-9 w-16 shrink-0 overflow-hidden bg-ink-800" aria-label="{{ $match['hero_name'] ?? 'Герой' }}">
+                                            @if (! empty($match['hero_image']))
+                                                <img src="{{ $match['hero_image'] }}" alt="{{ $match['hero_name'] ?? 'Герой' }}" class="h-full w-full object-cover" loading="lazy">
+                                            @endif
+                                        </a>
+                                    @else
+                                        <span class="h-9 w-16 shrink-0 overflow-hidden bg-ink-800">
+                                            @if (! empty($match['hero_image']))
+                                                <img src="{{ $match['hero_image'] }}" alt="{{ $match['hero_name'] ?? 'Герой' }}" class="h-full w-full object-cover" loading="lazy">
+                                            @endif
+                                        </span>
+                                    @endif
+                                    <div class="min-w-0">
+                                        <div class="truncate text-[12px] font-bold text-mist-200">{{ $match['hero_name'] ?? '—' }}</div>
+                                        <div class="text-[10px] text-mist-500">{{ $match['duration_label'] ?? '' }} @if(!empty($match['game_mode_label'] ?? $match['match_type_label'])) · {{ $match['game_mode_label'] ?? $match['match_type_label'] }} @endif</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-2 py-1 font-mono text-[12px] tabular-nums">
+                                <span class="text-green-500">{{ (int) ($match['kills'] ?? 0) }}</span><span class="text-mist-500/60">/</span><span class="text-red-500">{{ (int) ($match['deaths'] ?? 0) }}</span><span class="text-mist-500/60">/</span><span class="text-mist-400">{{ (int) ($match['assists'] ?? 0) }}</span>
+                                <span class="ml-1 text-[10px] text-mist-500">({{ number_format((float) ($match['kda'] ?? 0), 2, '.', '') }})</span>
+                            </td>
+                            <td class="px-2 py-1 font-mono text-[12px] tabular-nums text-mist-300">{{ (int) ($match['gpm'] ?? 0) ?: '—' }}</td>
+                            <td class="px-2 py-1">
+                                <div class="flex items-center gap-0.5">
+                                    @for ($slot = 0; $slot < 6; $slot++)
+                                        @php $item = $items[$slot] ?? null; @endphp
+                                        @if (is_array($item) && ! empty($item['image']))
+                                            <span class="block h-6 w-6 overflow-hidden rounded bg-ink-800" title="{{ $item['name'] ?? '' }}">
+                                                <img src="{{ $item['image'] }}" alt="{{ $item['name'] ?? '' }}" class="h-full w-full object-cover" loading="lazy">
+                                            </span>
+                                        @elseif (is_array($item))
+                                            <span class="grid h-6 w-6 place-items-center rounded bg-ink-800 text-[8px] font-bold text-mist-400" title="{{ $item['name'] ?? '' }}">?</span>
+                                        @else
+                                            <span class="block h-6 w-6 rounded border border-dashed border-line bg-ink-900/15"></span>
+                                        @endif
+                                    @endfor
+                                </div>
+                            </td>
                         </tr>
-                    </thead>
-                    <tbody class="table-rows">
-                        @foreach ($matches as $match)
-                            @php
-                                $matchUrl = route('dota.match', ['matchId' => $match['match_id'], 'player_id' => $player['account_id']]);
-                                $startedAt = ! empty($match['started_at']) ? \Carbon\CarbonImmutable::parse($match['started_at']) : null;
-                                $isWin = (bool) ($match['win'] ?? false);
-                            @endphp
-                            <tr class="transition hover:bg-ink-900/30">
-                                <td class="px-2 py-1">
-                                    <a href="{{ $matchUrl }}" class="group flex items-center gap-2">
-                                        <img src="{{ $match['hero_icon'] ?? $match['hero_image'] ?? '' }}" alt="{{ $match['hero_name'] ?? 'Герой' }}" class="h-6 w-6 shrink-0 object-cover" loading="lazy">
-                                        <span class="truncate text-[12px] font-semibold text-mist-200 transition group-hover:text-white">{{ $match['hero_name'] ?? 'Герой' }}</span>
-                                    </a>
-                                </td>
-                                <td class="px-2 py-1">
-                                    <a href="{{ $matchUrl }}" class="text-[12px] font-semibold {{ $isWin ? 'text-green-500' : 'text-red-500' }}">{{ $isWin ? 'Победа' : 'Поражение' }}</a>
-                                </td>
-                                <td class="px-2 py-1 font-mono text-[12px] tabular-nums text-mist-300">
-                                    <span class="text-green-500">{{ $match['kills'] ?? 0 }}</span>/<span class="text-red-500">{{ $match['deaths'] ?? 0 }}</span>/<span class="text-mist-300">{{ $match['assists'] ?? 0 }}</span>
-                                </td>
-                                <td class="px-2 py-1 font-mono text-[12px] tabular-nums text-mist-300">{{ number_format((float) ($match['kda'] ?? 0), 2, '.', '') }}</td>
-                                <td class="px-2 py-1 text-[12px] text-mist-400">{{ $match['duration_label'] ?? '—' }}</td>
-                                <td class="px-2 py-1 text-[12px] text-mist-400">{{ $match['match_type_label'] ?? $match['game_mode_label'] ?? '—' }}</td>
-                                <td class="px-2 py-1 text-[12px] text-mist-500">{{ $startedAt?->format('d.m.Y H:i') ?? '—' }}</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            @endif
-        </section>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
 
         @if ($matches->hasPages())
-            <div class="mt-4">{{ $matches->links('vendor.pagination.dotahub') }}</div>
+            <div class="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4 text-sm">
+                <span class="text-mist-400">Страница {{ $matches->currentPage() }} из {{ $matches->lastPage() }}</span>
+                <div class="flex items-center gap-2">
+                    @if ($matches->onFirstPage())
+                        <span class="button-ghost pointer-events-none opacity-50">Назад</span>
+                    @else
+                        <a href="{{ $matches->previousPageUrl() }}" class="button-ghost">Назад</a>
+                    @endif
+
+                    @if ($matches->hasMorePages())
+                        <a href="{{ $matches->nextPageUrl() }}" class="button-primary">Далее</a>
+                    @else
+                        <span class="button-primary pointer-events-none opacity-50">Далее</span>
+                    @endif
+                </div>
+            </div>
         @endif
+    @endif
+</section>
 @endsection

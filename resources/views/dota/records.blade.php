@@ -1,4 +1,4 @@
-@extends('dota.layouts.profile')
+﻿@extends('dota.layouts.profile')
 
 @section('title', $pageTitle ?? ($player['nickname'].' - Рекорды - DotaHub'))
 @section('description', 'Личные рекорды игрока '.$player['nickname'].' в Dota 2: самый длинный и короткий матч, максимум убийств, урона, GPM и серии побед и поражений.')
@@ -21,7 +21,7 @@
                 :aria-selected="(tab === 'all').toString()"
                 @click="tab = 'all'"
                 class="rounded-none px-3 py-2 text-sm font-semibold transition"
-                :class="tab === 'all' ? 'bg-accent-400/15 text-accent-300' : 'text-mist-400 hover:text-mist-200'"
+                :class="tab === 'all' ? 'bg-[#2d313e] text-white' : 'text-mist-400 hover:text-mist-200'"
             >Все матчи</button>
             <button
                 type="button"
@@ -30,15 +30,15 @@
                 :aria-selected="(tab === 'ranked').toString()"
                 @click="tab = 'ranked'"
                 class="rounded-none px-3 py-2 text-sm font-semibold transition"
-                :class="tab === 'ranked' ? 'bg-accent-400/15 text-accent-300' : 'text-mist-400 hover:text-mist-200'"
+                :class="tab === 'ranked' ? 'bg-[#2d313e] text-white' : 'text-mist-400 hover:text-mist-200'"
             >Рейтинг</button>
         </div>
 
-        <div id="records-all" role="tabpanel" x-show="tab === 'all'" x-cloak>
+        <div id="records-all" role="tabpanel" x-show="tab === 'all'" x-cloak class="mt-0">
             @include('dota.partials.records-grid', ['records' => $records])
         </div>
 
-        <div id="records-ranked" role="tabpanel" x-show="tab === 'ranked'" x-cloak>
+        <div id="records-ranked" role="tabpanel" x-show="tab === 'ranked'" x-cloak class="mt-0">
             @include('dota.partials.records-grid', ['records' => $rankedRecords])
         </div>
     </section>

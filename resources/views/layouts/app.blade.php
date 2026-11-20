@@ -121,22 +121,22 @@
         @if ($showProfileNav)
             <nav class="border-t border-[#2d313e] bg-[#1c1e26]" aria-label="Основная навигация">
                 <div class="mx-auto flex w-full max-w-7xl items-center gap-1 overflow-x-auto px-4 sm:px-6 lg:px-8">
-                    @foreach ([
-                        'dota.player' => ['dota.player', 'Обзор'],
-                        'dota.player.matches' => ['dota.player.matches', 'Матчи'],
-                        'dota.player.heroes' => ['dota.player.heroes', 'Герои'],
-                        'dota.player.records' => ['dota.player.records', 'Рекорды'],
-                        'dota.player.peers' => ['dota.player.peers', 'Союзники'],
-                    ] as $routeName => [$key, $label])
+                                        @foreach ([
+                        'dota.player' => 'Обзор',
+                        'dota.player.matches' => 'Матчи',
+                        'dota.player.heroes' => 'Герои',
+                        'dota.player.records' => 'Рекорды',
+                        'dota.player.peers' => 'Союзники',
+                    ] as $routeName => $label)
                         <a
-                            href="{{ route($item[0], ['accountId' => $navAccountId]) }}"
+                            href="{{ route($routeName, ['accountId' => $navAccountId]) }}"
                             @class([
                                 'shrink-0 px-3 py-2 text-xs font-semibold transition',
-                                'bg-[#2d313e] text-white' => $navRoute === $itemRoute,
-                                'text-mist-400 hover:text-mist-200' => $navRoute !== $itemRoute,
+                                'bg-[#2d313e] text-white' => $navRoute === $routeName,
+                                'text-mist-400 hover:text-mist-200' => $navRoute !== $routeName,
                             ])
-                            @if ($navRoute === $itemRoute) aria-current="page" @endif
-                        >{{ $item[1] }}</a>
+                            @if ($navRoute === $routeName) aria-current="page" @endif
+                        >{{ $label }}</a>
                     @endforeach
 
                     @if (in_array($navRoute, ['dota.match', 'dota.player.hero'], true))
