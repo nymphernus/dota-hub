@@ -164,7 +164,19 @@ class DotaProfileTest extends TestCase
             fn (array $matches) => count($matches) === 2
                 && $matches[0]['win'] === true
                 && $matches[1]['win'] === false
+                && $matches[0]['lane_role'] === 1
+                && $matches[1]['lane_role'] === 2
         );
+        $response->assertSee('Роль');
+        $response->assertSee('Safe');
+        $response->assertSee('Mid');
+
+        // Two of the six history rows are unranked; both must still feed the
+        // activity heatmap (ranked filtering only applies to records).
+        $response->assertViewHas('player', fn (array $player) => count(array_filter(
+            $player['match_history'],
+            fn (array $match) => $match['is_ranked'] === false,
+        )) === 2);
     }
 
     public function test_opendota_api_key_is_only_sent_when_configured(): void
@@ -693,6 +705,7 @@ class DotaProfileTest extends TestCase
                     'xp_per_min' => 710,
                     'duration' => 2400,
                     'start_time' => 1700000000,
+                    'lane_role' => 1,
                 ],
                 [
                     'match_id' => 9000000002,
@@ -706,6 +719,7 @@ class DotaProfileTest extends TestCase
                     'xp_per_min' => 420,
                     'duration' => 1980,
                     'start_time' => 1699900000,
+                    'lane_role' => 2,
                 ],
             ]),
             'api.opendota.com/api/players/'.self::ACCOUNT_ID.'/heroes*' => Http::response(

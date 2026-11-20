@@ -35,6 +35,7 @@
                                 <thead class="table-head">
                                     <tr>
                                         <th class="px-3 py-2.5 text-left font-semibold sm:px-4">Герой / режим</th>
+                                        <th class="px-2 py-2.5 text-left font-semibold">Роль</th>
                                         <th class="px-2 py-2.5 text-left font-semibold">K / D / A</th>
                                         <th class="px-2 py-2.5 text-left font-semibold">GPM / XPM</th>
                                         <th class="px-2 py-2.5 text-left font-semibold">Предметы</th>

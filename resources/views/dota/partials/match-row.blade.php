@@ -8,6 +8,12 @@
     $heroUrl = ! empty($match['hero_id'])
         ? route('dota.player.hero', ['accountId' => $accountId, 'heroId' => $match['hero_id']])
         : null;
+
+    // OpenDota lane_role: 1 = Safe, 2 = Mid, 3 = Off, 4 = Jungle.
+    $laneRole = (int) ($match['lane_role'] ?? 0);
+    $laneLabels = [1 => 'Safe', 2 => 'Mid', 3 => 'Off', 4 => 'Jungle'];
+    $roleLabel = $laneLabels[$laneRole] ?? ($match['role_key'] ?? null);
+    $roleTitle = $laneLabels[$laneRole] ?? ($roleLabel ? ucfirst((string) $roleLabel) : 'Роль не определена');
 @endphp
 <tr @class([
     'group transition',
@@ -70,6 +76,16 @@
                 </div>
             </div>
         </div>
+    </td>
+
+    <td class="px-2 py-2.5">
+        @if ($roleLabel)
+            <span class="inline-flex items-center rounded bg-white/[0.04] px-1.5 py-1 text-[10px] font-semibold text-mist-200" title="{{ $roleTitle }}">
+                {{ $laneLabels[$laneRole] ?? ucfirst((string) $roleLabel) }}
+            </span>
+        @else
+            <span class="text-[10px] text-mist-400" title="Роль не определена">—</span>
+        @endif
     </td>
 
     <td class="px-2 py-2.5 font-mono text-[12px] tabular-nums">

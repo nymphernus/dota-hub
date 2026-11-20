@@ -47,6 +47,9 @@ class DotaMatchesTest extends TestCase
         $response->assertSee('Победа');
         $response->assertSee('Режим игры');
         $response->assertSee('Роль');
+        $response->assertSee('Safe');
+        $response->assertSee('Mid');
+        $response->assertSee('Jungle');
         $response->assertDontSee('Нетворс');
         $response->assertSee('select-control', false);
         $response->assertSee('id="filter-time"', false);

@@ -42,6 +42,11 @@ class DotaPlayerController extends Controller
         $history = $player['match_history'] ?? [];
         $steamId = ($player['steam_id'] ?? '') ?: SteamId::steamId64FromAccountId($accountId);
 
+        // The heatmap is a lifetime-activity view: it must receive every cached
+        // match, including normal/turbo games. Ranked-only filtering belongs to
+        // the records page and is applied there, not here.
+        $heatmapMatches = $history;
+
         return view('dota.player', [
             'player' => $player,
             'pageTitle' => $player['nickname'].' - Обзор - DotaHub',
@@ -49,7 +54,7 @@ class DotaPlayerController extends Controller
             'profileSection' => 'Обзор',
             'winrate' => $player['winrate'],
             'recentMatches' => array_slice($player['matches'], 0, 25),
-            'activityHeatmap' => $this->activityHeatmap($history),
+            'activityHeatmap' => $this->activityHeatmap($heatmapMatches),
             'heroUsage' => $this->heroUsage(array_slice($history, 0, 25)),
             'lifetimeStats' => $openDota->lifetimeStats($accountId, $history),
             'rankStats' => $this->rankStats($history),
