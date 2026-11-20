@@ -27,7 +27,7 @@
             {{ $winrate !== null ? number_format($winrate, 1, '.', '').'%' : '—' }}
         </p>
         <div class="mt-2 h-1.5 overflow-hidden rounded-none bg-ink-900/50">
-            <div class="h-full rounded-none {{ ($winrate ?? 0) >= 50 ? 'bg-green-500' : 'bg-red-500' }}" style="width: {{ $winrate ?? 0 }}%"></div>
+            <div class="h-full rounded-none bg-green-500" style="width: {{ $winrate ?? 0 }}%"></div>
         </div>
     </div>
 

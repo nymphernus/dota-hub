@@ -1,4 +1,4 @@
-@php
+﻿@php
     $matchUrl = ! empty($match['match_id'])
         ? route('dota.match', ['matchId' => $match['match_id'], 'player_id' => $accountId])
         : null;
@@ -9,11 +9,28 @@
         ? route('dota.player.hero', ['accountId' => $accountId, 'heroId' => $match['hero_id']])
         : null;
 
-    // OpenDota lane_role: 1 = Safe, 2 = Mid, 3 = Off, 4 = Jungle.
     $laneRole = (int) ($match['lane_role'] ?? 0);
     $laneLabels = [1 => 'Safe', 2 => 'Mid', 3 => 'Off', 4 => 'Jungle'];
-    $roleLabel = $laneLabels[$laneRole] ?? ($match['role_key'] ?? null);
-    $roleTitle = $laneLabels[$laneRole] ?? ($roleLabel ? ucfirst((string) $roleLabel) : 'Роль не определена');
+    $roleKey = $match['role_key'] ?? null;
+    $roleLabel = $laneLabels[$laneRole] ?? match ($roleKey) {
+        'carry' => 'Safe',
+        'mid' => 'Mid',
+        'offlane' => 'Off',
+        'support' => 'Soft',
+        'hard_support' => 'Hard',
+        default => $roleKey ? ucfirst((string) $roleKey) : null,
+    };
+    $roleTitle = $laneLabels[$laneRole] ?? ($roleLabel ?: 'Роль не определена');
+
+    $roleClass = match ($roleLabel) {
+        'Safe' => 'text-green-500',
+        'Mid' => 'text-blue-500',
+        'Off' => 'text-red-500',
+        'Soft' => 'text-purple-500',
+        'Hard' => 'text-orange-500',
+        default => 'text-mist-300',
+    };
+
     $modeLabel = $match['game_mode_label'] ?? $match['match_type_label'] ?? null;
     $modeKey = strtolower((string) $modeLabel);
     $isRanked = (int) ($match['lobby_type'] ?? 0) === 7 || str_contains($modeKey, 'ranked');
@@ -37,7 +54,7 @@
     ])>
         <div class="flex items-center gap-2.5">
             @if ($heroUrl)
-                <a href="{{ $heroUrl }}" class="relative block h-10 w-16 shrink-0 overflow-hidden rounded-none bg-ink-800   transition " onclick="event.stopPropagation()" aria-label="Статистика героя {{ $match['hero_name'] }}">
+                <a href="{{ $heroUrl }}" class="relative block h-10 w-16 shrink-0 overflow-hidden rounded-none bg-ink-800 transition" onclick="event.stopPropagation()" aria-label="Статистика по герою {{ $match['hero_name'] }}">
                     @if ($match['hero_image'])
                         <img src="{{ $match['hero_image'] }}" alt="{{ $match['hero_name'] }}" class="h-full w-full object-cover" loading="lazy">
                     @else
@@ -48,7 +65,7 @@
                     @endif
                 </a>
             @else
-                <div class="h-10 w-16 shrink-0 overflow-hidden rounded-none bg-ink-800  "></div>
+                <div class="h-10 w-16 shrink-0 overflow-hidden rounded-none bg-ink-800"></div>
             @endif
 
             <div class="min-w-0">
@@ -66,7 +83,6 @@
                 </div>
                 <div class="mt-1 flex flex-wrap items-center gap-1.5 text-[9px] text-mist-500">
                     <span class="font-mono">{{ $match['duration_label'] ?? '—' }}</span>
-                    <span class="text-mist-500">·</span>
                     @if ($modeLabel)
                         <span @class([
                             'rounded px-1.5 py-0.5 text-[9px] font-semibold tracking-wide',
@@ -82,9 +98,7 @@
 
     <td class="px-2 py-1">
         @if ($roleLabel)
-            <span class="inline-flex items-center rounded bg-ink-900/40 px-1.5 py-1 text-[10px] font-semibold text-mist-200" title="{{ $roleTitle }}">
-                {{ $laneLabels[$laneRole] ?? ucfirst((string) $roleLabel) }}
-            </span>
+            <span class="inline-flex items-center text-[10px] font-semibold {{ $roleClass }}" title="{{ $roleTitle }}">{{ $roleLabel }}</span>
         @else
             <span class="text-[10px] text-mist-400" title="Роль не определена">—</span>
         @endif
@@ -104,12 +118,12 @@
         <div class="flex items-center gap-0.5">
             @for ($slot = 0; $slot < 6; $slot++)
                 @php $item = $match['items'][$slot] ?? null; @endphp
-                @if ($item && $item['image'])
-                    <span class="block h-6 w-6 overflow-hidden rounded bg-ink-800  " title="{{ $item['name'] }}">
-                        <img src="{{ $item['image'] }}" alt="{{ $item['name'] }}" class="h-full w-full object-cover" loading="lazy">
+                @if ($item && ! empty($item['image']))
+                    <span class="block h-6 w-6 overflow-hidden rounded bg-ink-800" title="{{ $item['name'] ?? '' }}">
+                        <img src="{{ $item['image'] }}" alt="{{ $item['name'] ?? '' }}" class="h-full w-full object-cover" loading="lazy">
                     </span>
                 @elseif ($item)
-                    <span class="grid h-6 w-6 place-items-center rounded bg-ink-800 text-[8px] font-bold text-mist-400  " title="{{ $item['name'] }}">?</span>
+                    <span class="grid h-6 w-6 place-items-center rounded bg-ink-800 text-[8px] font-bold text-mist-400" title="{{ $item['name'] ?? '' }}">?</span>
                 @else
                     <span class="block h-6 w-6 rounded border border-dashed border-line bg-ink-900/15"></span>
                 @endif

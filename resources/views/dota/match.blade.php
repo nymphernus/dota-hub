@@ -160,10 +160,10 @@
                                         $roleSource = $player['role']['source'] ?? null;
                                         $roleClasses = match ($roleLabel) {
                                             'Safe' => 'border-green-500/25 bg-green-500/10 text-green-500',
-                                            'Mid' => 'border-line bg-[#2d313e] text-mist-300',
-                                            'Off' => 'border-accent-500/25 bg-accent-500/10 text-accent-300',
-                                            'Soft' => 'border-accent-500/25 bg-accent-500/10 text-accent-300',
-                                            'Hard' => 'border-red-500/25 bg-red-500/10 text-red-500',
+                                            'Mid' => 'border-blue-500/25 bg-blue-500/10 text-blue-500',
+                                            'Off' => 'border-red-500/25 bg-red-500/10 text-red-500',
+                                            'Soft' => 'border-purple-500/25 bg-purple-500/10 text-purple-500',
+                                            'Hard' => 'border-orange-500/25 bg-orange-500/10 text-orange-500',
                                             default => 'border-line bg-ink-900/50 text-mist-400',
                                         };
                                         $isCurrentPlayer = $profilePlayerId !== null
@@ -174,7 +174,7 @@
                                     <tr @class([
                                         'transition hover:bg-ink-900/30',
                                         'odd:bg-[#1c1e26] even:bg-[#111318]',
-                                        'bg-ink-700/60' => $isCurrentPlayer,
+                                        'bg-[#2d313e]' => $isCurrentPlayer,
                                     ])>
                                         <td class="px-2 py-1">
                                             <div class="flex items-center gap-3">

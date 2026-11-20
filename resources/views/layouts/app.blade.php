@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='32' fill='%23dc2626'/%3E%3Ctext x='32' y='44' font-family='Arial,sans-serif' font-size='36' font-weight='bold' fill='white' text-anchor='middle'%3ED%3C/text%3E%3C/svg%3E">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='32' fill='%23dc2626'/%3E%3Ctext x='32' y='44' font-family='Arial,sans-serif' font-size='36' font-weight='700' fill='white' text-anchor='middle'%3ED%3C/text%3E%3C/svg%3E">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -28,13 +28,10 @@
     @endphp
     <header class="sticky top-0 z-50 border-b border-[#2d313e] bg-[#111318]/90 backdrop-blur-md">
         <div class="mx-auto flex h-16 w-full max-w-7xl items-center px-4 sm:px-6 lg:px-8">
-            <div class="flex min-w-0 items-center">
-                <a href="/" class="bg-[#d32f2f] px-2 py-1 text-2xl leading-none tracking-tighter text-white" aria-label="dotahub — на главную">dotahub</a>
+            <div class="flex min-w-0 items-center gap-3">
+                <a href="/" class="bg-[#d32f2f] px-2 py-1 text-white font-black uppercase text-xl tracking-tighter leading-none rounded-sm">DOTAHUB</a>
                 @if ($showProfileNav && $navNickname)
-                    <span class="ml-1 hidden min-w-0 items-center sm:inline-flex">
-                        <span class="mx-2 text-gray-400">/</span>
-                        <span class="truncate font-bold text-white">{{ $navNickname }}</span>
-                    </span>
+                    <span class="min-w-0 truncate text-sm font-semibold text-mist-300">dotahub <span class="mx-1 text-gray-400">/</span> <span class="font-bold text-white">{{ $navNickname }}</span></span>
                 @endif
             </div>
 
@@ -130,7 +127,7 @@
                         'dota.player.heroes' => ['dota.player.heroes', 'Герои'],
                         'dota.player.records' => ['dota.player.records', 'Рекорды'],
                         'dota.player.peers' => ['dota.player.peers', 'Союзники'],
-                    ] as $itemRoute => $item)
+                    ] as $routeName => [$key, $label])
                         <a
                             href="{{ route($item[0], ['accountId' => $navAccountId]) }}"
                             @class([
