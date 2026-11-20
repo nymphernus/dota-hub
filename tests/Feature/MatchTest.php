@@ -64,6 +64,7 @@ class MatchTest extends TestCase
         $response->assertDontSee('bg-blue-600', false);
         $response->assertDontSee('>P1<', false);
         $response->assertSee('Игрок / герой');
+        $response->assertDontSee('>Роль</th>', false);
         $response->assertSee('text-lg font-bold text-mist-200', false);
         $response->assertSee('text-gray-400 text-sm', false);
         $response->assertSee('Команда Dire', false);
@@ -116,6 +117,21 @@ class MatchTest extends TestCase
                 && $radiantCarry['hero_healing'] === 1250
                 && $radiantSupport['role']['label'] === 'Mid';
         });
+    }
+
+    public function test_purchase_column_is_hidden_when_item_data_is_not_parsed(): void
+    {
+        $this->fakeMatch(parsed: false);
+
+        $response = $this->get(route('dota.match', [
+            'matchId' => self::MATCH_ID,
+            'player_id' => self::ACCOUNT_ID,
+        ]));
+
+        $response->assertOk();
+        $response->assertDontSee('Закуп');
+        $response->assertDontSee('Blink Dagger');
+        $response->assertSee('Safe');
     }
 
     public function test_you_badge_is_never_shown_for_any_player(): void
@@ -392,7 +408,7 @@ class MatchTest extends TestCase
 
             foreach ($payload['players'] as &$player) {
                 if (! $parsed) {
-                    unset($player['networth_t'], $player['xp_t']);
+                    unset($player['networth_t'], $player['xp_t'], $player['purchase_log']);
                 }
 
                 if (! $withParties) {

@@ -104,17 +104,17 @@ class DotaProfileTest extends TestCase
         $response->assertSee('border border-[#2d313e] bg-[#1c1e26] rounded-none', false);
 
         $wheelPosition = strpos($content, 'id="hero-wheel"');
-        $lifetimePosition = strpos($content, '>Lifetime Stats</h2>');
         $activityPosition = strpos($content, '90 дней назад');
+        $lifetimePosition = strpos($content, '>Статистика за всё время</h2>');
         $alliesPosition = strpos($content, '>Союзники</h2>');
 
         $this->assertNotFalse($wheelPosition);
-        $this->assertNotFalse($lifetimePosition);
         $this->assertNotFalse($activityPosition);
+        $this->assertNotFalse($lifetimePosition);
         $this->assertNotFalse($alliesPosition);
-        $this->assertLessThan($lifetimePosition, $wheelPosition);
-        $this->assertLessThan($activityPosition, $lifetimePosition);
-        $this->assertLessThan($alliesPosition, $activityPosition);
+        $this->assertLessThan($activityPosition, $wheelPosition);
+        $this->assertLessThan($lifetimePosition, $activityPosition);
+        $this->assertLessThan($alliesPosition, $lifetimePosition);
 
         $response->assertDontSee('id="winrateChart"', false);
         $response->assertSee('id="dotahub-heatmap-data"', false);
@@ -130,6 +130,8 @@ class DotaProfileTest extends TestCase
         $response->assertSee('>Пн<', false);
         $response->assertSee('>Вс<', false);
         $response->assertSee('Активность за последние 13 недель', false);
+        $response->assertSee('<details class="group border border-line bg-ink-900/30" open>', false);
+        $response->assertSee('Статистика за всё время');
         $response->assertDontSee('id="recentMatchesChart"', false);
         $response->assertDontSee('panel-matches', false);
         $response->assertDontSee('Окружение');
@@ -740,7 +742,14 @@ class DotaProfileTest extends TestCase
         $response->assertSee('По количеству игр');
         $response->assertSee('По винрейту');
         $response->assertSee('По KDA');
-        $response->assertSee('perPage: 50', false);
+        $response->assertSee('perPage: 24', false);
+        $response->assertSee('grid grid-cols-2 gap-2 p-3 sm:grid-cols-3 lg:grid-cols-6', false);
+        $response->assertSee('id="heroes-hero-filter"', false);
+        $response->assertSee('id="heroes-hero-options"', false);
+        $response->assertSee('heroQuery', false);
+        $response->assertSee('filteredHeroOptions', false);
+        $response->assertSee('selectHero(hero.hero_id)', false);
+        $response->assertSee('aria-current="page"', false);
         $response->assertSee('x-text="pageCount"', false);
         $response->assertSee('x-for="number in pageCount"', false);
     }
@@ -757,7 +766,7 @@ class DotaProfileTest extends TestCase
         $response->assertSee('Teammate');
         $response->assertSee('Скрытый профиль');
         $response->assertSee('Винрейт вместе');
-        $response->assertSee('Любимый герой');
+        $response->assertDontSee('Любимый герой');
         $response->assertDontSee('Последний матч');
     }
 

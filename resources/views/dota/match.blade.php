@@ -15,8 +15,9 @@
     $profileNickname = $profilePlayer['nickname'] ?? null;
     $showTowerDamage = $allPlayers->contains(fn (array $player) => (int) ($player['tower_damage'] ?? 0) > 0);
     $showHealing = $allPlayers->contains(fn (array $player) => (int) ($player['hero_healing'] ?? 0) > 0);
+    $showPurchases = $allPlayers->contains(fn (array $player) => ! empty($player['purchases']));
     $picksBans = collect($match['picks_bans'] ?? []);
-    $columnCount = 7 + ($showTowerDamage ? 1 : 0) + ($showHealing ? 1 : 0);
+    $columnCount = 6 + ($showTowerDamage ? 1 : 0) + ($showHealing ? 1 : 0) + ($showPurchases ? 1 : 0);
     $teams = [
         'radiant' => [
             'label' => 'Radiant',
@@ -196,7 +197,6 @@
                     <thead class="table-head">
                         <tr>
                             <th class="px-2 py-1 font-semibold sm:px-5">Игрок / герой</th>
-                            <th class="px-2 py-1 font-semibold">Роль</th>
                             <th class="px-2 py-1 font-semibold">K / D / A</th>
                             <th class="px-2 py-1 font-semibold">GPM</th>
                             <th class="px-2 py-1 font-semibold">XPM</th>
@@ -207,7 +207,9 @@
                             @if ($showHealing)
                                 <th class="px-2 py-1 font-semibold">Лечение</th>
                             @endif
-                            <th class="px-2 py-1 text-right font-semibold sm:px-5">Закуп</th>
+                            @if ($showPurchases)
+                                <th class="px-2 py-1 text-right font-semibold sm:px-5">Закуп</th>
+                            @endif
                         </tr>
                     </thead>
                     <tbody class="table-rows" x-data="{ openPlayer: null }">
@@ -269,22 +271,15 @@
                                                         @if ($player['level'] > 0)
                                                             <span>ур. {{ $player['level'] }}</span>
                                                         @endif
+                                                        @if ($roleLabel)
+                                                            <span class="badge !px-1.5 !py-0.5 !text-[9px] {{ $roleClasses }}" title="{{ $roleName }}{{ $roleSource ? ' · '.$roleSource : '' }}">{{ $roleLabel }}</span>
+                                                        @endif
+                                                        @if (($player['impact'] ?? null) !== null)
+                                                            <span class="font-semibold text-accent-300/80" title="STRATZ impact">IMP {{ number_format($player['impact'], 1, '.', '') }}</span>
+                                                        @endif
                                                     </p>
                                                 </div>
                                             </div>
-                                        </td>
-                                        <td class="px-2 py-1">
-                                            @if ($roleLabel)
-                                                <span class="badge !px-2 !py-0.5 !text-[10px] {{ $roleClasses }}" title="{{ $roleName }}{{ $roleSource ? ' · '.$roleSource : '' }}">
-                                                    {{ $roleLabel }}
-                                                </span>
-                                                <p class="mt-1 text-[10px] text-mist-500">{{ $roleName }}</p>
-                                                @if (($player['impact'] ?? null) !== null)
-                                                    <p class="mt-0.5 text-[10px] font-semibold text-accent-300/80" title="STRATZ impact">IMP {{ number_format($player['impact'], 1, '.', '') }}</p>
-                                                @endif
-                                            @else
-                                                <span class="text-[11px] text-mist-500">—</span>
-                                            @endif
                                         </td>
                                         <td class="px-2 py-1 font-mono text-[13px] tabular-nums">
                                             <span class="text-emerald-300">{{ $player['kills'] }}</span>
@@ -303,26 +298,28 @@
                                         @if ($showHealing)
                                             <td class="px-2 py-1 font-mono text-[13px] tabular-nums text-mist-300">{{ isset($player['hero_healing']) ? number_format((int) $player['hero_healing'], 0, '.', ' ') : '—' }}</td>
                                         @endif
-                                        <td class="px-2 py-1 text-right sm:px-5">
-                                            @if ($player['purchases'] !== [])
-                                                <button
-                                                    type="button"
-                                                    class="inline-flex items-center gap-1.5 rounded-none border border-line bg-ink-900/40 px-2.5 py-1.5 text-[11px] font-semibold text-mist-300 transition hover:border-accent-500/30 hover:bg-accent-500/10 hover:text-accent-300"
-                                                    @click="openPlayer = openPlayer === {{ $playerIndex }} ? null : {{ $playerIndex }}"
-                                                    :aria-expanded="(openPlayer === {{ $playerIndex }}).toString()"
-                                                    aria-controls="purchases-{{ $teamKey }}-{{ $playerIndex }}"
-                                                >
-                                                    Закуп
-                                                    <span class="rounded bg-white/[0.06] px-1.5 py-0.5 text-[10px] text-mist-400">{{ count($player['purchases']) }}</span>
-                                                    <svg class="h-3 w-3 transition" :class="openPlayer === {{ $playerIndex }} ? 'rotate-180' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                                                </button>
-                                            @else
-                                                <span class="text-[11px] text-mist-500">—</span>
-                                            @endif
-                                        </td>
+                                        @if ($showPurchases)
+                                            <td class="px-2 py-1 text-right sm:px-5">
+                                                @if ($player['purchases'] !== [])
+                                                    <button
+                                                        type="button"
+                                                        class="inline-flex items-center gap-1.5 rounded-none border border-line bg-ink-900/40 px-2.5 py-1.5 text-[11px] font-semibold text-mist-300 transition hover:border-accent-400 hover:bg-accent-400/10 hover:text-white"
+                                                        @click="openPlayer = openPlayer === {{ $playerIndex }} ? null : {{ $playerIndex }}"
+                                                        :aria-expanded="(openPlayer === {{ $playerIndex }}).toString()"
+                                                        aria-controls="purchases-{{ $teamKey }}-{{ $playerIndex }}"
+                                                    >
+                                                        Закуп
+                                                        <span class="rounded bg-white/[0.06] px-1.5 py-0.5 text-[10px] text-mist-400">{{ count($player['purchases']) }}</span>
+                                                        <svg class="h-3 w-3 transition" :class="openPlayer === {{ $playerIndex }} ? 'rotate-180' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                                                    </button>
+                                                @else
+                                                    <span class="text-[11px] text-mist-500">—</span>
+                                                @endif
+                                            </td>
+                                        @endif
                                     </tr>
 
-                                    @if ($player['purchases'] !== [])
+                                    @if ($showPurchases && $player['purchases'] !== [])
                                         <tr id="purchases-{{ $teamKey }}-{{ $playerIndex }}" x-show="openPlayer === {{ $playerIndex }}" x-cloak x-transition.opacity.duration.150ms class="bg-ink-950/60">
                                             <td colspan="{{ $columnCount }}" class="px-4 pb-4 pt-1 sm:px-5">
                                                 <div class="rounded-none bg-ink-900/70 p-3">

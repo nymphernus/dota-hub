@@ -2602,6 +2602,7 @@ class OpenDotaService
                     'localized_name' => $meta['name'],
                     'name' => $meta['name'],
                     'image' => $meta['image'],
+                    'icon' => $meta['icon'] ?? null,
                     'games' => $games,
                     'win' => $wins,
                     'wins' => $wins,

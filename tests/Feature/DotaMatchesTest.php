@@ -47,6 +47,10 @@ class DotaMatchesTest extends TestCase
         $response->assertSee('Ranked');
         $response->assertSee('Normal');
         $response->assertSee('Все герои');
+        $response->assertSee('id="filter-hero"', false);
+        $response->assertSee('id="filter-hero-grid"', false);
+        $response->assertSee('heroPickerHeroes', false);
+        $response->assertSee('hero.icon || hero.image', false);
         $response->assertSee('Победа');
         $response->assertSee('Режим игры');
         $response->assertSee('Роль');

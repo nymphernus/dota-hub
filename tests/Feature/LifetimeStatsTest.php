@@ -33,7 +33,7 @@ class LifetimeStatsTest extends TestCase
         $response = $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertOk();
-        $response->assertSee('Lifetime Stats');
+        $response->assertSee('Статистика за всё время');
         $response->assertSee('По типу игры');
         $response->assertSee('По режиму');
         $response->assertSee('По фракции');

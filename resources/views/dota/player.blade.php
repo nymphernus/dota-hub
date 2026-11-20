@@ -95,54 +95,6 @@
                     @include('dota.partials.hero-wheel', ['heroes' => $heroUsage, 'playerId' => $player['account_id']])
                 </section>
 
-                @if (($lifetimeStats['total'] ?? 0) > 0)
-                    <section class="border border-[#2d313e] bg-[#1c1e26] p-3 rounded-none">
-                        <div class="flex items-start justify-between gap-2">
-                            <div>
-                                <h2 class="section-heading">Lifetime Stats</h2>
-                                <p class="mt-0.5 text-[10px] text-mist-500">Сводка по {{ number_format($lifetimeStats['total'], 0, '.', ' ') }} матчам за всё время</p>
-                            </div>
-                            <span class="badge border-line bg-ink-900/50 text-mist-400">
-                                {{ $lifetimeStats['winrate'] !== null ? number_format($lifetimeStats['winrate'], 1, '.', '').'%' : '—' }}
-                            </span>
-                        </div>
-
-                        <div class="mt-3 space-y-3">
-                            @foreach ($lifetimeStats['groups'] as $group)
-                                <div class="min-w-0">
-                                    <p class="section-heading mb-1">{{ $group['title'] }}</p>
-                                    @if ($group['rows'] === [])
-                                        <p class="text-[10px] text-mist-500">Нет данных</p>
-                                    @else
-                                        <div class="overflow-hidden border border-line">
-                                            <table class="w-full text-[11px]">
-                                                <thead class="table-head">
-                                                    <tr>
-                                                        <th class="px-2 py-1 text-left font-semibold">Категория</th>
-                                                        <th class="px-2 py-1 text-right font-semibold">Матчи</th>
-                                                        <th class="px-2 py-1 text-right font-semibold">Винрейт</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody class="table-rows">
-                                                    @foreach ($group['rows'] as $row)
-                                                        <tr>
-                                                            <td class="px-2 py-1 font-semibold text-mist-200">{{ $row['label'] }}</td>
-                                                            <td class="px-2 py-1 text-right font-mono text-mist-200">{{ $row['games'] }}</td>
-                                                            <td class="px-2 py-1 text-right font-mono {{ ($row['winrate'] ?? 0) >= 50 ? 'text-emerald-300' : 'text-rose-300' }}">
-                                                                {{ $row['winrate'] !== null ? number_format($row['winrate'], 1, '.', '').'%' : '—' }}
-                                                            </td>
-                                                        </tr>
-                                                    @endforeach
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    @endif
-                                </div>
-                            @endforeach
-                        </div>
-                    </section>
-                @endif
-
                 <section class="border border-[#2d313e] bg-[#1c1e26] p-3 rounded-none">
                     <div class="flex items-start justify-between gap-2">
                         <h2 class="section-heading">Активность</h2>
@@ -172,6 +124,57 @@
                         <span>Сегодня</span>
                     </div>
                 </section>
+
+                @if (($lifetimeStats['total'] ?? 0) > 0)
+                    <section class="border border-[#2d313e] bg-[#1c1e26] p-3 rounded-none">
+                        <div class="flex items-start justify-between gap-2">
+                            <div>
+                                <h2 class="section-heading">Статистика за всё время</h2>
+                                <p class="mt-0.5 text-[10px] text-mist-500">Сводка по {{ number_format($lifetimeStats['total'], 0, '.', ' ') }} матчам</p>
+                            </div>
+                            <span class="badge border-line bg-ink-900/50 text-mist-400">
+                                {{ $lifetimeStats['winrate'] !== null ? number_format($lifetimeStats['winrate'], 1, '.', '').'%' : '—' }}
+                            </span>
+                        </div>
+
+                        <div class="mt-2 space-y-1">
+                            @foreach ($lifetimeStats['groups'] as $group)
+                                <details class="group border border-line bg-ink-900/30" {{ $loop->first ? 'open' : '' }}>
+                                    <summary class="flex cursor-pointer list-none items-center justify-between px-2 py-1 text-[11px] font-semibold text-mist-300 transition hover:text-white">
+                                        <span>{{ $group['title'] }}</span>
+                                        <svg class="h-3 w-3 transition group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                                    </summary>
+                                    <div class="border-t border-line">
+                                        @if ($group['rows'] === [])
+                                            <p class="px-2 py-1 text-[10px] text-mist-500">Нет данных</p>
+                                        @else
+                                            <table class="w-full text-[11px]">
+                                                <thead class="table-head">
+                                                    <tr>
+                                                        <th class="px-2 py-1 text-left font-semibold">Категория</th>
+                                                        <th class="px-2 py-1 text-right font-semibold">Матчи</th>
+                                                        <th class="px-2 py-1 text-right font-semibold">Винрейт</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody class="table-rows">
+                                                    @foreach ($group['rows'] as $row)
+                                                        <tr>
+                                                            <td class="px-2 py-1 font-semibold text-mist-200">{{ $row['label'] }}</td>
+                                                            <td class="px-2 py-1 text-right font-mono text-mist-200">{{ $row['games'] }}</td>
+                                                            <td class="px-2 py-1 text-right font-mono {{ ($row['winrate'] ?? 0) >= 50 ? 'text-emerald-300' : 'text-rose-300' }}">
+                                                                {{ $row['winrate'] !== null ? number_format($row['winrate'], 1, '.', '').'%' : '—' }}
+                                                            </td>
+                                                        </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        @endif
+                                    </div>
+                                </details>
+                            @endforeach
+                        </div>
+                    </section>
+                @endif
 
                 <section class="border border-[#2d313e] bg-[#1c1e26] p-3 rounded-none">
                     <div class="flex items-start justify-between gap-2">

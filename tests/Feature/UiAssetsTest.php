@@ -104,9 +104,11 @@ class UiAssetsTest extends TestCase
 
         $this->assertStringContainsString('fonts.googleapis.com/css2?family=Inter', $layout);
         $this->assertStringContainsString('border-b border-[#2d313e] bg-[#111318]/90 backdrop-blur-md', $layout);
-        $this->assertStringContainsString('bg-[#d32f2f] px-2 py-1 text-2xl font-normal uppercase leading-none tracking-tighter text-white', $layout);
+        $this->assertStringContainsString('bg-[#d32f2f] px-2 py-1 text-2xl uppercase leading-none tracking-tighter text-white', $layout);
         $this->assertStringContainsString('>DOTAHUB</a>', $layout);
         $this->assertStringNotContainsString('font-black', $layout);
+        $this->assertStringNotContainsString('font-normal', $layout);
+        $this->assertStringNotContainsString('font-light', $layout);
         $this->assertStringNotContainsString('rounded-sm', $layout);
         $this->assertStringNotContainsString('>dotahub</span>', $layout);
         $this->assertStringNotContainsString('gold-', $layout);
@@ -186,17 +188,38 @@ class UiAssetsTest extends TestCase
         }
 
         $wheel = strpos($source, '>Колесо героев<');
-        $lifetime = strpos($source, '>Lifetime Stats<');
         $activity = strpos($source, '>Активность<');
+        $lifetime = strpos($source, '>Статистика за всё время<');
         $allies = strpos($source, '>Союзники<');
 
         $this->assertNotFalse($wheel);
-        $this->assertNotFalse($lifetime);
         $this->assertNotFalse($activity);
+        $this->assertNotFalse($lifetime);
         $this->assertNotFalse($allies);
-        $this->assertLessThan($lifetime, $wheel);
-        $this->assertLessThan($activity, $lifetime);
-        $this->assertLessThan($allies, $activity);
+        $this->assertLessThan($activity, $wheel);
+        $this->assertLessThan($lifetime, $activity);
+        $this->assertLessThan($allies, $lifetime);
+    }
+
+    public function test_hero_filters_use_icon_picker_and_searchable_dropdown(): void
+    {
+        $matches = (string) file_get_contents(resource_path('views/dota/matches.blade.php'));
+        $heroes = (string) file_get_contents(resource_path('views/dota/heroes.blade.php'));
+
+        $this->assertStringContainsString('id="filter-hero"', $matches);
+        $this->assertStringContainsString('id="filter-hero-grid"', $matches);
+        $this->assertStringContainsString('heroPickerHeroes', $matches);
+        $this->assertStringContainsString("hero.icon || hero.image", $matches);
+        $this->assertStringContainsString('class="h-8 w-8 overflow-hidden bg-ink-800"', $matches);
+        $this->assertStringNotContainsString("'id' => 'filter-hero'", $matches);
+
+        $this->assertStringContainsString('perPage: 24', $heroes);
+        $this->assertStringContainsString('grid grid-cols-2 gap-2 p-3 sm:grid-cols-3 lg:grid-cols-6', $heroes);
+        $this->assertStringContainsString('id="heroes-hero-filter"', $heroes);
+        $this->assertStringContainsString('id="heroes-hero-options"', $heroes);
+        $this->assertStringContainsString('heroQuery', $heroes);
+        $this->assertStringContainsString('filteredHeroOptions', $heroes);
+        $this->assertStringContainsString('hover:border-accent-400', $heroes);
     }
 
     public function test_no_gold_accents_remain_in_assets(): void

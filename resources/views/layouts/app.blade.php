@@ -20,7 +20,7 @@
 <body class="flex min-h-screen flex-col">
     <header class="sticky top-0 z-40 border-b border-[#2d313e] bg-[#111318]/90 backdrop-blur-md">
         <div class="mx-auto flex h-16 w-full max-w-7xl items-center px-4 sm:px-6 lg:px-8">
-            <a href="/" class="bg-[#d32f2f] px-2 py-1 text-2xl font-normal uppercase leading-none tracking-tighter text-white" aria-label="DOTAHUB — на главную">DOTAHUB</a>
+            <a href="/" class="bg-[#d32f2f] px-2 py-1 text-2xl uppercase leading-none tracking-tighter text-white" aria-label="DOTAHUB — на главную">DOTAHUB</a>
 
             <div class="ml-auto flex items-center gap-2 sm:gap-3">
                 <form
