@@ -12,9 +12,9 @@
             'marker' => 'bg-emerald-300 ',
         ],
         'sky' => [
-            'badge' => 'border-sky-500/25 bg-sky-500/10 text-sky-300',
-            'text' => 'text-sky-300',
-            'marker' => 'bg-sky-300 ',
+            'badge' => 'border-line bg-[#2d313e] text-mist-300',
+            'text' => 'text-mist-400',
+            'marker' => 'bg-mist-400 ',
         ],
         'amber' => [
             'badge' => 'border-accent-500/25 bg-accent-500/10 text-accent-300',
@@ -263,7 +263,7 @@
                                         <span class="text-mist-500/60">/</span>
                                         <span class="text-rose-300">{{ $match['deaths'] }}</span>
                                         <span class="text-mist-500/60">/</span>
-                                        <span class="text-sky-300">{{ $match['assists'] }}</span>
+                                        <span class="text-mist-400">{{ $match['assists'] }}</span>
                                     </td>
                                     <td class="px-2 py-1 font-mono text-[12px] font-semibold tabular-nums text-mist-200">{{ number_format($match['kda'], 2, '.', '') }}</td>
                                     <td class="px-2 py-1 font-mono text-[12px] tabular-nums text-mist-300">{{ $match['gpm'] ?: '—' }}</td>

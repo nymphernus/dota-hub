@@ -71,7 +71,7 @@
                         <span @class([
                             'rounded px-1.5 py-0.5 text-[9px] font-semibold tracking-wide',
                             'bg-yellow-500/20 text-yellow-500' => $isRanked,
-                            'bg-blue-500/20 text-blue-500' => $isTurbo && ! $isRanked,
+                            'bg-[#2d313e] text-mist-300' => $isTurbo && ! $isRanked,
                             'bg-ink-900/50 text-mist-300' => ! $isRanked && ! $isTurbo,
                         ])>{{ $isRanked ? 'Ranked' : $modeLabel }}</span>
                     @endif
@@ -91,7 +91,7 @@
     </td>
 
     <td class="px-2 py-1 font-mono text-[12px] tabular-nums">
-        <span class="text-emerald-300">{{ $match['kills'] }}</span><span class="text-mist-500/60">/</span><span class="text-rose-300">{{ $match['deaths'] }}</span><span class="text-mist-500/60">/</span><span class="text-sky-300">{{ $match['assists'] }}</span>
+        <span class="text-emerald-300">{{ $match['kills'] }}</span><span class="text-mist-500/60">/</span><span class="text-rose-300">{{ $match['deaths'] }}</span><span class="text-mist-500/60">/</span><span class="text-mist-400">{{ $match['assists'] }}</span>
         <p class="mt-0.5 text-[9px] text-mist-500">KDA {{ $match['kda'] ?? '—' }}</p>
     </td>
 

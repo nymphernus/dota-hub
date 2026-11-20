@@ -101,7 +101,7 @@ class UiAssetsTest extends TestCase
         $this->assertStringContainsString('--color-mist-400: #8b94a5', $css);
         $this->assertStringNotContainsString('--color-gold-', $css);
         $this->assertStringNotContainsString('#e2b02b', $css);
-        $this->assertStringContainsString('--color-accent-400: #3b82f6', $css);
+        $this->assertStringContainsString('--color-accent-400: #2d313e', $css);
         $this->assertStringContainsString('--color-win: #10b981', $css);
         $this->assertStringContainsString('--color-loss: #ef4444', $css);
         $this->assertStringContainsString("--font-sans: 'Inter'", $css);
@@ -116,7 +116,11 @@ class UiAssetsTest extends TestCase
         $this->assertStringContainsString('--color-green-500: #10b981', $css);
         $this->assertStringContainsString('--color-red-500: #ef4444', $css);
         $this->assertStringContainsString('--color-yellow-500: #eab308', $css);
-        $this->assertStringContainsString('--color-blue-500: #3b82f6', $css);
+        $this->assertStringNotContainsString('--color-blue-500', $css);
+        $this->assertStringNotContainsString('--color-sky-500', $css);
+        $this->assertStringNotContainsString('#3b82f6', $css);
+        $this->assertStringNotContainsString('blue-500', $css);
+        $this->assertStringNotContainsString('sky-500', $css);
         $this->assertStringNotContainsString('radial-gradient', $css);
         $this->assertStringNotContainsString('--color-radar-', $css);
 
@@ -178,6 +182,8 @@ class UiAssetsTest extends TestCase
             $this->assertDoesNotMatchRegularExpression('/\bborder-white(?:\/|\b)/', $source, $file);
             $this->assertStringNotContainsString('blur-3xl', $source, $file);
             $this->assertStringNotContainsString('bg-gradient', $source, $file);
+            $this->assertStringNotContainsString('blue-500', $source, $file);
+            $this->assertStringNotContainsString('sky-500', $source, $file);
         }
     }
 
@@ -190,7 +196,9 @@ class UiAssetsTest extends TestCase
         $this->assertStringContainsString('border-l-4 border-yellow-500', $source);
         $this->assertStringContainsString('border-l-4 border-red-500', $source);
         $this->assertStringContainsString('bg-yellow-500/20 text-yellow-500', $source);
-        $this->assertStringContainsString('bg-blue-500/20 text-blue-500', $source);
+        $this->assertStringContainsString("'bg-[#2d313e] text-mist-300' => \$isTurbo && ! \$isRanked", $source);
+        $this->assertStringNotContainsString('blue-500', $source);
+        $this->assertStringNotContainsString('sky-500', $source);
         $this->assertStringContainsString('px-3 py-1 sm:px-4', $source);
         $this->assertStringNotContainsString('bg-emerald-500/[0.055]', $source);
         $this->assertStringNotContainsString('bg-rose-500/[0.055]', $source);

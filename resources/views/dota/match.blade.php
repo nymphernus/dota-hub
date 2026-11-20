@@ -217,7 +217,7 @@
                                         $roleSource = $player['role']['source'] ?? null;
                                         $roleClasses = match ($roleLabel) {
                                             'Safe' => 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300',
-                                            'Mid' => 'border-sky-500/25 bg-sky-500/10 text-sky-300',
+                                            'Mid' => 'border-line bg-[#2d313e] text-mist-300',
                                             'Off' => 'border-accent-500/25 bg-accent-500/10 text-accent-300',
                                             'Soft' => 'border-accent-500/25 bg-accent-500/10 text-accent-300',
                                             'Hard' => 'border-rose-500/25 bg-rose-500/10 text-rose-300',
@@ -274,7 +274,7 @@
                                             <span class="text-mist-500/60">/</span>
                                             <span class="text-rose-300">{{ $player['deaths'] }}</span>
                                             <span class="text-mist-500/60">/</span>
-                                            <span class="text-sky-300">{{ $player['assists'] }}</span>
+                                            <span class="text-mist-400">{{ $player['assists'] }}</span>
                                             <span class="ml-1.5 text-[10px] text-mist-500">({{ number_format($player['kda'], 2, '.', '') }})</span>
                                         </td>
                                         <td class="px-2 py-1 font-mono text-[13px] tabular-nums text-mist-300">{{ number_format((int) ($player['gpm'] ?? 0), 0, '.', ' ') }}</td>

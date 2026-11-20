@@ -57,7 +57,7 @@
                             <span class="text-xs font-bold text-mist-200">{{ $player['rank_label'] ?: 'Без ранга' }}</span>
                         </span>
                         @if ($player['is_offline_cache'] ?? false)
-                            <span class="badge border-sky-500/25 bg-sky-500/10 text-sky-300">Данные из кэша (Офлайн)</span>
+                            <span class="badge border-line bg-[#2d313e] text-mist-300">Данные из кэша (Офлайн)</span>
                         @endif
                     </div>
 

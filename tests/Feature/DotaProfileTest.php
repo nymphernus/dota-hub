@@ -324,14 +324,14 @@ class DotaProfileTest extends TestCase
         );
 
         $this->fakeOpenDota(matchHistoryResponse: Http::sequence()
-            ->push($page(9100003000, 500))
-            ->push($page(9100002500, 500))
-            ->push($page(9100002000, 2)));
+            ->push($page(9100003000, 1500))
+            ->push($page(9100001500, 1500))
+            ->push($page(9100000000, 2)));
 
         $response = $this->get(route('dota.player.matches', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertOk();
-        $response->assertViewHas('matches', fn (LengthAwarePaginator $matches): bool => $matches->total() === 1002);
+        $response->assertViewHas('matches', fn (LengthAwarePaginator $matches): bool => $matches->total() === 3002);
 
         $requests = collect(Http::recorded())
             ->map(fn (array $record): Request => $record[0])
@@ -342,10 +342,10 @@ class DotaProfileTest extends TestCase
             ->values();
 
         $this->assertCount(3, $requests);
-        $this->assertSame('500', (string) $requests[0]['limit']);
+        $this->assertSame('1500', (string) $requests[0]['limit']);
         $this->assertArrayNotHasKey('date', $requests[0]->data());
-        $this->assertSame('9100002501', (string) $requests[1]['less_than_match_id']);
-        $this->assertSame('9100002001', (string) $requests[2]['less_than_match_id']);
+        $this->assertSame('9100001501', (string) $requests[1]['less_than_match_id']);
+        $this->assertSame('9100000001', (string) $requests[2]['less_than_match_id']);
     }
 
     public function test_refresh_forgets_the_profile_cache_and_rebuilds_it(): void

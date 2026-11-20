@@ -18,9 +18,9 @@
     --color-mist-500: #6b7280;
     --color-mist-600: #6b7280;
 
-    --color-accent-300: #7db3ff;
-    --color-accent-400: #3b82f6;
-    --color-accent-500: #2563eb;
+    --color-accent-300: #8b94a5;
+    --color-accent-400: #2d313e;
+    --color-accent-500: #3e4353;
 
     --color-win: #10b981;
     --color-loss: #ef4444;
@@ -30,7 +30,6 @@
     --color-red-950: #450a0a;
     --color-yellow-500: #eab308;
     --color-yellow-950: #422006;
-    --color-blue-500: #3b82f6;
 
     --color-dota-300: #ef4444;
     --color-dota-400: #ef4444;
@@ -47,15 +46,12 @@
     --color-rose-400: #ef4444;
     --color-rose-500: #ef4444;
     --color-rose-600: #ef4444;
-    --color-sky-300: #3b82f6;
-    --color-sky-400: #3b82f6;
-    --color-sky-500: #3b82f6;
     --color-amber-300: #8b94a5;
-    --color-amber-400: #3b82f6;
-    --color-amber-500: #3b82f6;
+    --color-amber-400: #eab308;
+    --color-amber-500: #eab308;
     --color-orange-300: #8b94a5;
-    --color-orange-400: #3b82f6;
-    --color-orange-500: #3b82f6;
+    --color-orange-400: #8b94a5;
+    --color-orange-500: #8b94a5;
     --color-yellow-400: #8b94a5;
     --color-slate-300: #d1d5db;
     --color-slate-400: #8b94a5;
@@ -99,7 +95,7 @@
     }
 
     :where(a, button, [tabindex]):focus-visible {
-        outline: 2px solid #3b82f6;
+        outline: 2px solid #8b94a5;
         outline-offset: 2px;
     }
 
@@ -165,7 +161,7 @@
     }
 
     .btn-primary {
-        @apply inline-flex items-center justify-center gap-2 rounded-none border border-accent-500 px-4 py-2.5 text-sm font-semibold text-white transition duration-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 bg-accent-400 hover:bg-accent-300 active:bg-accent-500;
+        @apply inline-flex items-center justify-center gap-2 rounded-none border border-[#3e4353] px-4 py-2.5 text-sm font-semibold text-white transition duration-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 bg-[#2d313e] hover:bg-[#3e4353] active:bg-[#2d313e];
     }
 
     .btn-ghost {

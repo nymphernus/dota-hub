@@ -26,13 +26,13 @@ class OpenDotaService
 
     private const ITEM_STATS_CACHE_KEY = 'opendota:item-stats:v2';
 
-    private const HISTORY_PAGE_SIZE = 500;
+    private const HISTORY_PAGE_SIZE = 1500;
 
     private const MAX_HISTORY_PAGES = 20;
 
     private const RECENT_MATCH_DETAILS = 10;
 
-    private const PROFILE_SCHEMA_VERSION = 5;
+    private const PROFILE_SCHEMA_VERSION = 6;
 
     /**
      * Human-readable labels for OpenDota /players/{id}/records keys.
@@ -478,7 +478,7 @@ class OpenDotaService
         );
 
         $nickname = $profile['personaname'] ?? null;
-        $heroRows = $this->transformHeroes($heroStats, $heroes, $recentMatches);
+        $heroRows = $this->transformHeroes($heroStats, $heroes, $recentMatches, $history);
         $hasPublicMatches = $matches !== [] || $history !== [];
 
         return [
@@ -1402,9 +1402,9 @@ class OpenDotaService
     }
 
     /**
-     * OpenDota caps a single match-history response at 500 rows. Follow its
+     * Request the full history in large pages and follow the
      * `less_than_match_id` cursor until a short page arrives so profiles with
-     * more than 500 games keep their full history.
+     * more than one page of games keep their full history.
      *
      * @return array<int, array<string, mixed>>
      */
@@ -2575,16 +2575,37 @@ class OpenDotaService
      * @param  array<int, mixed>  $heroStats
      * @param  array<int, array<string, mixed>>  $heroes
      * @param  array<int, mixed>  $recentMatches
+     * @param  array<int, array<string, mixed>>  $history
      * @return array<int, array<string, mixed>>
      */
-    private function transformHeroes(array $heroStats, array $heroes, array $recentMatches = []): array
+    private function transformHeroes(array $heroStats, array $heroes, array $recentMatches = [], array $history = []): array
     {
         $kdaByHero = $this->heroKda($recentMatches);
+        $rankedByHero = [];
+
+        foreach ($history as $match) {
+            if (! is_array($match) || (int) ($match['lobby_type'] ?? 0) !== 7) {
+                continue;
+            }
+
+            $heroId = (int) ($match['hero_id'] ?? 0);
+
+            if ($heroId <= 0) {
+                continue;
+            }
+
+            $rankedByHero[$heroId] ??= ['games' => 0, 'wins' => 0];
+            $rankedByHero[$heroId]['games']++;
+
+            if (! empty($match['win'])) {
+                $rankedByHero[$heroId]['wins']++;
+            }
+        }
 
         $rows = collect($heroStats)
             ->filter(fn ($hero) => is_array($hero) && isset($hero['hero_id']) && (int) ($hero['games'] ?? 0) > 0)
             ->sortByDesc(fn (array $hero) => (int) ($hero['games'] ?? 0))
-            ->map(function (array $hero) use ($heroes, $kdaByHero) {
+            ->map(function (array $hero) use ($heroes, $kdaByHero, $rankedByHero) {
                 $meta = $heroes[(int) $hero['hero_id']] ?? [
                     'id' => (int) $hero['hero_id'],
                     'name' => 'Hero #'.$hero['hero_id'],
@@ -2594,6 +2615,8 @@ class OpenDotaService
                 $games = (int) ($hero['games'] ?? 0);
                 $wins = (int) ($hero['win'] ?? 0);
                 $winRate = $games > 0 ? round($wins / $games * 100, 1) : null;
+                $ranked = $rankedByHero[$meta['id']] ?? ['games' => 0, 'wins' => 0];
+                $rankedLosses = max(0, $ranked['games'] - $ranked['wins']);
 
                 return [
                     'hero_id' => $meta['id'],
@@ -2608,6 +2631,9 @@ class OpenDotaService
                     'wins' => $wins,
                     'win_rate' => $winRate,
                     'winrate' => $winRate,
+                    'ranked_games' => $ranked['games'],
+                    'ranked_wins' => $ranked['wins'],
+                    'ranked_losses' => $rankedLosses,
                     'kda' => $kdaByHero[$meta['id']] ?? null,
                     'last_played_at' => isset($hero['last_played'])
                         ? CarbonImmutable::createFromTimestampUTC((int) $hero['last_played'])->toIso8601String()

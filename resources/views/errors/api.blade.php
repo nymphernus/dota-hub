@@ -9,11 +9,11 @@
         </div>
 
         <div class="mx-auto flex min-h-[calc(100vh-8rem)] w-full max-w-3xl flex-col items-center justify-center px-4 py-20 text-center sm:px-6 lg:px-8">
-            <span class="inline-flex items-center gap-2 rounded-none border border-sky-500/25 bg-sky-500/[0.08] px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-sky-300">
+            <span class="inline-flex items-center gap-2 rounded-none border border-line bg-[#2d313e] px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-mist-300">
                 Ошибка сети · 502
             </span>
 
-            <span class="mt-6 grid h-16 w-16 place-items-center rounded-none border border-sky-500/20 bg-sky-500/[0.07] text-sky-300">
+            <span class="mt-6 grid h-16 w-16 place-items-center rounded-none border border-line bg-[#2d313e] text-mist-300">
                 <svg class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
                     <path d="M7 18h10a4 4 0 0 0 .7-7.9A6 6 0 0 0 6.1 8.3 4.5 4.5 0 0 0 7 18z" stroke-linecap="round" stroke-linejoin="round" />
                     <path d="M9 9l6 6M15 9l-6 6" stroke-linecap="round" />
