@@ -113,7 +113,7 @@
                         x-model="date"
                         @change="apply()"
                         value="{{ $filters['date'] ?? '' }}"
-                        class="select-control"
+                        class="w-full appearance-none bg-[#1c1e26] text-white border-[#2d313e] rounded px-3 py-2 focus:outline-none"
                         data-filter="date"
                     >
                 </div>

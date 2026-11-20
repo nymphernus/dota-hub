@@ -137,17 +137,14 @@
                             </span>
                         </div>
 
-                        <div class="mt-2 space-y-1">
+                        <div class="mt-2 space-y-3">
                             @foreach ($lifetimeStats['groups'] as $group)
-                                <details class="group border border-line bg-ink-900/30" {{ $loop->first ? 'open' : '' }}>
-                                    <summary class="flex cursor-pointer list-none items-center justify-between px-2 py-1 text-[11px] font-semibold text-mist-300 transition hover:text-white">
-                                        <span>{{ $group['title'] }}</span>
-                                        <svg class="h-3 w-3 transition group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                                    </summary>
-                                    <div class="border-t border-line">
-                                        @if ($group['rows'] === [])
-                                            <p class="px-2 py-1 text-[10px] text-mist-500">Нет данных</p>
-                                        @else
+                                <div class="min-w-0">
+                                    <p class="section-heading mb-1">{{ $group['title'] }}</p>
+                                    @if ($group['rows'] === [])
+                                        <p class="px-2 py-1 text-[10px] text-mist-500">Нет данных</p>
+                                    @else
+                                        <div class="overflow-hidden border border-line bg-ink-900/30">
                                             <table class="w-full text-[11px]">
                                                 <thead class="table-head">
                                                     <tr>
@@ -168,9 +165,9 @@
                                                     @endforeach
                                                 </tbody>
                                             </table>
-                                        @endif
-                                    </div>
-                                </details>
+                                        </div>
+                                    @endif
+                                </div>
                             @endforeach
                         </div>
                     </section>

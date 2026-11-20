@@ -228,10 +228,12 @@ class UiAssetsTest extends TestCase
         $this->assertLessThan($allies, $lifetime);
     }
 
-    public function test_hero_filters_use_icon_picker_and_searchable_dropdown(): void
+    public function test_hero_filters_use_icon_pickers_and_hero_grid_matches_match_pagination(): void
     {
         $matches = (string) file_get_contents(resource_path('views/dota/matches.blade.php'));
         $heroes = (string) file_get_contents(resource_path('views/dota/heroes.blade.php'));
+        $matchPagination = (string) file_get_contents(resource_path('views/vendor/pagination/dotahub.blade.php'));
+        $heroPagination = (string) file_get_contents(resource_path('views/dota/partials/hero-pagination.blade.php'));
 
         $this->assertStringContainsString('id="filter-hero"', $matches);
         $this->assertStringContainsString('id="filter-hero-grid"', $matches);
@@ -239,14 +241,31 @@ class UiAssetsTest extends TestCase
         $this->assertStringContainsString("hero.icon || hero.image", $matches);
         $this->assertStringContainsString('class="h-8 w-8 overflow-hidden bg-ink-800"', $matches);
         $this->assertStringNotContainsString("'id' => 'filter-hero'", $matches);
+        $this->assertStringContainsString('bg-[#1c1e26] text-white border-[#2d313e] rounded px-3 py-2', $matches);
 
         $this->assertStringContainsString('perPage: 24', $heroes);
-        $this->assertStringContainsString('grid grid-cols-2 gap-2 p-3 sm:grid-cols-3 lg:grid-cols-6', $heroes);
+        $this->assertStringContainsString('grid grid-cols-2 gap-2 p-3 md:grid-cols-4 lg:grid-cols-6', $heroes);
         $this->assertStringContainsString('id="heroes-hero-filter"', $heroes);
-        $this->assertStringContainsString('id="heroes-hero-options"', $heroes);
-        $this->assertStringContainsString('heroQuery', $heroes);
-        $this->assertStringContainsString('filteredHeroOptions', $heroes);
-        $this->assertStringContainsString('hover:border-accent-400', $heroes);
+        $this->assertStringContainsString('id="heroes-hero-grid"', $heroes);
+        $this->assertStringContainsString('heroPickerQuery', $heroes);
+        $this->assertStringContainsString('filteredHeroPickerHeroes', $heroes);
+        $this->assertStringContainsString("hero.icon || hero.image", $heroes);
+        $this->assertStringContainsString('Винрейт', $heroes);
+
+        $sharedClasses = [
+            'grid h-9 min-w-9 place-items-center rounded-none border border-line bg-ink-900/40 px-3 text-xs font-semibold text-mist-300 transition hover:border-accent-400 hover:bg-accent-400/10 hover:text-mist-200',
+            'border-mist-400 bg-mist-400',
+            'text-ink-950',
+            'grid h-9 w-9 place-items-center rounded-none border border-line',
+        ];
+
+        foreach ($sharedClasses as $classes) {
+            $this->assertStringContainsString($classes, $matchPagination);
+            $this->assertStringContainsString($classes, $heroPagination);
+        }
+
+        $this->assertStringContainsString('aria-label="Пагинация"', $matchPagination);
+        $this->assertStringContainsString('aria-label="Пагинация"', $heroPagination);
     }
 
     public function test_no_gold_accents_remain_in_assets(): void

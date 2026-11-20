@@ -62,6 +62,7 @@ class DotaMatchesTest extends TestCase
         $response->assertSee('id="filter-date"', false);
         $response->assertSee('name="date"', false);
         $response->assertSee('type="date"', false);
+        $response->assertSee('bg-[#1c1e26] text-white border-[#2d313e] rounded px-3 py-2', false);
         $response->assertSee('Дата');
         $response->assertDontSee('id="filter-time"', false);
         $response->assertDontSee('Любое время');

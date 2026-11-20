@@ -133,7 +133,9 @@ class DotaProfileTest extends TestCase
         $response->assertSee('>Пн<', false);
         $response->assertSee('>Вс<', false);
         $response->assertSee('Активность за последние 13 недель', false);
-        $response->assertSee('<details class="group border border-line bg-ink-900/30" open>', false);
+        $response->assertDontSee('<details', false);
+        $response->assertDontSee('<summary', false);
+        $response->assertSee('bg-cover bg-center filter blur-sm opacity-20', false);
         $response->assertSee('Статистика за всё время');
         $response->assertDontSee('id="recentMatchesChart"', false);
         $response->assertDontSee('panel-matches', false);
@@ -747,14 +749,14 @@ class DotaProfileTest extends TestCase
         $response->assertSee('По винрейту');
         $response->assertSee('По KDA');
         $response->assertSee('perPage: 24', false);
-        $response->assertSee('grid grid-cols-2 gap-2 p-3 sm:grid-cols-3 lg:grid-cols-6', false);
+        $response->assertSee('grid grid-cols-2 gap-2 p-3 md:grid-cols-4 lg:grid-cols-6', false);
         $response->assertSee('id="heroes-hero-filter"', false);
-        $response->assertSee('id="heroes-hero-options"', false);
-        $response->assertSee('heroQuery', false);
-        $response->assertSee('filteredHeroOptions', false);
+        $response->assertSee('id="heroes-hero-grid"', false);
+        $response->assertSee('heroPickerQuery', false);
+        $response->assertSee('filteredHeroPickerHeroes', false);
+        $response->assertSee('hero.icon || hero.image', false);
         $response->assertSee('selectHero(hero.hero_id)', false);
-        $response->assertSee('aria-current="page"', false);
-        $response->assertSee('x-text="pageCount"', false);
+        $response->assertSee('aria-label="Пагинация"', false);
         $response->assertSee('x-for="number in pageCount"', false);
     }
 
