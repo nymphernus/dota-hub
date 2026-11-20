@@ -7,20 +7,20 @@
     <section class="mt-4" x-data="{ tab: 'all' }">
         <div class="flex flex-wrap items-center justify-between gap-2 px-1">
             <div>
-                <h2 class="text-lg font-semibold tracking-wide text-mist-200">Рекорды</h2>
+                <h2 class="section-heading">Рекорды</h2>
                 <p class="mt-0.5 text-[11px] text-mist-400">Лучшие результаты игрока в отдельных матчах</p>
             </div>
             <span class="badge text-mist-400" x-text="tab === 'ranked' ? '{{ count($rankedRecords) }} достижений' : '{{ count($records) }} достижений'"></span>
         </div>
 
-        <div class="mt-3 inline-flex rounded-lg bg-ink-900/40 p-1" role="tablist" aria-label="Тип рекордов">
+        <div class="mt-3 inline-flex rounded-none bg-ink-900/40 p-1" role="tablist" aria-label="Тип рекордов">
             <button
                 type="button"
                 role="tab"
                 aria-controls="records-all"
                 :aria-selected="(tab === 'all').toString()"
                 @click="tab = 'all'"
-                class="rounded-md px-3 py-2 text-sm font-semibold transition"
+                class="rounded-none px-3 py-2 text-sm font-semibold transition"
                 :class="tab === 'all' ? 'bg-gold-400/15 text-gold-200' : 'text-mist-400 hover:text-mist-200'"
             >Все матчи</button>
             <button
@@ -29,7 +29,7 @@
                 aria-controls="records-ranked"
                 :aria-selected="(tab === 'ranked').toString()"
                 @click="tab = 'ranked'"
-                class="rounded-md px-3 py-2 text-sm font-semibold transition"
+                class="rounded-none px-3 py-2 text-sm font-semibold transition"
                 :class="tab === 'ranked' ? 'bg-gold-400/15 text-gold-200' : 'text-mist-400 hover:text-mist-200'"
             >Рейтинг</button>
         </div>

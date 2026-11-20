@@ -11,7 +11,7 @@
     <div class="card min-w-[150px] flex-1 p-3 sm:p-4" role="listitem">
         <p class="label">Матчи</p>
         <p class="mt-1 text-xl font-semibold tracking-tight text-mist-200 sm:text-2xl">{{ number_format($games, 0, '.', ' ') }}</p>
-        <div class="mt-2 flex h-1.5 overflow-hidden rounded-lg bg-ink-900/50">
+        <div class="mt-2 flex h-1.5 overflow-hidden rounded-none bg-ink-900/50">
             <div class="h-full bg-amber-400" style="width: {{ $winShare }}%"></div>
             <div class="h-full bg-rose-500" style="width: {{ $lossShare }}%"></div>
         </div>
@@ -26,8 +26,8 @@
         <p class="mt-1 text-xl font-semibold tracking-tight sm:text-2xl {{ ($winrate ?? 0) >= 50 ? 'text-amber-300' : 'text-rose-300' }}">
             {{ $winrate !== null ? number_format($winrate, 1, '.', '').'%' : '—' }}
         </p>
-        <div class="mt-2 h-1.5 overflow-hidden rounded-lg bg-ink-900/50">
-            <div class="h-full rounded-lg {{ ($winrate ?? 0) >= 50 ? 'bg-win' : 'bg-loss' }}" style="width: {{ $winrate ?? 0 }}%"></div>
+        <div class="mt-2 h-1.5 overflow-hidden rounded-none bg-ink-900/50">
+            <div class="h-full rounded-none {{ ($winrate ?? 0) >= 50 ? 'bg-win' : 'bg-loss' }}" style="width: {{ $winrate ?? 0 }}%"></div>
         </div>
     </div>
 

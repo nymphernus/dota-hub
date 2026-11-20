@@ -6,7 +6,7 @@
 @section('profile-content')
         <div class="card mt-4 overflow-hidden">
             <div class="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-4 sm:px-5">
-                <h2 class="text-lg font-bold text-mist-200">Союзники</h2>
+                <h2 class="section-heading">Союзники</h2>
                 <span class="badge border-line bg-ink-900/50 text-mist-400">{{ count($player['peers'] ?? []) }}</span>
             </div>
 
@@ -21,22 +21,22 @@
                     <table class="w-full min-w-[680px] text-sm">
                         <thead class="table-head">
                             <tr>
-                                <th class="px-4 py-3 font-semibold sm:px-5">Игрок</th>
-                                <th class="px-4 py-3 font-semibold">Матчи вместе</th>
+                                <th class="px-2 py-1 font-semibold sm:px-5">Игрок</th>
+                                <th class="px-2 py-1 font-semibold">Матчи вместе</th>
                                 @if ($showWinrate)
-                                    <th class="px-4 py-3 font-semibold">Винрейт вместе</th>
+                                    <th class="px-2 py-1 font-semibold">Винрейт вместе</th>
                                 @endif
                                 @if ($showFavorite)
-                                    <th class="px-4 py-3 font-semibold sm:px-5">Любимый герой</th>
+                                    <th class="px-2 py-1 font-semibold sm:px-5">Любимый герой</th>
                                 @endif
                             </tr>
                         </thead>
                         <tbody class="table-rows">
                             @foreach ($player['peers'] as $peer)
                                 <tr class="transition hover:bg-ink-900/30">
-                                    <td class="px-4 py-3 sm:px-5">
+                                    <td class="px-2 py-1 sm:px-5">
                                         <a href="{{ route('dota.player', ['accountId' => $peer['account_id']]) }}" class="group flex items-center gap-3">
-                                            <span class="h-9 w-9 shrink-0 overflow-hidden rounded-lg bg-ink-800  ">
+                                            <span class="h-9 w-9 shrink-0 overflow-hidden rounded-none bg-ink-800  ">
                                                 @if ($peer['avatar'])
                                                     <img src="{{ $peer['avatar'] }}" alt="{{ $peer['nickname'] }}" class="h-full w-full object-cover" loading="lazy">
                                                 @endif
@@ -54,12 +54,12 @@
                                             </span>
                                         </a>
                                     </td>
-                                    <td class="px-4 py-3 font-mono text-[13px] tabular-nums text-mist-300">{{ number_format($peer['games'], 0, '.', ' ') }}</td>
+                                    <td class="px-2 py-1 font-mono text-[13px] tabular-nums text-mist-300">{{ number_format($peer['games'], 0, '.', ' ') }}</td>
                                     @if ($showWinrate)
-                                        <td class="px-4 py-3 font-mono text-[13px] tabular-nums {{ ($peer['winrate'] ?? 0) >= 50 ? 'text-emerald-300' : 'text-rose-300' }}">{{ $peer['winrate'] !== null ? number_format($peer['winrate'], 1, '.', '').'%' : '—' }}</td>
+                                        <td class="px-2 py-1 font-mono text-[13px] tabular-nums {{ ($peer['winrate'] ?? 0) >= 50 ? 'text-emerald-300' : 'text-rose-300' }}">{{ $peer['winrate'] !== null ? number_format($peer['winrate'], 1, '.', '').'%' : '—' }}</td>
                                     @endif
                                     @if ($showFavorite)
-                                        <td class="px-4 py-3 sm:px-5">
+                                        <td class="px-2 py-1 sm:px-5">
                                             @if (! empty($peer['favorite_hero']))
                                                 <span class="flex items-center gap-2" title="{{ $peer['favorite_hero']['games'] }} игр">
                                                     @if ($peer['favorite_hero']['image'])

@@ -12,7 +12,7 @@
         }
     }"
     @pageshow.window="loading = false"
-    class="rounded-lg border border-line bg-ink-800 "
+    class="rounded-none border border-line bg-ink-800 "
 >
     <form method="POST" action="{{ route('search') }}" @submit="loading = true" class="rounded-[calc(1.5rem-1px)] bg-ink-900/95 p-4  sm:p-5">
         @csrf
@@ -52,7 +52,7 @@
         </div>
 
         @error('query')
-            <div class="mt-3 flex items-start gap-2 rounded-lg border border-rose-500/25 bg-rose-500/10 px-3.5 py-2.5 text-sm text-rose-200">
+            <div class="mt-3 flex items-start gap-2 rounded-none border border-rose-500/25 bg-rose-500/10 px-3.5 py-2.5 text-sm text-rose-200">
                 <svg class="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                     <circle cx="12" cy="12" r="9" />
                     <path d="M12 7.5v5M12 16.2v.3" stroke-linecap="round" />
@@ -63,9 +63,9 @@
 
         <div class="mt-4 flex flex-wrap items-center gap-2 text-[11px] text-mist-500">
             <span class="uppercase tracking-wider">Например:</span>
-            <button type="button" @click="pick('Dendi')" class="rounded-lg border border-line bg-ink-900/30 px-2.5 py-1 font-medium text-mist-300 transition hover:border-gold-500/30 hover:text-gold-200">Dendi</button>
-            <button type="button" @click="pick('70388657')" class="rounded-lg border border-line bg-ink-900/30 px-2.5 py-1 font-mono font-medium text-mist-300 transition hover:border-gold-500/30 hover:text-gold-200">70388657</button>
-            <button type="button" @click="pick('https://steamcommunity.com/profiles/76561198030654385')" class="rounded-lg border border-line bg-ink-900/30 px-2.5 py-1 font-medium text-mist-300 transition hover:border-gold-500/30 hover:text-gold-200">Ссылка на Steam</button>
+            <button type="button" @click="pick('Dendi')" class="rounded-none border border-line bg-ink-900/30 px-2.5 py-1 font-medium text-mist-300 transition hover:border-gold-500/30 hover:text-gold-200">Dendi</button>
+            <button type="button" @click="pick('70388657')" class="rounded-none border border-line bg-ink-900/30 px-2.5 py-1 font-mono font-medium text-mist-300 transition hover:border-gold-500/30 hover:text-gold-200">70388657</button>
+            <button type="button" @click="pick('https://steamcommunity.com/profiles/76561198030654385')" class="rounded-none border border-line bg-ink-900/30 px-2.5 py-1 font-medium text-mist-300 transition hover:border-gold-500/30 hover:text-gold-200">Ссылка на Steam</button>
         </div>
     </form>
 </div>

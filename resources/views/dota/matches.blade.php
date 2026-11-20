@@ -126,12 +126,12 @@
                     <table class="w-full min-w-[820px] text-sm">
                         <thead class="table-head">
                             <tr>
-                                <th class="px-3 py-1.5 text-left font-semibold sm:px-4">Герой / режим</th>
-                                <th class="px-2 py-1.5 text-left font-semibold">Роль</th>
-                                <th class="px-2 py-1.5 text-left font-semibold">K / D / A</th>
-                                <th class="px-2 py-1.5 text-left font-semibold">GPM / XPM</th>
-                                <th class="px-2 py-1.5 text-left font-semibold">Предметы</th>
-                                <th class="px-3 py-1.5 text-right font-semibold sm:px-4">Дата</th>
+                                <th class="px-3 py-1 text-left font-semibold sm:px-4">Герой / режим</th>
+                                <th class="px-2 py-1 text-left font-semibold">Роль</th>
+                                <th class="px-2 py-1 text-left font-semibold">K / D / A</th>
+                                <th class="px-2 py-1 text-left font-semibold">GPM / XPM</th>
+                                <th class="px-2 py-1 text-left font-semibold">Предметы</th>
+                                <th class="px-3 py-1 text-right font-semibold sm:px-4">Дата</th>
                             </tr>
                         </thead>
                         <tbody class="table-rows">

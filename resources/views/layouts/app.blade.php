@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="description" content="@yield('description', 'DotaHub — быстрая статистика игроков Dota 2. Профили, матчи, герои и активность.')">
-    <meta name="theme-color" content="#0f111a">
+    <meta name="theme-color" content="#111318">
 
     <title>@yield('title', 'DotaHub')</title>
 
@@ -13,12 +13,12 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext x='16' y='24' font-family='Arial,Helvetica,sans-serif' font-size='24' font-weight='700' fill='%23e2e8f0' text-anchor='middle'%3ED%3C/text%3E%3C/svg%3E">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext x='16' y='24' font-family='Arial,Helvetica,sans-serif' font-size='24' font-weight='700' fill='%23d1d5db' text-anchor='middle'%3ED%3C/text%3E%3C/svg%3E">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="flex min-h-screen flex-col">
-    <header class="sticky top-0 z-40 border-b border-[#2a3042] bg-[#1b1f2e]/90 backdrop-blur-md">
+    <header class="sticky top-0 z-40 border-b border-[#2d313e] bg-[#111318]/90 backdrop-blur-md">
         <div class="mx-auto flex h-16 w-full max-w-7xl items-center px-4 sm:px-6 lg:px-8">
             <a href="/" class="bg-[#d32f2f] px-2 py-1 text-white font-black uppercase text-xl tracking-tighter leading-none rounded-sm" aria-label="DOTAHUB — на главную">DOTAHUB</a>
 
@@ -34,7 +34,7 @@
                     @csrf
                     <button
                         type="button"
-                        class="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-mist-400 transition hover:bg-ink-700 hover:text-mist-200"
+                        class="grid h-9 w-9 shrink-0 place-items-center rounded-none text-mist-400 transition hover:bg-ink-700 hover:text-mist-200"
                         @click="open = !open; if (open) $nextTick(() => $refs.query.focus())"
                         :aria-expanded="open.toString()"
                         aria-controls="header-search-query"
@@ -72,9 +72,9 @@
 
                 @if ($steamAccountId)
                     <div class="flex items-center gap-2.5">
-                        <a href="{{ route('dota.player', ['accountId' => $steamAccountId]) }}" class="group flex items-center gap-2.5 rounded-lg px-1 py-1 transition hover:bg-ink-700" aria-label="Открыть мой профиль">
+                        <a href="{{ route('dota.player', ['accountId' => $steamAccountId]) }}" class="group flex items-center gap-2.5 rounded-none px-1 py-1 transition hover:bg-ink-700" aria-label="Открыть мой профиль">
                             @if (session('steam_avatar'))
-                                <img src="{{ session('steam_avatar') }}" alt="Аватар Steam" class="h-8 w-8 rounded-lg object-cover   transition ">
+                                <img src="{{ session('steam_avatar') }}" alt="Аватар Steam" class="h-8 w-8 rounded-none object-cover   transition ">
                             @endif
                             <span class="hidden max-w-[140px] truncate text-xs font-semibold text-mist-200 transition group-hover:text-mist-200 sm:block">
                                 {{ session('steam_nickname') ?: 'Steam аккаунт' }}
@@ -107,14 +107,14 @@
     <main class="flex-1 pb-20">
         @if (session('status'))
             <div class="mx-auto mt-4 w-full max-w-7xl px-4 sm:px-6 lg:px-8" x-data="{ visible: true }">
-                <div x-show="visible" x-transition class="flex items-start justify-between gap-4 rounded-lg border border-gold-500/25 bg-gold-500/10 px-4 py-3 text-sm text-gold-200">
+                <div x-show="visible" x-transition class="flex items-start justify-between gap-4 rounded-none border border-gold-500/25 bg-gold-500/10 px-4 py-3 text-sm text-gold-200">
                     <div class="flex items-start gap-3">
                         <svg class="mt-0.5 h-5 w-5 shrink-0 text-gold-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                             <path d="M5 12.5l4.5 4.5L19 7" stroke-linecap="round" stroke-linejoin="round" />
                         </svg>
                         <p>{{ session('status') }}</p>
                     </div>
-                    <button type="button" @click="visible = false" class="rounded-lg p-1 text-gold-300/70 transition hover:bg-ink-700 hover:text-mist-200" aria-label="Закрыть уведомление">
+                    <button type="button" @click="visible = false" class="rounded-none p-1 text-gold-300/70 transition hover:bg-ink-700 hover:text-mist-200" aria-label="Закрыть уведомление">
                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                             <path d="M6 6l12 12M18 6L6 18" stroke-linecap="round" />
                         </svg>
@@ -125,7 +125,7 @@
 
         @if (session('error'))
             <div class="mx-auto mt-4 w-full max-w-7xl px-4 sm:px-6 lg:px-8" x-data="{ visible: true }">
-                <div x-show="visible" x-transition class="flex items-start justify-between gap-4 rounded-lg border border-rose-500/25 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+                <div x-show="visible" x-transition class="flex items-start justify-between gap-4 rounded-none border border-rose-500/25 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
                     <div class="flex items-start gap-3">
                         <svg class="mt-0.5 h-5 w-5 shrink-0 text-rose-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                             <circle cx="12" cy="12" r="9" />
@@ -133,7 +133,7 @@
                         </svg>
                         <p>{{ session('error') }}</p>
                     </div>
-                    <button type="button" @click="visible = false" class="rounded-lg p-1 text-rose-300/70 transition hover:bg-ink-700 hover:text-mist-200" aria-label="Закрыть уведомление">
+                    <button type="button" @click="visible = false" class="rounded-none p-1 text-rose-300/70 transition hover:bg-ink-700 hover:text-mist-200" aria-label="Закрыть уведомление">
                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                             <path d="M6 6l12 12M18 6L6 18" stroke-linecap="round" />
                         </svg>
@@ -148,7 +148,7 @@
     <footer class="border-t border-line bg-ink-950/60">
         <div class="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
             <div>
-                <p class="inline-flex bg-[#1b1f2e] border border-[#2a3042] px-3 py-1.5 rounded-md font-bold text-xl tracking-tighter text-white">dotahub</p>
+                <p class="inline-flex bg-[#1c1e26] border border-[#2d313e] px-3 py-1.5 rounded-none font-bold text-xl tracking-tighter text-white">dotahub</p>
                 <p class="text-[11px] text-mist-500">Данные: OpenDota · Steam Web API</p>
             </div>
 

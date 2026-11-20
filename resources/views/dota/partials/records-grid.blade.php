@@ -13,7 +13,7 @@
                         <p class="mt-2 text-2xl font-bold tracking-tight text-mist-200">{{ $record['value_label'] }}</p>
                     </div>
                     @if ($record['hero_image'] || $record['hero_icon'])
-                        <span class="h-12 w-20 shrink-0 overflow-hidden rounded-lg bg-ink-800 border border-line">
+                        <span class="h-12 w-20 shrink-0 overflow-hidden rounded-none bg-ink-800 border border-line">
                             <img src="{{ $record['hero_image'] ?? $record['hero_icon'] }}" alt="{{ $record['hero_name'] ?? 'Герой' }}" class="h-full w-full object-cover" loading="lazy">
                         </span>
                     @endif

@@ -51,7 +51,7 @@
             <div class="relative px-4 pb-5 pt-10 sm:px-6 lg:px-8">
                 <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
                     <div class="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-end">
-                        <div class="relative h-24 w-40 shrink-0 overflow-hidden rounded-lg bg-ink-800   ">
+                        <div class="relative h-24 w-40 shrink-0 overflow-hidden rounded-none bg-ink-800   ">
                             @if ($hero['image'])
                                 <img src="{{ $hero['image'] }}" alt="{{ $hero['name'] }}" class="h-full w-full object-cover" loading="eager">
                             @else
@@ -72,7 +72,7 @@
                             <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-mist-400">
                                 <a href="{{ $backUrl }}" class="inline-flex items-center gap-2 transition hover:text-mist-200">
                                     @if ($player['avatar'])
-                                        <img src="{{ $player['avatar'] }}" alt="" class="h-5 w-5 rounded-md object-cover  " loading="lazy">
+                                        <img src="{{ $player['avatar'] }}" alt="" class="h-5 w-5 rounded-none object-cover  " loading="lazy">
                                     @endif
                                     <span class="font-semibold text-mist-300">{{ $player['nickname'] }}</span>
                                     <span class="font-mono text-mist-500">ID {{ $player['account_id'] }}</span>
@@ -119,7 +119,7 @@
         <section class="mt-4 card overflow-hidden">
             <div class="flex flex-wrap items-start justify-between gap-3 border-b border-line px-4 py-4 sm:px-5">
                 <div>
-                    <h2 class="text-lg font-bold text-mist-200">Бенчмарки</h2>
+                    <h2 class="section-heading">Бенчмарки</h2>
                     <p class="mt-1 text-[11px] leading-relaxed text-mist-500">
                         Перцентили OpenDota по последним матчам. Чем правее маркер, тем сильнее показатель относительно других игроков.
                     </p>
@@ -139,7 +139,7 @@
                             $markerLeft = min(99, max(1, (float) ($benchmark['percentile'] ?? 0) * 100));
                         @endphp
 
-                        <div class="rounded-lg border border-line bg-ink-950/50 p-4 sm:p-5">
+                        <div class="rounded-none border border-line bg-ink-950/50 p-4 sm:p-5">
                             <div class="flex items-start justify-between gap-3">
                                 <div>
                                     <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-mist-400">{{ $benchmark['label'] }}</p>
@@ -170,9 +170,9 @@
 
                             @if ($benchmark['available'])
                                 <div class="mt-5">
-                                    <div class="relative h-2 rounded-lg bg-line">
+                                    <div class="relative h-2 rounded-none bg-line">
                                         <span
-                                            class="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-lg border-2 border-ink-950 {{ $tone['marker'] }}"
+                                            class="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-none border-2 border-ink-950 {{ $tone['marker'] }}"
                                             style="left: {{ number_format($markerLeft, 1, '.', '') }}%"
                                             aria-hidden="true"
                                         ></span>
@@ -203,10 +203,10 @@
 
         <section class="mt-4 card overflow-hidden">
             <div class="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-4 sm:px-5">
-                <h2 class="text-lg font-bold text-mist-200">История матчей</h2>
+                <h2 class="section-heading">История матчей</h2>
                 <div class="flex items-center gap-3 text-[11px]">
-                    <span class="inline-flex items-center gap-1.5 text-emerald-300"><span class="h-2 w-2 rounded-lg bg-emerald-400"></span> Победа</span>
-                    <span class="inline-flex items-center gap-1.5 text-rose-300"><span class="h-2 w-2 rounded-lg bg-rose-400"></span> Поражение</span>
+                    <span class="inline-flex items-center gap-1.5 text-emerald-300"><span class="h-2 w-2 rounded-none bg-emerald-400"></span> Победа</span>
+                    <span class="inline-flex items-center gap-1.5 text-rose-300"><span class="h-2 w-2 rounded-none bg-rose-400"></span> Поражение</span>
                 </div>
             </div>
 
@@ -243,7 +243,7 @@
                                 @endphp
                                 <tr
                                     @class([
-                                        'transition odd:bg-[#1b1f2e] even:bg-[#0f111a] hover:bg-ink-700/60',
+                                        'transition odd:bg-[#1c1e26] even:bg-[#111318] hover:bg-ink-700/60',
                                         'cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-gold-400' => $matchUrl,
                                     ])
                                     @if ($matchUrl)

@@ -80,7 +80,7 @@ class DotaProfileTest extends TestCase
         );
         $response->assertSee('id="hero-wheel"', false);
         $response->assertSee('<image', false);
-        $response->assertSee('fill="#1b1f2e"', false);
+        $response->assertSee('fill="#1c1e26"', false);
         $response->assertDontSee('<radialGradient', false);
         $response->assertDontSee('>героев</text>', false);
         $response->assertSee('Колесо героев');
@@ -96,14 +96,22 @@ class DotaProfileTest extends TestCase
         $response->assertDontSee('аффилирован');
         $response->assertSee('Самые играемые герои');
 
+        $response->assertSee('grid grid-cols-12 gap-4', false);
+        $response->assertSee('lg:col-span-8', false);
+        $response->assertSee('lg:col-span-4', false);
+        $response->assertSee('border border-[#2d313e] bg-[#1c1e26] rounded-none', false);
+
         $wheelPosition = strpos($content, 'id="hero-wheel"');
+        $lifetimePosition = strpos($content, '>Lifetime Stats</h2>');
         $activityPosition = strpos($content, '90 дней назад');
         $alliesPosition = strpos($content, '>Союзники</h2>');
 
         $this->assertNotFalse($wheelPosition);
+        $this->assertNotFalse($lifetimePosition);
         $this->assertNotFalse($activityPosition);
         $this->assertNotFalse($alliesPosition);
-        $this->assertLessThan($activityPosition, $wheelPosition);
+        $this->assertLessThan($lifetimePosition, $wheelPosition);
+        $this->assertLessThan($activityPosition, $lifetimePosition);
         $this->assertLessThan($alliesPosition, $activityPosition);
 
         $response->assertDontSee('id="winrateChart"', false);

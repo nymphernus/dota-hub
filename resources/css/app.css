@@ -4,19 +4,19 @@
     --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
     --font-mono: 'JetBrains Mono', 'Cascadia Code', 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
 
-    --color-ink-950: #0b0d16;
-    --color-ink-900: #0f111a;
-    --color-ink-850: #151925;
-    --color-ink-800: #1b1f2e;
-    --color-ink-700: #242a3b;
-    --color-ink-600: #30374c;
-    --color-line: #2a3042;
+    --color-ink-950: #0b0d11;
+    --color-ink-900: #111318;
+    --color-ink-850: #181b23;
+    --color-ink-800: #1c1e26;
+    --color-ink-700: #242732;
+    --color-ink-600: #343945;
+    --color-line: #2d313e;
 
-    --color-mist-200: #e2e8f0;
-    --color-mist-300: #cbd5e1;
+    --color-mist-200: #d1d5db;
+    --color-mist-300: #b9c0cb;
     --color-mist-400: #8b94a5;
-    --color-mist-500: #64748b;
-    --color-mist-600: #64748b;
+    --color-mist-500: #6b7280;
+    --color-mist-600: #6b7280;
 
     --color-gold-100: #fdf3d3;
     --color-gold-200: #f7e3a1;
@@ -58,10 +58,10 @@
     --color-orange-300: #e2b02b;
     --color-orange-400: #e2b02b;
     --color-orange-500: #e2b02b;
-    --color-slate-300: #e2e8f0;
+    --color-slate-300: #d1d5db;
     --color-slate-400: #8b94a5;
-    --color-slate-500: #64748b;
-    --color-slate-600: #64748b;
+    --color-slate-500: #6b7280;
+    --color-slate-600: #6b7280;
 }
 
 @layer base {
@@ -75,7 +75,7 @@
         min-height: 100vh;
     }
 
-    /* Flat design guardrails: no shadows, no radius above 8px, no gradient text. */
+    /* Flat design guardrails: no shadows and no card-like rounding. */
     *,
     *::before,
     *::after {
@@ -83,13 +83,8 @@
         text-shadow: none !important;
     }
 
-    :where(
-        [class*="rounded-xl"],
-        [class*="rounded-2xl"],
-        [class*="rounded-3xl"],
-        [class*="rounded-full"]
-    ) {
-        border-radius: 8px !important;
+    [class*="rounded"] {
+        border-radius: 0 !important;
     }
 
     h1,
@@ -98,6 +93,9 @@
     h4 {
         font-weight: 700 !important;
         letter-spacing: 0.025em !important;
+    }
+
+    h1 {
         color: #ffffff !important;
     }
 
@@ -120,16 +118,16 @@
     }
 
     ::-webkit-scrollbar-track {
-        background: #0f111a;
+        background: #111318;
     }
 
     ::-webkit-scrollbar-thumb {
-        background: #30374c;
-        border-radius: 8px;
+        background: #343945;
+        border-radius: 0;
     }
 
     ::-webkit-scrollbar-thumb:hover {
-        background: #424b66;
+        background: #4a5060;
     }
 
     img {
@@ -139,7 +137,7 @@
 
 @layer components {
     .card {
-        @apply rounded-lg border border-line bg-ink-800;
+        @apply rounded-none border border-line bg-ink-800;
     }
 
     .card-hover {
@@ -147,31 +145,36 @@
     }
 
     .header-search {
-        @apply flex items-center rounded-lg transition-colors duration-200;
+        @apply flex items-center rounded-none transition-colors duration-200;
     }
 
     .header-search.is-open {
         @apply bg-ink-900/50;
     }
 
-    .label {
-        @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-mist-500;
+    .label,
+    .section-heading {
+        @apply text-xs font-bold uppercase tracking-wider text-mist-400;
+    }
+
+    .section-heading {
+        color: #8b94a5;
     }
 
     .btn {
-        @apply inline-flex items-center justify-center gap-2 rounded-lg border border-line px-4 py-2.5 text-sm font-semibold transition duration-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60;
+        @apply inline-flex items-center justify-center gap-2 rounded-none border border-line px-4 py-2.5 text-sm font-semibold transition duration-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60;
     }
 
     .btn-primary {
-        @apply inline-flex items-center justify-center gap-2 rounded-lg border border-gold-500 px-4 py-2.5 text-sm font-semibold text-ink-950 transition duration-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 bg-gold-400 hover:bg-gold-300 active:bg-gold-500;
+        @apply inline-flex items-center justify-center gap-2 rounded-none border border-gold-500 px-4 py-2.5 text-sm font-semibold text-ink-950 transition duration-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 bg-gold-400 hover:bg-gold-300 active:bg-gold-500;
     }
 
     .btn-ghost {
-        @apply inline-flex items-center justify-center gap-2 rounded-lg border border-line px-4 py-2.5 text-sm font-semibold text-mist-200 transition duration-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 bg-ink-900/40 hover:bg-ink-700;
+        @apply inline-flex items-center justify-center gap-2 rounded-none border border-line px-4 py-2.5 text-sm font-semibold text-mist-200 transition duration-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 bg-ink-900/40 hover:bg-ink-700;
     }
 
     .badge {
-        @apply inline-flex items-center gap-1.5 rounded-md border border-line bg-ink-900/50 px-2 py-1 text-[11px] font-semibold text-mist-400;
+        @apply inline-flex items-center gap-1.5 rounded-none border border-line bg-ink-900/50 px-2 py-1 text-[11px] font-semibold text-mist-400;
     }
 
     .hero-wheel__slice {
@@ -193,11 +196,11 @@
     }
 
     .input {
-        @apply w-full rounded-lg border border-line bg-ink-900/50 px-4 py-3 text-sm text-mist-200 placeholder:text-mist-500 transition focus:outline-none;
+        @apply w-full rounded-none border border-line bg-ink-900/50 px-4 py-3 text-sm text-mist-200 placeholder:text-mist-500 transition focus:outline-none;
     }
 
     .select-control {
-        @apply w-full appearance-none rounded-lg border border-line bg-ink-900/80 py-2.5 pl-3 pr-9 text-sm font-semibold text-mist-200 transition focus:outline-none;
+        @apply w-full appearance-none rounded-none border border-line bg-ink-900/80 py-2.5 pl-3 pr-9 text-sm font-semibold text-mist-200 transition focus:outline-none;
     }
 
     .select-control option {
@@ -209,15 +212,15 @@
     }
 
     .table-rows tr {
-        border-bottom: 1px solid #2a3042;
+        border-bottom: 1px solid #2d313e;
     }
 
     .nav-link {
-        @apply rounded-lg px-3 py-2 text-sm font-medium text-mist-300 transition hover:bg-ink-700 hover:text-mist-200;
+        @apply rounded-none px-3 py-2 text-sm font-medium text-mist-300 transition hover:bg-ink-700 hover:text-mist-200;
     }
 
     .tab-button {
-        @apply inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-mist-400 transition hover:bg-ink-900/50 hover:text-mist-200;
+        @apply inline-flex items-center gap-2 rounded-none px-4 py-2.5 text-sm font-semibold text-mist-400 transition hover:bg-ink-900/50 hover:text-mist-200;
     }
 
     .tab-button-active {

@@ -9,7 +9,7 @@
     ];
 @endphp
 
-<div class="mt-4 flex items-center gap-1 overflow-x-auto rounded-lg bg-ink-900/60 p-1.5" role="tablist" aria-label="Разделы профиля">
+<div class="mt-4 flex items-center gap-1 overflow-x-auto rounded-none bg-ink-900/60 p-1.5" role="tablist" aria-label="Разделы профиля">
     @foreach ($tabs as $tab)
         <a
             id="tab-{{ $tab['key'] }}"
@@ -24,7 +24,7 @@
         >
             {{ $tab['label'] }}
             @if (array_key_exists('count', $tab))
-                <span class="rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-bold text-mist-400">{{ $tab['count'] }}</span>
+                <span class="rounded-none bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-bold text-mist-400">{{ $tab['count'] }}</span>
             @endif
         </a>
     @endforeach

@@ -4,7 +4,7 @@
 
 @section('content')
     <div class="mx-auto flex w-full max-w-3xl flex-col items-center px-4 py-20 text-center sm:px-6 lg:px-8">
-        <span class="grid h-16 w-16 place-items-center rounded-lg border border-line bg-ink-900/40 text-mist-300">
+        <span class="grid h-16 w-16 place-items-center rounded-none border border-line bg-ink-900/40 text-mist-300">
             <svg class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
                 <circle cx="12" cy="12" r="9" />
                 <path d="M12 7.5v5M12 16.2v.3" stroke-linecap="round" />

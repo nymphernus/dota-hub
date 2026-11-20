@@ -14,7 +14,7 @@ class UiAssetsTest extends TestCase
         $this->assertStringContainsString('<svg', $source);
         $this->assertStringContainsString('<image', $source);
         $this->assertStringContainsString('xlink:href', $source);
-        $this->assertStringContainsString('fill="#1b1f2e"', $source);
+        $this->assertStringContainsString('fill="#1c1e26"', $source);
         $this->assertStringContainsString('$wheelTotal', $source);
         $this->assertStringContainsString('* 360', $source);
         $this->assertStringContainsString('$iconSize', $source);
@@ -78,36 +78,38 @@ class UiAssetsTest extends TestCase
         $vite = (string) file_get_contents(base_path('vite.config.js'));
         $package = (string) file_get_contents(base_path('package.json'));
 
-        $this->assertStringContainsString('--color-ink-900: #0f111a', $css);
-        $this->assertStringContainsString('--color-ink-800: #1b1f2e', $css);
-        $this->assertStringContainsString('--color-line: #2a3042', $css);
-        $this->assertStringContainsString('--color-mist-200: #e2e8f0', $css);
+        $this->assertStringContainsString('--color-ink-900: #111318', $css);
+        $this->assertStringContainsString('--color-ink-800: #1c1e26', $css);
+        $this->assertStringContainsString('--color-line: #2d313e', $css);
+        $this->assertStringContainsString('--color-mist-200: #d1d5db', $css);
         $this->assertStringContainsString('--color-mist-400: #8b94a5', $css);
         $this->assertStringContainsString('--color-gold-400: #e2b02b', $css);
         $this->assertStringContainsString('--color-accent-400: #3b82f6', $css);
         $this->assertStringContainsString('--color-win: #10b981', $css);
         $this->assertStringContainsString('--color-loss: #ef4444', $css);
         $this->assertStringContainsString("--font-sans: 'Inter'", $css);
-        $this->assertStringContainsString('@apply rounded-lg border border-line bg-ink-800;', $css);
-        $this->assertStringContainsString('border-bottom: 1px solid #2a3042;', $css);
+        $this->assertStringContainsString('@apply rounded-none border border-line bg-ink-800;', $css);
+        $this->assertStringContainsString('border-bottom: 1px solid #2d313e;', $css);
         $this->assertStringContainsString('box-shadow: none !important', $css);
-        $this->assertStringContainsString('border-radius: 8px !important', $css);
+        $this->assertStringContainsString('border-radius: 0 !important', $css);
         $this->assertStringContainsString('font-weight: 700 !important', $css);
         $this->assertStringContainsString('color: #ffffff !important', $css);
+        $this->assertStringContainsString('.section-heading {', $css);
+        $this->assertStringContainsString('@apply text-xs font-bold uppercase tracking-wider text-mist-400;', $css);
         $this->assertStringContainsString('--color-green-500: #10b981', $css);
         $this->assertStringContainsString('--color-red-500: #ef4444', $css);
         $this->assertStringNotContainsString('radial-gradient', $css);
         $this->assertStringNotContainsString('--color-radar-', $css);
 
         $this->assertStringContainsString('fonts.googleapis.com/css2?family=Inter', $layout);
-        $this->assertStringContainsString('border-b border-[#2a3042] bg-[#1b1f2e]/90 backdrop-blur-md', $layout);
+        $this->assertStringContainsString('border-b border-[#2d313e] bg-[#111318]/90 backdrop-blur-md', $layout);
         $this->assertStringContainsString('bg-[#d32f2f] px-2 py-1 text-white font-black uppercase text-xl tracking-tighter leading-none rounded-sm', $layout);
         $this->assertStringContainsString('>DOTAHUB</a>', $layout);
         $this->assertStringNotContainsString('>dotahub</span>', $layout);
         $this->assertStringNotContainsString('text-gold-400', $layout);
         $this->assertStringNotContainsString('>Dota 2</', $layout);
         $this->assertStringNotContainsString('uppercase tracking-[0.2em] text-mist-500 sm:block', $layout);
-        $this->assertStringContainsString('content="#0f111a"', $layout);
+        $this->assertStringContainsString('content="#111318"', $layout);
         $this->assertStringNotContainsString('radar', $layout);
 
         $this->assertStringContainsString('resources/js/heatmap.js', $vite);
@@ -115,7 +117,7 @@ class UiAssetsTest extends TestCase
         $this->assertStringNotContainsString('chart.js', $package);
     }
 
-    public function test_all_views_use_flat_eight_pixel_radius_and_no_shadows(): void
+    public function test_all_views_use_flat_square_corners_and_no_shadows(): void
     {
         $files = glob(resource_path('views/*/*.blade.php'));
         $files = array_merge($files, glob(resource_path('views/*.blade.php')));
@@ -143,13 +145,54 @@ class UiAssetsTest extends TestCase
         $source = (string) file_get_contents(resource_path('views/dota/partials/match-row.blade.php'));
         $matches = (string) file_get_contents(resource_path('views/dota/matches.blade.php'));
 
-        $this->assertStringContainsString('odd:bg-[#1b1f2e] even:bg-[#0f111a]', $source);
+        $this->assertStringContainsString('odd:bg-[#1c1e26] even:bg-[#111318]', $source);
         $this->assertStringContainsString('border-l-4 border-green-500', $source);
         $this->assertStringContainsString('border-l-4 border-red-500', $source);
-        $this->assertStringContainsString('px-3 py-1.5 sm:px-4', $source);
+        $this->assertStringContainsString('px-3 py-1 sm:px-4', $source);
         $this->assertStringNotContainsString('bg-emerald-500/[0.055]', $source);
         $this->assertStringNotContainsString('bg-rose-500/[0.055]', $source);
         $this->assertStringNotContainsString('py-2.5', $source);
         $this->assertStringNotContainsString('py-2.5', $matches);
+    }
+
+    public function test_profile_uses_dense_twelve_column_grid_with_reordered_sidebar(): void
+    {
+        $source = (string) file_get_contents(resource_path('views/dota/player.blade.php'));
+
+        $this->assertStringContainsString('grid grid-cols-12 gap-4', $source);
+        $this->assertStringContainsString('col-span-12 min-w-0 space-y-4 lg:col-span-8', $source);
+        $this->assertStringContainsString('col-span-12 min-w-0 space-y-4 lg:col-span-4', $source);
+        $this->assertStringContainsString('border border-[#2d313e] bg-[#1c1e26] rounded-none', $source);
+        $this->assertStringContainsString('class="section-heading"', $source);
+        $this->assertStringContainsString('py-1', $source);
+        $this->assertStringContainsString("['heroes' => \$heroUsage, 'playerId' => \$player['account_id']]", $source);
+
+        foreach (['gap-6', 'space-y-6', 'p-6', 'rounded-xl', 'rounded-2xl'] as $forbidden) {
+            $this->assertStringNotContainsString($forbidden, $source);
+        }
+
+        $wheel = strpos($source, '>Колесо героев<');
+        $lifetime = strpos($source, '>Lifetime Stats<');
+        $activity = strpos($source, '>Активность<');
+        $allies = strpos($source, '>Союзники<');
+
+        $this->assertNotFalse($wheel);
+        $this->assertNotFalse($lifetime);
+        $this->assertNotFalse($activity);
+        $this->assertNotFalse($allies);
+        $this->assertLessThan($lifetime, $wheel);
+        $this->assertLessThan($activity, $lifetime);
+        $this->assertLessThan($allies, $activity);
+    }
+
+    public function test_refresh_control_is_a_square_icon_beside_the_favorite_star(): void
+    {
+        $source = (string) file_get_contents(resource_path('views/components/player-header.blade.php'));
+
+        $this->assertStringContainsString('data-favorite-star', $source);
+        $this->assertStringContainsString('aria-label="Обновить"', $source);
+        $this->assertStringContainsString('class="grid h-8 w-8 shrink-0 place-items-center', $source);
+        $this->assertStringContainsString('dota.player.refresh', $source);
+        $this->assertStringNotContainsString("x-text=\"loading ? 'Обновляем…' : 'Обновить'\"", $source);
     }
 }

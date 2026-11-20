@@ -9,11 +9,11 @@
         </div>
 
         <div class="mx-auto flex min-h-[calc(100vh-8rem)] w-full max-w-3xl flex-col items-center justify-center px-4 py-20 text-center sm:px-6 lg:px-8">
-            <span class="inline-flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/[0.08] px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-300">
+            <span class="inline-flex items-center gap-2 rounded-none border border-amber-500/20 bg-amber-500/[0.08] px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-300">
                 Ошибка 429
             </span>
 
-            <span class="mt-6 grid h-16 w-16 place-items-center rounded-lg border border-amber-500/20 bg-amber-500/[0.07] text-amber-300">
+            <span class="mt-6 grid h-16 w-16 place-items-center rounded-none border border-amber-500/20 bg-amber-500/[0.07] text-amber-300">
                 <svg class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
                     <circle cx="12" cy="12" r="9" />
                     <path d="M12 7.5V12l3 2" stroke-linecap="round" stroke-linejoin="round" />

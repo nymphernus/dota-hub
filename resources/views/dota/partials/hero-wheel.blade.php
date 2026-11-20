@@ -82,7 +82,7 @@
 @endphp
 
 @if ($sectors === [])
-    <div class="mt-4 grid h-48 place-items-center rounded-lg border border-dashed border-line text-xs text-mist-400">
+    <div class="mt-4 grid h-48 place-items-center rounded-none border border-dashed border-line text-xs text-mist-400">
         Нет данных
     </div>
 @else
@@ -97,7 +97,7 @@
     >
         <title>Колесо героев</title>
 
-        <circle cx="120" cy="120" r="112" fill="#0f111a" />
+        <circle cx="120" cy="120" r="112" fill="#111318" />
 
         @foreach ($sectors as $sector)
             <a
@@ -112,8 +112,8 @@
                     <path
                         class="hero-wheel__sector"
                         d="{{ $sector['path'] }}"
-                        fill="#1b1f2e"
-                        stroke="#2a3042"
+                        fill="#1c1e26"
+                        stroke="#2d313e"
                         stroke-width="1.5"
                     />
                     @if ($sector['icon'] !== '')
@@ -132,6 +132,6 @@
             </a>
         @endforeach
 
-        <circle class="hero-wheel__hub" cx="120" cy="120" r="45" fill="#1b1f2e" stroke="#2a3042" stroke-width="1" />
+        <circle class="hero-wheel__hub" cx="120" cy="120" r="45" fill="#1c1e26" stroke="#2d313e" stroke-width="1" />
     </svg>
 @endif

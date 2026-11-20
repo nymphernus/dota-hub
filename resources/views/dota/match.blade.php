@@ -98,12 +98,12 @@
                     </div>
 
                     <div class="flex shrink-0 items-center gap-3">
-                        <div class="rounded-lg border border-emerald-500/15 bg-emerald-500/[0.07] px-4 py-2 text-center">
+                        <div class="rounded-none border border-emerald-500/15 bg-emerald-500/[0.07] px-4 py-2 text-center">
                             <p class="text-[10px] uppercase tracking-wider text-emerald-300/70">Radiant</p>
                             <p class="text-xl font-semibold text-emerald-300">{{ $match['radiant_score'] }}</p>
                         </div>
                         <span class="text-xs font-bold text-mist-500">:</span>
-                        <div class="rounded-lg border border-rose-500/15 bg-rose-500/[0.07] px-4 py-2 text-center">
+                        <div class="rounded-none border border-rose-500/15 bg-rose-500/[0.07] px-4 py-2 text-center">
                             <p class="text-[10px] uppercase tracking-wider text-rose-300/70">Dire</p>
                             <p class="text-xl font-semibold text-rose-300">{{ $match['dire_score'] }}</p>
                         </div>
@@ -115,7 +115,7 @@
         @if ($picksBans->isNotEmpty())
             <section class="mt-4 card p-4 sm:p-5" aria-label="Пики и баны">
                 <div class="flex flex-wrap items-end justify-between gap-2">
-                    <h2 class="text-lg font-bold text-mist-200">Пики и баны</h2>
+                    <h2 class="section-heading">Пики и баны</h2>
                     <span class="text-[11px] text-mist-500">Порядок драфта</span>
                 </div>
 
@@ -126,7 +126,7 @@
                             $picks = $teamEntries->where('is_pick', true)->values();
                             $bans = $teamEntries->where('is_pick', false)->values();
                         @endphp
-                        <div class="rounded-lg bg-ink-900/30 p-3">
+                        <div class="rounded-none bg-ink-900/30 p-3">
                             <p class="text-[11px] font-semibold uppercase tracking-[0.14em] {{ $teamId === 0 ? 'text-emerald-300' : 'text-rose-300' }}">{{ $teamLabel }}</p>
 
                             @if ($picks->isNotEmpty())
@@ -134,7 +134,7 @@
                                     <p class="text-[10px] uppercase tracking-[0.14em] text-mist-500">Пики</p>
                                     <div class="mt-2 flex flex-wrap gap-2">
                                         @foreach ($picks as $entry)
-                                            <div class="flex items-center gap-2 rounded-lg bg-ink-900/60 px-2 py-1.5" title="{{ $entry['hero_name'] }}">
+                                            <div class="flex items-center gap-2 rounded-none bg-ink-900/60 px-2 py-1.5" title="{{ $entry['hero_name'] }}">
                                                 <span class="h-7 w-12 overflow-hidden rounded bg-ink-800  ">
                                                     @if (! empty($entry['hero_image']))
                                                         <img src="{{ $entry['hero_image'] }}" alt="{{ $entry['hero_name'] }}" class="h-full w-full object-cover" loading="lazy">
@@ -152,7 +152,7 @@
                                     <p class="text-[10px] uppercase tracking-[0.14em] text-mist-500">Баны</p>
                                     <div class="mt-2 flex flex-wrap gap-2">
                                         @foreach ($bans as $entry)
-                                            <div class="flex items-center gap-2 rounded-lg border border-rose-500/15 bg-rose-500/[0.05] px-2 py-1.5 opacity-80" title="{{ $entry['hero_name'] }}">
+                                            <div class="flex items-center gap-2 rounded-none border border-rose-500/15 bg-rose-500/[0.05] px-2 py-1.5 opacity-80" title="{{ $entry['hero_name'] }}">
                                                 <span class="h-7 w-12 overflow-hidden rounded bg-ink-800   grayscale">
                                                     @if (! empty($entry['hero_image']))
                                                         <img src="{{ $entry['hero_image'] }}" alt="{{ $entry['hero_name'] }}" class="h-full w-full object-cover" loading="lazy">
@@ -178,7 +178,7 @@
             <div class="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-4 sm:px-5">
                 <div>
                     <p class="text-[10px] uppercase tracking-[0.18em] text-mist-500">Составы</p>
-                    <h2 class="text-lg font-bold text-mist-200">Игроки матча</h2>
+                    <h2 class="section-heading">Игроки матча</h2>
                 </div>
                 <span class="badge text-mist-400">
                     <span class="text-emerald-300">{{ $match['radiant_score'] }}</span>
@@ -191,19 +191,19 @@
                 <table class="w-full min-w-[980px] text-sm">
                     <thead class="table-head">
                         <tr>
-                            <th class="px-4 py-3 font-semibold sm:px-5">Игрок / герой</th>
-                            <th class="px-4 py-3 font-semibold">Роль</th>
-                            <th class="px-4 py-3 font-semibold">K / D / A</th>
-                            <th class="px-4 py-3 font-semibold">GPM</th>
-                            <th class="px-4 py-3 font-semibold">XPM</th>
-                            <th class="px-4 py-3 font-semibold">Урон</th>
+                            <th class="px-2 py-1 font-semibold sm:px-5">Игрок / герой</th>
+                            <th class="px-2 py-1 font-semibold">Роль</th>
+                            <th class="px-2 py-1 font-semibold">K / D / A</th>
+                            <th class="px-2 py-1 font-semibold">GPM</th>
+                            <th class="px-2 py-1 font-semibold">XPM</th>
+                            <th class="px-2 py-1 font-semibold">Урон</th>
                             @if ($showTowerDamage)
-                                <th class="px-4 py-3 font-semibold">Башни</th>
+                                <th class="px-2 py-1 font-semibold">Башни</th>
                             @endif
                             @if ($showHealing)
-                                <th class="px-4 py-3 font-semibold">Лечение</th>
+                                <th class="px-2 py-1 font-semibold">Лечение</th>
                             @endif
-                            <th class="px-4 py-3 text-right font-semibold sm:px-5">Закуп</th>
+                            <th class="px-2 py-1 text-right font-semibold sm:px-5">Закуп</th>
                         </tr>
                     </thead>
                     <tbody class="table-rows" x-data="{ openPlayer: null }">
@@ -238,9 +238,9 @@
                                         'transition hover:bg-ink-900/30',
                                         'bg-ink-700/60' => $isCurrentPlayer,
                                     ])>
-                                        <td class="px-4 py-3 sm:px-5">
+                                        <td class="px-2 py-1 sm:px-5">
                                             <div class="flex items-center gap-3">
-                                                <div class="h-9 w-16 shrink-0 overflow-hidden rounded-md bg-ink-800  ">
+                                                <div class="h-9 w-16 shrink-0 overflow-hidden rounded-none bg-ink-800  ">
                                                     @if ($player['hero_image'])
                                                         <img src="{{ $player['hero_image'] }}" alt="{{ $player['hero_name'] }}" class="h-full w-full object-cover" loading="lazy">
                                                     @else
@@ -269,7 +269,7 @@
                                                 </div>
                                             </div>
                                         </td>
-                                        <td class="px-4 py-3">
+                                        <td class="px-2 py-1">
                                             @if ($roleLabel)
                                                 <span class="badge !px-2 !py-0.5 !text-[10px] {{ $roleClasses }}" title="{{ $roleName }}{{ $roleSource ? ' · '.$roleSource : '' }}">
                                                     {{ $roleLabel }}
@@ -282,7 +282,7 @@
                                                 <span class="text-[11px] text-mist-500">—</span>
                                             @endif
                                         </td>
-                                        <td class="px-4 py-3 font-mono text-[13px] tabular-nums">
+                                        <td class="px-2 py-1 font-mono text-[13px] tabular-nums">
                                             <span class="text-emerald-300">{{ $player['kills'] }}</span>
                                             <span class="text-mist-500/60">/</span>
                                             <span class="text-rose-300">{{ $player['deaths'] }}</span>
@@ -290,20 +290,20 @@
                                             <span class="text-sky-300">{{ $player['assists'] }}</span>
                                             <span class="ml-1.5 text-[10px] text-mist-500">({{ number_format($player['kda'], 2, '.', '') }})</span>
                                         </td>
-                                        <td class="px-4 py-3 font-mono text-[13px] tabular-nums text-mist-300">{{ number_format((int) ($player['gpm'] ?? 0), 0, '.', ' ') }}</td>
-                                        <td class="px-4 py-3 font-mono text-[13px] tabular-nums text-mist-300">{{ number_format((int) ($player['xpm'] ?? 0), 0, '.', ' ') }}</td>
-                                        <td class="px-4 py-3 font-mono text-[13px] tabular-nums text-mist-300">{{ number_format((int) ($player['hero_damage'] ?? 0), 0, '.', ' ') }}</td>
+                                        <td class="px-2 py-1 font-mono text-[13px] tabular-nums text-mist-300">{{ number_format((int) ($player['gpm'] ?? 0), 0, '.', ' ') }}</td>
+                                        <td class="px-2 py-1 font-mono text-[13px] tabular-nums text-mist-300">{{ number_format((int) ($player['xpm'] ?? 0), 0, '.', ' ') }}</td>
+                                        <td class="px-2 py-1 font-mono text-[13px] tabular-nums text-mist-300">{{ number_format((int) ($player['hero_damage'] ?? 0), 0, '.', ' ') }}</td>
                                         @if ($showTowerDamage)
-                                            <td class="px-4 py-3 font-mono text-[13px] tabular-nums text-mist-300">{{ isset($player['tower_damage']) ? number_format((int) $player['tower_damage'], 0, '.', ' ') : '—' }}</td>
+                                            <td class="px-2 py-1 font-mono text-[13px] tabular-nums text-mist-300">{{ isset($player['tower_damage']) ? number_format((int) $player['tower_damage'], 0, '.', ' ') : '—' }}</td>
                                         @endif
                                         @if ($showHealing)
-                                            <td class="px-4 py-3 font-mono text-[13px] tabular-nums text-mist-300">{{ isset($player['hero_healing']) ? number_format((int) $player['hero_healing'], 0, '.', ' ') : '—' }}</td>
+                                            <td class="px-2 py-1 font-mono text-[13px] tabular-nums text-mist-300">{{ isset($player['hero_healing']) ? number_format((int) $player['hero_healing'], 0, '.', ' ') : '—' }}</td>
                                         @endif
-                                        <td class="px-4 py-3 text-right sm:px-5">
+                                        <td class="px-2 py-1 text-right sm:px-5">
                                             @if ($player['purchases'] !== [])
                                                 <button
                                                     type="button"
-                                                    class="inline-flex items-center gap-1.5 rounded-lg border border-line bg-ink-900/40 px-2.5 py-1.5 text-[11px] font-semibold text-mist-300 transition hover:border-gold-500/30 hover:bg-gold-500/10 hover:text-gold-200"
+                                                    class="inline-flex items-center gap-1.5 rounded-none border border-line bg-ink-900/40 px-2.5 py-1.5 text-[11px] font-semibold text-mist-300 transition hover:border-gold-500/30 hover:bg-gold-500/10 hover:text-gold-200"
                                                     @click="openPlayer = openPlayer === {{ $playerIndex }} ? null : {{ $playerIndex }}"
                                                     :aria-expanded="(openPlayer === {{ $playerIndex }}).toString()"
                                                     aria-controls="purchases-{{ $teamKey }}-{{ $playerIndex }}"
@@ -321,15 +321,15 @@
                                     @if ($player['purchases'] !== [])
                                         <tr id="purchases-{{ $teamKey }}-{{ $playerIndex }}" x-show="openPlayer === {{ $playerIndex }}" x-cloak x-transition.opacity.duration.150ms class="bg-ink-950/60">
                                             <td colspan="{{ $columnCount }}" class="px-4 pb-4 pt-1 sm:px-5">
-                                                <div class="rounded-lg bg-ink-900/70 p-3">
+                                                <div class="rounded-none bg-ink-900/70 p-3">
                                                     <div class="flex flex-wrap items-center justify-between gap-2">
                                                         <p class="label">Закуп · {{ $player['hero_name'] }}</p>
                                                         <p class="text-[10px] text-mist-500">{{ $player['purchase_log_count'] }} покупок · показаны ключевые предметы</p>
                                                     </div>
                                                     <div class="mt-3 flex flex-wrap gap-2">
                                                         @foreach ($player['purchases'] as $item)
-                                                            <div class="flex items-center gap-2 rounded-lg bg-ink-900/30 p-2 pr-3" title="{{ $item['name'] }} · {{ $item['time_label'] }}">
-                                                                <div class="grid h-8 w-10 shrink-0 place-items-center overflow-hidden rounded-md bg-ink-800  ">
+                                                            <div class="flex items-center gap-2 rounded-none bg-ink-900/30 p-2 pr-3" title="{{ $item['name'] }} · {{ $item['time_label'] }}">
+                                                                <div class="grid h-8 w-10 shrink-0 place-items-center overflow-hidden rounded-none bg-ink-800  ">
                                                                     <img src="{{ $item['image'] }}" alt="" class="h-full w-full object-contain" loading="lazy" referrerpolicy="no-referrer">
                                                                 </div>
                                                                 <div class="min-w-0">
@@ -356,7 +356,7 @@
             </div>
         </section>
 
-        <div class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-ink-900/60 px-4 py-3 text-[11px] text-mist-500">
+        <div class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-none bg-ink-900/60 px-2 py-1 text-[11px] text-mist-500">
             <span>Данные OpenDota · кэш матча 1 час</span>
             <div class="flex items-center gap-3">
                 @if ($profilePlayerId)

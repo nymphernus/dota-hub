@@ -15,7 +15,7 @@
 
         @if ($favorites === [])
             <div class="card mt-5 grid place-items-center p-12 text-center">
-                <span class="grid h-12 w-12 place-items-center rounded-lg border border-amber-500/25 bg-amber-500/10 text-amber-300">
+                <span class="grid h-12 w-12 place-items-center rounded-none border border-amber-500/25 bg-amber-500/10 text-amber-300">
                     <svg class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.5l6.1-.9L12 3Z"/></svg>
                 </span>
                 <p class="mt-4 text-sm font-semibold text-mist-200">Вы ещё не добавили игроков в избранное.</p>
@@ -30,7 +30,7 @@
                         $profileUrl = route('dota.player', ['accountId' => $accountId]);
                     @endphp
                     <div class="card flex items-center gap-3 p-3">
-                        <a href="{{ $profileUrl }}" class="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-ink-800  ">
+                        <a href="{{ $profileUrl }}" class="h-12 w-12 shrink-0 overflow-hidden rounded-none bg-ink-800  ">
                             @if (! empty($favorite['avatar']))
                                 <img src="{{ $favorite['avatar'] }}" alt="" class="h-full w-full object-cover" loading="lazy">
                             @endif

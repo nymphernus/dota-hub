@@ -1,11 +1,11 @@
 @if ($paginator->hasPages())
     <nav role="navigation" aria-label="Пагинация" class="flex flex-wrap items-center justify-center gap-2">
         @if ($paginator->onFirstPage())
-            <span class="grid h-9 w-9 place-items-center rounded-lg border border-line bg-ink-900/20 text-mist-500" aria-disabled="true">
+            <span class="grid h-9 w-9 place-items-center rounded-none border border-line bg-ink-900/20 text-mist-500" aria-disabled="true">
                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 5l-7 7 7 7" stroke-linecap="round" stroke-linejoin="round" /></svg>
             </span>
         @else
-            <a href="{{ $paginator->previousPageUrl() }}" rel="prev" class="grid h-9 w-9 place-items-center rounded-lg border border-line bg-ink-900/40 text-mist-300 transition hover:border-gold-500/30 hover:bg-gold-500/10 hover:text-mist-200" aria-label="Предыдущая страница">
+            <a href="{{ $paginator->previousPageUrl() }}" rel="prev" class="grid h-9 w-9 place-items-center rounded-none border border-line bg-ink-900/40 text-mist-300 transition hover:border-gold-500/30 hover:bg-gold-500/10 hover:text-mist-200" aria-label="Предыдущая страница">
                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 5l-7 7 7 7" stroke-linecap="round" stroke-linejoin="round" /></svg>
             </a>
         @endif
@@ -18,20 +18,20 @@
             @if (is_array($element))
                 @foreach ($element as $page => $url)
                     @if ($page == $paginator->currentPage())
-                        <span aria-current="page" class="grid h-9 min-w-9 place-items-center rounded-lg bg-gold-500 px-3 text-xs font-semibold text-ink-950 ">{{ $page }}</span>
+                        <span aria-current="page" class="grid h-9 min-w-9 place-items-center rounded-none bg-gold-500 px-3 text-xs font-semibold text-ink-950 ">{{ $page }}</span>
                     @else
-                        <a href="{{ $url }}" class="grid h-9 min-w-9 place-items-center rounded-lg border border-line bg-ink-900/40 px-3 text-xs font-semibold text-mist-300 transition hover:border-gold-500/30 hover:bg-gold-500/10 hover:text-mist-200" aria-label="Страница {{ $page }}">{{ $page }}</a>
+                        <a href="{{ $url }}" class="grid h-9 min-w-9 place-items-center rounded-none border border-line bg-ink-900/40 px-3 text-xs font-semibold text-mist-300 transition hover:border-gold-500/30 hover:bg-gold-500/10 hover:text-mist-200" aria-label="Страница {{ $page }}">{{ $page }}</a>
                     @endif
                 @endforeach
             @endif
         @endforeach
 
         @if ($paginator->hasMorePages())
-            <a href="{{ $paginator->nextPageUrl() }}" rel="next" class="grid h-9 w-9 place-items-center rounded-lg border border-line bg-ink-900/40 text-mist-300 transition hover:border-gold-500/30 hover:bg-gold-500/10 hover:text-mist-200" aria-label="Следующая страница">
+            <a href="{{ $paginator->nextPageUrl() }}" rel="next" class="grid h-9 w-9 place-items-center rounded-none border border-line bg-ink-900/40 text-mist-300 transition hover:border-gold-500/30 hover:bg-gold-500/10 hover:text-mist-200" aria-label="Следующая страница">
                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round" /></svg>
             </a>
         @else
-            <span class="grid h-9 w-9 place-items-center rounded-lg border border-line bg-ink-900/20 text-mist-500" aria-disabled="true">
+            <span class="grid h-9 w-9 place-items-center rounded-none border border-line bg-ink-900/20 text-mist-500" aria-disabled="true">
                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round" /></svg>
             </span>
         @endif
