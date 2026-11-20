@@ -158,7 +158,13 @@
 
                         <div class="min-w-0 flex-1">
                             <div id="heatmap-months" class="mb-1 grid gap-[3px] text-[9px] font-semibold text-mist-400" aria-hidden="true"></div>
-                            <div id="activity-heatmap" class="grid w-full gap-[3px]" role="grid" aria-label="Дни по неделям"></div>
+                            <div
+                                id="activity-heatmap"
+                                class="grid w-full gap-[3px]"
+                                role="grid"
+                                aria-label="Дни по неделям"
+                                data-match-url-template="{{ route('dota.player.matches', ['accountId' => $player['account_id'], 'date' => '__DATE__']) }}"
+                            ></div>
                         </div>
                     </div>
                     <div class="mt-2 flex items-center justify-between text-[10px] text-mist-500">

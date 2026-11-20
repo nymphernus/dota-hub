@@ -208,7 +208,7 @@ class DotaPlayerController extends Controller
             'result' => in_array($request->query('result'), ['win', 'loss'], true) ? $request->query('result') : '',
             'mode' => in_array($request->query('mode'), ['ranked', 'turbo', 'normal'], true) ? $request->query('mode') : '',
             'role' => in_array($request->query('role'), ['carry', 'mid', 'offlane', 'support', 'hard_support'], true) ? $request->query('role') : '',
-            'time' => in_array($request->query('time'), ['today', 'week', 'month'], true) ? $request->query('time') : '',
+            'date' => $this->validDate($request->query('date')),
         ];
 
         try {
@@ -271,6 +271,24 @@ class DotaPlayerController extends Controller
         return redirect()
             ->route('dota.player', ['accountId' => $accountId])
             ->with('status', 'Кэш очищен — загружаем свежие данные из OpenDota.');
+    }
+
+    /**
+     * Accept only an exact UTC calendar day from the date filter.
+     */
+    private function validDate(mixed $value): string
+    {
+        if (! is_string($value) || preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) !== 1) {
+            return '';
+        }
+
+        try {
+            $date = CarbonImmutable::createFromFormat('!Y-m-d', $value, 'UTC');
+
+            return $date !== false && $date->format('Y-m-d') === $value ? $value : '';
+        } catch (\Throwable) {
+            return '';
+        }
     }
 
     /**

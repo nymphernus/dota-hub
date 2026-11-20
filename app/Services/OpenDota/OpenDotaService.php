@@ -855,15 +855,22 @@ class OpenDotaService
         $result = (string) ($filters['result'] ?? '');
         $mode = (string) ($filters['mode'] ?? '');
         $role = (string) ($filters['role'] ?? '');
-        $time = (string) ($filters['time'] ?? '');
-        $timeThreshold = match ($time) {
-            'today' => CarbonImmutable::now('UTC')->startOfDay(),
-            'week' => CarbonImmutable::now('UTC')->startOfWeek(CarbonImmutable::MONDAY),
-            'month' => CarbonImmutable::now('UTC')->startOfMonth(),
-            default => null,
-        };
+        $date = (string) ($filters['date'] ?? '');
+        $dateRange = null;
 
-        $rows = array_values(array_filter($rows, function (array $row) use ($heroId, $result, $mode, $role, $timeThreshold) {
+        if ($date !== '') {
+            try {
+                $day = CarbonImmutable::createFromFormat('!Y-m-d', $date, 'UTC');
+
+                if ($day !== false && $day->format('Y-m-d') === $date) {
+                    $dateRange = [$day->getTimestamp(), $day->addDay()->getTimestamp()];
+                }
+            } catch (\Throwable) {
+                $dateRange = null;
+            }
+        }
+
+        $rows = array_values(array_filter($rows, function (array $row) use ($heroId, $result, $mode, $role, $dateRange) {
             if ($heroId > 0 && (int) ($row['hero_id'] ?? 0) !== $heroId) {
                 return false;
             }
@@ -894,14 +901,20 @@ class OpenDotaService
                 return false;
             }
 
-            if ($timeThreshold !== null) {
-                $startedAt = $row['started_at'] ?? null;
+            if ($dateRange !== null) {
+                $startTime = isset($row['start_time']) && is_numeric($row['start_time'])
+                    ? (int) $row['start_time']
+                    : null;
 
-                if (! is_string($startedAt) || $startedAt === '') {
-                    return false;
+                if ($startTime === null && is_string($row['started_at'] ?? null)) {
+                    try {
+                        $startTime = CarbonImmutable::parse($row['started_at'])->getTimestamp();
+                    } catch (\Throwable) {
+                        $startTime = null;
+                    }
                 }
 
-                if (CarbonImmutable::parse($startedAt)->lessThan($timeThreshold)) {
+                if ($startTime === null || $startTime < $dateRange[0] || $startTime >= $dateRange[1]) {
                     return false;
                 }
             }
@@ -926,7 +939,7 @@ class OpenDotaService
                 'result' => $result,
                 'mode' => $mode,
                 'role' => $role,
-                'time' => $time,
+                'date' => $date,
             ],
         ];
     }
@@ -2461,6 +2474,7 @@ class OpenDotaService
                 'hero_icon' => $hero['icon'] ?? null,
                 'win' => $radiantWin === $isRadiant,
                 'is_radiant' => $isRadiant,
+                'start_time' => $startTime,
                 'started_at' => CarbonImmutable::createFromTimestampUTC($startTime)->toIso8601String(),
                 'duration' => (int) ($match['duration'] ?? 0),
                 'kills' => (int) ($match['kills'] ?? 0),

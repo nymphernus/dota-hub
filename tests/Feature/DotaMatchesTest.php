@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Cache;
@@ -54,11 +55,15 @@ class DotaMatchesTest extends TestCase
         $response->assertSee('Jungle');
         $response->assertDontSee('Нетворс');
         $response->assertSee('select-control', false);
-        $response->assertSee('id="filter-time"', false);
-        $response->assertSee('Любое время');
-        $response->assertSee('Сегодня');
-        $response->assertSee('Неделя');
-        $response->assertSee('Месяц');
+        $response->assertSee('id="filter-date"', false);
+        $response->assertSee('name="date"', false);
+        $response->assertSee('type="date"', false);
+        $response->assertSee('Дата');
+        $response->assertDontSee('id="filter-time"', false);
+        $response->assertDontSee('Любое время');
+        $response->assertDontSee('Сегодня');
+        $response->assertDontSee('Неделя');
+        $response->assertDontSee('Месяц');
         $response->assertDontSee('bg-blue-600', false);
         $response->assertDontSee('>P1<', false);
         $response->assertViewHas('matches', function (LengthAwarePaginator $matches) {
@@ -68,6 +73,7 @@ class DotaMatchesTest extends TestCase
                 && $matches->perPage() === 25
                 && $matches->count() === 6
                 && $first['match_id'] === 9000000001
+                && isset($first['start_time'])
                 && $first['gpm'] === 640
                 && $first['xpm'] === 720
                 && $first['net_worth'] === 31200
@@ -82,7 +88,7 @@ class DotaMatchesTest extends TestCase
             'result' => '',
             'mode' => '',
             'role' => '',
-            'time' => '',
+            'date' => '',
         ]);
     }
 
@@ -139,18 +145,28 @@ class DotaMatchesTest extends TestCase
         });
     }
 
-    public function test_matches_page_filters_by_time(): void
+    public function test_matches_page_filters_by_exact_utc_date(): void
     {
         $this->fakeOpenDota();
 
+        $date = CarbonImmutable::now('UTC')->subDays(4)->toDateString();
         $response = $this->get(route('dota.player.matches', [
             'accountId' => self::ACCOUNT_ID,
-            'time' => 'month',
+            'date' => $date,
         ]));
 
         $response->assertOk();
-        $response->assertViewHas('filters', fn (array $filters): bool => $filters['time'] === 'month');
-        $response->assertViewHas('matches', fn (LengthAwarePaginator $matches): bool => $matches->total() === 6);
+        $response->assertViewHas('filters', fn (array $filters): bool => $filters['date'] === $date);
+        $response->assertViewHas('matches', fn (LengthAwarePaginator $matches): bool => $matches->total() === 2);
+
+        $invalid = $this->get(route('dota.player.matches', [
+            'accountId' => self::ACCOUNT_ID,
+            'date' => '2026-99-99',
+        ]));
+
+        $invalid->assertOk();
+        $invalid->assertViewHas('filters', fn (array $filters): bool => $filters['date'] === '');
+        $invalid->assertViewHas('matches', fn (LengthAwarePaginator $matches): bool => $matches->total() === 6);
     }
 
     public function test_matches_page_paginates_the_history(): void

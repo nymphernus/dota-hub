@@ -29,12 +29,6 @@
                 'support' => 'Support',
                 'hard_support' => 'Hard Support',
             ];
-            $timeFilterOptions = [
-                '' => 'Любое время',
-                'today' => 'Сегодня',
-                'week' => 'Неделя',
-                'month' => 'Месяц',
-            ];
         @endphp
 
         <section
@@ -44,14 +38,14 @@
                 result: @js((string) $filters['result']),
                 mode: @js((string) $filters['mode']),
                 role: @js((string) $filters['role']),
-                time: @js((string) ($filters['time'] ?? '')),
+                date: @js((string) ($filters['date'] ?? '')),
                 apply() {
                     const params = new URLSearchParams();
                     if (this.hero) params.set('hero_id', this.hero);
                     if (this.result) params.set('result', this.result);
                     if (this.mode) params.set('mode', this.mode);
                     if (this.role) params.set('role', this.role);
-                    if (this.time) params.set('time', this.time);
+                    if (this.date) params.set('date', this.date);
                     const query = params.toString();
                     window.location.href = '{{ route('dota.player.matches', ['accountId' => $player['account_id']]) }}' + (query ? '?' + query : '');
                 }
@@ -91,16 +85,21 @@
                     'selected' => (string) $filters['role'],
                     'options' => $roleFilterOptions,
                 ])
-                @include('dota.partials.filter-select', [
-                    'id' => 'filter-time',
-                    'label' => 'Время',
-                    'model' => 'time',
-                    'filterKey' => 'time',
-                    'selected' => (string) ($filters['time'] ?? ''),
-                    'options' => $timeFilterOptions,
-                ])
+                <div>
+                    <label for="filter-date" class="label mb-1.5 block">Дата</label>
+                    <input
+                        id="filter-date"
+                        name="date"
+                        type="date"
+                        x-model="date"
+                        @change="apply()"
+                        value="{{ $filters['date'] ?? '' }}"
+                        class="select-control"
+                        data-filter="date"
+                    >
+                </div>
             </div>
-            @if ($filters['hero_id'] || $filters['result'] || $filters['mode'] || $filters['role'] || ($filters['time'] ?? ''))
+            @if ($filters['hero_id'] || $filters['result'] || $filters['mode'] || $filters['role'] || ($filters['date'] ?? ''))
                 <div class="mt-3 flex justify-end">
                     <a href="{{ route('dota.player.matches', ['accountId' => $player['account_id']]) }}" class="btn-ghost !py-2">Сбросить фильтры</a>
                 </div>

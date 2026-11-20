@@ -96,7 +96,15 @@ if (heatmapPayload && heatmapRoot) {
 
                 const count = Number(day.count) || 0;
                 const title = `${day.label}: ${count} игр, ${Number(day.wins) || 0} побед, ${Number(day.losses) || 0} поражений`;
-                const cell = document.createElement('div');
+                const matchUrlTemplate = heatmapRoot.dataset.matchUrlTemplate;
+                const cell = matchUrlTemplate
+                    ? document.createElement('a')
+                    : document.createElement('div');
+
+                if (matchUrlTemplate) {
+                    cell.href = matchUrlTemplate.replace('__DATE__', day.date);
+                }
+
                 cell.className = `flex aspect-square items-center justify-center rounded-[2px] text-[11px] font-semibold leading-none transition hover:scale-125  ${tones[day.level] || tones.empty}`;
                 cell.dataset.date = day.date;
                 cell.dataset.count = String(count);

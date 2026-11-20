@@ -185,6 +185,17 @@ class UiAssetsTest extends TestCase
         $this->assertLessThan($allies, $activity);
     }
 
+    public function test_heatmap_days_link_to_the_dated_matches_page(): void
+    {
+        $javascript = (string) file_get_contents(resource_path('js/heatmap.js'));
+        $player = (string) file_get_contents(resource_path('views/dota/player.blade.php'));
+
+        $this->assertStringContainsString('data-match-url-template=', $player);
+        $this->assertStringContainsString("'date' => '__DATE__'", $player);
+        $this->assertStringContainsString("document.createElement('a')", $javascript);
+        $this->assertStringContainsString("matchUrlTemplate.replace('__DATE__', day.date)", $javascript);
+    }
+
     public function test_refresh_control_is_a_square_icon_beside_the_favorite_star(): void
     {
         $source = (string) file_get_contents(resource_path('views/components/player-header.blade.php'));
