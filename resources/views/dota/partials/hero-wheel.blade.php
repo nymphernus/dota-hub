@@ -22,12 +22,23 @@
         $wins = max(0, (int) ($hero['wins'] ?? 0));
         $winrate = $games > 0 ? round($wins / $games * 100, 1) : 0.0;
 
+        $attr = strtolower((string) ($hero['primary_attr'] ?? ''));
+        $color = match ($attr) {
+            'str', 'strength' => '#b73a3a',
+            'agi', 'agility' => '#3ab75e',
+            'int', 'intelligence' => '#3a75b7',
+            'all', 'universal' => '#b73aab',
+            default => '#4b5563',
+        };
+
         $items[] = [
             'hero_id' => (int) ($hero['hero_id'] ?? $hero['id'] ?? 0),
             'name' => $hero['name'] ?? $hero['localized_name'] ?? 'Герой',
+            'image' => $hero['image'] ?? $hero['hero_image'] ?? $hero['icon'] ?? null,
             'icon' => $hero['icon'] ?? $hero['image'] ?? null,
             'games' => $games,
             'winrate' => $winrate,
+            'color' => $color,
         ];
 
         $totalGames += $games;
@@ -37,21 +48,16 @@
     $overallWinrate = $totalGames > 0 ? round($totalWins / $totalGames * 100, 1) : 0.0;
     $heroUrlTemplate = $playerId > 0 ? route('dota.player.hero', ['accountId' => $playerId, 'heroId' => '__HERO__']) : '';
 
-    $topHeroIds = collect($items)
-        ->sortByDesc('games')
-        ->take(3)
-        ->pluck('hero_id')
-        ->all();
-
-    $sectorCount = count($items);
-    $anglePerSector = $sectorCount > 0 ? (2 * M_PI) / $sectorCount : 0.0;
     $startAngle = -M_PI / 2;
+    $currentAngle = $startAngle;
     $sectors = [];
 
-    foreach (array_values($items) as $index => $hero) {
-        $a1 = $startAngle + ($index * $anglePerSector);
-        $a2 = $a1 + $anglePerSector;
+    foreach ($items as $hero) {
+        $angle = $totalGames > 0 ? ($hero['games'] / $totalGames) * 2 * M_PI : 0.0;
+        $a1 = $currentAngle;
+        $a2 = $currentAngle + $angle;
         $mid = ($a1 + $a2) / 2;
+        $currentAngle = $a2;
 
         $x1 = $cx + $outerRadius * cos($a1);
         $y1 = $cy + $outerRadius * sin($a1);
@@ -61,7 +67,7 @@
         $y3 = $cy + $innerRadius * sin($a2);
         $x4 = $cx + $innerRadius * cos($a1);
         $y4 = $cy + $innerRadius * sin($a1);
-        $largeArc = $anglePerSector > M_PI ? 1 : 0;
+        $largeArc = $angle > M_PI ? 1 : 0;
         $path = sprintf(
             'M %.3F %.3F A %.3F %.3F 0 %d 1 %.3F %.3F L %.3F %.3F A %.3F %.3F 0 %d 0 %.3F %.3F Z',
             $x1, $y1, $outerRadius, $outerRadius, $largeArc, $x2, $y2,
@@ -69,15 +75,16 @@
         );
 
         $iconMidRadius = ($innerRadius + $outerRadius) / 2;
-        $iconSize = max(14.0, min(24.0, $iconMidRadius * $anglePerSector * 0.72));
+        $iconSize = max(10.0, min(26.0, $iconMidRadius * $angle * 0.8));
 
         $sectors[] = [
             'hero_id' => $hero['hero_id'],
             'name' => $hero['name'],
+            'image' => $hero['image'],
             'icon' => $hero['icon'],
             'games' => $hero['games'],
             'winrate' => $hero['winrate'],
-            'color' => in_array($hero['hero_id'], $topHeroIds, true) ? '#2d313e' : '#1b1f2e',
+            'color' => $hero['color'],
             'path' => $path,
             'icon_x' => ($cx + $iconMidRadius * cos($mid)) - ($iconSize / 2),
             'icon_y' => ($cy + $iconMidRadius * sin($mid)) - ($iconSize / 2),
@@ -91,7 +98,14 @@
         <div class="relative aspect-square w-full max-w-[220px]">
             <svg class="h-full w-full" viewBox="0 0 240 240" role="img" aria-label="Круговая диаграмма героев">
                 @foreach ($sectors as $sector)
-                    <g class="hover:scale-105" style="transform-box: fill-box; transform-origin: center;">
+                    <g
+                        class="hover:scale-105"
+                        style="transform-box: fill-box; transform-origin: center;"
+                        data-hero-name="{{ $sector['name'] }}"
+                        data-hero-image="{{ $sector['image'] ?? '' }}"
+                        data-hero-games="{{ $sector['games'] }}"
+                        data-hero-winrate="{{ number_format((float) $sector['winrate'], 1, '.', '') }}"
+                    >
                         <title>{{ $sector['name'] }}: {{ $sector['games'] }} игр, {{ number_format((float) $sector['winrate'], 1, '.', '') }}% побед</title>
                         @if ($heroUrlTemplate !== '')
                             <a href="{{ str_replace('__HERO__', (string) $sector['hero_id'], $heroUrlTemplate) }}" aria-label="{{ $sector['name'] }}">
@@ -112,4 +126,5 @@
             </svg>
         </div>
     </div>
+    <div id="wheel-tooltip" class="hidden fixed z-[9999] bg-[#1c1e26] border border-[#2d313e] p-2 rounded flex items-center gap-3 shadow-xl"></div>
 @endif

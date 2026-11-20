@@ -55,7 +55,7 @@ class DotaPlayerController extends Controller
             'winrate' => $player['winrate'],
             'recentMatches' => array_slice($player['matches'], 0, 25),
             'activityHeatmap' => $this->activityHeatmap($heatmapMatches),
-            'heroUsage' => $this->heroUsage(array_slice($history, 0, 25)),
+            'heroUsage' => $this->heroUsage(array_slice($history, 0, 25), $openDota),
             'lifetimeStats' => $openDota->lifetimeStats($accountId, $history),
             'rankStats' => $this->rankStats($history),
             'steamProfile' => $steam->summary($steamId),
@@ -389,11 +389,12 @@ class DotaPlayerController extends Controller
                     'losses' => $isFuture ? 0 : $losses,
                     'level' => $isFuture ? 'future' : match (true) {
                         $count === 0 => 'empty',
-                        $wins === $count => 'win',
-                        $losses === $count => 'loss',
-                        $wins > $losses => 'more_wins',
+                        $wins === 0 && $losses > 0 => 'loss',
                         $losses > $wins => 'more_losses',
-                        default => 'more_wins',
+                        $losses === $wins => 'equal',
+                        $wins > $losses => 'more_wins',
+                        $losses === 0 && $wins > 0 => 'win',
+                        default => 'empty',
                     },
                     'column' => $weekIndex,
                     'weekday' => $weekday,
@@ -430,9 +431,10 @@ class DotaPlayerController extends Controller
      * @param  array<int, array<string, mixed>>  $matches
      * @return array<int, array<string, mixed>>
      */
-    private function heroUsage(array $matches): array
+    private function heroUsage(array $matches, OpenDotaService $openDota): array
     {
         $aggregated = [];
+        $heroStats = $openDota->heroStats();
 
         foreach ($matches as $match) {
             $heroId = (int) ($match['hero_id'] ?? 0);
@@ -441,11 +443,13 @@ class DotaPlayerController extends Controller
                 continue;
             }
 
+            $meta = $heroStats[$heroId] ?? [];
             $aggregated[$heroId] ??= [
                 'hero_id' => $heroId,
-                'name' => $match['hero_name'] ?? 'Hero #'.$heroId,
-                'image' => $match['hero_image'] ?? null,
-                'icon' => $match['hero_icon'] ?? null,
+                'name' => $match['hero_name'] ?? ($meta['localized_name'] ?? $meta['name'] ?? 'Hero #'.$heroId),
+                'image' => $match['hero_image'] ?? ($meta['image'] ?? null),
+                'icon' => $match['hero_icon'] ?? ($meta['icon'] ?? null),
+                'primary_attr' => $meta['primary_attr'] ?? null,
                 'games' => 0,
                 'wins' => 0,
             ];
@@ -470,7 +474,6 @@ class DotaPlayerController extends Controller
 
         return $rows;
     }
-
     /**
      * Ranked/unranked split used by the sidebar rank card.
      *

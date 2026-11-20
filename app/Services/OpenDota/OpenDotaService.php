@@ -1410,7 +1410,7 @@ class OpenDotaService
         $cursor = null;
 
         while (true) {
-            $query = [];
+            $query = ['limit' => 500];
 
             if ($cursor !== null) {
                 $query['less_than_match_id'] = $cursor;

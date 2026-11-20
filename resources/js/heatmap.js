@@ -17,7 +17,8 @@ if (heatmapPayload && heatmapRoot) {
         empty: 'bg-[#1b1f2e] text-transparent',
         win: 'bg-green-500 text-green-950',
         loss: 'bg-red-500 text-red-950',
-        more_wins: 'bg-yellow-500 text-yellow-950',
+        equal: 'bg-yellow-500 text-yellow-950',
+        more_wins: 'bg-lime-500 text-lime-950',
         more_losses: 'bg-orange-500 text-orange-950',
     };
     const DAY_MS = 86400000;

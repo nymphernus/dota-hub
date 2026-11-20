@@ -94,4 +94,41 @@ Alpine.data('favoriteStar', (config) => ({
     },
 }));
 
+const wheelTooltip = document.getElementById('wheel-tooltip');
+if (wheelTooltip) {
+    const sectors = document.querySelectorAll('svg [data-hero-name]');
+    const showWheelTooltip = (event) => {
+        const sector = event.currentTarget;
+        const name = sector.getAttribute('data-hero-name') || '';
+        const image = sector.getAttribute('data-hero-image') || '';
+        const games = sector.getAttribute('data-hero-games') || '0';
+        const winrate = sector.getAttribute('data-hero-winrate') || '0';
+
+        wheelTooltip.innerHTML = `${image ? `<img src="${image}" class="w-12 h-12">` : ''}<div><b>${name}</b><br>${games} игр, ${winrate}% побед</div>`;
+        wheelTooltip.classList.remove('hidden');
+        wheelTooltip.style.left = `${event.clientX + 12}px`;
+        wheelTooltip.style.top = `${event.clientY + 12}px`;
+    };
+    const moveWheelTooltip = (event) => {
+        if (wheelTooltip.classList.contains('hidden')) return;
+        wheelTooltip.style.left = `${event.clientX + 12}px`;
+        wheelTooltip.style.top = `${event.clientY + 12}px`;
+    };
+    const hideWheelTooltip = () => {
+        wheelTooltip.classList.add('hidden');
+    };
+
+    sectors.forEach((sector) => {
+        sector.addEventListener('mousemove', (event) => {
+            if (wheelTooltip.classList.contains('hidden')) {
+                showWheelTooltip(event);
+            } else {
+                moveWheelTooltip(event);
+            }
+        });
+        sector.addEventListener('mouseenter', showWheelTooltip);
+        sector.addEventListener('mouseleave', hideWheelTooltip);
+    });
+}
+
 Alpine.start();
