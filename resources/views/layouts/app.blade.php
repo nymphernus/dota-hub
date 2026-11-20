@@ -172,7 +172,7 @@
         @yield('content')
     </main>
 
-    <footer class="mt-16 border-t border-line">
+    <footer>
         <div class="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
             <span class="text-xs font-semibold tracking-tight text-mist-400">DOTAHUB</span>
             <span class="text-[10px] text-mist-500">&copy; {{ date('Y') }} &middot; OpenDota &middot; Steam Web API</span>

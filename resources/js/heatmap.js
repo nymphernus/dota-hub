@@ -14,7 +14,7 @@ if (heatmapPayload && heatmapRoot) {
     const monthLabels = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сент', 'Окт', 'Ноя', 'Дек'];
     const tones = {
         future: 'bg-transparent text-transparent',
-        empty: 'bg-[#1b1f2e] text-transparent',
+        empty: 'bg-[#2d313e] text-transparent',
         win: 'bg-green-500 text-green-950',
         loss: 'bg-red-500 text-red-950',
         equal: 'bg-yellow-500 text-yellow-950',
@@ -88,7 +88,7 @@ if (heatmapPayload && heatmapRoot) {
             column.forEach((day) => {
                 if (!day) {
                     const empty = document.createElement('span');
-                    empty.className = 'aspect-square rounded-[2px] bg-[#1b1f2e]';
+                    empty.className = 'aspect-square rounded-[2px] bg-[#2d313e]';
                     empty.setAttribute('aria-hidden', 'true');
                     cells.push(empty);
                     return;

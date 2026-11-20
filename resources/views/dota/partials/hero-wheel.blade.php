@@ -1,9 +1,9 @@
 ﻿@php
     $playerId = (int) ($playerId ?? 0);
-    $cx = 120.0;
-    $cy = 120.0;
-    $outerRadius = 110.0;
-    $innerRadius = 58.0;
+    $cx = 100.0;
+    $cy = 100.0;
+    $outerRadius = 92.0;
+    $innerRadius = 48.0;
 
     $items = [];
     $totalGames = 0;
@@ -24,10 +24,10 @@
 
         $attr = strtolower((string) ($hero['primary_attr'] ?? ''));
         $color = match ($attr) {
-            'str', 'strength' => '#b73a3a',
-            'agi', 'agility' => '#3ab75e',
-            'int', 'intelligence' => '#3a75b7',
-            'all', 'universal' => '#b73aab',
+            'str', 'strength' => '#8b2b2b',
+            'agi', 'agility' => '#2b8b3a',
+            'int', 'intelligence' => '#2b4c8b',
+            'all', 'universal' => '#8b2b8b',
             default => '#4b5563',
         };
 
@@ -75,7 +75,7 @@
         );
 
         $iconMidRadius = ($innerRadius + $outerRadius) / 2;
-        $iconSize = max(10.0, min(26.0, $iconMidRadius * $angle * 0.8));
+        $iconSize = max(8.0, min(22.0, $iconMidRadius * $angle * 0.8));
 
         $sectors[] = [
             'hero_id' => $hero['hero_id'],
@@ -95,8 +95,8 @@
 
 @if ($sectors !== [])
     <div class="mt-3 flex flex-col items-center">
-        <div class="relative aspect-square w-full max-w-[220px]">
-            <svg class="h-full w-full" viewBox="0 0 240 240" role="img" aria-label="Круговая диаграмма героев">
+        <div class="relative w-full">
+            <svg viewBox="0 0 200 200" class="w-full h-auto max-w-[400px] mx-auto" role="img" aria-label="Круговая диаграмма героев">
                 @foreach ($sectors as $sector)
                     <g
                         class="hover:scale-105"
@@ -106,23 +106,22 @@
                         data-hero-games="{{ $sector['games'] }}"
                         data-hero-winrate="{{ number_format((float) $sector['winrate'], 1, '.', '') }}"
                     >
-                        <title>{{ $sector['name'] }}: {{ $sector['games'] }} игр, {{ number_format((float) $sector['winrate'], 1, '.', '') }}% побед</title>
                         @if ($heroUrlTemplate !== '')
                             <a href="{{ str_replace('__HERO__', (string) $sector['hero_id'], $heroUrlTemplate) }}" aria-label="{{ $sector['name'] }}">
-                                <path d="{{ $sector['path'] }}" fill="{{ $sector['color'] }}" stroke="#15171e" stroke-width="1.5" />
+                                <path d="{{ $sector['path'] }}" fill="{{ $sector['color'] }}" stroke="#0f111a" stroke-width="2" />
                                 @if (! empty($sector['icon']))
                                     <image href="{{ $sector['icon'] }}" x="{{ $sector['icon_x'] }}" y="{{ $sector['icon_y'] }}" width="{{ $sector['icon_size'] }}" height="{{ $sector['icon_size'] }}" preserveAspectRatio="xMidYMid slice" />
                                 @endif
                             </a>
                         @else
-                            <path d="{{ $sector['path'] }}" fill="{{ $sector['color'] }}" stroke="#15171e" stroke-width="1.5" />
+                            <path d="{{ $sector['path'] }}" fill="{{ $sector['color'] }}" stroke="#0f111a" stroke-width="2" />
                             @if (! empty($sector['icon']))
                                 <image href="{{ $sector['icon'] }}" x="{{ $sector['icon_x'] }}" y="{{ $sector['icon_y'] }}" width="{{ $sector['icon_size'] }}" height="{{ $sector['icon_size'] }}" preserveAspectRatio="xMidYMid slice" />
                             @endif
                         @endif
                     </g>
                 @endforeach
-                <text x="120" y="120" text-anchor="middle" dominant-baseline="middle" class="text-xl font-bold fill-white">{{ (int) round($overallWinrate) }}%</text>
+                <text x="100" y="100" text-anchor="middle" dominant-baseline="middle" class="text-xl font-bold fill-white">{{ (int) round($overallWinrate) }}%</text>
             </svg>
         </div>
     </div>

@@ -104,7 +104,7 @@ if (wheelTooltip) {
         const games = sector.getAttribute('data-hero-games') || '0';
         const winrate = sector.getAttribute('data-hero-winrate') || '0';
 
-        wheelTooltip.innerHTML = `${image ? `<img src="${image}" class="w-12 h-12">` : ''}<div><b>${name}</b><br>${games} игр, ${winrate}% побед</div>`;
+        wheelTooltip.innerHTML = `${image ? `<img src="${image}" class="w-16 h-9 object-cover rounded shadow-md border border-gray-600">` : ''}<div><b>${name}</b><br>${games} игр, ${winrate}% побед</div>`;
         wheelTooltip.classList.remove('hidden');
         wheelTooltip.style.left = `${event.clientX + 12}px`;
         wheelTooltip.style.top = `${event.clientY + 12}px`;

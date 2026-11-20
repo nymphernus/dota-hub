@@ -28,8 +28,8 @@
 
 <div class="mt-4 flex flex-wrap gap-2" role="list" aria-label="Ключевая статистика">
     <div class="card min-w-[150px] flex-1 p-3 sm:p-4" role="listitem">
-        <p class="label">МАТЧИ</p>
-        <p class="mt-1 text-xl font-semibold tracking-tight text-mist-200 sm:text-2xl">{{ number_format($games, 0, '.', ' ') }}</p>
+        <p class="text-sm text-gray-400 font-bold uppercase">МАТЧИ</p>
+        <p class="mt-1 text-4xl font-black text-white">{{ number_format($games, 0, '.', ' ') }}</p>
         <div class="mt-1 text-[10px] text-mist-500">
             <div>Первый: {{ $fmt($firstMatch) }}</div>
             <div>Последний: {{ $fmt($lastMatch) }}</div>
@@ -42,7 +42,7 @@
                         $fill = $blockGames / 100 * 100;
                     @endphp
                     <div class="h-2 flex-1 overflow-hidden rounded-sm bg-ink-900/50">
-                        <div class="h-full bg-accent-400" style="width: {{ $fill }}%"></div>
+                        <div class="h-full bg-yellow-500/80" style="width: {{ $fill }}%"></div>
                     </div>
                 @endfor
             </div>
@@ -50,19 +50,23 @@
     </div>
 
     <div class="card min-w-[150px] flex-1 p-3 sm:p-4" role="listitem">
-        <p class="label">ВИНРЕЙТ</p>
-        <p class="mt-1 text-xl font-semibold tracking-tight sm:text-2xl {{ $winrateValue >= 50 ? 'text-green-500' : 'text-red-500' }}">
+        <p class="text-sm text-gray-400 font-bold uppercase">ВИНРЕЙТ</p>
+        <p class="mt-1 text-4xl font-black text-white">
             {{ $winrate !== null ? number_format($winrateValue, 1, '.', '').'%' : '—' }}
         </p>
-        <div class="mt-2 flex h-1.5 overflow-hidden rounded-none bg-ink-900/50">
+        <div class="mt-2 flex h-2 w-full rounded overflow-hidden">
             <div class="h-full bg-yellow-500" style="width: {{ $winrateValue }}%"></div>
             <div class="h-full bg-red-500" style="width: {{ max(0, 100 - $winrateValue) }}%"></div>
+        </div>
+        <div class="flex justify-between text-xs text-gray-400 mt-1">
+            <span>{{ $wins }} побед</span>
+            <span>{{ $losses }} поражений</span>
         </div>
     </div>
 
     <div class="card min-w-[150px] flex-1 p-3 sm:p-4" role="listitem">
-        <p class="label">MMR</p>
-        <p class="mt-1 text-xl font-semibold tracking-tight text-mist-200 sm:text-2xl">
+        <p class="text-sm text-gray-400 font-bold uppercase">MMR</p>
+        <p class="mt-1 text-4xl font-black text-white">
             {{ $player['mmr_estimate'] !== null ? number_format($player['mmr_estimate'], 0, '.', ' ') : '—' }}
         </p>
     </div>
