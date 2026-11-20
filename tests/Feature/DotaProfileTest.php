@@ -171,9 +171,10 @@ class DotaProfileTest extends TestCase
                 && $peers[1]['is_private'] === true;
         });
         $response->assertSee('OtherPeer');
-        $response->assertSee('text-sm text-[#8b94a5]', false);
-        $response->assertSee('font-medium text-white" aria-current="page"', false);
-        $response->assertSee('<span aria-hidden="true">/</span>', false);
+        $response->assertSee('id="dotahub-tab-data"', false);
+        $response->assertSee('x-data="tabs()"', false);
+        $response->assertSee('aria-label="Навигация по вкладкам"', false);
+        $response->assertDontSee('aria-label="Хлебные крошки"', false);
         $response->assertViewHas(
             'recentMatches',
             fn (array $matches) => count($matches) === 2

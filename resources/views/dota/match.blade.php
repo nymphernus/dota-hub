@@ -46,18 +46,6 @@
 
 @section('content')
     <div class="mx-auto w-full max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">
-        <nav class="mb-3 flex items-center gap-2 text-sm text-gray-500" aria-label="Хлебные крошки">
-            <a href="{{ route('home') }}" class="text-white transition hover:text-accent-300">Главная</a>
-            <span aria-hidden="true">/</span>
-            @if ($profileNickname !== null && $profilePlayerId !== null)
-                <a href="{{ route('dota.player', ['accountId' => $profilePlayerId]) }}" class="text-white transition hover:text-accent-300">{{ $profileNickname }}</a>
-            @else
-                <span class="text-white">Dota 2</span>
-            @endif
-            <span aria-hidden="true">/</span>
-            <span class="truncate font-medium text-white" aria-current="page">Матч #{{ $match['match_id'] }}</span>
-        </nav>
-
         <section class="relative py-2">
             <div class="relative px-0 py-1">
                 <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">

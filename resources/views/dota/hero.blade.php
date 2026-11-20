@@ -36,14 +36,6 @@
 
 @section('content')
     <div class="mx-auto w-full max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">
-        <nav class="mb-4 flex items-center gap-2 text-sm text-[#8b94a5]" aria-label="Хлебные крошки">
-            <a href="{{ route('home') }}" class="transition hover:text-white">Главная</a>
-            <span aria-hidden="true">/</span>
-            <a href="{{ $backUrl }}" class="transition hover:text-white">{{ $player['nickname'] }}</a>
-            <span aria-hidden="true">/</span>
-            <span class="truncate font-medium text-white" aria-current="page">{{ $hero['name'] }}</span>
-        </nav>
-
         <section class="card relative overflow-hidden">
             @if ($hero['image'])
                 <img src="{{ $hero['image'] }}" alt="" class="pointer-events-none absolute -right-10 -top-8 h-56 w-auto scale-110 object-cover opacity-20 blur-[1px]" aria-hidden="true">
