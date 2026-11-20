@@ -6,15 +6,17 @@ use Tests\TestCase;
 
 class UiAssetsTest extends TestCase
 {
-    public function test_hero_wheel_is_flat_svg_with_images_and_group_hover_growth(): void
+    public function test_hero_wheel_has_ranked_toggle_center_winrate_and_rich_tooltip(): void
     {
         $source = (string) file_get_contents(resource_path('views/dota/partials/hero-wheel.blade.php'));
+        $app = (string) file_get_contents(resource_path('js/app.js'));
         $css = (string) file_get_contents(resource_path('css/app.css'));
         $javascript = (string) file_get_contents(resource_path('js/heatmap.js'));
 
         $this->assertStringContainsString('<svg', $source);
         $this->assertStringContainsString('<image', $source);
-        $this->assertStringContainsString('xlink:href', $source);
+        $this->assertStringContainsString(':href="sector.icon"', $source);
+        $this->assertStringNotContainsString('xlink:href', $source);
         $this->assertStringContainsString('fill="#1c1e26"', $source);
         $this->assertStringContainsString('$wheelTotal', $source);
         $this->assertStringContainsString('* 360', $source);
@@ -22,23 +24,23 @@ class UiAssetsTest extends TestCase
         $this->assertStringContainsString('deg2rad($middleAngle)', $source);
         $this->assertStringContainsString('hero-wheel__slice', $source);
         $this->assertStringContainsString('hero-wheel__sector', $source);
-        $this->assertStringContainsString('% побед</title>', $source);
-        $this->assertStringContainsString("{{ \$sector['name'] }}: {{ \$sector['games'] }} игр", $source);
-        $this->assertStringContainsString("{{ \$sector['winrate'] }}% побед", $source);
-        $this->assertStringContainsString('<a', $source);
-        $this->assertStringContainsString('href="{{ route(\'dota.player.hero\', [$playerId, $sector[\'hero_id\']]) }}"', $source);
         $this->assertStringContainsString('cursor-pointer hover:opacity-80 focus:outline-none outline-none ring-0', $source);
 
-        // The icon lives in the same group as the sector, and the group itself
-        // is transformed so both move together on hover.
-        $slicePosition = strpos($source, "class=\"hero-wheel__slice\"");
-        $imagePosition = strpos($source, '<image');
-        $groupEndPosition = strpos($source, '</g>', $slicePosition);
-        $this->assertNotFalse($slicePosition);
-        $this->assertNotFalse($imagePosition);
-        $this->assertNotFalse($groupEndPosition);
-        $this->assertGreaterThan($slicePosition, $imagePosition);
-        $this->assertLessThan($groupEndPosition, $imagePosition);
+        $this->assertStringContainsString('Только рейтинг', $source);
+        $this->assertStringContainsString('x-model="rankedOnly"', $source);
+        $this->assertStringContainsString('x-for="sector in sectors"', $source);
+        $this->assertStringContainsString('ranked_games', $source);
+        $this->assertStringContainsString('ranked_wins', $source);
+        $this->assertStringContainsString('ranked_losses', $source);
+        $this->assertStringContainsString('class="text-2xl font-bold"', $source);
+        $this->assertStringContainsString('{{ $overallWinrate }}%', $source);
+        $this->assertStringContainsString('hero-wheel-all-data', $source);
+        $this->assertStringContainsString('hero-wheel-ranked-data', $source);
+
+        $this->assertStringContainsString("Alpine.data('heroWheel'", $app);
+        $this->assertStringContainsString("return this.rankedOnly ? this.rankedSectors : this.allSectors;", $app);
+        $this->assertStringContainsString('data-all-winrate', $source);
+        $this->assertStringContainsString('data-ranked-winrate', $source);
 
         $this->assertStringContainsString('.hero-wheel__slice {', $css);
         $this->assertStringContainsString('transform-origin: 120px 120px', $css);
@@ -49,26 +51,24 @@ class UiAssetsTest extends TestCase
         $this->assertStringNotContainsString('<defs>', $source);
         $this->assertStringNotContainsString('<radialGradient', $source);
         $this->assertStringNotContainsString('url(#hero-wheel-gradient-', $source);
-        $this->assertStringNotContainsString('hero-wheel__hub-value', $source);
-        $this->assertStringNotContainsString('hero-wheel__hub-label', $source);
-        $this->assertStringNotContainsString('героев</text>', $source);
         $this->assertStringNotContainsString('<canvas', $source);
         $this->assertStringNotContainsString('chart.js', $source);
         $this->assertStringNotContainsString('drawImage', $source);
 
         $this->assertStringContainsString('id="wheel-tooltip" class="hidden fixed z-50 bg-[#1c1e26] border border-[#2d313e] rounded p-2 text-white shadow-xl flex items-center gap-3"', $source);
         $this->assertStringContainsString('data-wheel-tooltip', $source);
-        $this->assertStringContainsString('data-hero-image="{{ $sector[\'icon\'] }}"', $source);
-        $this->assertStringContainsString('data-hero-games="{{ $sector[\'games\'] }}"', $source);
-        $this->assertStringContainsString('data-hero-winrate="{{ $sector[\'winrate\'] }}"', $source);
+        $this->assertStringContainsString(':data-hero-image="sector.icon"', $source);
+        $this->assertStringContainsString(':data-hero-wins="sector.wins"', $source);
+        $this->assertStringContainsString(':data-hero-losses="sector.losses"', $source);
         $this->assertStringContainsString("document.getElementById('wheel-tooltip')", $javascript);
-        $this->assertStringContainsString("image.className = 'w-10 h-10 object-cover'", $javascript);
+        $this->assertStringContainsString("image.className = 'w-12 h-12 object-cover'", $javascript);
         $this->assertStringContainsString("name.className = 'font-bold'", $javascript);
         $this->assertStringContainsString("details.className = 'text-sm text-gray-400'", $javascript);
-        $this->assertStringContainsString(' игр, ${', $javascript);
-        $this->assertStringContainsString("addEventListener('mouseenter'", $javascript);
+        $this->assertStringContainsString('Побед /', $javascript);
+        $this->assertStringContainsString('Поражений', $javascript);
+        $this->assertStringContainsString("addEventListener('mouseover'", $javascript);
         $this->assertStringContainsString("addEventListener('mousemove'", $javascript);
-        $this->assertStringContainsString("addEventListener('mouseleave'", $javascript);
+        $this->assertStringContainsString("addEventListener('mouseout'", $javascript);
     }
 
     public function test_heatmap_uses_native_date_for_weekdays_months_and_columns(): void

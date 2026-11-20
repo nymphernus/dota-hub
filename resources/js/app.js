@@ -2,6 +2,61 @@ import Alpine from 'alpinejs';
 
 window.Alpine = Alpine;
 
+/**
+ * Hero wheel data and the ranked-only toggle. Sector geometry is prepared by
+ * Blade; Alpine only swaps between the all-games and ranked-only datasets.
+ */
+Alpine.data('heroWheel', () => ({
+    rankedOnly: false,
+    allSectors: [],
+    rankedSectors: [],
+    allWinrate: 0,
+    rankedWinrate: 0,
+    heroUrlTemplate: '',
+
+    init() {
+        this.allSectors = this.readJson('hero-wheel-all-data');
+        this.rankedSectors = this.readJson('hero-wheel-ranked-data');
+
+        const config = document.getElementById('hero-wheel-data');
+
+        if (! config) {
+            return;
+        }
+
+        this.heroUrlTemplate = config.dataset.urlTemplate || '';
+        this.allWinrate = Number(config.dataset.allWinrate) || 0;
+        this.rankedWinrate = Number(config.dataset.rankedWinrate) || 0;
+    },
+
+    readJson(id) {
+        const node = document.getElementById(id);
+
+        if (! node) {
+            return [];
+        }
+
+        try {
+            const value = JSON.parse(node.textContent);
+            return Array.isArray(value) ? value : [];
+        } catch (error) {
+            return [];
+        }
+    },
+
+    get sectors() {
+        return this.rankedOnly ? this.rankedSectors : this.allSectors;
+    },
+
+    get overallWinrate() {
+        return this.rankedOnly ? this.rankedWinrate : this.allWinrate;
+    },
+
+    heroUrl(heroId) {
+        return this.heroUrlTemplate.replace('__HERO__', heroId);
+    },
+}));
+
 const TAB_STORAGE_KEY = 'dotahub.tabs.v1';
 
 /**

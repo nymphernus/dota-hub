@@ -235,7 +235,7 @@ class DotaProfileTest extends TestCase
         $this->assertNotNull($record);
         $this->assertSame('Dendi', $record->data['nickname']);
         $this->assertSame(120, $record->data['wins']);
-        $this->assertSame(5, $record->data['schema_version']);
+        $this->assertSame(6, $record->data['schema_version']);
     }
 
     public function test_second_visit_is_served_from_the_database(): void

@@ -128,8 +128,8 @@ if (heatmapPayload && heatmapRoot) {
 }
 
 /**
- * Rich hero-wheel tooltip. Each slice carries its own image and stats so the
- * tooltip can be positioned next to the cursor without another request.
+ * Rich hero-wheel tooltip. Delegated listeners keep the tooltip working after
+ * Alpine redraws the slices when the ranked-only toggle changes.
  */
 const wheelTooltip = document.getElementById('wheel-tooltip');
 
@@ -146,13 +146,15 @@ if (wheelTooltip) {
         wheelTooltip.style.top = `${Math.max(offset, top)}px`;
     };
 
+    const resolveSlice = (target) => target instanceof Element ? target.closest('[data-wheel-tooltip]') : null;
+
     const showTooltip = (slice, event) => {
         wheelTooltip.replaceChildren();
 
         const image = document.createElement('img');
         image.src = slice.dataset.heroImage || '';
         image.alt = '';
-        image.className = 'w-10 h-10 object-cover';
+        image.className = 'w-12 h-12 object-cover';
 
         const content = document.createElement('div');
 
@@ -162,7 +164,7 @@ if (wheelTooltip) {
 
         const details = document.createElement('div');
         details.className = 'text-sm text-gray-400';
-        details.textContent = `${slice.dataset.heroGames || 0} игр, ${slice.dataset.heroWinrate || 0}%`;
+        details.textContent = `${slice.dataset.heroWins || 0} Побед / ${slice.dataset.heroLosses || 0} Поражений`;
 
         content.append(name, details);
         wheelTooltip.append(image, content);
@@ -174,9 +176,25 @@ if (wheelTooltip) {
         wheelTooltip.classList.add('hidden');
     };
 
-    document.querySelectorAll('[data-wheel-tooltip]').forEach((slice) => {
-        slice.addEventListener('mouseenter', (event) => showTooltip(slice, event));
-        slice.addEventListener('mousemove', positionTooltip);
-        slice.addEventListener('mouseleave', hideTooltip);
+    document.addEventListener('mouseover', (event) => {
+        const slice = resolveSlice(event.target);
+
+        if (slice) {
+            showTooltip(slice, event);
+        }
+    });
+
+    document.addEventListener('mousemove', (event) => {
+        if (! wheelTooltip.classList.contains('hidden')) {
+            positionTooltip(event);
+        }
+    });
+
+    document.addEventListener('mouseout', (event) => {
+        const slice = resolveSlice(event.target);
+
+        if (slice && ! slice.contains(event.relatedTarget)) {
+            hideTooltip();
+        }
     });
 }
