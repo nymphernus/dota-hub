@@ -159,15 +159,3 @@
         </div>
     </div>
 </section>
-
-<div class="mt-4 flex flex-wrap items-center gap-2 rounded-none bg-ink-900/60 px-4 py-3 text-[11px]">
-    <span class="uppercase tracking-[0.16em] text-mist-500">Приватность</span>
-    <span @class(['badge', $steamTone])>Steam: {{ $steamProfile['visibility'] ?? 'Неизвестно' }}</span>
-    <span @class(['badge', $dotaTone])>Dota: {{ $dotaPublic ? 'Публичные матчи доступны' : 'Матчей пока нет' }}</span>
-    @if (! $steamAvailable)
-        <span class="text-accent-300/80">{{ $steamProfile['error'] ?? 'Steam API недоступна' }}</span>
-    @endif
-    @if ($player['is_private'])
-        <span class="badge border-accent-500/25 bg-accent-500/10 text-accent-300">Данные скрыты</span>
-    @endif
-</div>

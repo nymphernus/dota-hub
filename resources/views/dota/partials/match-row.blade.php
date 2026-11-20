@@ -31,10 +31,36 @@
         default => 'text-mist-300',
     };
 
+    $gameMode = (int) ($match['game_mode'] ?? 0);
     $modeLabel = $match['game_mode_label'] ?? $match['match_type_label'] ?? null;
-    $modeKey = strtolower((string) $modeLabel);
-    $isRanked = (int) ($match['lobby_type'] ?? 0) === 7 || str_contains($modeKey, 'ranked');
-    $isTurbo = str_contains($modeKey, 'turbo');
+    if ($modeLabel === null || $modeLabel === '') {
+        $modeLabel = match ($gameMode) {
+            1 => 'All Pick',
+            2 => 'Captains Mode',
+            3 => 'Random Draft',
+            4 => 'Single Draft',
+            5 => 'All Random',
+            11 => 'Mid Only',
+            16 => 'Captains Draft',
+            18 => 'Ability Draft',
+            22 => 'Ranked',
+            23 => 'Turbo',
+            default => null,
+        };
+    }
+    $modeClass = match ($gameMode) {
+        22 => 'bg-yellow-500/20 text-yellow-500',
+        23 => 'bg-blue-500/20 text-blue-500',
+        1 => 'bg-green-500/20 text-green-500',
+        4 => 'bg-purple-500/20 text-purple-500',
+        2, 16 => 'bg-amber-500/20 text-amber-500',
+        3, 17 => 'bg-teal-500/20 text-teal-500',
+        5, 20 => 'bg-orange-500/20 text-orange-500',
+        18 => 'bg-pink-500/20 text-pink-500',
+        11 => 'bg-cyan-500/20 text-cyan-500',
+        default => 'bg-ink-900/50 text-mist-300',
+    };
+    $isRanked = (int) ($match['lobby_type'] ?? 0) === 7 || $gameMode === 22;
 @endphp
 <tr @class([
     'group transition odd:bg-[#1c1e26] even:bg-[#111318] hover:bg-ink-700/60',
@@ -84,12 +110,7 @@
                 <div class="mt-1 flex flex-wrap items-center gap-1.5 text-[9px] text-mist-500">
                     <span class="font-mono">{{ $match['duration_label'] ?? '—' }}</span>
                     @if ($modeLabel)
-                        <span @class([
-                            'rounded px-1.5 py-0.5 text-[9px] font-semibold tracking-wide',
-                            'bg-yellow-500/20 text-yellow-500' => $isRanked,
-                            'bg-[#2d313e] text-mist-300' => $isTurbo && ! $isRanked,
-                            'bg-ink-900/50 text-mist-300' => ! $isRanked && ! $isTurbo,
-                        ])>{{ $isRanked ? 'Ranked' : $modeLabel }}</span>
+                        <span class="rounded px-1.5 py-0.5 text-[9px] font-semibold tracking-wide {{ $modeClass }}">{{ $isRanked ? 'Ranked' : $modeLabel }}</span>
                     @endif
                 </div>
             </div>

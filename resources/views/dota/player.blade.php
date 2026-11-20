@@ -10,6 +10,34 @@
 @endphp
 
 @section('profile-content')
+        @php
+            $steamAvailable = (bool) ($steamProfile['available'] ?? false);
+            $steamPublic = $steamProfile['is_public'] ?? null;
+            $dotaPublic = (bool) ($player['has_public_matches'] ?? false);
+            $steamTone = match (true) {
+                $steamPublic === true => 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300',
+                $steamPublic === false => 'border-rose-500/25 bg-rose-500/10 text-rose-300',
+                default => 'border-line bg-ink-900/50 text-mist-300',
+            };
+            $dotaTone = $dotaPublic
+                ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300'
+                : 'border-accent-500/25 bg-accent-500/10 text-accent-300';
+        @endphp
+
+        <div class="mt-4 flex flex-wrap items-center gap-2 rounded-none bg-ink-900/60 px-4 py-3 text-[11px]">
+            <span class="uppercase tracking-[0.16em] text-mist-500">Приватность</span>
+            <span @class(['badge', $steamTone])>Steam: {{ $steamProfile['visibility'] ?? 'Неизвестно' }}</span>
+            <span @class(['badge', $dotaTone])>Dota: {{ $dotaPublic ? 'Публичные матчи доступны' : 'Матчей пока нет' }}</span>
+            @if (! $steamAvailable)
+                <span class="text-accent-300/80">{{ $steamProfile['error'] ?? 'Steam API недоступна' }}</span>
+            @endif
+            @if ($player['is_private'])
+                <span class="badge border-accent-500/25 bg-accent-500/10 text-accent-300">Данные скрыты</span>
+            @endif
+        </div>
+
+        <x-player-metrics :player="$player" />
+
         @if ($player['is_private'])
             <div class="mt-4 flex items-start gap-3 border border-accent-500/25 bg-accent-500/[0.08] p-3 text-sm text-accent-300">
                 <svg class="mt-0.5 h-5 w-5 shrink-0 text-accent-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2" /><path d="M8 10V7a4 4 0 018 0v3" stroke-linecap="round" /></svg>

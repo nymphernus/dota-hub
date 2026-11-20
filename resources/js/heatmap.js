@@ -14,8 +14,7 @@ if (heatmapPayload && heatmapRoot) {
     const monthLabels = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сент', 'Окт', 'Ноя', 'Дек'];
     const tones = {
         future: 'bg-transparent text-transparent',
-        empty: 'bg-ink-900/40 text-transparent',
-        single: 'bg-gray-500 text-white',
+        empty: 'bg-[#1b1f2e] text-transparent',
         win: 'bg-green-500 text-green-950',
         loss: 'bg-red-500 text-red-950',
         more_wins: 'bg-yellow-500 text-yellow-950',
@@ -88,15 +87,17 @@ if (heatmapPayload && heatmapRoot) {
             column.forEach((day) => {
                 if (!day) {
                     const empty = document.createElement('span');
-                    empty.className = 'aspect-square rounded-[2px] bg-ink-900/40';
+                    empty.className = 'aspect-square rounded-[2px] bg-[#1b1f2e]';
                     empty.setAttribute('aria-hidden', 'true');
                     cells.push(empty);
                     return;
                 }
 
                 const count = Number(day.count) || 0;
+                const wins = Number(day.wins) || 0;
+                const losses = Number(day.losses) || 0;
                 const title = count > 0
-                    ? `${day.label}: ${count} ${gameLabel(count)} (${Number(day.wins) || 0}П / ${Number(day.losses) || 0}П)`
+                    ? `${day.label}: ${count} ${gameLabel(count)} (${wins} ${winLabel(wins)}, ${losses} ${lossLabel(losses)})`
                     : `${day.label}: ${day.level === 'future' ? 'будущий день' : 'нет игр'}`;
                 const matchUrlTemplate = heatmapRoot.dataset.matchUrlTemplate;
                 const cell = matchUrlTemplate && count > 0
@@ -128,4 +129,16 @@ function gameLabel(count) {
     if (count % 10 === 1 && count % 100 !== 11) return 'игра';
     if ([2, 3, 4].includes(count % 10) && ![12, 13, 14].includes(count % 100)) return 'игры';
     return 'игр';
+}
+
+function winLabel(count) {
+    if (count % 10 === 1 && count % 100 !== 11) return 'победа';
+    if ([2, 3, 4].includes(count % 10) && ![12, 13, 14].includes(count % 100)) return 'победы';
+    return 'побед';
+}
+
+function lossLabel(count) {
+    if (count % 10 === 1 && count % 100 !== 11) return 'поражение';
+    if ([2, 3, 4].includes(count % 10) && ![12, 13, 14].includes(count % 100)) return 'поражения';
+    return 'поражений';
 }

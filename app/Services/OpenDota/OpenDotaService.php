@@ -26,10 +26,6 @@ class OpenDotaService
 
     private const ITEM_STATS_CACHE_KEY = 'opendota:item-stats:v2';
 
-    private const HISTORY_PAGE_SIZE = 1500;
-
-    private const MAX_HISTORY_PAGES = 20;
-
     private const RECENT_MATCH_DETAILS = 10;
 
     private const PROFILE_SCHEMA_VERSION = 6;
@@ -1402,9 +1398,8 @@ class OpenDotaService
     }
 
     /**
-     * Request the full history in large pages and follow the
-     * `less_than_match_id` cursor until a short page arrives so profiles with
-     * more than one page of games keep their full history.
+     * Request the full match history by following the `less_than_match_id`
+     * cursor until the API returns no matches.
      *
      * @return array<int, array<string, mixed>>
      */
@@ -1414,8 +1409,8 @@ class OpenDotaService
         $seen = [];
         $cursor = null;
 
-        for ($page = 1; $page <= self::MAX_HISTORY_PAGES; $page++) {
-            $query = ['limit' => self::HISTORY_PAGE_SIZE];
+        while (true) {
+            $query = [];
 
             if ($cursor !== null) {
                 $query['less_than_match_id'] = $cursor;
@@ -1427,7 +1422,7 @@ class OpenDotaService
                 break;
             }
 
-            if ($batch === []) {
+            if (! is_array($batch) || $batch === []) {
                 break;
             }
 
@@ -1452,10 +1447,6 @@ class OpenDotaService
                 }
 
                 $matches[] = $match;
-            }
-
-            if (count($batch) < self::HISTORY_PAGE_SIZE) {
-                break;
             }
 
             // Stop instead of looping if the API ignores the cursor or returns

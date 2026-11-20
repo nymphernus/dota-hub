@@ -389,7 +389,6 @@ class DotaPlayerController extends Controller
                     'losses' => $isFuture ? 0 : $losses,
                     'level' => $isFuture ? 'future' : match (true) {
                         $count === 0 => 'empty',
-                        $count === 1 => 'single',
                         $wins === $count => 'win',
                         $losses === $count => 'loss',
                         $wins > $losses => 'more_wins',

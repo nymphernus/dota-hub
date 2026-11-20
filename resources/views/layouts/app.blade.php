@@ -7,7 +7,7 @@
     <meta name="description" content="@yield('description', 'DotaHub — быстрая статистика игроков Dota 2. Профили, матчи, герои и активность.')">
     <meta name="theme-color" content="#111318">
 
-    <title>@yield('title', 'DotaHub')</title>
+    <title>@yield('title', 'DOTAHUB')</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -29,9 +29,9 @@
     <header class="sticky top-0 z-50 border-b border-[#2d313e] bg-[#111318]/90 backdrop-blur-md">
         <div class="mx-auto flex h-16 w-full max-w-7xl items-center px-4 sm:px-6 lg:px-8">
             <div class="flex min-w-0 items-center gap-3">
-                <a href="/" class="bg-[#d32f2f] px-2 py-1 text-white font-black uppercase text-xl tracking-tighter leading-none rounded-sm">DOTAHUB</a>
+                <a href="/" class="bg-[#d32f2f] px-3 py-1 text-white font-light uppercase text-2xl tracking-widest leading-none rounded-none">DOTAHUB</a>
                 @if ($showProfileNav && $navNickname)
-                    <span class="min-w-0 truncate text-sm font-semibold text-mist-300">dotahub <span class="mx-1 text-gray-400">/</span> <span class="font-bold text-white">{{ $navNickname }}</span></span>
+                    <span class="min-w-0 truncate text-sm font-semibold text-white">{{ $navNickname }}</span>
                 @endif
             </div>
 
@@ -174,7 +174,7 @@
 
     <footer class="mt-16 border-t border-line">
         <div class="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-            <span class="text-xs font-semibold tracking-tight text-mist-400">dotahub</span>
+            <span class="text-xs font-semibold tracking-tight text-mist-400">DOTAHUB</span>
             <span class="text-[10px] text-mist-500">&copy; {{ date('Y') }} &middot; OpenDota &middot; Steam Web API</span>
         </div>
     </footer>
