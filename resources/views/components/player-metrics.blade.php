@@ -51,8 +51,12 @@
 
     <div class="card min-w-[150px] flex-1 p-3" role="listitem">
         <p class="text-sm text-gray-400 font-bold uppercase">ВИНРЕЙТ</p>
-        <p class="mt-1 text-4xl font-black text-white">
-            {{ $winrate !== null ? number_format($winrateValue, 1, '.', '').'%' : '—' }}
+        <p class="mt-1 text-4xl font-black">
+            @if ($winrate !== null)
+                <span class="{{ $winrateValue >= 50 ? 'text-green-500' : 'text-red-500' }}">{{ number_format($winrateValue, 1, '.', '') }}%</span>
+            @else
+                <span class="text-white">—</span>
+            @endif
         </p>
         <div class="mt-2 flex h-2 w-full rounded overflow-hidden">
             <div class="h-full bg-yellow-500" style="width: {{ $winrateValue }}%"></div>
