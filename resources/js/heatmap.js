@@ -15,12 +15,12 @@ if (heatmapPayload && heatmapRoot) {
     const monthLabels = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сент', 'Окт', 'Ноя', 'Дек'];
     const tones = {
         future: 'bg-transparent text-transparent',
-        empty: 'bg-ink-900/40    text-transparent',
-        win: 'bg-emerald-500    text-emerald-950',
-        loss: 'bg-rose-500    text-rose-950',
-        loss_majority: 'bg-accent-500    text-ink-950',
-        win_majority: 'bg-mist-400    text-ink-950',
-        mixed: 'bg-accent-400    text-ink-950',
+        empty: 'bg-ink-900/40 text-transparent',
+        win: 'bg-green-500 text-green-950',
+        loss: 'bg-red-500 text-red-950',
+        loss_majority: 'bg-red-500/80 text-red-950',
+        win_majority: 'bg-green-500/80 text-green-950',
+        mixed: 'bg-yellow-500 text-yellow-950',
     };
     const DAY_MS = 86400000;
 

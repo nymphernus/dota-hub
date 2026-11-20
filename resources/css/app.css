@@ -25,7 +25,12 @@
     --color-win: #10b981;
     --color-loss: #ef4444;
     --color-green-500: #10b981;
+    --color-green-950: #052e16;
     --color-red-500: #ef4444;
+    --color-red-950: #450a0a;
+    --color-yellow-500: #eab308;
+    --color-yellow-950: #422006;
+    --color-blue-500: #3b82f6;
 
     --color-dota-300: #ef4444;
     --color-dota-400: #ef4444;
@@ -52,7 +57,6 @@
     --color-orange-400: #3b82f6;
     --color-orange-500: #3b82f6;
     --color-yellow-400: #8b94a5;
-    --color-yellow-950: #0b0d11;
     --color-slate-300: #d1d5db;
     --color-slate-400: #8b94a5;
     --color-slate-500: #6b7280;

@@ -90,6 +90,7 @@ class UiAssetsTest extends TestCase
     {
         $css = (string) file_get_contents(resource_path('css/app.css'));
         $layout = (string) file_get_contents(resource_path('views/layouts/app.blade.php'));
+        $hero = (string) file_get_contents(resource_path('views/dota/hero.blade.php'));
         $vite = (string) file_get_contents(base_path('vite.config.js'));
         $package = (string) file_get_contents(base_path('package.json'));
 
@@ -114,13 +115,15 @@ class UiAssetsTest extends TestCase
         $this->assertStringContainsString('@apply text-xs font-bold uppercase tracking-wider text-mist-400;', $css);
         $this->assertStringContainsString('--color-green-500: #10b981', $css);
         $this->assertStringContainsString('--color-red-500: #ef4444', $css);
+        $this->assertStringContainsString('--color-yellow-500: #eab308', $css);
+        $this->assertStringContainsString('--color-blue-500: #3b82f6', $css);
         $this->assertStringNotContainsString('radial-gradient', $css);
         $this->assertStringNotContainsString('--color-radar-', $css);
 
         $this->assertStringContainsString('fonts.googleapis.com/css2?family=Inter', $layout);
         $this->assertStringContainsString('border-b border-[#2d313e] bg-[#111318]/90 backdrop-blur-md', $layout);
-        $this->assertStringContainsString('bg-[#d32f2f] px-2 py-1 text-2xl uppercase leading-none tracking-tighter text-white', $layout);
-        $this->assertStringContainsString('>DOTAHUB</a>', $layout);
+        $this->assertStringContainsString('bg-[#d32f2f] px-2 py-1 text-2xl leading-none tracking-tighter text-white', $layout);
+        $this->assertStringContainsString('>dotahub</a>', $layout);
         $this->assertStringNotContainsString('font-black', $layout);
         $this->assertStringNotContainsString('font-normal', $layout);
         $this->assertStringNotContainsString('font-light', $layout);
@@ -128,13 +131,15 @@ class UiAssetsTest extends TestCase
         $this->assertStringNotContainsString('>dotahub</span>', $layout);
         $this->assertStringNotContainsString('gold-', $layout);
         $this->assertStringContainsString('rel="icon" type="image/x-icon" href="{{ asset(\'favicon.ico\') }}"', $layout);
-        $this->assertStringContainsString('>DotaHub</p>', $layout);
+        $this->assertStringContainsString('>dotahub</p>', $layout);
+        $this->assertStringContainsString('&copy; {{ date(\'Y\') }} dotahub', $layout);
         $this->assertFileExists(public_path('favicon.ico'));
         $this->assertSame("\x00\x00", substr((string) file_get_contents(public_path('favicon.ico')), 0, 2));
         $this->assertStringNotContainsString('>Dota 2</', $layout);
         $this->assertStringNotContainsString('uppercase tracking-[0.2em] text-mist-500 sm:block', $layout);
         $this->assertStringContainsString('content="#111318"', $layout);
         $this->assertStringNotContainsString('radar', $layout);
+        $this->assertStringNotContainsString('Dota Plus style', $hero);
 
         $this->assertStringContainsString('resources/js/heatmap.js', $vite);
         $this->assertStringNotContainsString('resources/js/charts.js', $vite);
@@ -182,8 +187,10 @@ class UiAssetsTest extends TestCase
         $matches = (string) file_get_contents(resource_path('views/dota/matches.blade.php'));
 
         $this->assertStringContainsString('odd:bg-[#1c1e26] even:bg-[#111318]', $source);
-        $this->assertStringContainsString('border-l-4 border-green-500', $source);
+        $this->assertStringContainsString('border-l-4 border-yellow-500', $source);
         $this->assertStringContainsString('border-l-4 border-red-500', $source);
+        $this->assertStringContainsString('bg-yellow-500/20 text-yellow-500', $source);
+        $this->assertStringContainsString('bg-blue-500/20 text-blue-500', $source);
         $this->assertStringContainsString('px-3 py-1 sm:px-4', $source);
         $this->assertStringNotContainsString('bg-emerald-500/[0.055]', $source);
         $this->assertStringNotContainsString('bg-rose-500/[0.055]', $source);
@@ -271,7 +278,10 @@ class UiAssetsTest extends TestCase
         $this->assertStringNotContainsString('--color-gold-', $css);
         $this->assertStringNotContainsString('bg-amber-', $javascript);
         $this->assertStringNotContainsString('bg-orange-', $javascript);
-        $this->assertStringNotContainsString('bg-yellow-', $javascript);
+        $this->assertStringNotContainsString('bg-accent-', $javascript);
+        $this->assertStringContainsString('bg-green-500', $javascript);
+        $this->assertStringContainsString('bg-red-500', $javascript);
+        $this->assertStringContainsString('bg-yellow-500', $javascript);
     }
 
     public function test_heatmap_days_link_to_the_dated_matches_page(): void

@@ -42,7 +42,7 @@ class DotaMatchesTest extends TestCase
         $response->assertSee('aria-current="page"', false);
         $response->assertSee('Anti-Mage');
         $response->assertSee('Blink Dagger');
-        $response->assertSee('Ranked All Pick');
+        $response->assertSee('bg-yellow-500/20 text-yellow-500', false);
         $response->assertSee('All Pick');
         $response->assertSee('Ranked');
         $response->assertSee('Normal');

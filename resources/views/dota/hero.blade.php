@@ -116,7 +116,6 @@
                         Перцентили OpenDota по последним матчам. Чем правее маркер, тем сильнее показатель относительно других игроков.
                     </p>
                 </div>
-                <span class="badge border-accent-500/25 bg-accent-500/10 text-accent-300">Dota Plus style</span>
             </div>
 
             @if (collect($benchmarks)->every(fn (array $benchmark) => ! $benchmark['available']))

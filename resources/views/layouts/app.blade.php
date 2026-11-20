@@ -39,7 +39,7 @@
 
     <header class="sticky top-0 z-40 border-b border-[#2d313e] bg-[#111318]/90 backdrop-blur-md">
         <div class="mx-auto flex h-16 w-full max-w-7xl items-center px-4 sm:px-6 lg:px-8">
-            <a href="/" class="bg-[#d32f2f] px-2 py-1 text-2xl uppercase leading-none tracking-tighter text-white" aria-label="DOTAHUB — на главную">DOTAHUB</a>
+            <a href="/" class="bg-[#d32f2f] px-2 py-1 text-2xl leading-none tracking-tighter text-white" aria-label="dotahub — на главную">dotahub</a>
 
             <div class="ml-auto flex items-center gap-2 sm:gap-3">
                 <form
@@ -191,11 +191,11 @@
     <footer class="border-t border-line bg-ink-950/60">
         <div class="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
             <div>
-                <p class="text-sm font-semibold text-mist-200">DotaHub</p>
+                <p class="text-sm font-semibold text-mist-200">dotahub</p>
                 <p class="text-[11px] text-mist-500">Данные: OpenDota · Steam Web API</p>
             </div>
 
-            <p class="text-[11px] text-mist-500">&copy; {{ date('Y') }} DotaHub</p>
+            <p class="text-[11px] text-mist-500">&copy; {{ date('Y') }} dotahub</p>
         </div>
     </footer>
 
