@@ -26,8 +26,8 @@
     $segmentCount = $games > 0 ? (int) ceil($games / 100) : 0;
 @endphp
 
-<div class="mt-4 flex flex-wrap gap-2" role="list" aria-label="Ключевая статистика">
-    <div class="card min-w-[150px] flex-1 p-3 sm:p-4" role="listitem">
+<div class="mt-4 flex flex-wrap gap-3" role="list" aria-label="Ключевая статистика">
+    <div class="card min-w-[150px] flex-1 p-3" role="listitem">
         <p class="text-sm text-gray-400 font-bold uppercase">МАТЧИ</p>
         <p class="mt-1 text-4xl font-black text-white">{{ number_format($games, 0, '.', ' ') }}</p>
         <div class="mt-1 text-[10px] text-mist-500">
@@ -49,7 +49,7 @@
         @endif
     </div>
 
-    <div class="card min-w-[150px] flex-1 p-3 sm:p-4" role="listitem">
+    <div class="card min-w-[150px] flex-1 p-3" role="listitem">
         <p class="text-sm text-gray-400 font-bold uppercase">ВИНРЕЙТ</p>
         <p class="mt-1 text-4xl font-black text-white">
             {{ $winrate !== null ? number_format($winrateValue, 1, '.', '').'%' : '—' }}
@@ -59,12 +59,12 @@
             <div class="h-full bg-red-500" style="width: {{ max(0, 100 - $winrateValue) }}%"></div>
         </div>
         <div class="flex justify-between text-xs text-gray-400 mt-1">
-            <span class="text-green-500">{{ $wins }} побед</span>
+            <span class="text-yellow-500">{{ $wins }} побед</span>
             <span class="text-red-500">{{ $losses }} поражений</span>
         </div>
     </div>
 
-    <div class="card min-w-[150px] flex-1 p-3 sm:p-4" role="listitem">
+    <div class="card min-w-[150px] flex-1 p-3" role="listitem">
         <p class="text-sm text-gray-400 font-bold uppercase">MMR</p>
         <p class="mt-1 text-4xl font-black text-white">
             {{ $player['mmr_estimate'] !== null ? number_format($player['mmr_estimate'], 0, '.', ' ') : '—' }}
