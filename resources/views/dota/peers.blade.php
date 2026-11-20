@@ -13,14 +13,22 @@
             @if (($player['peers'] ?? []) === [])
                 <div class="p-10 text-center text-sm text-mist-400">Нет данных о совместных матчах</div>
             @else
+                @php
+                    $showWinrate = collect($player['peers'])->contains(fn (array $peer) => ($peer['winrate'] ?? null) !== null);
+                    $showFavorite = collect($player['peers'])->contains(fn (array $peer) => ! empty($peer['favorite_hero']));
+                @endphp
                 <div class="overflow-x-auto">
                     <table class="w-full min-w-[680px] text-sm">
                         <thead class="table-head">
                             <tr>
                                 <th class="px-4 py-3 font-semibold sm:px-5">Игрок</th>
                                 <th class="px-4 py-3 font-semibold">Матчи вместе</th>
-                                <th class="px-4 py-3 font-semibold">Процент побед</th>
-                                <th class="px-4 py-3 text-right font-semibold sm:px-5">Последний матч</th>
+                                @if ($showWinrate)
+                                    <th class="px-4 py-3 font-semibold">Винрейт вместе</th>
+                                @endif
+                                @if ($showFavorite)
+                                    <th class="px-4 py-3 font-semibold sm:px-5">Любимый герой</th>
+                                @endif
                             </tr>
                         </thead>
                         <tbody class="table-rows">
@@ -47,10 +55,23 @@
                                         </a>
                                     </td>
                                     <td class="px-4 py-3 font-mono text-[13px] tabular-nums text-mist-300">{{ number_format($peer['games'], 0, '.', ' ') }}</td>
-                                    <td class="px-4 py-3 font-mono text-[13px] tabular-nums {{ ($peer['winrate'] ?? 0) >= 50 ? 'text-emerald-300' : 'text-rose-300' }}">{{ $peer['winrate'] !== null ? number_format($peer['winrate'], 1, '.', '').'%' : '—' }}</td>
-                                    <td class="px-4 py-3 text-right text-[11px] text-mist-400 sm:px-5">
-                                        {{ $peer['last_played_at'] ? \Carbon\CarbonImmutable::parse($peer['last_played_at'])->format('d.m.Y') : '—' }}
-                                    </td>
+                                    @if ($showWinrate)
+                                        <td class="px-4 py-3 font-mono text-[13px] tabular-nums {{ ($peer['winrate'] ?? 0) >= 50 ? 'text-emerald-300' : 'text-rose-300' }}">{{ $peer['winrate'] !== null ? number_format($peer['winrate'], 1, '.', '').'%' : '—' }}</td>
+                                    @endif
+                                    @if ($showFavorite)
+                                        <td class="px-4 py-3 sm:px-5">
+                                            @if (! empty($peer['favorite_hero']))
+                                                <span class="flex items-center gap-2" title="{{ $peer['favorite_hero']['games'] }} игр">
+                                                    @if ($peer['favorite_hero']['image'])
+                                                        <img src="{{ $peer['favorite_hero']['image'] }}" alt="{{ $peer['favorite_hero']['name'] }}" class="h-8 w-12 rounded border border-line object-cover" loading="lazy">
+                                                    @endif
+                                                    <span class="truncate text-[12px] font-semibold text-mist-200">{{ $peer['favorite_hero']['name'] }}</span>
+                                                </span>
+                                            @else
+                                                <span class="text-[11px] text-mist-500">—</span>
+                                            @endif
+                                        </td>
+                                    @endif
                                 </tr>
                             @endforeach
                         </tbody>

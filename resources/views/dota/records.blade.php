@@ -34,11 +34,6 @@
             >Рейтинг</button>
         </div>
 
-        <p
-            class="mt-2 px-1 text-[10px] text-mist-400"
-            x-text="tab === 'ranked' ? 'Учитываются только рейтинговые матчи (lobby_type 7).' : 'Учитываются все сохранённые матчи.'"
-        ></p>
-
         <div id="records-all" role="tabpanel" x-show="tab === 'all'" x-cloak>
             @include('dota.partials.records-grid', ['records' => $records])
         </div>

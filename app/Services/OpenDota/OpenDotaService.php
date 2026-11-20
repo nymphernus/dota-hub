@@ -30,7 +30,7 @@ class OpenDotaService
 
     private const RECENT_MATCH_DETAILS = 10;
 
-    private const PROFILE_SCHEMA_VERSION = 3;
+    private const PROFILE_SCHEMA_VERSION = 4;
 
     /**
      * Human-readable labels for OpenDota /players/{id}/records keys.
@@ -38,13 +38,13 @@ class OpenDotaService
     private const RECORD_LABELS = [
         'DURATION' => 'Самый длинный матч',
         'SHORTEST_DURATION' => 'Самый короткий матч',
-        'KILLS' => 'Наибольшее число убийств',
+        'KILLS' => 'Самое большое количество убийств',
         'DEATHS' => 'Больше всего смертей',
-        'ASSISTS' => 'Наибольшее число ассистов',
+        'ASSISTS' => 'Самое большое количество ассистов',
         'GPM' => 'Максимум GPM',
         'XPM' => 'Максимум XPM',
         'HERO_DAMAGE' => 'Максимум урона по героям',
-        'TOWER_DAMAGE' => 'Максимум урона по вышкам',
+        'TOWER_DAMAGE' => 'Максимум урона по зданиям',
         'HERO_HEALING' => 'Максимум лечения',
         'LAST_HITS' => 'Максимум добиваний',
         'DENIES' => 'Максимум отказов',
@@ -443,6 +443,7 @@ class OpenDotaService
         $heroes = $this->heroStats();
         $matches = $this->transformMatches($recentMatches, $heroes);
         $matches = $this->enrichMatches($matches, $accountId, self::RECENT_MATCH_DETAILS);
+        $favoriteHeroes = $this->peersFavoriteHeroes(array_column($matches, 'match_id'), $heroes);
         $history = $this->transformHistory($matchHistory, $heroes);
 
         // The history endpoint can be unavailable even when recent matches are
@@ -508,7 +509,7 @@ class OpenDotaService
             'top_heroes' => array_slice($heroRows, 0, 5),
             'matches' => array_slice($matches, 0, 25),
             'match_history' => $history,
-            'peers' => $this->transformPeers($peers),
+            'peers' => $this->transformPeers($peers, $favoriteHeroes),
             'has_public_matches' => $hasPublicMatches,
             'dota_data_hidden' => ! $hasPublicMatches,
             'cached_at' => CarbonImmutable::now()->toIso8601String(),
@@ -521,9 +522,10 @@ class OpenDotaService
      * Frequent teammates from OpenDota's aggregated peers endpoint.
      *
      * @param  array<int, mixed>  $peers
+     * @param  array<int, array<string, mixed>>  $favoriteHeroes
      * @return array<int, array<string, mixed>>
      */
-    private function transformPeers(array $peers): array
+    private function transformPeers(array $peers, array $favoriteHeroes = []): array
     {
         $rows = [];
 
@@ -537,9 +539,10 @@ class OpenDotaService
             $lastMatch = $peer['last_match_time'] ?? null;
             $profile = $peer['profile'] ?? null;
             $profileHidden = array_key_exists('profile', $peer) && empty($profile);
+            $accountId = (int) $peer['account_id'];
 
             $rows[] = [
-                'account_id' => (int) $peer['account_id'],
+                'account_id' => $accountId,
                 'nickname' => ($peer['personaname'] ?? null) ?: 'Анонимный игрок',
                 'avatar' => $peer['avatarfull'] ?? $peer['avatar'] ?? null,
                 'profile_url' => is_array($profile) ? ($profile['profileurl'] ?? null) : null,
@@ -548,12 +551,65 @@ class OpenDotaService
                 'wins' => $wins,
                 'winrate' => $games > 0 ? round($wins / $games * 100, 1) : null,
                 'last_played_at' => $this->dateTime($lastMatch),
+                'favorite_hero' => $favoriteHeroes[$accountId] ?? null,
             ];
         }
 
         usort($rows, fn (array $a, array $b) => [$b['games'], $b['wins']] <=> [$a['games'], $a['wins']]);
 
         return array_slice($rows, 0, 50);
+    }
+
+    /**
+     * Most frequent hero played alongside each teammate in the sampled matches.
+     *
+     * The per-match map is written by matchPlayerSummary() while the details are
+     * already being fetched, so this never adds an OpenDota request.
+     *
+     * @param  array<int, mixed>  $matchIds
+     * @param  array<int, array<string, mixed>>  $heroes
+     * @return array<int, array<string, mixed>>
+     */
+    private function peersFavoriteHeroes(array $matchIds, array $heroes): array
+    {
+        $counts = [];
+
+        foreach ($matchIds as $matchId) {
+            $map = Cache::get('opendota:match-peer-heroes:v1:'.(int) $matchId);
+
+            if (! is_array($map)) {
+                continue;
+            }
+
+            foreach ($map as $peerId => $heroCounts) {
+                if (! is_array($heroCounts)) {
+                    continue;
+                }
+
+                foreach ($heroCounts as $heroId => $games) {
+                    $peerId = (int) $peerId;
+                    $heroId = (int) $heroId;
+                    $counts[$peerId][$heroId] = ($counts[$peerId][$heroId] ?? 0) + (int) $games;
+                }
+            }
+        }
+
+        $favorites = [];
+
+        foreach ($counts as $peerId => $heroCounts) {
+            arsort($heroCounts);
+            $heroId = (int) array_key_first($heroCounts);
+            $meta = $heroes[$heroId] ?? null;
+
+            $favorites[$peerId] = [
+                'hero_id' => $heroId,
+                'name' => $meta['name'] ?? ('Герой #'.$heroId),
+                'image' => $meta['image'] ?? null,
+                'games' => (int) reset($heroCounts),
+            ];
+        }
+
+        return $favorites;
     }
 
     /**
@@ -625,8 +681,8 @@ class OpenDotaService
         Cache::forget($this->playerHeaderCacheKey($accountId));
         Cache::forget("opendota:records:v1:{$accountId}");
         Cache::forget("opendota:records:v2:{$accountId}");
-        Cache::forget("opendota:records:v3:{$accountId}:all");
-        Cache::forget("opendota:records:v3:{$accountId}:ranked");
+        Cache::forget("opendota:records:v4:{$accountId}:all");
+        Cache::forget("opendota:records:v4:{$accountId}:ranked");
     }
 
     /**
@@ -922,7 +978,7 @@ class OpenDotaService
         }
 
         $ttl = (int) config('stats.cache.dota_records', 86400);
-        $cacheKey = "opendota:records:v3:{$accountId}:{$scope}";
+        $cacheKey = "opendota:records:v4:{$accountId}:{$scope}";
         $fingerprint = sha1($scope.':'.implode(':', array_map(
             fn (array $match) => (string) ($match['match_id'] ?? '').'@'.(string) ($match['started_at'] ?? ($match['start_time'] ?? '')),
             $history,
@@ -1866,13 +1922,13 @@ class OpenDotaService
             13 => 'Limited Heroes',
             14 => 'Compendium',
             15 => 'Custom',
-            16 => 'Captains Draft',
+            16 => "Captain's Mode",
             17 => 'Balanced Draft',
             18 => 'Ability Draft',
             19 => 'Event',
             20 => 'All Random Deathmatch',
             21 => '1v1 Mid',
-            22 => 'All Pick',
+            22 => 'Ranked All Pick',
             23 => 'Turbo',
             24 => 'Mutation',
             default => null,
@@ -1886,16 +1942,12 @@ class OpenDotaService
 
     private function matchTypeLabel(?int $lobbyType, ?int $gameMode): string
     {
-        if ($gameMode === 23) {
-            return 'Turbo';
-        }
-
-        return match ($lobbyType) {
-            7 => 'Ranked',
-            0 => 'Normal',
-            6 => 'Solo',
-            default => $this->lobbyTypeLabel($lobbyType) ?? 'Normal',
-        };
+        // The match table must show the game mode (All Pick, Turbo, ...), not
+        // the lobby type. Lobby labels remain only as a fallback for unknown
+        // modes and for the "Ranked" badge on the match detail page.
+        return $this->gameModeLabel($gameMode)
+            ?? $this->lobbyTypeLabel($lobbyType)
+            ?? 'Normal';
     }
 
     /**
@@ -2194,6 +2246,23 @@ class OpenDotaService
 
             return null;
         }
+
+        $peerHeroes = [];
+
+        foreach (($match['players'] ?? []) as $candidate) {
+            if (! is_array($candidate)) {
+                continue;
+            }
+
+            $candidateAccount = (int) ($candidate['account_id'] ?? 0);
+            $candidateHero = (int) ($candidate['hero_id'] ?? 0);
+
+            if ($candidateAccount > 0 && $candidateHero > 0) {
+                $peerHeroes[$candidateAccount][$candidateHero] = ($peerHeroes[$candidateAccount][$candidateHero] ?? 0) + 1;
+            }
+        }
+
+        Cache::put("opendota:match-peer-heroes:v1:{$matchId}", $peerHeroes, $ttl);
 
         $player = null;
 

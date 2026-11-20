@@ -8,10 +8,13 @@
             continue;
         }
 
+        $wins = max(0, (int) ($hero['win'] ?? $hero['wins'] ?? 0));
+
         $wheelHeroes[] = [
             'name' => $hero['name'] ?? 'Герой',
             'icon' => $hero['icon'] ?? ($hero['image'] ?? ''),
             'games' => $games,
+            'winrate' => $games > 0 ? round($wins / $games * 100, 1) : 0,
         ];
     }
 
@@ -66,6 +69,7 @@
             'name' => $hero['name'],
             'icon' => $hero['icon'],
             'games' => $hero['games'],
+            'winrate' => $hero['winrate'],
             'path' => $sectorPath,
             'x' => sprintf('%.2f', $cx + $iconRadius * cos($iconRadians) - $iconSize / 2),
             'y' => sprintf('%.2f', $cy + $iconRadius * sin($iconRadians) - $iconSize / 2),
@@ -93,8 +97,8 @@
         <circle cx="120" cy="120" r="112" fill="#0f111a" />
 
         @foreach ($sectors as $sector)
-            <g class="hero-wheel__slice" tabindex="0" role="img" aria-label="{{ $sector['name'] }}: {{ $sector['games'] }} игр">
-                <title>{{ $sector['name'] }}: {{ $sector['games'] }} игр</title>
+            <g class="hero-wheel__slice" tabindex="0" role="img" aria-label="{{ $sector['name'] }}: {{ $sector['games'] }} игр, {{ $sector['winrate'] }}% побед">
+                <title>{{ $sector['name'] }}: {{ $sector['games'] }} игр, {{ $sector['winrate'] }}% побед</title>
                 <path
                     class="hero-wheel__sector"
                     d="{{ $sector['path'] }}"

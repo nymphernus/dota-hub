@@ -159,6 +159,9 @@ class DotaProfileTest extends TestCase
                 && $peers[1]['is_private'] === true;
         });
         $response->assertSee('OtherPeer');
+        $response->assertSee('text-sm text-[#8b94a5]', false);
+        $response->assertSee('font-medium text-white" aria-current="page"', false);
+        $response->assertSee('<span aria-hidden="true">/</span>', false);
         $response->assertViewHas(
             'recentMatches',
             fn (array $matches) => count($matches) === 2
@@ -676,6 +679,12 @@ class DotaProfileTest extends TestCase
         $response->assertSee('id="tab-heroes"', false);
         $response->assertSee('Anti-Mage');
         $response->assertSee('Союзники');
+        $response->assertSee('По количеству игр');
+        $response->assertSee('По винрейту');
+        $response->assertSee('По KDA');
+        $response->assertSee('perPage: 50', false);
+        $response->assertSee('x-text="pageCount"', false);
+        $response->assertSee('x-for="number in pageCount"', false);
     }
 
     public function test_peers_page_renders_teammates_table(): void
@@ -689,6 +698,9 @@ class DotaProfileTest extends TestCase
         $response->assertSee('id="tab-peers"', false);
         $response->assertSee('Teammate');
         $response->assertSee('Скрытый профиль');
+        $response->assertSee('Винрейт вместе');
+        $response->assertSee('Любимый герой');
+        $response->assertDontSee('Последний матч');
     }
 
     private function fakeOpenDota(

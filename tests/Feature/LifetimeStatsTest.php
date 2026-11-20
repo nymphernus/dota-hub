@@ -79,17 +79,28 @@ class LifetimeStatsTest extends TestCase
         $response->assertSee('x-show="tab === \'all\'"', false);
         $response->assertSee('x-show="tab === \'ranked\'"', false);
         $response->assertViewHas('rankedRecords');
+        $response->assertDontSee('lobby_type 7');
+        $response->assertDontSee('Учитываются только рейтинговые матчи');
         $response->assertSee('Самый длинный матч');
-        $response->assertSee('Наибольшее число убийств');
+        $response->assertSee('Самое большое количество убийств');
+        $response->assertSee('Самое большое количество ассистов');
         $response->assertSee('Максимум GPM');
+        $response->assertSee('Максимум XPM');
+        $response->assertSee('Максимум урона по героям');
+        $response->assertSee('Максимум урона по зданиям');
         $response->assertSee('Anti-Mage');
         $response->assertSee('15.11.2026');
         $response->assertViewHas('records', function (array $records): bool {
             $keys = array_column($records, 'key');
 
-            return in_array('DURATION', $keys, true)
+            return count($records) >= 16
+                && in_array('DURATION', $keys, true)
                 && in_array('KILLS', $keys, true)
-                && in_array('GPM', $keys, true);
+                && in_array('ASSISTS', $keys, true)
+                && in_array('GPM', $keys, true)
+                && in_array('XPM', $keys, true)
+                && in_array('HERO_DAMAGE', $keys, true)
+                && in_array('TOWER_DAMAGE', $keys, true);
         });
     }
 
@@ -102,7 +113,7 @@ class LifetimeStatsTest extends TestCase
         $response->assertOk();
         $response->assertSee('Самый длинный матч');
         $response->assertSee('Самый короткий матч');
-        $response->assertSee('Наибольшее число убийств');
+        $response->assertSee('Самое большое количество убийств');
         $response->assertSee('Максимум GPM');
         $response->assertSee('Максимум урона по героям');
         $response->assertSee('Самая длинная серия поражений');
@@ -121,7 +132,7 @@ class LifetimeStatsTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Максимум лечения');
-        $response->assertSee('Максимум урона по вышкам');
+        $response->assertSee('Максимум урона по зданиям');
         $response->assertSee('Самая длинная серия побед');
         $response->assertViewHas('records', function (array $records): bool {
             $byKey = collect($records)->keyBy('key');
@@ -147,7 +158,8 @@ class LifetimeStatsTest extends TestCase
         $response->assertSee('Все матчи');
         $response->assertSee('Рейтинг');
         $response->assertDontSee('Только рейтинг');
-        $response->assertSee('lobby_type 7');
+        $response->assertDontSee('lobby_type 7');
+        $response->assertDontSee('Учитываются только рейтинговые матчи');
 
         // Both panels are rendered in the initial HTML; Alpine only toggles
         // visibility, so clicking a tab never reopens the records endpoint.

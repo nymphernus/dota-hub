@@ -20,8 +20,8 @@
 <body class="flex min-h-screen flex-col">
     <header class="sticky top-0 z-40 border-b border-line bg-ink-950/90 ">
         <div class="mx-auto flex h-16 w-full max-w-7xl items-center px-4 sm:px-6 lg:px-8">
-            <a href="{{ route('home') }}" class="flex items-center" aria-label="DotaHub — на главную">
-                <span class="font-sans font-bold tracking-tight text-2xl leading-none text-white">DotaHub</span>
+            <a href="{{ route('home') }}" class="bg-[#1b1f2e] border border-[#2a3042] px-3 py-1.5 rounded-md flex items-center gap-2" aria-label="dotahub — на главную">
+                <span class="font-sans font-bold text-xl tracking-tighter text-white">dotahub</span>
             </a>
 
             <div class="ml-auto flex items-center gap-2 sm:gap-3">
@@ -150,11 +150,11 @@
     <footer class="border-t border-line bg-ink-950/60">
         <div class="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
             <div>
-                <p class="text-sm font-bold tracking-tight text-white">DotaHub</p>
+                <p class="inline-flex bg-[#1b1f2e] border border-[#2a3042] px-3 py-1.5 rounded-md font-bold text-xl tracking-tighter text-white">dotahub</p>
                 <p class="text-[11px] text-mist-500">Данные: OpenDota · Steam Web API</p>
             </div>
 
-            <p class="text-[11px] text-mist-500">&copy; {{ date('Y') }} DotaHub</p>
+            <p class="text-[11px] text-mist-500">&copy; {{ date('Y') }} dotahub</p>
         </div>
     </footer>
 

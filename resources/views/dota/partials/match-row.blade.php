@@ -65,14 +65,13 @@
                 <div class="mt-1 flex flex-wrap items-center gap-1.5 text-[9px] text-mist-500">
                     <span class="font-mono">{{ $match['duration_label'] ?? '—' }}</span>
                     <span class="text-mist-500">·</span>
-                    @php $modeLabel = $match['game_mode_label'] ?? null; @endphp
-                    <span class="{{ ($match['match_type_label'] ?? '') === 'Ranked' ? 'font-semibold text-amber-300' : (($match['match_type_label'] ?? '') === 'Turbo' ? 'font-semibold text-accent-300' : '') }}">
-                        {{ $match['match_type_label'] ?? 'Normal' }}
-                    </span>
-                    @if ($modeLabel && $modeLabel !== 'All Pick' && $modeLabel !== ($match['match_type_label'] ?? null))
-                        <span class="text-mist-500">·</span>
-                        <span>{{ $modeLabel }}</span>
-                    @endif
+                    @php $modeLabel = $match['game_mode_label'] ?? $match['match_type_label'] ?? null; @endphp
+                    <span @class([
+                        'font-semibold',
+                        'text-accent-300' => $modeLabel === 'Turbo',
+                        'text-gold-200' => $modeLabel === 'Ranked All Pick',
+                        'text-mist-300' => ! in_array($modeLabel, ['Turbo', 'Ranked All Pick'], true),
+                    ])>{{ $modeLabel ?? 'Normal' }}</span>
                 </div>
             </div>
         </div>

@@ -21,6 +21,9 @@ class UiAssetsTest extends TestCase
         $this->assertStringContainsString('deg2rad($middleAngle)', $source);
         $this->assertStringContainsString('hero-wheel__slice', $source);
         $this->assertStringContainsString('hero-wheel__sector', $source);
+        $this->assertStringContainsString('% побед</title>', $source);
+        $this->assertStringContainsString("{{ \$sector['name'] }}: {{ \$sector['games'] }} игр", $source);
+        $this->assertStringContainsString("{{ \$sector['winrate'] }}% побед", $source);
 
         // The icon lives in the same group as the sector, and the group itself
         // is transformed so both move together on hover.
@@ -91,7 +94,10 @@ class UiAssetsTest extends TestCase
         $this->assertStringNotContainsString('--color-radar-', $css);
 
         $this->assertStringContainsString('fonts.googleapis.com/css2?family=Inter', $layout);
-        $this->assertStringContainsString('font-sans font-bold tracking-tight text-2xl leading-none text-white">DotaHub</span>', $layout);
+        $this->assertStringContainsString('bg-[#1b1f2e] border border-[#2a3042] px-3 py-1.5 rounded-md flex items-center gap-2', $layout);
+        $this->assertStringContainsString('font-sans font-bold text-xl tracking-tighter text-white">dotahub</span>', $layout);
+        $this->assertStringNotContainsString('>DotaHub</span>', $layout);
+        $this->assertStringNotContainsString('>DotaHub</p>', $layout);
         $this->assertStringNotContainsString('text-gold-400', $layout);
         $this->assertStringNotContainsString('>Dota 2</', $layout);
         $this->assertStringNotContainsString('uppercase tracking-[0.2em] text-mist-500 sm:block', $layout);

@@ -41,6 +41,8 @@ class DotaMatchesTest extends TestCase
         $response->assertSee('aria-current="page"', false);
         $response->assertSee('Anti-Mage');
         $response->assertSee('Blink Dagger');
+        $response->assertSee('Ranked All Pick');
+        $response->assertSee('All Pick');
         $response->assertSee('Ranked');
         $response->assertSee('Normal');
         $response->assertSee('Все герои');
