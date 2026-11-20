@@ -23,13 +23,6 @@
         $winrate = $games > 0 ? round($wins / $games * 100, 1) : 0.0;
 
         $attr = strtolower((string) ($hero['primary_attr'] ?? ''));
-        $color = match ($attr) {
-            'str', 'strength' => '#8b2b2b',
-            'agi', 'agility' => '#2b8b3a',
-            'int', 'intelligence' => '#2b4c8b',
-            'all', 'universal' => '#8b2b8b',
-            default => '#4b5563',
-        };
 
         $items[] = [
             'hero_id' => (int) ($hero['hero_id'] ?? $hero['id'] ?? 0),
@@ -38,7 +31,7 @@
             'icon' => $hero['icon'] ?? $hero['image'] ?? null,
             'games' => $games,
             'winrate' => $winrate,
-            'color' => $color,
+            'attr' => $attr,
         ];
 
         $totalGames += $games;
@@ -47,6 +40,8 @@
 
     $overallWinrate = $totalGames > 0 ? round($totalWins / $totalGames * 100, 1) : 0.0;
     $heroUrlTemplate = $playerId > 0 ? route('dota.player.hero', ['accountId' => $playerId, 'heroId' => '__HERO__']) : '';
+
+    $topHeroIds = collect($items)->sortByDesc('games')->take(3)->pluck('hero_id')->all();
 
     $startAngle = -M_PI / 2;
     $currentAngle = $startAngle;
@@ -77,6 +72,16 @@
         $iconMidRadius = ($innerRadius + $outerRadius) / 2;
         $iconSize = max(8.0, min(22.0, $iconMidRadius * $angle * 0.8));
 
+        $isTop = in_array($hero['hero_id'], $topHeroIds, true);
+        $alpha = $isTop ? 0.55 : 0.4;
+        $fill = match ($hero['attr']) {
+            'str', 'strength' => "rgba(139, 43, 43, {$alpha})",
+            'agi', 'agility' => "rgba(43, 139, 58, {$alpha})",
+            'int', 'intelligence' => "rgba(43, 76, 139, {$alpha})",
+            'all', 'universal' => "rgba(139, 43, 139, {$alpha})",
+            default => $isTop ? '#4b5563' : '#2d313e',
+        };
+
         $sectors[] = [
             'hero_id' => $hero['hero_id'],
             'name' => $hero['name'],
@@ -84,7 +89,7 @@
             'icon' => $hero['icon'],
             'games' => $hero['games'],
             'winrate' => $hero['winrate'],
-            'color' => $hero['color'],
+            'fill' => $fill,
             'path' => $path,
             'icon_x' => ($cx + $iconMidRadius * cos($mid)) - ($iconSize / 2),
             'icon_y' => ($cy + $iconMidRadius * sin($mid)) - ($iconSize / 2),
@@ -95,8 +100,8 @@
 
 @if ($sectors !== [])
     <div class="mt-3 flex flex-col items-center">
-        <div class="relative w-full">
-            <svg viewBox="0 0 200 200" class="w-full h-auto max-w-[400px] mx-auto" role="img" aria-label="Круговая диаграмма героев">
+        <svg viewBox="0 0 200 200" width="200" height="200" class="mx-auto" role="img" aria-label="Круговая диаграмма героев">
+            <g opacity="0.85">
                 @foreach ($sectors as $sector)
                     <g
                         class="hover:scale-105"
@@ -108,22 +113,22 @@
                     >
                         @if ($heroUrlTemplate !== '')
                             <a href="{{ str_replace('__HERO__', (string) $sector['hero_id'], $heroUrlTemplate) }}" aria-label="{{ $sector['name'] }}">
-                                <path d="{{ $sector['path'] }}" fill="{{ $sector['color'] }}" stroke="#0f111a" stroke-width="2" />
+                                <path d="{{ $sector['path'] }}" fill="{{ $sector['fill'] }}" />
                                 @if (! empty($sector['icon']))
                                     <image href="{{ $sector['icon'] }}" x="{{ $sector['icon_x'] }}" y="{{ $sector['icon_y'] }}" width="{{ $sector['icon_size'] }}" height="{{ $sector['icon_size'] }}" preserveAspectRatio="xMidYMid slice" />
                                 @endif
                             </a>
                         @else
-                            <path d="{{ $sector['path'] }}" fill="{{ $sector['color'] }}" stroke="#0f111a" stroke-width="2" />
+                            <path d="{{ $sector['path'] }}" fill="{{ $sector['fill'] }}" />
                             @if (! empty($sector['icon']))
                                 <image href="{{ $sector['icon'] }}" x="{{ $sector['icon_x'] }}" y="{{ $sector['icon_y'] }}" width="{{ $sector['icon_size'] }}" height="{{ $sector['icon_size'] }}" preserveAspectRatio="xMidYMid slice" />
                             @endif
                         @endif
                     </g>
                 @endforeach
-                <text x="100" y="100" text-anchor="middle" dominant-baseline="middle" class="text-xl font-bold fill-white">{{ (int) round($overallWinrate) }}%</text>
-            </svg>
-        </div>
+            </g>
+            <text x="100" y="100" text-anchor="middle" dominant-baseline="middle" class="text-xl font-bold fill-white">{{ (int) round($overallWinrate) }}%</text>
+        </svg>
     </div>
     <div id="wheel-tooltip" class="hidden fixed z-[9999] bg-[#1c1e26] border border-[#2d313e] p-2 rounded flex items-center gap-3 shadow-xl"></div>
 @endif

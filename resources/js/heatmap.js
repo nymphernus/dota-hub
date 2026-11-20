@@ -14,11 +14,11 @@ if (heatmapPayload && heatmapRoot) {
     const monthLabels = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сент', 'Окт', 'Ноя', 'Дек'];
     const tones = {
         future: 'bg-transparent text-transparent',
-        empty: 'bg-[#2d313e] text-transparent',
-        win: 'bg-green-500 text-green-950',
+        empty: 'bg-gray-600 text-transparent',
+        win: 'bg-green-600 text-green-950',
         loss: 'bg-red-500 text-red-950',
         equal: 'bg-yellow-500 text-yellow-950',
-        more_wins: 'bg-lime-500 text-lime-950',
+        more_wins: 'bg-lime-400 text-lime-950',
         more_losses: 'bg-orange-500 text-orange-950',
     };
     const DAY_MS = 86400000;
@@ -88,7 +88,7 @@ if (heatmapPayload && heatmapRoot) {
             column.forEach((day) => {
                 if (!day) {
                     const empty = document.createElement('span');
-                    empty.className = 'aspect-square rounded-[2px] bg-[#2d313e]';
+                    empty.className = 'aspect-square rounded-[2px] bg-gray-600';
                     empty.setAttribute('aria-hidden', 'true');
                     cells.push(empty);
                     return;
@@ -109,12 +109,14 @@ if (heatmapPayload && heatmapRoot) {
                     cell.href = matchUrlTemplate.replace('__DATE__', day.date);
                 }
 
-                cell.className = `flex aspect-square items-center justify-center rounded-[2px] text-[11px] font-semibold leading-none transition hover:scale-125 ${tones[day.level] || tones.empty}`;
+                const className = `flex aspect-square items-center justify-center rounded-[2px] text-[11px] font-semibold leading-none transition hover:scale-125 ${tones[day.level] || tones.empty}`;
+                cell.className = className;
                 cell.dataset.date = day.date;
                 cell.dataset.count = String(count);
                 cell.setAttribute('title', title);
                 cell.setAttribute('aria-label', title);
                 cell.textContent = count > 0 ? String(count) : '';
+                console.log(`Дата: ${day.date}, Wins: ${wins}, Losses: ${losses}, Class: ${className}`);
                 cells.push(cell);
             });
         });

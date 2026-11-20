@@ -59,8 +59,8 @@
             <div class="h-full bg-red-500" style="width: {{ max(0, 100 - $winrateValue) }}%"></div>
         </div>
         <div class="flex justify-between text-xs text-gray-400 mt-1">
-            <span>{{ $wins }} побед</span>
-            <span>{{ $losses }} поражений</span>
+            <span class="text-green-500">{{ $wins }} побед</span>
+            <span class="text-red-500">{{ $losses }} поражений</span>
         </div>
     </div>
 
