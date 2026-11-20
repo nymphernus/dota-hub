@@ -36,12 +36,12 @@
 
 @section('content')
     <div class="mx-auto w-full max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">
-        <nav class="mb-4 flex flex-wrap items-center gap-2 text-[11px] text-mist-500" aria-label="Хлебные крошки">
-            <a href="{{ route('home') }}" class="transition hover:text-mist-200">Главная</a>
-            <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke-linecap="round" /></svg>
-            <a href="{{ $backUrl }}" class="transition hover:text-mist-200">{{ $player['nickname'] }}</a>
-            <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke-linecap="round" /></svg>
-            <span class="truncate text-slate-300">{{ $hero['name'] }}</span>
+        <nav class="mb-4 flex items-center gap-2 text-sm text-[#8b94a5]" aria-label="Хлебные крошки">
+            <a href="{{ route('home') }}" class="transition hover:text-white">Главная</a>
+            <span aria-hidden="true">/</span>
+            <a href="{{ $backUrl }}" class="transition hover:text-white">{{ $player['nickname'] }}</a>
+            <span aria-hidden="true">/</span>
+            <span class="truncate font-medium text-white" aria-current="page">{{ $hero['name'] }}</span>
         </nav>
 
         <section class="card relative overflow-hidden">
@@ -220,15 +220,18 @@
                 </div>
             @else
                 <div class="overflow-x-auto">
-                    <table class="w-full min-w-[760px] text-sm">
+                    <table class="w-full min-w-[980px] text-sm">
                         <thead class="table-head">
                             <tr>
-                                <th class="px-4 py-2.5 text-left font-semibold sm:px-5">Результат</th>
-                                <th class="px-3 py-2.5 text-left font-semibold">K / D / A</th>
-                                <th class="px-3 py-2.5 text-left font-semibold">KDA</th>
-                                <th class="px-3 py-2.5 text-left font-semibold">GPM / XPM</th>
-                                <th class="px-3 py-2.5 text-left font-semibold">Длительность</th>
-                                <th class="px-4 py-2.5 text-right font-semibold sm:px-5">Дата</th>
+                                <th class="px-2 py-1 text-left font-semibold sm:px-3">Результат</th>
+                                <th class="px-2 py-1 text-left font-semibold">K / D / A</th>
+                                <th class="px-2 py-1 text-left font-semibold">KDA</th>
+                                <th class="px-2 py-1 text-left font-semibold">GPM</th>
+                                <th class="px-2 py-1 text-left font-semibold">XPM</th>
+                                <th class="px-2 py-1 text-left font-semibold">Нетворс</th>
+                                <th class="px-2 py-1 text-left font-semibold">Урон</th>
+                                <th class="px-2 py-1 text-left font-semibold">Длительность</th>
+                                <th class="px-2 py-1 text-right font-semibold sm:px-3">Дата</th>
                             </tr>
                         </thead>
                         <tbody class="table-rows">
@@ -240,10 +243,8 @@
                                 @endphp
                                 <tr
                                     @class([
-                                        'transition',
-                                        'cursor-pointer    focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-gold-400' => $matchUrl,
-                                        'bg-emerald-500/[0.055] hover:bg-emerald-500/[0.10]' => $match['win'],
-                                        'bg-rose-500/[0.055] hover:bg-rose-500/[0.10]' => ! $match['win'],
+                                        'transition odd:bg-[#1b1f2e] even:bg-[#0f111a] hover:bg-ink-700/60',
+                                        'cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-gold-400' => $matchUrl,
                                     ])
                                     @if ($matchUrl)
                                         data-href="{{ $matchUrl }}"
@@ -254,31 +255,32 @@
                                     @endif
                                 >
                                     <td @class([
-                                        'px-4 py-3 sm:px-5',
-                                        'border-l-2 border-emerald-400/70' => $match['win'],
-                                        'border-l-2 border-rose-400/70' => ! $match['win'],
+                                        'px-2 py-1 sm:px-3',
+                                        'border-l-4 border-green-500' => $match['win'],
+                                        'border-l-4 border-red-500' => ! $match['win'],
                                     ])>
                                         <span @class([
-                                            'badge !px-2 !py-0.5 !text-[9px]',
+                                            'badge !px-1.5 !py-0 !text-[9px]',
                                             'border-emerald-500/25 bg-emerald-500/10 text-emerald-300' => $match['win'],
                                             'border-rose-500/25 bg-rose-500/10 text-rose-300' => ! $match['win'],
                                         ])>
                                             {{ $match['win'] ? 'WIN' : 'LOSS' }}
                                         </span>
                                     </td>
-                                    <td class="px-3 py-3 font-mono text-[12px] tabular-nums">
+                                    <td class="px-2 py-1 font-mono text-[12px] tabular-nums">
                                         <span class="text-emerald-300">{{ $match['kills'] }}</span>
                                         <span class="text-mist-500/60">/</span>
                                         <span class="text-rose-300">{{ $match['deaths'] }}</span>
                                         <span class="text-mist-500/60">/</span>
                                         <span class="text-sky-300">{{ $match['assists'] }}</span>
                                     </td>
-                                    <td class="px-3 py-3 font-mono text-[12px] font-semibold tabular-nums text-mist-200">{{ number_format($match['kda'], 2, '.', '') }}</td>
-                                    <td class="px-3 py-3 font-mono text-[12px] tabular-nums text-mist-300">
-                                        {{ $match['gpm'] ?: '—' }} <span class="text-mist-500/60">/</span> {{ $match['xpm'] ?: '—' }}
-                                    </td>
-                                    <td class="px-3 py-3 font-mono text-[11px] text-mist-400">{{ $match['duration_label'] }}</td>
-                                    <td class="px-4 py-3 text-right text-[10px] text-mist-400 sm:px-5">
+                                    <td class="px-2 py-1 font-mono text-[12px] font-semibold tabular-nums text-mist-200">{{ number_format($match['kda'], 2, '.', '') }}</td>
+                                    <td class="px-2 py-1 font-mono text-[12px] tabular-nums text-mist-300">{{ $match['gpm'] ?: '—' }}</td>
+                                    <td class="px-2 py-1 font-mono text-[12px] tabular-nums text-mist-300">{{ $match['xpm'] ?: '—' }}</td>
+                                    <td class="px-2 py-1 font-mono text-[12px] tabular-nums text-mist-300">{{ ($match['net_worth'] ?? 0) > 0 ? number_format($match['net_worth'], 0, '.', ' ') : '—' }}</td>
+                                    <td class="px-2 py-1 font-mono text-[12px] tabular-nums text-mist-300">{{ ($match['hero_damage'] ?? 0) > 0 ? number_format($match['hero_damage'], 0, '.', ' ') : '—' }}</td>
+                                    <td class="px-2 py-1 font-mono text-[11px] text-mist-400">{{ $match['duration_label'] }}</td>
+                                    <td class="px-2 py-1 text-right text-[10px] text-mist-400 sm:px-3">
                                         @if ($match['started_at'])
                                             <time datetime="{{ $match['started_at'] }}" title="{{ \Carbon\CarbonImmutable::parse($match['started_at'])->format('d.m.Y H:i') }}">
                                                 {{ \Carbon\CarbonImmutable::parse($match['started_at'])->format('d.m.y') }}

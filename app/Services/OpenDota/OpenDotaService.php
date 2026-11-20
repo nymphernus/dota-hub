@@ -352,8 +352,8 @@ class OpenDotaService
                 continue;
             }
 
-            // Ranked games only: turbo and normal games do not move MMR.
-            if ((int) ($match['lobby_type'] ?? 0) !== 7) {
+            // Ranked game modes only: turbo and normal games do not move MMR.
+            if (! $this->isRankedMode((int) ($match['game_mode'] ?? 0))) {
                 continue;
             }
 
@@ -880,9 +880,8 @@ class OpenDotaService
             }
 
             $gameMode = (int) ($row['game_mode'] ?? 0);
-            $lobbyType = (int) ($row['lobby_type'] ?? 0);
 
-            if ($mode === 'ranked' && ($lobbyType !== 7 || $gameMode === 23)) {
+            if ($mode === 'ranked' && ! $this->isRankedMode($gameMode)) {
                 return false;
             }
 
@@ -890,7 +889,7 @@ class OpenDotaService
                 return false;
             }
 
-            if ($mode === 'normal' && ($lobbyType !== 0 || $gameMode === 23)) {
+            if ($mode === 'normal' && ($this->isRankedMode($gameMode) || $gameMode === 23)) {
                 return false;
             }
 
@@ -973,12 +972,12 @@ class OpenDotaService
         if ($rankedOnly) {
             $history = array_values(array_filter(
                 $history,
-                fn (array $match): bool => (int) ($match['lobby_type'] ?? 0) === 7,
+                fn (array $match): bool => $this->isRankedMode((int) ($match['game_mode'] ?? 0)),
             ));
         }
 
         $ttl = (int) config('stats.cache.dota_records', 86400);
-        $cacheKey = "opendota:records:v4:{$accountId}:{$scope}";
+        $cacheKey = "opendota:records:v5:{$accountId}:{$scope}";
         $fingerprint = sha1($scope.':'.implode(':', array_map(
             fn (array $match) => (string) ($match['match_id'] ?? '').'@'.(string) ($match['started_at'] ?? ($match['start_time'] ?? '')),
             $history,
@@ -1682,7 +1681,7 @@ class OpenDotaService
             'lobby_type' => $lobbyType,
             'lobby_type_label' => $this->lobbyTypeLabel($lobbyType),
             'match_type_label' => $this->matchTypeLabel($lobbyType, $gameMode),
-            'is_ranked' => $lobbyType === 7,
+            'is_ranked' => $this->isRankedMode($gameMode),
             'radiant_score' => $radiantScore,
             'dire_score' => $direScore,
             'players' => [
@@ -1904,6 +1903,11 @@ class OpenDotaService
         ];
     }
 
+    private function isRankedMode(int $gameMode): bool
+    {
+        return in_array($gameMode, [16, 22], true);
+    }
+
     private function gameModeLabel(?int $mode): ?string
     {
         return match ($mode) {
@@ -2108,7 +2112,7 @@ class OpenDotaService
                     isset($match['lobby_type']) ? (int) $match['lobby_type'] : null,
                     isset($match['game_mode']) ? (int) $match['game_mode'] : null,
                 ),
-                'is_ranked' => (int) ($match['lobby_type'] ?? 0) === 7,
+                'is_ranked' => $this->isRankedMode((int) ($match['game_mode'] ?? 0)),
                 'party_label' => $this->partyLabel($match),
                 'party_id' => isset($match['party_id']) && is_numeric($match['party_id']) ? (int) $match['party_id'] : null,
                 'party_size' => isset($match['party_size']) && is_numeric($match['party_size']) ? (int) $match['party_size'] : null,
@@ -2225,7 +2229,7 @@ class OpenDotaService
             return null;
         }
 
-        $cacheKey = "opendota:match-player:v1:{$matchId}:{$accountId}";
+        $cacheKey = "opendota:match-player:v2:{$matchId}:{$accountId}";
         $cached = Cache::get($cacheKey);
 
         if (is_array($cached)) {
@@ -2280,6 +2284,7 @@ class OpenDotaService
         $summary = [
             'level' => (int) ($player['level'] ?? 0),
             'net_worth' => (int) ($player['net_worth'] ?? 0),
+            'hero_damage' => (int) ($player['hero_damage'] ?? 0),
             'gold_per_min' => (int) ($player['gold_per_min'] ?? 0),
             'xp_per_min' => (int) ($player['xp_per_min'] ?? 0),
             'item_0' => (int) ($player['item_0'] ?? 0),
@@ -2341,6 +2346,10 @@ class OpenDotaService
 
             if ($details['net_worth'] > 0) {
                 $matches[$index]['net_worth'] = $details['net_worth'];
+            }
+
+            if ($details['hero_damage'] > 0) {
+                $matches[$index]['hero_damage'] = $details['hero_damage'];
             }
         }
 
@@ -2409,7 +2418,7 @@ class OpenDotaService
                     isset($match['lobby_type']) ? (int) $match['lobby_type'] : null,
                     isset($match['game_mode']) ? (int) $match['game_mode'] : null,
                 ),
-                'is_ranked' => (int) ($match['lobby_type'] ?? 0) === 7,
+                'is_ranked' => $this->isRankedMode((int) ($match['game_mode'] ?? 0)),
                 'party_label' => $this->partyLabel($match),
                 'party_id' => isset($match['party_id']) && is_numeric($match['party_id']) ? (int) $match['party_id'] : null,
                 'party_size' => isset($match['party_size']) && is_numeric($match['party_size']) ? (int) $match['party_size'] : null,

@@ -1,5 +1,6 @@
 @php
     $wheelHeroes = [];
+    $playerId = (int) ($playerId ?? 0);
 
     foreach (($heroes ?? []) as $hero) {
         $games = max(0, (int) ($hero['games'] ?? 0));
@@ -11,6 +12,7 @@
         $wins = max(0, (int) ($hero['win'] ?? $hero['wins'] ?? 0));
 
         $wheelHeroes[] = [
+            'hero_id' => (int) ($hero['hero_id'] ?? $hero['id'] ?? 0),
             'name' => $hero['name'] ?? 'Герой',
             'icon' => $hero['icon'] ?? ($hero['image'] ?? ''),
             'games' => $games,
@@ -66,6 +68,7 @@
 
         $sectors[] = [
             'index' => $index,
+            'hero_id' => $hero['hero_id'],
             'name' => $hero['name'],
             'icon' => $hero['icon'],
             'games' => $hero['games'],
@@ -97,28 +100,36 @@
         <circle cx="120" cy="120" r="112" fill="#0f111a" />
 
         @foreach ($sectors as $sector)
-            <g class="hero-wheel__slice" tabindex="0" role="img" aria-label="{{ $sector['name'] }}: {{ $sector['games'] }} игр, {{ $sector['winrate'] }}% побед">
-                <title>{{ $sector['name'] }}: {{ $sector['games'] }} игр, {{ $sector['winrate'] }}% побед</title>
-                <path
-                    class="hero-wheel__sector"
-                    d="{{ $sector['path'] }}"
-                    fill="#1b1f2e"
-                    stroke="#2a3042"
-                    stroke-width="1.5"
-                />
-                @if ($sector['icon'] !== '')
-                    <image
-                        class="hero-wheel__icon"
-                        x="{{ $sector['x'] }}"
-                        y="{{ $sector['y'] }}"
-                        width="{{ $sector['size'] }}"
-                        height="{{ $sector['size'] }}"
-                        href="{{ $sector['icon'] }}"
-                        xlink:href="{{ $sector['icon'] }}"
-                        preserveAspectRatio="xMidYMid slice"
+            <a
+                href="{{ route('dota.player.hero', [$playerId, $sector['hero_id']]) }}"
+                class="cursor-pointer hover:opacity-80"
+                tabindex="0"
+                role="link"
+                aria-label="{{ $sector['name'] }}: {{ $sector['games'] }} игр, {{ $sector['winrate'] }}% побед"
+            >
+                <g class="hero-wheel__slice" role="img" aria-label="{{ $sector['name'] }}: {{ $sector['games'] }} игр, {{ $sector['winrate'] }}% побед">
+                    <title>{{ $sector['name'] }}: {{ $sector['games'] }} игр, {{ $sector['winrate'] }}% побед</title>
+                    <path
+                        class="hero-wheel__sector"
+                        d="{{ $sector['path'] }}"
+                        fill="#1b1f2e"
+                        stroke="#2a3042"
+                        stroke-width="1.5"
                     />
-                @endif
-            </g>
+                    @if ($sector['icon'] !== '')
+                        <image
+                            class="hero-wheel__icon"
+                            x="{{ $sector['x'] }}"
+                            y="{{ $sector['y'] }}"
+                            width="{{ $sector['size'] }}"
+                            height="{{ $sector['size'] }}"
+                            href="{{ $sector['icon'] }}"
+                            xlink:href="{{ $sector['icon'] }}"
+                            preserveAspectRatio="xMidYMid slice"
+                        />
+                    @endif
+                </g>
+            </a>
         @endforeach
 
         <circle class="hero-wheel__hub" cx="120" cy="120" r="45" fill="#1b1f2e" stroke="#2a3042" stroke-width="1" />

@@ -41,6 +41,10 @@ class DotaHeroTest extends TestCase
         $response->assertSee('Бенчмарки');
         $response->assertSee('GPM');
         $response->assertSee('XPM');
+        $response->assertSee('Нетворс');
+        $response->assertSee('Урон');
+        $response->assertSee('28 000');
+        $response->assertSee('21 500');
         $response->assertSee('KDA');
         $response->assertSee('Топ 10%');
         $response->assertSee(route('dota.player', ['accountId' => self::ACCOUNT_ID]), false);
@@ -82,7 +86,9 @@ class DotaHeroTest extends TestCase
         $response->assertViewHas('matches', fn (array $matches) => count($matches) === 3
             && $matches[0]['win'] === true
             && $matches[1]['win'] === false
-            && $matches[0]['gpm'] === 650);
+            && $matches[0]['gpm'] === 650
+            && $matches[2]['net_worth'] === 28000
+            && $matches[2]['hero_damage'] === 21500);
 
         $this->assertTrue(Cache::has('opendota:player-header:v1:'.self::ACCOUNT_ID));
         $this->assertTrue(Cache::has('opendota:player-hero:v2:'.self::ACCOUNT_ID.':'.self::HERO_ID));
@@ -159,6 +165,8 @@ class DotaHeroTest extends TestCase
                     'assists' => 15,
                     'gold_per_min' => 650,
                     'xp_per_min' => 700,
+                    'net_worth' => 31200,
+                    'hero_damage' => 24500,
                     'duration' => 2400,
                     'start_time' => now()->subDays(1)->timestamp,
                 ],
@@ -195,6 +203,7 @@ class DotaHeroTest extends TestCase
                         'hero_id' => self::HERO_ID,
                         'level' => 25,
                         'net_worth' => 28000,
+                        'hero_damage' => 21500,
                         'gold_per_min' => 700,
                         'xp_per_min' => 800,
                     ],

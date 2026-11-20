@@ -95,6 +95,27 @@
                                 </svg>
                             </a>
                         @endif
+                        <form
+                            method="POST"
+                            action="{{ route('dota.player.refresh', ['accountId' => $player['account_id']]) }}"
+                            x-data="{ loading: false }"
+                            @submit="loading = true"
+                            @pageshow.window="loading = false"
+                        >
+                            @csrf
+                            <button
+                                type="submit"
+                                class="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-line bg-ink-900/40 text-mist-400 transition hover:text-mist-200 disabled:opacity-60"
+                                :disabled="loading"
+                                aria-label="Обновить"
+                                title="Обновить"
+                            >
+                                <svg :class="loading ? 'animate-spin' : ''" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                                    <path d="M20 11a8 8 0 1 0-2.3 6.3" stroke-linecap="round" />
+                                    <path d="M20 4v7h-7" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            </button>
+                        </form>
                         @if ($nameHistory !== [])
                             <div class="relative">
                                 <button type="button" @click="open = !open" class="grid h-7 w-7 place-items-center rounded-lg border border-line bg-ink-900/40 text-mist-400 transition hover:text-mist-200" :aria-expanded="open.toString()" aria-label="История никнеймов">
@@ -130,18 +151,6 @@
                 </div>
             </div>
 
-            <div class="flex shrink-0 flex-wrap items-center gap-2">
-                <form method="POST" action="{{ route('dota.player.refresh', ['accountId' => $player['account_id']]) }}" x-data="{ loading: false }" @submit="loading = true" @pageshow.window="loading = false">
-                    @csrf
-                    <button type="submit" class="btn-ghost !py-2" :disabled="loading">
-                        <svg :class="loading ? 'animate-spin' : ''" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                            <path d="M20 11a8 8 0 1 0-2.3 6.3" stroke-linecap="round" />
-                            <path d="M20 4v7h-7" stroke-linecap="round" stroke-linejoin="round" />
-                        </svg>
-                        <span x-text="loading ? 'Обновляем…' : 'Обновить'">Обновить</span>
-                    </button>
-                </form>
-            </div>
         </div>
     </div>
 </section>

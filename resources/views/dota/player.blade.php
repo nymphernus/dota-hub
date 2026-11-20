@@ -94,7 +94,7 @@
                         <span class="badge border-line bg-ink-900/50 text-mist-400" aria-label="Матчей в колесе: {{ $heroUsageTotal }}">{{ $heroUsageTotal }}</span>
                     </div>
 
-                    @include('dota.partials.hero-wheel', ['heroes' => $heroUsage])
+                    @include('dota.partials.hero-wheel', ['heroes' => $heroUsage, 'playerId' => $player['account_id']])
                 </section>
 
                 <section class="card p-4">

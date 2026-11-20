@@ -24,6 +24,9 @@ class UiAssetsTest extends TestCase
         $this->assertStringContainsString('% побед</title>', $source);
         $this->assertStringContainsString("{{ \$sector['name'] }}: {{ \$sector['games'] }} игр", $source);
         $this->assertStringContainsString("{{ \$sector['winrate'] }}% побед", $source);
+        $this->assertStringContainsString('<a', $source);
+        $this->assertStringContainsString('href="{{ route(\'dota.player.hero\', [$playerId, $sector[\'hero_id\']]) }}"', $source);
+        $this->assertStringContainsString('cursor-pointer hover:opacity-80', $source);
 
         // The icon lives in the same group as the sector, and the group itself
         // is transformed so both move together on hover.
@@ -68,7 +71,7 @@ class UiAssetsTest extends TestCase
         $this->assertStringNotContainsString('chart.js', $source);
     }
 
-    public function test_assets_use_dotabuff_palette_inter_and_text_logo(): void
+    public function test_assets_use_dotabuff_palette_inter_and_red_square_logo(): void
     {
         $css = (string) file_get_contents(resource_path('css/app.css'));
         $layout = (string) file_get_contents(resource_path('views/layouts/app.blade.php'));
@@ -98,10 +101,9 @@ class UiAssetsTest extends TestCase
 
         $this->assertStringContainsString('fonts.googleapis.com/css2?family=Inter', $layout);
         $this->assertStringContainsString('border-b border-[#2a3042] bg-[#1b1f2e]/90 backdrop-blur-md', $layout);
-        $this->assertStringContainsString('bg-[#1b1f2e] border border-[#2a3042] px-3 py-1.5 rounded-md flex items-center gap-2', $layout);
-        $this->assertStringContainsString('font-sans font-bold text-xl tracking-tighter text-white">dotahub</span>', $layout);
-        $this->assertStringNotContainsString('>DotaHub</span>', $layout);
-        $this->assertStringNotContainsString('>DotaHub</p>', $layout);
+        $this->assertStringContainsString('bg-[#d32f2f] px-2 py-1 text-white font-black uppercase text-xl tracking-tighter leading-none rounded-sm', $layout);
+        $this->assertStringContainsString('>DOTAHUB</a>', $layout);
+        $this->assertStringNotContainsString('>dotahub</span>', $layout);
         $this->assertStringNotContainsString('text-gold-400', $layout);
         $this->assertStringNotContainsString('>Dota 2</', $layout);
         $this->assertStringNotContainsString('uppercase tracking-[0.2em] text-mist-500 sm:block', $layout);

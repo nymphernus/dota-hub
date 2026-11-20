@@ -20,9 +20,7 @@
 <body class="flex min-h-screen flex-col">
     <header class="sticky top-0 z-40 border-b border-[#2a3042] bg-[#1b1f2e]/90 backdrop-blur-md">
         <div class="mx-auto flex h-16 w-full max-w-7xl items-center px-4 sm:px-6 lg:px-8">
-            <a href="{{ route('home') }}" class="bg-[#1b1f2e] border border-[#2a3042] px-3 py-1.5 rounded-md flex items-center gap-2" aria-label="dotahub — на главную">
-                <span class="font-sans font-bold text-xl tracking-tighter text-white">dotahub</span>
-            </a>
+            <a href="/" class="bg-[#d32f2f] px-2 py-1 text-white font-black uppercase text-xl tracking-tighter leading-none rounded-sm" aria-label="DOTAHUB — на главную">DOTAHUB</a>
 
             <div class="ml-auto flex items-center gap-2 sm:gap-3">
                 <form

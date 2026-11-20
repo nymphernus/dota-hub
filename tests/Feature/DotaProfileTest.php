@@ -581,6 +581,7 @@ class DotaProfileTest extends TestCase
             $matches[] = [
                 'start_time' => 1700000000 - $index,
                 'lobby_type' => 7,
+                'game_mode' => 22,
                 'radiant_win' => true,
                 'player_slot' => $index < 10 ? 0 : 128,
             ];
