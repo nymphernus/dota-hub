@@ -1,39 +1,7 @@
 import Alpine from 'alpinejs';
+import './hero-wheel';
 
 window.Alpine = Alpine;
-
-Alpine.data('heroWheel', () => ({
-    sectors: [],
-    overallWinrate: 0,
-    heroUrlTemplate: '',
-
-    init() {
-        const sectorsNode = document.getElementById('hero-wheel-sectors-data');
-        const config = document.getElementById('hero-wheel-data');
-
-        if (sectorsNode) {
-            try {
-                const value = JSON.parse(sectorsNode.textContent);
-                this.sectors = Array.isArray(value) ? value : [];
-            } catch {
-                this.sectors = [];
-            }
-        }
-
-        if (config) {
-            this.heroUrlTemplate = config.dataset.urlTemplate || '';
-            this.overallWinrate = Number(config.dataset.overallWinrate) || 0;
-        }
-    },
-
-    get centerWinrate() {
-        return `${Math.round(this.overallWinrate)}%`;
-    },
-
-    sectorUrl(heroId) {
-        return this.heroUrlTemplate.replace('__HERO__', String(heroId));
-    },
-}));
 
 /**
  * Outline/filled star beside the player nickname. Toggling stays on the page:
