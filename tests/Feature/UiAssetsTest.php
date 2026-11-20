@@ -26,7 +26,7 @@ class UiAssetsTest extends TestCase
         $this->assertStringContainsString("{{ \$sector['winrate'] }}% побед", $source);
         $this->assertStringContainsString('<a', $source);
         $this->assertStringContainsString('href="{{ route(\'dota.player.hero\', [$playerId, $sector[\'hero_id\']]) }}"', $source);
-        $this->assertStringContainsString('cursor-pointer hover:opacity-80', $source);
+        $this->assertStringContainsString('cursor-pointer hover:opacity-80 focus:outline-none outline-none ring-0', $source);
 
         // The icon lives in the same group as the sector, and the group itself
         // is transformed so both move together on hover.
@@ -83,7 +83,8 @@ class UiAssetsTest extends TestCase
         $this->assertStringContainsString('--color-line: #2d313e', $css);
         $this->assertStringContainsString('--color-mist-200: #d1d5db', $css);
         $this->assertStringContainsString('--color-mist-400: #8b94a5', $css);
-        $this->assertStringContainsString('--color-gold-400: #e2b02b', $css);
+        $this->assertStringNotContainsString('--color-gold-', $css);
+        $this->assertStringNotContainsString('#e2b02b', $css);
         $this->assertStringContainsString('--color-accent-400: #3b82f6', $css);
         $this->assertStringContainsString('--color-win: #10b981', $css);
         $this->assertStringContainsString('--color-loss: #ef4444', $css);
@@ -103,10 +104,16 @@ class UiAssetsTest extends TestCase
 
         $this->assertStringContainsString('fonts.googleapis.com/css2?family=Inter', $layout);
         $this->assertStringContainsString('border-b border-[#2d313e] bg-[#111318]/90 backdrop-blur-md', $layout);
-        $this->assertStringContainsString('bg-[#d32f2f] px-2 py-1 text-white font-black uppercase text-xl tracking-tighter leading-none rounded-sm', $layout);
+        $this->assertStringContainsString('bg-[#d32f2f] px-2 py-1 text-2xl font-normal uppercase leading-none tracking-tighter text-white', $layout);
         $this->assertStringContainsString('>DOTAHUB</a>', $layout);
+        $this->assertStringNotContainsString('font-black', $layout);
+        $this->assertStringNotContainsString('rounded-sm', $layout);
         $this->assertStringNotContainsString('>dotahub</span>', $layout);
-        $this->assertStringNotContainsString('text-gold-400', $layout);
+        $this->assertStringNotContainsString('gold-', $layout);
+        $this->assertStringContainsString('rel="icon" type="image/x-icon" href="{{ asset(\'favicon.ico\') }}"', $layout);
+        $this->assertStringContainsString('>DotaHub</p>', $layout);
+        $this->assertFileExists(public_path('favicon.ico'));
+        $this->assertSame("\x00\x00", substr((string) file_get_contents(public_path('favicon.ico')), 0, 2));
         $this->assertStringNotContainsString('>Dota 2</', $layout);
         $this->assertStringNotContainsString('uppercase tracking-[0.2em] text-mist-500 sm:block', $layout);
         $this->assertStringContainsString('content="#111318"', $layout);
@@ -133,7 +140,14 @@ class UiAssetsTest extends TestCase
             $source = (string) file_get_contents($file);
 
             $this->assertDoesNotMatchRegularExpression('/\brounded-(xl|2xl|3xl|full)\b/', $source, $file);
-            $this->assertDoesNotMatchRegularExpression('/\b(?:[a-z-]+:)*(?:shadow|ring)(?:-[^\s"\']+)?/', $source, $file);
+            $this->assertDoesNotMatchRegularExpression('/\b(?:[a-z-]+:)*shadow(?:-[^\s"\']+)?\b/', $source, $file);
+
+            preg_match_all('/\b(?:[a-z-]+:)*ring(?:-[^\s"\']+)?\b/', $source, $ringMatches);
+
+            foreach ($ringMatches[0] as $ring) {
+                $this->assertContains($ring, ['ring-0'], $file);
+            }
+
             $this->assertDoesNotMatchRegularExpression('/\bborder-white(?:\/|\b)/', $source, $file);
             $this->assertStringNotContainsString('blur-3xl', $source, $file);
             $this->assertStringNotContainsString('bg-gradient', $source, $file);
@@ -183,6 +197,38 @@ class UiAssetsTest extends TestCase
         $this->assertLessThan($lifetime, $wheel);
         $this->assertLessThan($activity, $lifetime);
         $this->assertLessThan($allies, $activity);
+    }
+
+    public function test_no_gold_accents_remain_in_assets(): void
+    {
+        $files = [
+            resource_path('css/app.css'),
+            resource_path('js/heatmap.js'),
+        ];
+        $files = array_merge(
+            $files,
+            glob(resource_path('views/*/*.blade.php')),
+            glob(resource_path('views/*.blade.php')),
+            glob(resource_path('views/components/*.blade.php')),
+            glob(resource_path('views/errors/*.blade.php')),
+            glob(resource_path('views/dota/partials/*.blade.php')),
+            glob(resource_path('views/vendor/pagination/*.blade.php')),
+        );
+
+        foreach ($files as $file) {
+            $source = (string) file_get_contents($file);
+
+            $this->assertStringNotContainsString('#e2b02b', $source, $file);
+            $this->assertStringNotContainsString('gold-', $source, $file);
+        }
+
+        $css = (string) file_get_contents(resource_path('css/app.css'));
+        $javascript = (string) file_get_contents(resource_path('js/heatmap.js'));
+
+        $this->assertStringNotContainsString('--color-gold-', $css);
+        $this->assertStringNotContainsString('bg-amber-', $javascript);
+        $this->assertStringNotContainsString('bg-orange-', $javascript);
+        $this->assertStringNotContainsString('bg-yellow-', $javascript);
     }
 
     public function test_heatmap_days_link_to_the_dated_matches_page(): void

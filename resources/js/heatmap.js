@@ -18,9 +18,9 @@ if (heatmapPayload && heatmapRoot) {
         empty: 'bg-ink-900/40    text-transparent',
         win: 'bg-emerald-500    text-emerald-950',
         loss: 'bg-rose-500    text-rose-950',
-        loss_majority: 'bg-orange-500    text-orange-950',
-        win_majority: 'bg-yellow-400    text-yellow-950',
-        mixed: 'bg-amber-400    text-amber-950',
+        loss_majority: 'bg-accent-500    text-ink-950',
+        win_majority: 'bg-mist-400    text-ink-950',
+        mixed: 'bg-accent-400    text-ink-950',
     };
     const DAY_MS = 86400000;
 

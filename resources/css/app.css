@@ -18,13 +18,6 @@
     --color-mist-500: #6b7280;
     --color-mist-600: #6b7280;
 
-    --color-gold-100: #fdf3d3;
-    --color-gold-200: #f7e3a1;
-    --color-gold-300: #f0c94f;
-    --color-gold-400: #e2b02b;
-    --color-gold-500: #c8951e;
-    --color-gold-600: #a67814;
-
     --color-accent-300: #7db3ff;
     --color-accent-400: #3b82f6;
     --color-accent-500: #2563eb;
@@ -52,12 +45,14 @@
     --color-sky-300: #3b82f6;
     --color-sky-400: #3b82f6;
     --color-sky-500: #3b82f6;
-    --color-amber-300: #e2b02b;
-    --color-amber-400: #e2b02b;
-    --color-amber-500: #e2b02b;
-    --color-orange-300: #e2b02b;
-    --color-orange-400: #e2b02b;
-    --color-orange-500: #e2b02b;
+    --color-amber-300: #8b94a5;
+    --color-amber-400: #3b82f6;
+    --color-amber-500: #3b82f6;
+    --color-orange-300: #8b94a5;
+    --color-orange-400: #3b82f6;
+    --color-orange-500: #3b82f6;
+    --color-yellow-400: #8b94a5;
+    --color-yellow-950: #0b0d11;
     --color-slate-300: #d1d5db;
     --color-slate-400: #8b94a5;
     --color-slate-500: #6b7280;
@@ -100,7 +95,7 @@
     }
 
     :where(a, button, [tabindex]):focus-visible {
-        outline: 2px solid #e2b02b;
+        outline: 2px solid #3b82f6;
         outline-offset: 2px;
     }
 
@@ -109,7 +104,7 @@
     }
 
     ::selection {
-        @apply bg-gold-400/30 text-mist-200;
+        @apply bg-accent-400/30 text-mist-200;
     }
 
     ::-webkit-scrollbar {
@@ -166,7 +161,7 @@
     }
 
     .btn-primary {
-        @apply inline-flex items-center justify-center gap-2 rounded-none border border-gold-500 px-4 py-2.5 text-sm font-semibold text-ink-950 transition duration-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 bg-gold-400 hover:bg-gold-300 active:bg-gold-500;
+        @apply inline-flex items-center justify-center gap-2 rounded-none border border-accent-500 px-4 py-2.5 text-sm font-semibold text-white transition duration-200 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 bg-accent-400 hover:bg-accent-300 active:bg-accent-500;
     }
 
     .btn-ghost {
@@ -188,6 +183,10 @@
     .hero-wheel__slice:hover,
     .hero-wheel__slice:focus-visible {
         transform: scale(1.05);
+    }
+
+    .hero-wheel a:focus-visible {
+        outline: none;
     }
 
     .hero-wheel__icon,
@@ -224,6 +223,6 @@
     }
 
     .tab-button-active {
-        @apply bg-gold-400/10 text-gold-200;
+        @apply bg-accent-400/10 text-accent-300;
     }
 }

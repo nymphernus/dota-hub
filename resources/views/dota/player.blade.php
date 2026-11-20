@@ -11,11 +11,11 @@
 
 @section('profile-content')
         @if ($player['is_private'])
-            <div class="mt-4 flex items-start gap-3 border border-amber-500/25 bg-amber-500/[0.08] p-3 text-sm text-amber-100">
-                <svg class="mt-0.5 h-5 w-5 shrink-0 text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2" /><path d="M8 10V7a4 4 0 018 0v3" stroke-linecap="round" /></svg>
+            <div class="mt-4 flex items-start gap-3 border border-accent-500/25 bg-accent-500/[0.08] p-3 text-sm text-accent-300">
+                <svg class="mt-0.5 h-5 w-5 shrink-0 text-accent-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2" /><path d="M8 10V7a4 4 0 018 0v3" stroke-linecap="round" /></svg>
                 <div>
                     <p class="font-semibold">Профиль игрока скрыт. Данные недоступны.</p>
-                    <p class="mt-1 text-xs leading-relaxed text-amber-100/70">Это может быть чужой аккаунт с закрытыми матчами или профиль ещё не проиндексирован.</p>
+                    <p class="mt-1 text-xs leading-relaxed text-accent-300/70">Это может быть чужой аккаунт с закрытыми матчами или профиль ещё не проиндексирован.</p>
                 </div>
             </div>
         @endif
@@ -64,7 +64,7 @@
                         <div class="grid gap-2 p-3 sm:grid-cols-2">
                             @foreach ($topHeroes as $index => $hero)
                                 @php $heroUrl = route('dota.player.hero', ['accountId' => $player['account_id'], 'heroId' => $hero['hero_id']]); @endphp
-                                <a href="{{ $heroUrl }}" class="group flex items-center gap-2 border border-line bg-ink-900/30 p-1.5 transition hover:border-gold-500/30 hover:bg-gold-500/[0.06]">
+                                <a href="{{ $heroUrl }}" class="group flex items-center gap-2 border border-line bg-ink-900/30 p-1.5 transition hover:border-accent-500/30 hover:bg-accent-500/[0.06]">
                                     <span class="w-4 text-center font-mono text-[10px] text-mist-500">{{ $index + 1 }}</span>
                                     <span class="h-8 w-14 shrink-0 overflow-hidden bg-ink-800">
                                         @if ($hero['image'])
@@ -72,7 +72,7 @@
                                         @endif
                                     </span>
                                     <span class="min-w-0 flex-1">
-                                        <span class="block truncate text-[12px] font-bold text-mist-200 transition group-hover:text-gold-200">{{ $hero['name'] }}</span>
+                                        <span class="block truncate text-[12px] font-bold text-mist-200 transition group-hover:text-accent-300">{{ $hero['name'] }}</span>
                                         <span class="block text-[10px] text-mist-500">{{ $hero['games'] }} игр</span>
                                     </span>
                                     <span class="font-mono text-[12px] font-bold {{ ($hero['winrate'] ?? 0) >= 50 ? 'text-emerald-300' : 'text-rose-300' }}">
@@ -185,14 +185,14 @@
                     @else
                         <div class="mt-2 space-y-1.5">
                             @foreach ($topPeers as $peer)
-                                <a href="{{ route('dota.player', ['accountId' => $peer['account_id']]) }}" class="group flex items-center gap-2 border border-line bg-ink-900/30 p-1.5 transition hover:border-gold-500/30 hover:bg-gold-500/[0.06]">
+                                <a href="{{ route('dota.player', ['accountId' => $peer['account_id']]) }}" class="group flex items-center gap-2 border border-line bg-ink-900/30 p-1.5 transition hover:border-accent-500/30 hover:bg-accent-500/[0.06]">
                                     <span class="h-7 w-7 shrink-0 overflow-hidden bg-ink-800">
                                         @if ($peer['avatar'])
                                             <img src="{{ $peer['avatar'] }}" alt="{{ $peer['nickname'] }}" class="h-full w-full object-cover" loading="lazy">
                                         @endif
                                     </span>
                                     <span class="min-w-0 flex-1">
-                                        <span class="block truncate text-[11px] font-bold text-mist-200 transition group-hover:text-gold-200">{{ $peer['nickname'] }}</span>
+                                        <span class="block truncate text-[11px] font-bold text-mist-200 transition group-hover:text-accent-300">{{ $peer['nickname'] }}</span>
                                         <span class="block text-[9px] text-mist-500">{{ $peer['games'] }} совм. игр · {{ $peer['winrate'] !== null ? number_format($peer['winrate'], 1, '.', '').'%' : '—' }}</span>
                                     </span>
                                 </a>

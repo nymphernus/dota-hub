@@ -60,12 +60,5 @@
                 <span>{{ $message }}</span>
             </div>
         @enderror
-
-        <div class="mt-4 flex flex-wrap items-center gap-2 text-[11px] text-mist-500">
-            <span class="uppercase tracking-wider">Например:</span>
-            <button type="button" @click="pick('Dendi')" class="rounded-none border border-line bg-ink-900/30 px-2.5 py-1 font-medium text-mist-300 transition hover:border-gold-500/30 hover:text-gold-200">Dendi</button>
-            <button type="button" @click="pick('70388657')" class="rounded-none border border-line bg-ink-900/30 px-2.5 py-1 font-mono font-medium text-mist-300 transition hover:border-gold-500/30 hover:text-gold-200">70388657</button>
-            <button type="button" @click="pick('https://steamcommunity.com/profiles/76561198030654385')" class="rounded-none border border-line bg-ink-900/30 px-2.5 py-1 font-medium text-mist-300 transition hover:border-gold-500/30 hover:text-gold-200">Ссылка на Steam</button>
-        </div>
     </form>
 </div>

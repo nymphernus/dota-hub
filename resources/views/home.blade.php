@@ -24,7 +24,7 @@
                             </span>
                             <span class="min-w-0">
                                 <span class="block text-[11px] font-semibold uppercase tracking-[0.18em] text-mist-500">Дашборд</span>
-                                <span class="mt-1 block truncate text-2xl font-semibold text-mist-200 transition group-hover:text-gold-200">
+                                <span class="mt-1 block truncate text-2xl font-semibold text-mist-200 transition group-hover:text-accent-300">
                                     С возвращением, {{ $dashboard['nickname'] }}
                                 </span>
                                 <span class="mt-1 block text-xs text-mist-400">
@@ -43,9 +43,9 @@
                                     {{ $dashboard['mmr_is_estimated'] ? 'Оценка' : 'Открыт' }}
                                 </p>
                             </div>
-                            <a href="{{ route('dota.player', ['accountId' => $dashboard['account_id']]) }}" class="group grid place-items-center rounded-none bg-gold-500/10 px-4 py-3 text-center transition hover:bg-gold-500/[0.16]">
-                                <span class="text-xs font-bold text-gold-200">Мой профиль</span>
-                                <span class="mt-1 text-[10px] text-mist-400 transition group-hover:text-gold-100">Открыть →</span>
+                            <a href="{{ route('dota.player', ['accountId' => $dashboard['account_id']]) }}" class="group grid place-items-center rounded-none bg-accent-500/10 px-4 py-3 text-center transition hover:bg-accent-500/[0.16]">
+                                <span class="text-xs font-bold text-accent-300">Мой профиль</span>
+                                <span class="mt-1 text-[10px] text-mist-400 transition group-hover:text-accent-300">Открыть →</span>
                             </a>
                         </div>
                     </div>
@@ -53,7 +53,7 @@
                     <div class="mt-6">
                         <div class="flex flex-wrap items-center justify-between gap-2">
                             <h2 class="section-heading">Последние матчи</h2>
-                            <a href="{{ route('dota.player', ['accountId' => $dashboard['account_id']]) }}" class="text-[11px] font-semibold text-mist-400 transition hover:text-gold-200">
+                            <a href="{{ route('dota.player', ['accountId' => $dashboard['account_id']]) }}" class="text-[11px] font-semibold text-mist-400 transition hover:text-accent-300">
                                 Все матчи
                             </a>
                         </div>
@@ -117,9 +117,6 @@
                     DotaHub
                 </h1>
 
-                <p class="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-mist-400 sm:text-base">
-                    Статистика игроков Dota 2 — профиль, матчи и герои в одном поиске.
-                </p>
             </div>
 
             <div id="search" class="mx-auto w-full max-w-3xl px-4 pb-16 sm:px-6 lg:px-8">

@@ -6,7 +6,7 @@
     <div class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         @foreach ($records as $record)
             <article class="card relative overflow-hidden p-4">
-                <span class="absolute inset-y-0 left-0 w-0.5 bg-gold-400/70" aria-hidden="true"></span>
+                <span class="absolute inset-y-0 left-0 w-0.5 bg-accent-400/70" aria-hidden="true"></span>
                 <div class="flex items-start justify-between gap-3">
                     <div class="min-w-0">
                         <p class="label uppercase tracking-[0.14em] text-mist-500">{{ $record['label'] }}</p>
@@ -27,7 +27,7 @@
                         <span>{{ \Carbon\CarbonImmutable::parse($record['played_at'])->format('d.m.Y') }}</span>
                     @endif
                     @if ($record['match_id'])
-                        <a href="{{ route('dota.match', ['matchId' => $record['match_id']]) }}" class="transition hover:text-gold-300">
+                        <a href="{{ route('dota.match', ['matchId' => $record['match_id']]) }}" class="transition hover:text-accent-300">
                             Матч #{{ $record['match_id'] }}
                         </a>
                     @endif

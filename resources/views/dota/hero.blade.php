@@ -17,14 +17,14 @@
             'marker' => 'bg-sky-300 ',
         ],
         'amber' => [
-            'badge' => 'border-amber-500/25 bg-amber-500/10 text-amber-300',
-            'text' => 'text-amber-300',
-            'marker' => 'bg-amber-300 ',
+            'badge' => 'border-accent-500/25 bg-accent-500/10 text-accent-300',
+            'text' => 'text-accent-300',
+            'marker' => 'bg-accent-300 ',
         ],
         'orange' => [
-            'badge' => 'border-orange-500/25 bg-orange-500/10 text-orange-300',
-            'text' => 'text-orange-300',
-            'marker' => 'bg-orange-300 ',
+            'badge' => 'border-accent-500/25 bg-accent-500/10 text-accent-300',
+            'text' => 'text-accent-300',
+            'marker' => 'bg-accent-300 ',
         ],
         'rose' => [
             'badge' => 'border-rose-500/25 bg-rose-500/10 text-rose-300',
@@ -124,7 +124,7 @@
                         Перцентили OpenDota по последним матчам. Чем правее маркер, тем сильнее показатель относительно других игроков.
                     </p>
                 </div>
-                <span class="badge border-gold-500/25 bg-gold-500/10 text-gold-300">Dota Plus style</span>
+                <span class="badge border-accent-500/25 bg-accent-500/10 text-accent-300">Dota Plus style</span>
             </div>
 
             @if (collect($benchmarks)->every(fn (array $benchmark) => ! $benchmark['available']))
@@ -213,7 +213,7 @@
             @if ($matches === [])
                 <div class="p-10 text-center">
                     <p class="text-sm text-mist-400">У игрока нет публичных матчей на этом герое.</p>
-                    <a href="{{ $backUrl }}" class="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-gold-300 transition hover:text-gold-200">
+                    <a href="{{ $backUrl }}" class="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-accent-300 transition hover:text-accent-300">
                         Вернуться в профиль
                         <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke-linecap="round" /></svg>
                     </a>
@@ -244,7 +244,7 @@
                                 <tr
                                     @class([
                                         'transition odd:bg-[#1c1e26] even:bg-[#111318] hover:bg-ink-700/60',
-                                        'cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-gold-400' => $matchUrl,
+                                        'cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent-400' => $matchUrl,
                                     ])
                                     @if ($matchUrl)
                                         data-href="{{ $matchUrl }}"

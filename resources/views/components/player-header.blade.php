@@ -25,7 +25,7 @@
     };
     $dotaTone = $dotaPublic
         ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300'
-        : 'border-amber-500/25 bg-amber-500/10 text-amber-300';
+        : 'border-accent-500/25 bg-accent-500/10 text-accent-300';
 @endphp
 
 <section class="card relative overflow-hidden">
@@ -71,7 +71,7 @@
                                 })"
                                 @click="toggle"
                                 :disabled="loading"
-                                :class="active ? 'border-amber-400/40 bg-amber-400/10 text-amber-300' : 'border-line bg-ink-900/40 text-mist-400 hover:border-amber-400/30 hover:text-amber-200'"
+                                :class="active ? 'border-accent-400/40 bg-accent-400/10 text-accent-300' : 'border-line bg-ink-900/40 text-mist-400 hover:border-accent-400/30 hover:text-accent-300'"
                                 class="grid h-8 w-8 shrink-0 place-items-center rounded-none border transition disabled:opacity-60"
                                 :aria-label="active ? 'Удалить из избранного' : 'Добавить в избранное'"
                                 :aria-pressed="active.toString()"
@@ -85,7 +85,7 @@
                         @else
                             <a
                                 href="{{ route('auth.steam', ['intended' => url()->current()]) }}"
-                                class="grid h-8 w-8 shrink-0 place-items-center rounded-none border border-line bg-ink-900/40 text-mist-400 transition hover:border-amber-400/30 hover:text-amber-200"
+                                class="grid h-8 w-8 shrink-0 place-items-center rounded-none border border-line bg-ink-900/40 text-mist-400 transition hover:border-accent-400/30 hover:text-accent-300"
                                 aria-label="Добавить в избранное"
                                 title="Добавить в избранное"
                                 data-favorite-star
@@ -142,7 +142,7 @@
                         @if ($steamProfile['account_created_at'] ?? null)
                             <span>Регистрация {{ \Carbon\CarbonImmutable::parse($steamProfile['account_created_at'])->format('d.m.Y') }}</span>
                         @endif
-                        <a href="{{ $player['profile_url'] ?: 'https://steamcommunity.com/profiles/'.$player['steam_id'] }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 transition hover:text-gold-300">
+                        <a href="{{ $player['profile_url'] ?: 'https://steamcommunity.com/profiles/'.$player['steam_id'] }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 transition hover:text-accent-300">
                             Steam
                             <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 5h5v5M19 5l-8 8M10 5H5v14h14v-5" stroke-linecap="round" stroke-linejoin="round" /></svg>
                         </a>
@@ -160,9 +160,9 @@
     <span @class(['badge', $steamTone])>Steam: {{ $steamProfile['visibility'] ?? 'Неизвестно' }}</span>
     <span @class(['badge', $dotaTone])>Dota: {{ $dotaPublic ? 'Публичные матчи доступны' : 'Матчей пока нет' }}</span>
     @if (! $steamAvailable)
-        <span class="text-amber-300/80">{{ $steamProfile['error'] ?? 'Steam API недоступна' }}</span>
+        <span class="text-accent-300/80">{{ $steamProfile['error'] ?? 'Steam API недоступна' }}</span>
     @endif
     @if ($player['is_private'])
-        <span class="badge border-amber-500/25 bg-amber-500/10 text-amber-300">Данные скрыты</span>
+        <span class="badge border-accent-500/25 bg-accent-500/10 text-accent-300">Данные скрыты</span>
     @endif
 </div>

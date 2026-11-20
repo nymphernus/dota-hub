@@ -102,7 +102,7 @@
         @foreach ($sectors as $sector)
             <a
                 href="{{ route('dota.player.hero', [$playerId, $sector['hero_id']]) }}"
-                class="cursor-pointer hover:opacity-80"
+                class="cursor-pointer hover:opacity-80 focus:outline-none outline-none ring-0"
                 tabindex="0"
                 role="link"
                 aria-label="{{ $sector['name'] }}: {{ $sector['games'] }} игр, {{ $sector['winrate'] }}% побед"

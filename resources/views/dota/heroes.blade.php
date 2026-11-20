@@ -97,7 +97,7 @@
                                             <span class="h-9 w-16 shrink-0 overflow-hidden rounded-none bg-ink-800   transition ">
                                                 <img :src="hero.image" :alt="hero.localized_name" class="h-full w-full object-cover" loading="lazy" x-show="hero.image">
                                             </span>
-                                            <span class="truncate text-[13px] font-semibold text-mist-200 transition group-hover:text-gold-200" x-text="hero.localized_name"></span>
+                                            <span class="truncate text-[13px] font-semibold text-mist-200 transition group-hover:text-accent-300" x-text="hero.localized_name"></span>
                                         </a>
                                     </td>
                                     <td class="px-2 py-1 font-mono text-[13px] tabular-nums text-mist-300" x-text="hero.games"></td>
@@ -122,7 +122,7 @@
                             <button
                                 type="button"
                                 class="rounded-none border border-line px-2.5 py-1.5 text-[11px] font-semibold transition"
-                                :class="page === number ? 'bg-gold-400/15 text-gold-200' : 'text-mist-400 hover:bg-ink-700 hover:text-mist-200'"
+                                :class="page === number ? 'bg-accent-400/15 text-accent-300' : 'text-mist-400 hover:bg-ink-700 hover:text-mist-200'"
                                 @click="goTo(number)"
                                 x-text="number"
                             ></button>

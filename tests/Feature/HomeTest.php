@@ -19,7 +19,9 @@ class HomeTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('DotaHub');
-        $response->assertSee('Статистика игроков Dota 2', false);
+        $response->assertDontSee('Статистика игроков Dota 2', false);
+        $response->assertDontSee('Например:');
+        $response->assertDontSee('70388657');
         $response->assertDontSee('Последние поиски');
         $response->assertDontSee('Дашборд');
         $response->assertViewHas('dashboard', null);

@@ -76,6 +76,13 @@ class MatchTest extends TestCase
         $response->assertSee(route('dota.player', ['accountId' => 123456789]), false);
         $response->assertSee(route('dota.player', ['accountId' => 987654321]), false);
         $response->assertDontSee('Данные о нетворсе появятся после парсинга матча');
+        $response->assertSee('class="mb-3 flex items-center gap-2 text-sm text-gray-500" aria-label="Хлебные крошки"', false);
+        $response->assertSee('>Главная</a>', false);
+        $response->assertSee('>Dendi</a>', false);
+        $response->assertSee('>Матч #'.self::MATCH_ID.'</span>', false);
+        $response->assertDontSee('Профиль игрока');
+        $response->assertDontSee('card relative overflow-hidden', false);
+        $response->assertDontSee('mt-4 card p-4', false);
 
         $content = (string) $response->getContent();
         $this->assertSame(1, substr_count($content, '<table'));

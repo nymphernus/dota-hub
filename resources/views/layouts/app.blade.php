@@ -13,14 +13,14 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext x='16' y='24' font-family='Arial,Helvetica,sans-serif' font-size='24' font-weight='700' fill='%23d1d5db' text-anchor='middle'%3ED%3C/text%3E%3C/svg%3E">
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="flex min-h-screen flex-col">
     <header class="sticky top-0 z-40 border-b border-[#2d313e] bg-[#111318]/90 backdrop-blur-md">
         <div class="mx-auto flex h-16 w-full max-w-7xl items-center px-4 sm:px-6 lg:px-8">
-            <a href="/" class="bg-[#d32f2f] px-2 py-1 text-white font-black uppercase text-xl tracking-tighter leading-none rounded-sm" aria-label="DOTAHUB — на главную">DOTAHUB</a>
+            <a href="/" class="bg-[#d32f2f] px-2 py-1 text-2xl font-normal uppercase leading-none tracking-tighter text-white" aria-label="DOTAHUB — на главную">DOTAHUB</a>
 
             <div class="ml-auto flex items-center gap-2 sm:gap-3">
                 <form
@@ -82,7 +82,7 @@
                         </a>
 
                         <a href="{{ route('favorites.index') }}" class="btn-ghost !px-2.5 !py-2" aria-label="Избранное" title="Избранное">
-                            <svg class="h-4 w-4 text-amber-300" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.5l6.1-.9L12 3Z"/></svg>
+                            <svg class="h-4 w-4 text-accent-300" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.5l6.1-.9L12 3Z"/></svg>
                             <span class="hidden sm:inline">Избранное</span>
                         </a>
 
@@ -107,14 +107,14 @@
     <main class="flex-1 pb-20">
         @if (session('status'))
             <div class="mx-auto mt-4 w-full max-w-7xl px-4 sm:px-6 lg:px-8" x-data="{ visible: true }">
-                <div x-show="visible" x-transition class="flex items-start justify-between gap-4 rounded-none border border-gold-500/25 bg-gold-500/10 px-4 py-3 text-sm text-gold-200">
+                <div x-show="visible" x-transition class="flex items-start justify-between gap-4 rounded-none border border-accent-500/25 bg-accent-500/10 px-4 py-3 text-sm text-accent-300">
                     <div class="flex items-start gap-3">
-                        <svg class="mt-0.5 h-5 w-5 shrink-0 text-gold-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                        <svg class="mt-0.5 h-5 w-5 shrink-0 text-accent-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                             <path d="M5 12.5l4.5 4.5L19 7" stroke-linecap="round" stroke-linejoin="round" />
                         </svg>
                         <p>{{ session('status') }}</p>
                     </div>
-                    <button type="button" @click="visible = false" class="rounded-none p-1 text-gold-300/70 transition hover:bg-ink-700 hover:text-mist-200" aria-label="Закрыть уведомление">
+                    <button type="button" @click="visible = false" class="rounded-none p-1 text-accent-300/70 transition hover:bg-ink-700 hover:text-mist-200" aria-label="Закрыть уведомление">
                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                             <path d="M6 6l12 12M18 6L6 18" stroke-linecap="round" />
                         </svg>
@@ -148,11 +148,11 @@
     <footer class="border-t border-line bg-ink-950/60">
         <div class="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-8 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
             <div>
-                <p class="inline-flex bg-[#1c1e26] border border-[#2d313e] px-3 py-1.5 rounded-none font-bold text-xl tracking-tighter text-white">dotahub</p>
+                <p class="text-sm font-semibold text-mist-200">DotaHub</p>
                 <p class="text-[11px] text-mist-500">Данные: OpenDota · Steam Web API</p>
             </div>
 
-            <p class="text-[11px] text-mist-500">&copy; {{ date('Y') }} dotahub</p>
+            <p class="text-[11px] text-mist-500">&copy; {{ date('Y') }} DotaHub</p>
         </div>
     </footer>
 

@@ -21,7 +21,7 @@
                 :aria-selected="(tab === 'all').toString()"
                 @click="tab = 'all'"
                 class="rounded-none px-3 py-2 text-sm font-semibold transition"
-                :class="tab === 'all' ? 'bg-gold-400/15 text-gold-200' : 'text-mist-400 hover:text-mist-200'"
+                :class="tab === 'all' ? 'bg-accent-400/15 text-accent-300' : 'text-mist-400 hover:text-mist-200'"
             >Все матчи</button>
             <button
                 type="button"
@@ -30,7 +30,7 @@
                 :aria-selected="(tab === 'ranked').toString()"
                 @click="tab = 'ranked'"
                 class="rounded-none px-3 py-2 text-sm font-semibold transition"
-                :class="tab === 'ranked' ? 'bg-gold-400/15 text-gold-200' : 'text-mist-400 hover:text-mist-200'"
+                :class="tab === 'ranked' ? 'bg-accent-400/15 text-accent-300' : 'text-mist-400 hover:text-mist-200'"
             >Рейтинг</button>
         </div>
 

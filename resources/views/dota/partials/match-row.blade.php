@@ -50,7 +50,7 @@
             <div class="min-w-0">
                 <div class="flex items-center gap-2">
                     @if ($heroUrl)
-                        <a href="{{ $heroUrl }}" onclick="event.stopPropagation()" class="truncate text-[12px] font-bold text-mist-200 transition group-hover:text-gold-200">{{ $match['hero_name'] }}</a>
+                        <a href="{{ $heroUrl }}" onclick="event.stopPropagation()" class="truncate text-[12px] font-bold text-mist-200 transition group-hover:text-accent-300">{{ $match['hero_name'] }}</a>
                     @else
                         <span class="truncate text-[12px] font-bold text-mist-200">{{ $match['hero_name'] }}</span>
                     @endif
@@ -67,7 +67,7 @@
                     <span @class([
                         'font-semibold',
                         'text-accent-300' => $modeLabel === 'Turbo',
-                        'text-gold-200' => $modeLabel === 'Ranked All Pick',
+                        'text-accent-300' => $modeLabel === 'Ranked All Pick',
                         'text-mist-300' => ! in_array($modeLabel, ['Turbo', 'Ranked All Pick'], true),
                     ])>{{ $modeLabel ?? 'Normal' }}</span>
                 </div>

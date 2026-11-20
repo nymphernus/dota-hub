@@ -9,6 +9,10 @@
     $winner = $radiantWin ? 'Radiant' : 'Dire';
     $startedAt = $match['started_at'] ? \Carbon\CarbonImmutable::parse($match['started_at']) : null;
     $allPlayers = collect($match['players']['radiant'] ?? [])->merge($match['players']['dire'] ?? []);
+    $profilePlayer = $profilePlayerId !== null
+        ? $allPlayers->first(fn (array $player): bool => (int) ($player['account_id'] ?? 0) === $profilePlayerId)
+        : null;
+    $profileNickname = $profilePlayer['nickname'] ?? null;
     $showTowerDamage = $allPlayers->contains(fn (array $player) => (int) ($player['tower_damage'] ?? 0) > 0);
     $showHealing = $allPlayers->contains(fn (array $player) => (int) ($player['hero_healing'] ?? 0) > 0);
     $picksBans = collect($match['picks_bans'] ?? []);
@@ -41,20 +45,20 @@
 
 @section('content')
     <div class="mx-auto w-full max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">
-        <nav class="mb-4 flex items-center gap-2 text-[11px] text-mist-500" aria-label="Хлебные крошки">
-            <a href="{{ route('home') }}" class="transition hover:text-mist-200">Главная</a>
-            <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke-linecap="round" /></svg>
-            <span class="text-mist-400">Dota 2</span>
-            @if ($profilePlayerId)
-                <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke-linecap="round" /></svg>
-                <a href="{{ route('dota.player', ['accountId' => $profilePlayerId]) }}" class="transition hover:text-mist-200">Профиль игрока</a>
+        <nav class="mb-3 flex items-center gap-2 text-sm text-gray-500" aria-label="Хлебные крошки">
+            <a href="{{ route('home') }}" class="text-white transition hover:text-accent-300">Главная</a>
+            <span aria-hidden="true">/</span>
+            @if ($profileNickname !== null && $profilePlayerId !== null)
+                <a href="{{ route('dota.player', ['accountId' => $profilePlayerId]) }}" class="text-white transition hover:text-accent-300">{{ $profileNickname }}</a>
+            @else
+                <span class="text-white">Dota 2</span>
             @endif
-            <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke-linecap="round" /></svg>
-            <span class="truncate text-slate-300">Матч #{{ $match['match_id'] }}</span>
+            <span aria-hidden="true">/</span>
+            <span class="truncate font-medium text-white" aria-current="page">Матч #{{ $match['match_id'] }}</span>
         </nav>
 
-        <section class="card relative overflow-hidden">
-            <div class="relative px-4 pb-6 pt-14 sm:px-6 lg:px-8">
+        <section class="relative py-2">
+            <div class="relative px-0 py-1">
                 <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
                     <div class="min-w-0">
                         <div class="flex flex-wrap items-center gap-2">
@@ -67,7 +71,7 @@
                                 Победа {{ $winner }}
                             </span>
                             @if ($match['is_ranked'])
-                                <span class="badge border-amber-500/25 bg-amber-500/10 text-amber-300">
+                                <span class="badge border-accent-500/25 bg-accent-500/10 text-accent-300">
                                     <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.5 9.2l5.9-.9L12 3z" stroke-linejoin="round" /></svg>
                                     Ranked
                                 </span>
@@ -113,7 +117,7 @@
         </section>
 
         @if ($picksBans->isNotEmpty())
-            <section class="mt-4 card p-4 sm:p-5" aria-label="Пики и баны">
+            <section class="mt-3" aria-label="Пики и баны">
                 <div class="flex flex-wrap items-end justify-between gap-2">
                     <h2 class="section-heading">Пики и баны</h2>
                     <span class="text-[11px] text-mist-500">Порядок драфта</span>
@@ -224,8 +228,8 @@
                                         $roleClasses = match ($roleLabel) {
                                             'Safe' => 'border-emerald-500/25 bg-emerald-500/10 text-emerald-300',
                                             'Mid' => 'border-sky-500/25 bg-sky-500/10 text-sky-300',
-                                            'Off' => 'border-amber-500/25 bg-amber-500/10 text-amber-300',
-                                            'Soft' => 'border-orange-500/25 bg-orange-500/10 text-orange-300',
+                                            'Off' => 'border-accent-500/25 bg-accent-500/10 text-accent-300',
+                                            'Soft' => 'border-accent-500/25 bg-accent-500/10 text-accent-300',
                                             'Hard' => 'border-rose-500/25 bg-rose-500/10 text-rose-300',
                                             default => 'border-line bg-ink-900/50 text-mist-400',
                                         };
@@ -251,7 +255,7 @@
                                                 </div>
                                                 <div class="min-w-0">
                                                     @if ($accountId > 0)
-                                                        <a href="{{ route('dota.player', ['accountId' => $accountId]) }}" class="block truncate text-lg font-bold text-mist-200 transition hover:text-gold-200">
+                                                        <a href="{{ route('dota.player', ['accountId' => $accountId]) }}" class="block truncate text-lg font-bold text-mist-200 transition hover:text-accent-300">
                                                             {{ $player['nickname'] ?: 'Игрок '.$accountId }}
                                                         </a>
                                                     @else
@@ -260,7 +264,7 @@
                                                     <p class="mt-0.5 flex flex-wrap items-center gap-1.5 truncate text-gray-400 text-sm">
                                                         <span>{{ $player['hero_name'] }}</span>
                                                         @if (! empty($player['rank_label']))
-                                                            <span class="rounded bg-amber-500/10 px-1 py-0.5 text-[8px] font-bold uppercase tracking-wide text-amber-300" title="Ранг">{{ $player['rank_label'] }}</span>
+                                                            <span class="rounded bg-accent-500/10 px-1 py-0.5 text-[8px] font-bold uppercase tracking-wide text-accent-300" title="Ранг">{{ $player['rank_label'] }}</span>
                                                         @endif
                                                         @if ($player['level'] > 0)
                                                             <span>ур. {{ $player['level'] }}</span>
@@ -303,7 +307,7 @@
                                             @if ($player['purchases'] !== [])
                                                 <button
                                                     type="button"
-                                                    class="inline-flex items-center gap-1.5 rounded-none border border-line bg-ink-900/40 px-2.5 py-1.5 text-[11px] font-semibold text-mist-300 transition hover:border-gold-500/30 hover:bg-gold-500/10 hover:text-gold-200"
+                                                    class="inline-flex items-center gap-1.5 rounded-none border border-line bg-ink-900/40 px-2.5 py-1.5 text-[11px] font-semibold text-mist-300 transition hover:border-accent-500/30 hover:bg-accent-500/10 hover:text-accent-300"
                                                     @click="openPlayer = openPlayer === {{ $playerIndex }} ? null : {{ $playerIndex }}"
                                                     :aria-expanded="(openPlayer === {{ $playerIndex }}).toString()"
                                                     aria-controls="purchases-{{ $teamKey }}-{{ $playerIndex }}"
@@ -360,7 +364,7 @@
             <span>Данные OpenDota · кэш матча 1 час</span>
             <div class="flex items-center gap-3">
                 @if ($profilePlayerId)
-                    <a href="{{ route('dota.player', ['accountId' => $profilePlayerId]) }}" class="inline-flex items-center gap-1 font-semibold text-gold-300 transition hover:text-gold-200">
+                    <a href="{{ route('dota.player', ['accountId' => $profilePlayerId]) }}" class="inline-flex items-center gap-1 font-semibold text-accent-300 transition hover:text-accent-300">
                         <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 5l-7 7 7 7" stroke-linecap="round" stroke-linejoin="round" /></svg>
                         Вернуться к профилю
                     </a>
