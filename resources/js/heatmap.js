@@ -145,3 +145,57 @@ function lossLabel(count) {
     if ([2, 3, 4].includes(count % 10) && ![12, 13, 14].includes(count % 100)) return 'поражения';
     return 'поражений';
 }
+
+/**
+ * Rich hero-wheel tooltip. Each slice carries its own image and stats so the
+ * tooltip can be positioned next to the cursor without another request.
+ */
+const wheelTooltip = document.getElementById('wheel-tooltip');
+
+if (wheelTooltip) {
+    wheelTooltip.style.pointerEvents = 'none';
+
+    const positionTooltip = (event) => {
+        const offset = 14;
+        const bounds = wheelTooltip.getBoundingClientRect();
+        const left = Math.min(event.clientX + offset, window.innerWidth - bounds.width - offset);
+        const top = Math.min(event.clientY + offset, window.innerHeight - bounds.height - offset);
+
+        wheelTooltip.style.left = `${Math.max(offset, left)}px`;
+        wheelTooltip.style.top = `${Math.max(offset, top)}px`;
+    };
+
+    const showTooltip = (slice, event) => {
+        wheelTooltip.replaceChildren();
+
+        const image = document.createElement('img');
+        image.src = slice.dataset.heroImage || '';
+        image.alt = '';
+        image.className = 'w-10 h-10 object-cover';
+
+        const content = document.createElement('div');
+
+        const name = document.createElement('div');
+        name.className = 'font-bold';
+        name.textContent = slice.dataset.heroName || 'Герой';
+
+        const details = document.createElement('div');
+        details.className = 'text-sm text-gray-400';
+        details.textContent = `${slice.dataset.heroGames || 0} игр, ${slice.dataset.heroWinrate || 0}%`;
+
+        content.append(name, details);
+        wheelTooltip.append(image, content);
+        wheelTooltip.classList.remove('hidden');
+        positionTooltip(event);
+    };
+
+    const hideTooltip = () => {
+        wheelTooltip.classList.add('hidden');
+    };
+
+    document.querySelectorAll('[data-wheel-tooltip]').forEach((slice) => {
+        slice.addEventListener('mouseenter', (event) => showTooltip(slice, event));
+        slice.addEventListener('mousemove', positionTooltip);
+        slice.addEventListener('mouseleave', hideTooltip);
+    });
+}
