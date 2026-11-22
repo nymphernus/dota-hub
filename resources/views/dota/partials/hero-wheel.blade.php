@@ -17,6 +17,7 @@
             'hero_id' => (int) ($hero['hero_id'] ?? $hero['id'] ?? 0),
             'name' => $hero['name'] ?? 'Герой',
             'icon' => $hero['icon'] ?? ($hero['image'] ?? ''),
+            'image' => $hero['image'] ?? $hero['hero_image'] ?? $hero['icon'] ?? '',
             'games' => $games,
             'wins' => $wins,
             'losses' => $losses,
@@ -79,6 +80,7 @@
             'hero_id' => $hero['hero_id'],
             'name' => $hero['name'],
             'icon' => $hero['icon'],
+            'image' => $hero['image'],
             'games' => $hero['games'],
             'wins' => $hero['wins'],
             'losses' => $hero['losses'],
@@ -99,7 +101,7 @@
         Нет данных
     </div>
 @else
-    <div class="relative w-full max-w-[400px] mx-auto h-[400px] mt-4">
+    <div class="relative w-full max-w-[300px] mx-auto h-[300px]">
         <svg
             id="hero-wheel"
             class="hero-wheel block w-full h-full"
@@ -125,7 +127,7 @@
                         aria-label="{{ $sector['name'] }}: {{ $sector['games'] }} игр, {{ $sector['winrate'] }}% побед"
                         data-wheel-tooltip
                         data-hero-name="{{ $sector['name'] }}"
-                        data-hero-image="{{ $sector['icon'] }}"
+                        data-hero-image="{{ $sector['image'] }}"
                         data-hero-games="{{ $sector['games'] }}"
                         data-hero-wins="{{ $sector['wins'] }}"
                         data-hero-losses="{{ $sector['losses'] }}"
@@ -134,9 +136,7 @@
                         <path
                             class="hero-wheel__sector"
                             d="{{ $sector['path'] }}"
-                            fill="{{ $sector['is_top'] ? '#4b5563' : '#2d313e' }}"
-                            stroke="#2d313e"
-                            stroke-width="1.5"
+                            fill="{{ $sector['is_top'] ? '#3f4655' : '#2d313e' }}"
                         />
                         @if ($sector['icon'] !== '')
                             <image
@@ -155,8 +155,12 @@
             @endforeach
 
             <circle class="hero-wheel__hub" cx="120" cy="120" r="45" fill="#1c1e26" stroke="#2d313e" stroke-width="1" />
-            <text x="120" y="114" text-anchor="middle" dominant-baseline="middle" class="text-2xl font-bold" fill="{{ $wheelOverallWinrate >= 50 ? '#10b981' : '#ef4444' }}">{{ number_format($wheelOverallWinrate, 1, '.', '') }}%</text>
-            <text x="120" y="132" text-anchor="middle" dominant-baseline="middle" class="text-xs font-semibold fill-white">{{ $wheelTotalWins }} / {{ $wheelTotalLosses }}</text>
+            <text x="120" y="112" text-anchor="middle" dominant-baseline="middle" class="text-3xl font-bold" fill="{{ $wheelOverallWinrate >= 50 ? '#10b981' : '#ef4444' }}">{{ number_format($wheelOverallWinrate, 1, '.', '') }}%</text>
+            <text x="120" y="134" text-anchor="middle" dominant-baseline="middle" class="text-xs font-semibold" fill="#d1d5db">
+                <tspan fill="#10b981">{{ $wheelTotalWins }}W</tspan>
+                <tspan fill="#8b94a5"> / </tspan>
+                <tspan fill="#ef4444">{{ $wheelTotalLosses }}L</tspan>
+            </text>
         </svg>
     </div>
 @endif
