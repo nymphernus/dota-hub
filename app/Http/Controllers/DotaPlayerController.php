@@ -65,7 +65,7 @@ class DotaPlayerController extends Controller
     }
 
     /**
-     * Full hero pool for the dedicated heroes page.
+     * List the player's heroes with sort and hero filter.
      */
     public function heroes(int $accountId, Request $request, OpenDotaService $openDota, SteamService $steam, FavoriteService $favorites): View|Response
     {
@@ -83,10 +83,7 @@ class DotaPlayerController extends Controller
 
         $filters = [
             'hero_id' => $request->integer('hero_id') ?: 0,
-            'result' => in_array($request->query('result'), ['win', 'loss'], true) ? $request->query('result') : '',
-            'mode' => in_array($request->query('mode'), ['ranked', 'turbo', 'normal'], true) ? $request->query('mode') : '',
-            'role' => in_array($request->query('role'), ['carry', 'mid', 'offlane', 'support', 'hard_support'], true) ? $request->query('role') : '',
-            'date' => $this->validDate($request->query('date')),
+            'sort' => in_array($request->query('sort'), ['games', 'winrate', 'kda'], true) ? $request->query('sort') : 'games',
         ];
 
         $heroes = collect($player['heroes'] ?? []);
@@ -94,7 +91,12 @@ class DotaPlayerController extends Controller
             $heroes = $heroes->where('hero_id', $filters['hero_id']);
         }
 
-        $heroes = $heroes->sortByDesc('games')->values();
+        $heroes = match ($filters['sort']) {
+            'winrate' => $heroes->sortByDesc(fn ($h) => (float) ($h['win_rate'] ?? $h['winrate'] ?? 0))->values(),
+            'kda' => $heroes->sortByDesc(fn ($h) => (float) ($h['kda'] ?? 0))->values(),
+            default => $heroes->sortByDesc('games')->values(),
+        };
+
         $perPage = min(50, max(5, $request->integer('per_page') ?: 25));
         $page = max(1, $request->integer('page') ?: 1);
         $total = $heroes->count();
@@ -106,8 +108,8 @@ class DotaPlayerController extends Controller
         $heroOptions = collect($player['heroes'] ?? [])
             ->map(fn (array $hero) => [
                 'hero_id' => (int) ($hero['hero_id'] ?? 0),
-                'localized_name' => $hero['localized_name'] ?? $hero['name'] ?? 'Герой',
-                'name' => $hero['name'] ?? $hero['localized_name'] ?? 'Герой',
+                'localized_name' => $hero['localized_name'] ?? $hero['name'] ?? '?????',
+                'name' => $hero['name'] ?? $hero['localized_name'] ?? '?????',
                 'icon' => $hero['icon'] ?? null,
                 'image' => $hero['image'] ?? null,
             ])
@@ -117,9 +119,9 @@ class DotaPlayerController extends Controller
 
         return view('dota.heroes', [
             'player' => $player,
-            'pageTitle' => $player['nickname'].' - Герои - DOTAHUB',
+            'pageTitle' => $player['nickname'].' - ????? - DOTAHUB',
             'activeTab' => 'heroes',
-            'profileSection' => 'Герои',
+            'profileSection' => '?????',
             'steamProfile' => $steam->summary(
                 ($player['steam_id'] ?? '') ?: SteamId::steamId64FromAccountId($accountId)
             ),
@@ -222,17 +224,46 @@ class DotaPlayerController extends Controller
                 'message' => $exception->getMessage(),
                 'backUrl' => route('home'),
             ], 429);
-        } catch (ApiUnavailableException $exception) {
-            return response()->view('errors.api', [
-                'message' => $exception->getMessage(),
-                'backUrl' => route('home'),
-            ], 502);
-        } catch (ExternalApiException $exception) {
-            return response()->view('errors.player', [
-                'title' => 'OpenDota недоступна',
-                'message' => $exception->getMessage(),
-                'backUrl' => route('home'),
-            ], 502);
+        } catch (ApiUnavailableException|ExternalApiException $exception) {
+            $cached = \App\Models\PlayerProfile::where('account_id', $accountId)->first();
+            $data = is_array($cached?->data) ? $cached->data : [];
+            if ($data !== []) {
+                $data['api_warning'] = 'Данные временно недоступны (Лимит API). Показаны сохранённые данные.';
+                return $data;
+            }
+
+            return [
+                'account_id' => $accountId,
+                'steam_id' => (string) \App\Support\SteamId::steamId64FromAccountId($accountId),
+                'nickname' => 'Игрок #'.$accountId,
+                'avatar' => null,
+                'profile_url' => null,
+                'country_code' => null,
+                'last_login_at' => null,
+                'is_private' => false,
+                'rank_tier' => null,
+                'rank_label' => 'Без ранга',
+                'rank_medal' => null,
+                'rank_stars' => 0,
+                'leaderboard_rank' => null,
+                'mmr_estimate' => null,
+                'mmr_is_estimated' => false,
+                'mmr_source' => null,
+                'mmr_games_considered' => 0,
+                'games' => 0,
+                'wins' => 0,
+                'losses' => 0,
+                'winrate' => null,
+                'averages' => ['gpm' => 0, 'xpm' => 0, 'kills' => 0, 'deaths' => 0, 'assists' => 0, 'kda' => 0],
+                'heroes' => [],
+                'top_heroes' => [],
+                'matches' => [],
+                'match_history' => [],
+                'peers' => [],
+                'has_public_matches' => false,
+                'dota_data_hidden' => false,
+                'api_warning' => 'Данные временно недоступны (Лимит API)',
+            ];
         }
     }
 
@@ -269,10 +300,10 @@ class DotaPlayerController extends Controller
                 'backUrl' => route('home'),
             ], 429);
         } catch (ApiUnavailableException|ExternalApiException $exception) {
-            return response()->view('errors.api', [
-                'message' => $exception->getMessage(),
-                'backUrl' => route('home'),
-            ], 502);
+            $player = $this->playerOrError($accountId, $openDota);
+            if ($player instanceof Response) { return $player; }
+            $player['api_warning'] = $player['api_warning'] ?? 'Данные временно недоступны (Лимит API)';
+            $result = ['rows' => [], 'total' => 0, 'hero_options' => [], 'player' => $player];
         }
 
         $perPage = min(50, max(5, $request->integer('per_page') ?: 25));
