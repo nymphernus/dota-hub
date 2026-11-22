@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', $pageTitle ?? 'DOTAHUB — статистика игроков Dota 2')
-@section('description', 'Ищите игроков Dota 2 по ссылке на Steam, SteamID64 или никнейму. KDA, GPM, XPM, топ героев, активность и последние матчи.')
+@section('title', $pageTitle ?? 'DOTAHUB')
+@section('description', __('ui.home_subtitle'))
 
 @php
     $isDashboard = is_array($dashboard ?? null);
@@ -23,12 +23,12 @@
                                 @endif
                             </span>
                             <span class="min-w-0">
-                                <span class="block text-[11px] font-semibold uppercase tracking-[0.18em] text-mist-500">Дашборд</span>
+                                <span class="block text-[11px] font-semibold uppercase tracking-[0.18em] text-mist-500">DOTAHUB</span>
                                 <span class="mt-1 block truncate text-2xl font-semibold text-mist-200 transition group-hover:text-accent-300">
-                                    С возвращением, {{ $dashboard['nickname'] }}
+                                    {{ $dashboard['nickname'] }}
                                 </span>
                                 <span class="mt-1 block text-xs text-mist-400">
-                                    {{ $dashboard['rank_label'] ?: 'Dota 2 профиль' }}
+                                    {{ $dashboard['rank_label'] ?: 'Dota 2 }}
                                 </span>
                             </span>
                         </a>
@@ -40,28 +40,26 @@
                                     {{ $dashboard['mmr_estimate'] !== null ? number_format((int) $dashboard['mmr_estimate'], 0, '.', ' ') : '—' }}
                                 </p>
                                 <p class="mt-1 text-[10px] text-mist-500">
-                                    {{ $dashboard['mmr_is_estimated'] ? 'Оценка' : 'Открыт' }}
+                                    {{ $dashboard['mmr_is_estimated'] ? '}}
                                 </p>
                             </div>
                             <a href="{{ route('dota.player', ['accountId' => $dashboard['account_id']]) }}" class="group grid place-items-center rounded-none bg-accent-500/10 px-4 py-3 text-center transition hover:bg-accent-500/[0.16]">
-                                <span class="text-xs font-bold text-accent-300">Мой профиль</span>
-                                <span class="mt-1 text-[10px] text-mist-400 transition group-hover:text-accent-300">Открыть →</span>
+                                <span class="text-xs font-bold text-accent-300"></span>
+                                <span class="mt-1 text-[10px] text-mist-400 transition group-hover:text-accent-300">→</span>
                             </a>
                         </div>
                     </div>
 
                     <div class="mt-6">
                         <div class="flex flex-wrap items-center justify-between gap-2">
-                            <h2 class="section-heading">Последние матчи</h2>
+                            <h2 class="section-heading"></h2>
                             <a href="{{ route('dota.player', ['accountId' => $dashboard['account_id']]) }}" class="text-[11px] font-semibold text-mist-400 transition hover:text-accent-300">
-                                Все матчи
-                            </a>
+                                </a>
                         </div>
 
                         @if (! ($dashboard['available'] ?? false))
                             <div class="mt-3 rounded-none border border-dashed border-line px-4 py-6 text-center text-sm text-mist-400">
-                                Не удалось загрузить профиль сейчас. Попробуйте открыть страницу профиля чуть позже.
-                            </div>
+                                </div>
                         @elseif (($dashboard['recent_matches'] ?? []) === [])
                             <div class="mt-3 rounded-none border border-dashed border-line px-4 py-6 text-center text-sm text-mist-400">
                                 {{ __('ui.no_matches_yet') }}

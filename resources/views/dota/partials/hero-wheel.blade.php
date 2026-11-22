@@ -115,13 +115,13 @@
             <defs>
                 <!-- Градиент для обычных героев -->
                 <radialGradient id="grad-normal" cx="50%" cy="50%" r="50%">
-                    <stop offset="0%" stop-color="#374151" /> <!-- Светло-серый у центра -->
-                    <stop offset="100%" stop-color="#1f2937" /> <!-- Темно-серый у края -->
+                    <stop offset="0%" stop-color="var(--wheel-normal-start, #374151)" />
+                    <stop offset="100%" stop-color="var(--wheel-normal-end, #1f2937)" />
                 </radialGradient>
                 <!-- Градиент для Топ-3 героев (чуть светлее) -->
                 <radialGradient id="grad-top" cx="50%" cy="50%" r="50%">
-                    <stop offset="0%" stop-color="#4b5563" /> <!-- Светлее у центра -->
-                    <stop offset="100%" stop-color="#2d313e" /> <!-- Темнее у края -->
+                    <stop offset="0%" stop-color="var(--wheel-top-start, #4b5563)" />
+                    <stop offset="100%" stop-color="var(--wheel-top-end, #2d313e)" />
                 </radialGradient>
             </defs>
 

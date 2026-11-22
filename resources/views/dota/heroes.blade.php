@@ -1,52 +1,52 @@
 @extends('dota.layouts.profile')
 
-@section('title', $pageTitle ?? ($player['nickname'].' - ????? - DOTAHUB'))
-@section('description', '????? ?????? '.$player['nickname'].': ????, ??????? ? KDA.')
+@section('title', $pageTitle ?? ($player['nickname'].' - '.__('ui.heroes').' - DOTAHUB'))
+@section('description', $player['nickname'].' - '.__('ui.heroes'))
 
 @section('profile-content')
 <section class="card mt-4 p-4 sm:p-5">
     <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div>
-            <h2 class="section-heading">?????</h2>
+            <h2 class="section-heading">{{ __('ui.heroes') }}</h2>
         </div>
-        <span class="badge border-line bg-ink-900/50 text-mist-400">{{ $heroes->total() }} ??????</span>
+        <span class="badge border-line bg-ink-900/50 text-mist-400">{{ $heroes->total() }} {{ __('ui.heroes_count') }}</span>
     </div>
 
     <form method="GET" action="{{ route('dota.player.heroes', ['accountId' => $player['account_id']]) }}" class="flex flex-row flex-wrap items-end gap-2">
         <label class="min-w-[180px] flex-1">
-            <span class="label mb-1 block">?????</span>
-            <select name="hero_id" onchange="this.form.submit()" class="h-10 w-full rounded border border-[#2d313e] bg-[#1c1e26] px-3 text-sm text-mist-200 focus:border-accent-400/50 focus:outline-none">
-                <option value="0">??? ?????</option>
+            <span class="label mb-1 block">{{ __('ui.hero') }}</span>
+            <select name="hero_id" onchange="this.form.submit()" class="h-10 w-full rounded border border-[#2d313e] bg-white text-gray-900 dark:bg-[#1c1e26] px-3 text-sm dark:text-mist-200 focus:border-accent-400/50 focus:outline-none">
+                <option value="0">{{ __('ui.all_heroes') }}</option>
                 @foreach (($heroOptions ?? []) as $hero)
-                    <option value="{{ $hero['hero_id'] }}" @selected((int) ($filters['hero_id'] ?? 0) === (int) $hero['hero_id'])>{{ $hero['localized_name'] ?? $hero['name'] ?? '?????' }}</option>
+                    <option value="{{ $hero['hero_id'] }}" @selected((int) ($filters['hero_id'] ?? 0) === (int) $hero['hero_id'])>{{ $hero['localized_name'] ?? $hero['name'] ?? __('ui.hero') }}</option>
                 @endforeach
             </select>
         </label>
 
         <label class="min-w-[180px] flex-1">
-            <span class="label mb-1 block">??????????</span>
-            <select name="sort" onchange="this.form.submit()" class="h-10 w-full rounded border border-[#2d313e] bg-[#1c1e26] px-3 text-sm text-mist-200 focus:border-accent-400/50 focus:outline-none">
-                <option value="games" @selected(($filters['sort'] ?? 'games') === 'games')>?? ?????????? ???</option>
-                <option value="winrate" @selected(($filters['sort'] ?? '') === 'winrate')>?? ????????</option>
-                <option value="kda" @selected(($filters['sort'] ?? '') === 'kda')>?? KDA</option>
+            <span class="label mb-1 block">{{ __('ui.sort') }}</span>
+            <select name="sort" onchange="this.form.submit()" class="h-10 w-full rounded border border-[#2d313e] bg-white text-gray-900 dark:bg-[#1c1e26] px-3 text-sm dark:text-mist-200 focus:border-accent-400/50 focus:outline-none">
+                <option value="games" @selected(($filters['sort'] ?? 'games') === 'games')>{{ __('ui.sort_by_games') }}</option>
+                <option value="winrate" @selected(($filters['sort'] ?? '') === 'winrate')>{{ __('ui.sort_by_winrate') }}</option>
+                <option value="kda" @selected(($filters['sort'] ?? '') === 'kda')>{{ __('ui.sort_by_kda') }}</option>
             </select>
         </label>
 
         @if (($filters['hero_id'] ?? 0) > 0 || ($filters['sort'] ?? 'games') !== 'games')
-            <a href="{{ route('dota.player.heroes', ['accountId' => $player['account_id']]) }}" class="button-ghost h-10 px-4">????????</a>
+            <a href="{{ route('dota.player.heroes', ['accountId' => $player['account_id']]) }}" class="button-ghost h-10 px-4">{{ __('ui.reset') }}</a>
         @endif
     </form>
 
     @if ($heroes->isEmpty())
-        <div class="mt-6 p-10 text-center text-sm text-mist-400">????? ?? ???????.</div>
+        <div class="mt-6 p-10 text-center text-sm text-mist-400">{{ __('ui.no_heroes_found') }}</div>
     @else
-        <div class="mt-4 overflow-hidden border border-[#2d313e] bg-[#1c1e26]">
+        <div class="mt-4 overflow-hidden border border-line bg-white dark:bg-[#1c1e26]">
             <table class="w-full text-sm">
                 <thead class="table-head">
                     <tr>
-                        <th class="px-2 py-1 text-left font-semibold">?????</th>
-                        <th class="px-2 py-1 text-left font-semibold">?????</th>
-                        <th class="px-2 py-1 text-left font-semibold">???????</th>
+                        <th class="px-2 py-1 text-left font-semibold">{{ __('ui.hero') }}</th>
+                        <th class="px-2 py-1 text-left font-semibold">{{ __('ui.games') }}</th>
+                        <th class="px-2 py-1 text-left font-semibold">{{ __('ui.winrate') }}</th>
                         <th class="px-2 py-1 text-left font-semibold">KDA</th>
                     </tr>
                 </thead>
@@ -55,13 +55,13 @@
                         @php
                             $heroId = (int) ($hero['hero_id'] ?? 0);
                             $heroUrl = $heroId > 0 ? route('dota.player.hero', ['accountId' => $player['account_id'], 'heroId' => $heroId]) : null;
-                            $name = $hero['localized_name'] ?? $hero['name'] ?? '?????';
+                            $name = $hero['localized_name'] ?? $hero['name'] ?? __('ui.hero');
                             $img = $hero['image'] ?? $hero['icon'] ?? null;
                             $games = (int) ($hero['games'] ?? 0);
                             $winrate = $hero['win_rate'] ?? $hero['winrate'] ?? null;
                             $kda = $hero['kda'] ?? null;
                         @endphp
-                        <tr class="transition odd:bg-[#1c1e26] even:bg-[#111318] hover:bg-ink-700/60">
+                        <tr class="transition odd:bg-white even:bg-slate-50 hover:bg-slate-100 text-gray-900 dark:text-mist-200 dark:odd:bg-[#1c1e26] dark:even:bg-[#111318] dark:hover:bg-ink-700/60">
                             <td class="px-2 py-1">
                                 <div class="flex items-center gap-3">
                                     @if ($heroUrl)

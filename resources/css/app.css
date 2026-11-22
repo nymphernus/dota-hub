@@ -329,3 +329,18 @@ html:not(.dark) .bg-ink-800,
 }
 html:not(.dark) .bg-\[\#d32f2f\],
 html:not(.dark) .bg-\[\#d32f2f\].text-white { background-color: #d32f2f !important; color: #fff !important; }
+
+
+/* Hero wheel theme vars */
+:root {
+  --wheel-normal-start: #cbd5e1;
+  --wheel-normal-end: #94a3b8;
+  --wheel-top-start: #e2e8f0;
+  --wheel-top-end: #cbd5e1;
+}
+.dark {
+  --wheel-normal-start: #374151;
+  --wheel-normal-end: #1f2937;
+  --wheel-top-start: #4b5563;
+  --wheel-top-end: #2d313e;
+}

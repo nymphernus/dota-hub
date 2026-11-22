@@ -33,23 +33,32 @@ class OpenDotaService
     /**
      * Human-readable labels for OpenDota /players/{id}/records keys.
      */
-    private const RECORD_LABELS = [
-        'DURATION' => 'Самый длинный матч',
-        'SHORTEST_DURATION' => 'Самый короткий матч',
-        'KILLS' => 'Самое большое количество убийств',
-        'DEATHS' => 'Больше всего смертей',
-        'ASSISTS' => 'Самое большое количество ассистов',
-        'GPM' => 'Максимум GPM',
-        'XPM' => 'Максимум XPM',
-        'HERO_DAMAGE' => 'Максимум урона по героям',
-        'TOWER_DAMAGE' => 'Максимум урона по зданиям',
-        'HERO_HEALING' => 'Максимум лечения',
-        'LAST_HITS' => 'Максимум добиваний',
-        'DENIES' => 'Максимум отказов',
-        'GOLD' => 'Максимум золота',
-        'NET_WORTH' => 'Максимум нетворса',
-        'LONGEST_WIN_STREAK' => 'Самая длинная серия побед',
-    ];
+    private static function recordLabels(): array
+    {
+        return [
+            'DURATION' => __('ui.longest_match'),
+            'SHORTEST_DURATION' => __('ui.shortest_match'),
+            'KILLS' => __('ui.most_kills'),
+            'DEATHS' => __('ui.most_deaths'),
+            'ASSISTS' => __('ui.most_assists'),
+            'GPM' => __('ui.highest_gpm'),
+            'XPM' => __('ui.highest_xpm'),
+            'HERO_DAMAGE' => __('ui.most_hero_damage'),
+            'TOWER_DAMAGE' => __('ui.most_tower_damage'),
+            'HERO_HEALING' => __('ui.most_hero_healing'),
+            'LAST_HITS' => __('ui.most_last_hits'),
+            'DENIES' => __('ui.most_denies'),
+            'GOLD' => __('ui.most_gold'),
+            'NET_WORTH' => __('ui.most_net_worth'),
+            'LONGEST_WIN_STREAK' => __('ui.longest_win_streak'),
+        ];
+    }
+
+    private static function recordLabel(string $name): string
+    {
+        $labels = self::recordLabels();
+        return $labels[$name] ?? ucwords(str_replace('_', ' ', strtolower($name)));
+    }
 
     /** Record fields available in the cached match history. */
     private const HISTORY_RECORD_FIELDS = [
@@ -1183,7 +1192,7 @@ class OpenDotaService
 
             $row = [
                 'key' => $name,
-                'label' => self::RECORD_LABELS[$name] ?? ucwords(str_replace('_', ' ', strtolower($name))),
+                'label' => self::recordLabel($name),
                 'value' => $value,
                 'value_label' => $this->recordValueLabel($name, $value),
                 'hero_id' => $heroId > 0 ? $heroId : null,
@@ -1259,7 +1268,7 @@ class OpenDotaService
 
         return [
             'key' => $name,
-            'label' => self::RECORD_LABELS[$name] ?? ucwords(str_replace('_', ' ', strtolower($name))),
+            'label' => self::recordLabel($name),
             'value' => $value,
             'value_label' => $this->recordValueLabel($name, $value),
             'hero_id' => $heroId > 0 ? $heroId : null,
@@ -1342,7 +1351,7 @@ class OpenDotaService
      */
     private function orderRecords(array $rows): array
     {
-        $order = array_keys(self::RECORD_LABELS);
+        $order = array_keys(self::recordLabels());
 
         usort($rows, function (array $left, array $right) use ($order): int {
             $leftIndex = array_search($left['key'], $order, true);

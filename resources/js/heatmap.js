@@ -10,8 +10,8 @@ if (heatmapPayload && heatmapRoot) {
     const heatmap = JSON.parse(heatmapPayload.textContent);
     const weekdaysNode = document.getElementById('heatmap-weekdays');
     const monthsNode = document.getElementById('heatmap-months');
-    const weekdayLabels = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
-    const monthLabels = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сент', 'Окт', 'Ноя', 'Дек'];
+    const weekdayLabels = (window.dotahubI18n && window.dotahubI18n.weekdays) || ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    const monthLabels = (window.dotahubI18n && window.dotahubI18n.months) || ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     const tones = {
         future: 'bg-transparent text-transparent',
         empty: 'bg-[#2d313e] text-transparent',
