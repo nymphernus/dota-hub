@@ -22,16 +22,16 @@
     $nameHistory = $player['name_history'] ?? [];
 @endphp
 
-<section class="card relative overflow-hidden min-h-[150px]">
+<section class="card relative overflow-hidden min-h-[220px] sm:min-h-[250px]">
     @if ($avatar)
         <div class="absolute inset-0 bg-cover bg-center filter blur-md opacity-40 scale-105" style="background-image: url('{{ $avatar }}');" aria-hidden="true"></div>
     @endif
     <div class="absolute inset-0 bg-gradient-to-t from-[#111318] via-[#111318]/30 to-transparent" aria-hidden="true"></div>
 
-    <div class="relative z-10 flex h-full min-h-[150px] flex-col justify-end px-4 pb-4 pt-6 sm:px-6 lg:px-8">
+    <div class="relative z-10 flex h-full min-h-[220px] sm:min-h-[250px] flex-col justify-end px-4 pb-4 pt-6 sm:px-6 lg:px-8">
         <div class="flex w-full flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div class="flex min-w-0 items-center gap-4">
-                <div class="relative h-16 w-16 shrink-0 overflow-hidden rounded-none bg-ink-800 sm:h-20 sm:w-20 border border-[#2d313e]">
+                <div class="relative h-20 w-20 shrink-0 overflow-hidden rounded-none bg-ink-800 sm:h-24 sm:w-24 border border-[#2d313e]">
                     @if ($avatar)
                         <img src="{{ $avatar }}" alt="{{ $player['nickname'] }}" class="h-full w-full object-cover" loading="eager">
                     @else
@@ -45,7 +45,7 @@
                     @endif
 
                     <div class="mt-1 flex flex-wrap items-center gap-x-2" x-data="{ open: false }">
-                        <h1 class="min-w-0 truncate text-2xl font-semibold tracking-tight text-mist-200 sm:text-3xl">{{ $player['nickname'] }}</h1>
+                        <h1 class="min-w-0 truncate text-3xl font-semibold tracking-tight text-mist-200 sm:text-4xl">{{ $player['nickname'] }}</h1>
                         @if (session('steam_id'))
                             <button
                                 type="button"

@@ -22,9 +22,9 @@ use Illuminate\Support\Facades\Log;
  */
 class OpenDotaService
 {
-    private const HERO_STATS_CACHE_KEY = 'opendota:hero-stats:v2';
+    private const HERO_STATS_CACHE_KEY = 'opendota:hero-stats:v3';
 
-    private const ITEM_STATS_CACHE_KEY = 'opendota:item-stats:v2';
+    private const ITEM_STATS_CACHE_KEY = 'opendota:item-stats:v3';
 
     private const RECENT_MATCH_DETAILS = 25;
 
@@ -1633,11 +1633,13 @@ class OpenDotaService
             $reactImage = $short !== ''
                 ? 'https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/'.$short.'.png'
                 : (isset($hero['img']) ? 'https://cdn.cloudflare.steamstatic.com'.$hero['img'] : null);
+            $localRel = $short !== '' ? 'images/heroes/'.$short.'.png' : null;
+            $localImage = $localRel && is_file(public_path($localRel)) ? '/'.$localRel : $reactImage;
 
             $map[(int) $hero['id']] = [
                 'id' => (int) $hero['id'],
                 'name' => $hero['localized_name'] ?? 'Hero #'.$hero['id'],
-                'image' => $reactImage,
+                'image' => $localImage,
                 'image_cdn' => $reactImage,
                 'icon' => isset($hero['icon']) ? 'https://cdn.cloudflare.steamstatic.com'.$hero['icon'] : null,
                 'primary_attr' => $hero['primary_attr'] ?? null,
@@ -1690,11 +1692,13 @@ class OpenDotaService
             $cdnImage = isset($item['img'])
                 ? 'https://cdn.cloudflare.steamstatic.com'.$item['img']
                 : $this->itemImage($itemKey);
+            $localRel = 'images/items/'.$itemKey.'.png';
+            $localImage = is_file(public_path($localRel)) ? '/'.$localRel : $cdnImage;
 
             $map[$itemKey] = [
                 'id' => (int) ($item['id'] ?? 0),
                 'name' => (string) $item['dname'],
-                'image' => $cdnImage,
+                'image' => $localImage,
                 'cost' => (int) ($item['cost'] ?? 0),
             ];
         }
