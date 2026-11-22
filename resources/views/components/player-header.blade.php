@@ -3,20 +3,21 @@
     $bannerImage = $bannerHero['image'] ?? ($player['avatar'] ?? null);
     $rankTier = (int) ($player['rank_tier'] ?? 0);
     $rankIconBase = asset('images/dota/ranks');
+    $rankTierBand = 0;
+    $rankStars = 0;
     $rankIcon = $rankIconBase.'/rank_icon_0.png';
+    $rankLabel = $player['rank_label'] ?: __('ui.no_rank');
     $rankStarIcon = null;
 
     if ($rankTier > 0) {
         $rankTierBand = intdiv($rankTier, 10);
+        $rankStars = $rankTier % 10;
         $rankIcon = $rankIconBase.'/rank_icon_'.$rankTierBand.'.png';
-
-        if ($rankTierBand >= 1 && $rankTierBand <= 7) {
-            $rankStars = max(1, min(7, $rankTier % 10));
-            $rankStarIcon = $rankIconBase.'/rank_star_'.$rankStars.'.png';
+        if ($rankTierBand >= 1 && $rankTierBand <= 7 && $rankStars >= 1) {
+            $rankStarIcon = $rankIconBase.'/rank_star_'.min(5, $rankStars).'.png';
         }
     }
 
-    $rankStars5 = ($rankTierBand >= 1 && $rankTierBand <= 7) ? max(1, min(5, $rankTier % 10)) : 0;
     $nameHistory = $player['name_history'] ?? [];
     $steamAvailable = (bool) ($steamProfile['available'] ?? false);
     $steamPublic = $steamProfile['is_public'] ?? null;
@@ -148,18 +149,14 @@
             </div>
 
             <div class="flex shrink-0 items-center gap-3 self-start lg:self-auto">
-                <div class="flex flex-col items-center gap-1">
-                    <img src="{{ $rankIcon }}" alt="{{ $rankLabel ?? ($player['rank_label'] ?: __('ui.no_rank')) }}" class="h-16 w-16 object-contain">
-                    @if ($rankTierBand >= 1 && $rankTierBand <= 7)
-                        <div class="flex items-center gap-0.5" aria-label="{{ $rankStars5 }} / 5">
-                            @for ($i = 1; $i <= 5; $i++)
-                                <svg class="h-3.5 w-3.5 {{ $i <= $rankStars5 ? 'text-yellow-400' : 'text-gray-600' }}" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.5l6.1-.9L12 3Z"/></svg>
-                            @endfor
-                        </div>
+                <div class="relative inline-flex h-16 w-16 items-center justify-center">
+                    <img src="{{ $rankIcon }}" alt="{{ $rankLabel }}" class="w-16 h-16 object-contain">
+                    @if ($rankStarIcon)
+                        <img src="{{ $rankStarIcon }}" alt="" class="absolute -bottom-1 left-1/2 h-4 w-14 -translate-x-1/2 object-contain">
                     @endif
                 </div>
                 <div class="text-right">
-                    <div class="text-xl font-bold text-mist-100 sm:text-2xl">{{ $player['rank_label'] ?: __('ui.no_rank') }}</div>
+                    <div class="text-xl font-bold text-mist-100 sm:text-2xl">{{ $rankLabel }}</div>
                     @if (! empty($player['leaderboard_rank']))
                         <div class="text-sm text-accent-300">#{{ number_format((int) $player['leaderboard_rank'], 0, '.', ' ') }}</div>
                     @endif
