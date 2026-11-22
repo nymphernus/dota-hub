@@ -34,10 +34,10 @@
     $wheelGap = count($wheelHeroes) > 1 ? 1.4 : 0;
     $wheelCursor = -90.0;
     $sectors = [];
-    $cx = 120.0;
-    $cy = 120.0;
-    $outerRadius = 110.0;
-    $innerRadius = 58.0;
+    $cx = 150.0;
+    $cy = 150.0;
+    $outerRadius = 150.0;
+    $innerRadius = 110.0;
 
     foreach ($wheelHeroes as $index => $hero) {
         $sweep = ($hero['games'] / $wheelTotal) * 360;
@@ -105,13 +105,26 @@
         <svg
             id="hero-wheel"
             class="hero-wheel block w-full h-full"
-            viewBox="0 0 240 240"
+            viewBox="0 0 300 300"
             role="img"
             aria-label="Колесо героев"
             xmlns="http://www.w3.org/2000/svg"
             xmlns:xlink="http://www.w3.org/1999/xlink"
         >
-            <circle cx="120" cy="120" r="112" fill="#111318" />
+            <defs>
+                <!-- Градиент для обычных героев -->
+                <radialGradient id="grad-normal" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#374151" /> <!-- Светло-серый у центра -->
+                    <stop offset="100%" stop-color="#1f2937" /> <!-- Темно-серый у края -->
+                </radialGradient>
+                <!-- Градиент для Топ-3 героев (чуть светлее) -->
+                <radialGradient id="grad-top" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#4b5563" /> <!-- Светлее у центра -->
+                    <stop offset="100%" stop-color="#2d313e" /> <!-- Темнее у края -->
+                </radialGradient>
+            </defs>
+
+            <circle cx="150" cy="150" r="150" fill="#111318" />
 
             @foreach ($sectors as $sector)
                 <a
@@ -136,7 +149,9 @@
                         <path
                             class="hero-wheel__sector"
                             d="{{ $sector['path'] }}"
-                            fill="{{ $sector['is_top'] ? '#3f4655' : '#2d313e' }}"
+                            fill="{{ $sector['is_top'] ? 'url(#grad-top)' : 'url(#grad-normal)' }}"
+                            stroke="none"
+                            stroke-width="0"
                         />
                         @if ($sector['icon'] !== '')
                             <image
@@ -154,9 +169,9 @@
                 </a>
             @endforeach
 
-            <circle class="hero-wheel__hub" cx="120" cy="120" r="45" fill="#1c1e26" stroke="#2d313e" stroke-width="1" />
-            <text x="120" y="112" text-anchor="middle" dominant-baseline="middle" class="text-3xl font-bold" fill="{{ $wheelOverallWinrate >= 50 ? '#10b981' : '#ef4444' }}">{{ number_format($wheelOverallWinrate, 1, '.', '') }}%</text>
-            <text x="120" y="134" text-anchor="middle" dominant-baseline="middle" class="text-xs font-semibold" fill="#d1d5db">
+            <circle class="hero-wheel__hub" cx="150" cy="150" r="108" fill="#1c1e26" stroke="none" stroke-width="0" />
+            <text x="150" y="145" text-anchor="middle" dominant-baseline="middle" class="text-2xl font-bold fill-white">{{ number_format($wheelOverallWinrate, 1, '.', '') }}%</text>
+            <text x="150" y="170" text-anchor="middle" dominant-baseline="middle" class="text-sm font-semibold" fill="#d1d5db">
                 <tspan fill="#10b981">{{ $wheelTotalWins }}W</tspan>
                 <tspan fill="#8b94a5"> / </tspan>
                 <tspan fill="#ef4444">{{ $wheelTotalLosses }}L</tspan>
