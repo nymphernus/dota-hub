@@ -36,8 +36,8 @@
     $sectors = [];
     $cx = 150.0;
     $cy = 150.0;
-    $outerRadius = 150.0;
-    $innerRadius = 110.0;
+    $outerRadius = 140.0;
+    $innerRadius = 80.0;
 
     foreach ($wheelHeroes as $index => $hero) {
         $sweep = ($hero['games'] / $wheelTotal) * 360;
@@ -105,7 +105,8 @@
         <svg
             id="hero-wheel"
             class="hero-wheel block w-full h-full"
-            viewBox="0 0 300 300"
+            viewBox="-10 -10 320 320"
+            overflow="visible"
             role="img"
             aria-label="Колесо героев"
             xmlns="http://www.w3.org/2000/svg"
@@ -123,8 +124,6 @@
                     <stop offset="100%" stop-color="#2d313e" /> <!-- Темнее у края -->
                 </radialGradient>
             </defs>
-
-            <circle cx="150" cy="150" r="150" fill="#111318" />
 
             @foreach ($sectors as $sector)
                 <a
@@ -169,8 +168,8 @@
                 </a>
             @endforeach
 
-            <circle class="hero-wheel__hub" cx="150" cy="150" r="108" fill="#1c1e26" stroke="none" stroke-width="0" />
-            <text x="150" y="145" text-anchor="middle" dominant-baseline="middle" class="text-2xl font-bold fill-white">{{ number_format($wheelOverallWinrate, 1, '.', '') }}%</text>
+            <circle cx="150" cy="150" r="80" fill="#1c1e26" />
+            <text x="150" y="145" text-anchor="middle" dominant-baseline="middle" class="text-2xl font-bold {{ $wheelOverallWinrate >= 50 ? 'fill-green-500' : 'fill-red-500' }}">{{ number_format($wheelOverallWinrate, 1, '.', '') }}%</text>
             <text x="150" y="170" text-anchor="middle" dominant-baseline="middle" class="text-sm font-semibold" fill="#d1d5db">
                 <tspan fill="#10b981">{{ $wheelTotalWins }}W</tspan>
                 <tspan fill="#8b94a5"> / </tspan>
