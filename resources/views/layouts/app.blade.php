@@ -7,7 +7,7 @@
     <meta name="description" content="@yield('description', 'DOTAHUB — быстрая статистика игроков Dota 2. Профили, матчи, герои и активность.')">
     <meta name="theme-color" content="#111318">
 
-    <title>DOTAHUB</title>
+    <title>{{ $pageTitle ?? 'DOTAHUB' }}</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

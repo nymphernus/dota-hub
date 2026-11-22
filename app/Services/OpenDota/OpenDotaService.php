@@ -1417,12 +1417,32 @@ class OpenDotaService
     }
 
     /**
-     * Request the full match history by following the `less_than_match_id`
-     * cursor until the API returns no matches.
+     * Request the full match history. Prefer STRATZ (no OpenDota daily limit),
+     * fallback to OpenDota pagination when STRATZ is unavailable.
      *
      * @return array<int, array<string, mixed>>
      */
     private function fetchMatchHistory(int $accountId): array
+    {
+        try {
+            $stratzMatches = $this->stratz->playerMatches($accountId);
+            if (is_array($stratzMatches) && $stratzMatches !== []) {
+                Log::info('Match history loaded from STRATZ', ['account_id' => $accountId, 'total' => count($stratzMatches)]);
+                return $stratzMatches;
+            }
+        } catch (\Throwable $e) {
+            Log::warning('STRATZ match history failed, falling back to OpenDota', ['account_id' => $accountId, 'message' => $e->getMessage()]);
+        }
+
+        return $this->fetchMatchHistoryFromOpenDota($accountId);
+    }
+
+    /**
+     * OpenDota fallback: follow less_than_match_id cursor until exhausted.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function fetchMatchHistoryFromOpenDota(int $accountId): array
     {
         $allMatches = [];
         $lessThanMatchId = null;

@@ -324,6 +324,182 @@ class StratzService
     }
 
     /**
+     * Full match history from STRATZ (bypasses OpenDota daily limits).
+     * Returns rows normalized to OpenDota /players/{id}/matches shape.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function playerMatches(int $accountId, int $take = 100, int $maxMatches = 0): array
+    {
+        if (! $this->enabled() || $accountId <= 0) {
+            return [];
+        }
+
+        $cacheKey = "stratz:player:{$accountId}:matches:v1";
+        $cached = Cache::get($cacheKey);
+        if (is_array($cached)) {
+            return $cached;
+        }
+
+        $query = <<<'GRAPHQL'
+        query GetMatches($steamAccountId: Long!, $take: Int, $skip: Int) {
+          player(steamAccountId: $steamAccountId) {
+            matches(request: { take: $take, skip: $skip }) {
+              id
+              startDateTime
+              durationSeconds
+              gameMode
+              lobbyType
+              players(steamAccountId: $steamAccountId) {
+                heroId
+                isRadiant
+                isVictory
+                kills
+                deaths
+                assists
+                goldPerMinute
+                experiencePerMinute
+                networth
+                level
+              }
+            }
+          }
+        }
+        GRAPHQL;
+
+        $all = [];
+        $skip = 0;
+        $take = max(1, min(100, $take));
+
+        while (true) {
+            try {
+                $response = $this->http
+                    ->withToken((string) config('services.stratz.token'))
+                    ->withHeaders(['User-Agent' => 'DotaHub/1.0'])
+                    ->acceptJson()
+                    ->timeout(20)
+                    ->post((string) config('services.stratz.endpoint', 'https://api.stratz.com/graphql'), [
+                        'query' => $query,
+                        'variables' => [
+                            'steamAccountId' => $accountId,
+                            'take' => $take,
+                            'skip' => $skip,
+                        ],
+                    ]);
+            } catch (ConnectionException $exception) {
+                Log::warning('STRATZ match history unreachable', ['account_id' => $accountId, 'message' => $exception->getMessage()]);
+                return $all;
+            }
+
+            if ($response->failed()) {
+                Log::warning('STRATZ match history request failed', ['account_id' => $accountId, 'status' => $response->status()]);
+                return $all;
+            }
+
+            $payload = $response->json();
+            $matches = $payload['data']['player']['matches'] ?? null;
+            if (! is_array($matches) || $matches === []) {
+                if ($all === []) {
+                    Log::info('STRATZ match history returned no data', ['account_id' => $accountId, 'errors' => $payload['errors'] ?? null]);
+                }
+                break;
+            }
+
+            foreach ($matches as $match) {
+                $row = $this->normalizeStratzMatch($match);
+                if ($row !== null) {
+                    $all[] = $row;
+                }
+            }
+
+            $count = count($matches);
+            $skip += $count;
+            Log::info('STRATZ matches loaded', ['account_id' => $accountId, 'batch' => $count, 'total' => count($all)]);
+
+            if ($count < $take) {
+                break;
+            }
+            if ($maxMatches > 0 && count($all) >= $maxMatches) {
+                break;
+            }
+        }
+
+        if ($all !== []) {
+            Cache::put($cacheKey, $all, (int) config('stats.cache.dota_player', 3600));
+        }
+
+        return $all;
+    }
+
+    /**
+     * @param  mixed  $match
+     * @return array<string, mixed>|null
+     */
+    private function normalizeStratzMatch(mixed $match): ?array
+    {
+        if (! is_array($match) || empty($match['id'])) {
+            return null;
+        }
+
+        $players = $match['players'] ?? [];
+        $p = is_array($players) && isset($players[0]) && is_array($players[0]) ? $players[0] : null;
+        if ($p === null) {
+            return null;
+        }
+
+        $isRadiant = (bool) ($p['isRadiant'] ?? false);
+        $isVictory = (bool) ($p['isVictory'] ?? false);
+        $radiantWin = ($isRadiant && $isVictory) || (! $isRadiant && ! $isVictory);
+
+        return [
+            'match_id' => (int) $match['id'],
+            'player_slot' => $isRadiant ? 0 : 128,
+            'radiant_win' => $radiantWin,
+            'duration' => (int) ($match['durationSeconds'] ?? 0),
+            'game_mode' => $this->mapStratzGameMode($match['gameMode'] ?? null),
+            'lobby_type' => $this->mapStratzLobbyType($match['lobbyType'] ?? null),
+            'hero_id' => (int) ($p['heroId'] ?? 0),
+            'start_time' => (int) ($match['startDateTime'] ?? 0),
+            'kills' => (int) ($p['kills'] ?? 0),
+            'deaths' => (int) ($p['deaths'] ?? 0),
+            'assists' => (int) ($p['assists'] ?? 0),
+            'gold_per_min' => (int) ($p['goldPerMinute'] ?? 0),
+            'xp_per_min' => (int) ($p['experiencePerMinute'] ?? 0),
+            'net_worth' => (int) ($p['networth'] ?? 0),
+            'level' => (int) ($p['level'] ?? 0),
+        ];
+    }
+
+    private function mapStratzGameMode(mixed $value): ?int
+    {
+        if (is_numeric($value)) return (int) $value;
+        if (! is_string($value)) return null;
+        return match ($value) {
+            'NONE' => 0, 'ALL_PICK' => 1, 'CAPTAINS_MODE' => 2, 'RANDOM_DRAFT' => 3,
+            'SINGLE_DRAFT' => 4, 'ALL_RANDOM' => 5, 'INTRO' => 6, 'THE_DIRETIDE' => 7,
+            'REVERSE_CAPTAINS_MODE' => 8, 'THE_GREEVILING' => 9, 'TUTORIAL' => 10,
+            'MID_ONLY' => 11, 'LEAST_PLAYED' => 12, 'LIMITED_HEROES' => 13,
+            'COMPENDIUM_MATCHMAKING' => 14, 'CUSTOM' => 15, 'CAPTAINS_DRAFT' => 16,
+            'BALANCED_DRAFT' => 17, 'ABILITY_DRAFT' => 18, 'EVENT' => 19,
+            'ALL_RANDOM_DEATH_MATCH' => 20, 'SOLO_MID' => 21, 'ALL_PICK_RANKED' => 22,
+            'TURBO' => 23, 'MUTATION' => 24,
+            default => null,
+        };
+    }
+
+    private function mapStratzLobbyType(mixed $value): ?int
+    {
+        if (is_numeric($value)) return (int) $value;
+        if (! is_string($value)) return null;
+        return match ($value) {
+            'INVALID' => -1, 'UNRANKED' => 0, 'PRACTICE' => 1, 'TOURNAMENT' => 2,
+            'TUTORIAL' => 3, 'COOP_VS_BOTS' => 4, 'TEAM_MATCH' => 5, 'SOLO_QUEUE' => 6,
+            'RANKED' => 7, 'SOLO_MID' => 8, 'BATTLE_CUP' => 9,
+            default => null,
+        };
+    }
+
+    /**
      * One-off GraphQL probe. The raw response is written to laravel.log so the
      * token, Cloudflare status and field names can be inspected from tinker.
      *
