@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Слишком много запросов — DOTAHUB')
+@section('title', '{{ __('ui.too_many_requests') }} — DOTAHUB')
 @section('description', 'Превышен лимит запросов к API. Попробуйте позже.')
 
 @section('content')
@@ -21,14 +21,14 @@
             </span>
 
             <h1 class="mt-6 text-balance text-3xl font-semibold tracking-tight text-mist-200 sm:text-4xl">
-                Слишком много запросов
+                {{ __('ui.too_many_requests') }}
             </h1>
             <p class="mt-3 max-w-xl text-sm leading-relaxed text-mist-400">
                 OpenDota ограничила частоту обращений. Подождите минуту и попробуйте снова — уже закэшированные профили откроются без задержки.
             </p>
 
             <div class="mt-8 flex flex-wrap justify-center gap-2">
-                <a href="{{ route('home') }}" class="btn-primary">Вернуться на главную</a>
+                <a href="{{ route('home') }}" class="btn-primary">{{ __('ui.back_home') }}</a>
                 <button type="button" onclick="window.location.reload()" class="btn-ghost">Повторить запрос</button>
             </div>
         </div>

@@ -32,7 +32,7 @@
 
             <div class="mt-8 flex flex-wrap justify-center gap-2">
                 <button type="button" onclick="window.location.reload()" class="btn-primary">Повторить запрос</button>
-                <a href="{{ $backUrl ?? route('home') }}" class="btn-ghost">Вернуться на главную</a>
+                <a href="{{ $backUrl ?? route('home') }}" class="btn-ghost">{{ __('ui.back_home') }}</a>
             </div>
         </div>
     </div>

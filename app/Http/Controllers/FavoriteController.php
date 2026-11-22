@@ -57,7 +57,7 @@ class FavoriteController extends Controller
             ]);
         }
 
-        return back()->with('status', 'Игрок добавлен в избранное.');
+        return back()->with('status', '__('ui.favorite_added')');
     }
 
     public function destroy(Request $request, int $accountId, FavoriteService $favorites): RedirectResponse|JsonResponse
@@ -78,7 +78,7 @@ class FavoriteController extends Controller
             ]);
         }
 
-        return back()->with('status', 'Игрок удалён из избранного.');
+        return back()->with('status', '__('ui.favorite_removed')');
     }
 
     private function steamId(): ?string
@@ -95,7 +95,7 @@ class FavoriteController extends Controller
         if (request()->expectsJson()) {
             return response()->json([
                 'ok' => false,
-                'message' => 'Войдите через Steam, чтобы управлять избранным.',
+                'message' => '__('ui.login_to_manage_favorites')',
                 'login_url' => $loginUrl,
             ], 401);
         }

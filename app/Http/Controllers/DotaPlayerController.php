@@ -59,9 +59,9 @@ class DotaPlayerController extends Controller
 
         return view('dota.player', [
             'player' => $player,
-            'pageTitle' => $player['nickname'].' - Обзор',
+            'pageTitle' => $player['nickname'].' - '.__('ui.overview'),
             'activeTab' => 'overview',
-            'profileSection' => 'Обзор',
+            'profileSection' => __('ui.overview'),
             'winrate' => $player['winrate'],
             'recentMatches' => array_slice($player['matches'], 0, 25),
             'history' => $history,
@@ -162,9 +162,9 @@ class DotaPlayerController extends Controller
 
         return view('dota.peers', [
             'player' => $player,
-            'pageTitle' => $player['nickname'].' - Союзники',
+            'pageTitle' => $player['nickname'].' - '.__('ui.peers'),
             'activeTab' => 'peers',
-            'profileSection' => 'Союзники',
+            'profileSection' => __('ui.peers'),
             'steamProfile' => $steam->summary(
                 ($player['steam_id'] ?? '') ?: SteamId::steamId64FromAccountId($accountId)
             ),
@@ -195,9 +195,9 @@ class DotaPlayerController extends Controller
         // client-side and never reloads the profile.
         return view('dota.records', [
             'player' => $player,
-            'pageTitle' => $player['nickname'].' - Рекорды',
+            'pageTitle' => $player['nickname'].' - '.__('ui.records'),
             'activeTab' => 'records',
-            'profileSection' => 'Рекорды',
+            'profileSection' => __('ui.records'),
             'records' => $openDota->playerRecords($accountId, $history, false),
             'rankedRecords' => $openDota->playerRecords($accountId, $history, true),
             'steamProfile' => $steam->summary(
@@ -225,13 +225,13 @@ class DotaPlayerController extends Controller
             return $openDota->player($accountId);
         } catch (PlayerNotFoundException $exception) {
             return response()->view('errors.player', [
-                'title' => 'Игрок не найден',
+                'title' => __('ui.player_not_found'),
                 'message' => $exception->getMessage(),
                 'backUrl' => route('home'),
             ], 404);
         } catch (ApiRateLimitException $exception) {
             return response()->view('errors.player', [
-                'title' => 'Лимит API исчерпан',
+                'title' => __('ui.api_limit'),
                 'message' => $exception->getMessage(),
                 'backUrl' => route('home'),
             ], 429);
@@ -239,21 +239,21 @@ class DotaPlayerController extends Controller
             $cached = \App\Models\PlayerProfile::where('account_id', $accountId)->first();
             $data = is_array($cached?->data) ? $cached->data : [];
             if ($data !== []) {
-                $data['api_warning'] = 'Данные временно недоступны (Лимит API). Показаны сохранённые данные.';
+                $data['api_warning'] = __('ui.api_warning');
                 return $data;
             }
 
             return [
                 'account_id' => $accountId,
                 'steam_id' => (string) \App\Support\SteamId::steamId64FromAccountId($accountId),
-                'nickname' => 'Игрок #'.$accountId,
+                'nickname' => __('ui.player_hash', ['id' => $accountId]),
                 'avatar' => null,
                 'profile_url' => null,
                 'country_code' => null,
                 'last_login_at' => null,
                 'is_private' => false,
                 'rank_tier' => null,
-                'rank_label' => 'Без ранга',
+                'rank_label' => __('ui.no_rank'),
                 'rank_medal' => null,
                 'rank_stars' => 0,
                 'leaderboard_rank' => null,
@@ -273,7 +273,7 @@ class DotaPlayerController extends Controller
                 'peers' => [],
                 'has_public_matches' => false,
                 'dota_data_hidden' => false,
-                'api_warning' => 'Данные временно недоступны (Лимит API)',
+                'api_warning' => __('ui.api_limit_short'),
             ];
         }
     }
@@ -300,20 +300,20 @@ class DotaPlayerController extends Controller
             );
         } catch (PlayerNotFoundException $exception) {
             return response()->view('errors.player', [
-                'title' => 'Игрок не найден',
+                'title' => __('ui.player_not_found'),
                 'message' => $exception->getMessage(),
                 'backUrl' => route('home'),
             ], 404);
         } catch (ApiRateLimitException $exception) {
             return response()->view('errors.player', [
-                'title' => 'Лимит API исчерпан',
+                'title' => __('ui.api_limit'),
                 'message' => $exception->getMessage(),
                 'backUrl' => route('home'),
             ], 429);
         } catch (ApiUnavailableException|ExternalApiException $exception) {
             $player = $this->playerOrError($accountId, $openDota);
             if ($player instanceof Response) { return $player; }
-            $player['api_warning'] = $player['api_warning'] ?? 'Данные временно недоступны (Лимит API)';
+            $player['api_warning'] = $player['api_warning'] ?? __('ui.api_limit_short');
             $result = ['rows' => [], 'total' => 0, 'hero_options' => [], 'player' => $player];
         }
 
@@ -332,9 +332,9 @@ class DotaPlayerController extends Controller
 
         return view('dota.matches', [
             'player' => $player,
-            'pageTitle' => $player['nickname'].' - Матчи',
+            'pageTitle' => $player['nickname'].' - '.__('ui.matches'),
             'activeTab' => 'matches',
-            'profileSection' => 'Матчи',
+            'profileSection' => __('ui.matches'),
             'steamProfile' => $steam->summary($steamId),
             'isFavorite' => $this->favoriteState($accountId, $favorites),
             'matches' => $matches,
@@ -350,7 +350,7 @@ class DotaPlayerController extends Controller
 
         return redirect()
             ->route('dota.player', ['accountId' => $accountId])
-            ->with('status', 'Кэш очищен — загружаем свежие данные из OpenDota.');
+            ->with('status', __('ui.cache_cleared'));
     }
 
     /**

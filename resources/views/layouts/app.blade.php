@@ -100,7 +100,15 @@
 
                 <div class="relative" x-data="{ open: false }" @click.outside="open = false" @keydown.escape.window="open = false">
                     <button type="button" @click="open = !open" class="flex items-center gap-1.5 h-9 px-2 rounded-none border-0 text-mist-400 transition hover:bg-ink-700 hover:text-white focus:outline-none focus:ring-0" :aria-expanded="open.toString()" aria-haspopup="true" title="{{ __('ui.language') }}">
-                        <span class="inline-flex items-center">@if($currentLocale === 'en')<img src="{{ asset('images/flags/us.svg') }}" alt="US" class="w-5 h-5 object-cover rounded-sm">@else<img src="{{ asset('images/flags/ru.svg') }}" alt="RU" class="w-5 h-5 object-cover rounded-sm">@endif</span>
+                        <span class="inline-flex items-center">
+                            @if($currentLocale === 'en')
+                                <img src="{{ asset('images/flags/us.svg') }}" alt="US" class="w-5 h-5 object-cover rounded-sm">
+                            @elseif($currentLocale === 'de')
+                                <img src="{{ asset('images/flags/de.svg') }}" alt="DE" class="w-5 h-5 object-cover rounded-sm">
+                            @else
+                                <img src="{{ asset('images/flags/ru.svg') }}" alt="RU" class="w-5 h-5 object-cover rounded-sm">
+                            @endif
+                        </span>
                         <svg class="h-3 w-3 transition" :class="open ? 'rotate-180' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </button>
                     <div x-show="open" x-cloak x-transition.opacity.duration.150ms class="absolute right-0 top-10 z-50 w-40 border border-line bg-ink-800 py-1 shadow-lg">

@@ -27,7 +27,7 @@
         <div class="mt-4 flex flex-wrap items-center gap-2 rounded-none bg-ink-900/60 px-4 py-3 text-[11px]">
             <span class="uppercase tracking-[0.16em] text-mist-500">{{ __('ui.privacy') }}</span>
             <span @class(['badge', $steamTone])>Steam: {{ $steamProfile['visibility'] ?? __('ui.steam_unknown') }}</span>
-            <span @class(['badge', $dotaTone])>Dota: {{ $dotaPublic ? 'Публичные матчи доступны' : 'Матчей пока нет' }}</span>
+            <span @class(['badge', $dotaTone])>{{ $dotaPublic ? __('ui.dota_public') : __('ui.dota_no_matches') }}</span>
             @if (! $steamAvailable)
                 <span class="text-accent-300/80">{{ $steamProfile['error'] ?? 'Steam API недоступна' }}</span>
             @endif
@@ -52,7 +52,7 @@
             <div class="col-span-12 min-w-0 space-y-4 lg:col-span-8">
                 <section class="overflow-hidden border border-[#2d313e] bg-[#1c1e26] rounded-none">
                     <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[#2d313e] px-3 py-2">
-                        <h2 class="section-heading">Последние игры</h2>
+                        <h2 class="section-heading">{{ __('ui.recent_games') }}</h2>
                     </div>
 
                     @if ($recentMatches === [])
@@ -115,7 +115,7 @@
                 <section class="border border-[#2d313e] bg-[#1c1e26] p-3 rounded-none">
                     <div class="flex items-start justify-between gap-2">
                         <h2 class="section-heading">{{ __('ui.hero_wheel') }}</h2>
-                        <span class="text-[10px] text-mist-500">{{ $heroUsageTotal }} матчей</span>
+                        <span class="text-[10px] text-mist-500">{{ $heroUsageTotal }} {{ __('ui.matches_word') }}</span>
                     </div>
 
                     @include('dota.partials.hero-wheel', ['allHeroes' => $heroUsage, 'playerId' => $player['account_id'], 'heroUsageUnavailable' => $heroUsageUnavailable ?? false])

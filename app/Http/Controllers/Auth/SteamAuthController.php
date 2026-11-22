@@ -37,7 +37,7 @@ class SteamAuthController extends Controller
             $steamId = (string) $steamUser->getId();
 
             if ($steamId === '') {
-                throw new \RuntimeException('Steam не вернул идентификатор игрока.');
+                throw new \RuntimeException('Steam did not return a player identifier.');
             }
 
             Session::put('steam_id', $steamId);
@@ -45,12 +45,12 @@ class SteamAuthController extends Controller
             Session::put('steam_avatar', (string) ($steamUser->getAvatar() ?? ''));
 
             return $this->redirectTo($intended, route('home'))
-                ->with('status', 'Вы вошли через Steam.');
+                ->with('status', __('ui.steam_logged_in'));
         } catch (Throwable $exception) {
             Log::warning('Steam login failed', ['message' => $exception->getMessage()]);
 
             return $this->redirectTo($intended, route('home'))
-                ->with('error', 'Не удалось войти через Steam. Попробуйте ещё раз.');
+                ->with('error', __('ui.steam_login_failed'));
         }
     }
 
@@ -61,7 +61,7 @@ class SteamAuthController extends Controller
         $intended = $request->string('intended')->toString();
 
         return $this->redirectTo($intended, route('home'))
-            ->with('status', 'Вы вышли из аккаунта Steam.');
+            ->with('status', __('ui.steam_logged_out'));
     }
 
     /**

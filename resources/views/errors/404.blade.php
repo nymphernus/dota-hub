@@ -28,7 +28,7 @@
             </p>
 
             <div class="mt-8 flex flex-wrap justify-center gap-2">
-                <a href="{{ route('home') }}" class="btn-primary">Вернуться на главную</a>
+                <a href="{{ route('home') }}" class="btn-primary">{{ __('ui.back_home') }}</a>
                 <a href="{{ route('home') }}#search" class="btn-ghost">К поиску игрока</a>
             </div>
         </div>

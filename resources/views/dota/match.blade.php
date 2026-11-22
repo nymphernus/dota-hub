@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', $pageTitle ?? ('Матч '.$match['match_id'].' - DOTAHUB'))
-@section('description', 'Детальная статистика матча Dota 2 #'.$match['match_id'].': счёт, роли, закуп, длительность, герои, K/D/A, GPM, XPM и урон игроков Radiant и Dire.')
+@section('title', $pageTitle ?? (__('ui.match').' #'.$match['match_id'].' - DOTAHUB'))
+@section('description', __('ui.match_details_title', ['id' => $match['match_id']]))
 
 @php
     $profilePlayerId = request()->integer('player_id') ?: null;
@@ -57,7 +57,7 @@
                                 'border-green-500/25 bg-green-500/10 text-green-500' => $radiantWin,
                                 'border-red-500/25 bg-red-500/10 text-red-500' => ! $radiantWin,
                             ])>
-                                Победа {{ $winner }}
+                                {{ __('ui.win_of_team', ['team' => $winner]) }}
                             </span>
                             @if ($match['is_ranked'])
                                 <span class="badge border-accent-500/25 bg-accent-500/10 text-accent-300">
@@ -73,7 +73,7 @@
                         </div>
 
                         <h1 class="mt-3 text-3xl font-semibold tracking-tight text-mist-200 sm:text-4xl">
-                            Матч <span class="font-mono text-2xl text-mist-300 sm:text-3xl">#{{ $match['match_id'] }}</span>
+                            {{ __('ui.match') }} <span class="font-mono text-2xl text-mist-300 sm:text-3xl">#{{ $match['match_id'] }}</span>
                         </h1>
 
                         <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-mist-400">
@@ -105,11 +105,11 @@
             </div>
         </section>
 
-        <section class="card mt-4 overflow-hidden" aria-label="Составы матча">
+        <section class="card mt-4 overflow-hidden" aria-label="{{ __('ui.match_squads') }}">
             <div class="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-4">
                 <div>
-                    <p class="text-[10px] uppercase tracking-[0.18em] text-mist-500">Составы</p>
-                    <h2 class="section-heading">Игроки матча</h2>
+                    <p class="text-[10px] uppercase tracking-[0.18em] text-mist-500">{{ __('ui.match_squads') }}</p>
+                    <h2 class="section-heading">{{ __('ui.players_in_match') }}</h2>
                 </div>
                 <span class="badge text-mist-400">
                     <span class="text-green-500">{{ $match['radiant_score'] }}</span>
@@ -122,7 +122,7 @@
                 <table class="w-full text-sm">
                     <thead class="table-head">
                         <tr>
-                            <th class="px-2 py-1 font-semibold">Игрок / герой</th>
+                            <th class="px-2 py-1 font-semibold">{{ __('ui.player_hero_col') }}</th>
                             <th class="px-2 py-1 font-semibold">IMP</th>
                             <th class="px-2 py-1 font-semibold">K / D / A</th>
                             <th class="px-2 py-1 font-semibold">GPM</th>
@@ -280,7 +280,7 @@
                                     @endif
                             @empty
                                 <tr>
-                                    <td colspan="{{ $columnCount }}" class="px-4 py-8 text-center text-sm text-mist-400">Нет данных по игрокам.</td>
+                                    <td colspan="{{ $columnCount }}" class="px-4 py-8 text-center text-sm text-mist-400">{{ __('ui.no_data') }} по игрокам.</td>
                                 </tr>
                             @endforelse
                         @endforeach

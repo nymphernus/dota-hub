@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('title', $pageTitle ?? ($hero['name'].' - '.$player['nickname'].' - DOTAHUB'))
-@section('description', 'Статистика '.$player['nickname'].' на герое '.$hero['name'].': винрейт, KDA, GPM, XPM, бенчмарки OpenDota и последние матчи.')
+@section('description', '$player['nickname'].' - '.$hero['name']')
 
 @php
     $backUrl = route('dota.player', ['accountId' => $player['account_id']]);
@@ -55,8 +55,8 @@
 
                         <div class="min-w-0 pb-1">
                             <div class="flex flex-wrap items-center gap-2">
-                                <span class="badge border-dota-500/25 bg-dota-500/10 text-dota-300">Герой</span>
-                                <span class="badge border-line bg-ink-900/50 text-mist-400">Последние 100 игр</span>
+                                <span class="badge border-dota-500/25 bg-dota-500/10 text-dota-300">{{ __('ui.hero') }}</span>
+                                <span class="badge border-line bg-ink-900/50 text-mist-400">{{ __('ui.recent_games') }}</span>
                             </div>
 
                             <h1 class="mt-2 truncate text-3xl font-semibold tracking-tight text-mist-200 sm:text-4xl">{{ $hero['name'] }}</h1>
@@ -71,7 +71,7 @@
                                 </a>
                                 <span class="inline-flex items-center gap-1 text-mist-500">
                                     <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" stroke-linecap="round" /></svg>
-                                    Обновлено {{ \Carbon\CarbonImmutable::parse($cachedAt)->diffForHumans(short: true) }}
+                                    {{ __('ui.updated') }} {{ \Carbon\CarbonImmutable::parse($cachedAt)->diffForHumans(short: true) }}
                                 </span>
                             </div>
                         </div>
@@ -87,40 +87,40 @@
 
         <div class="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
             <x-stat
-                label="Матчи"
+                label="{{ __('ui.matches') }}"
                 :value="number_format($summary['games'], 0, '.', ' ')"
-                hint="Последние 100 игр на герое"
+                hint="{{ __('ui.last_100_games_hero') }}"
             />
             <x-stat
-                label="Победы / Поражения"
+                label="{{ __('ui.wins_losses') }}"
                 :value="number_format($summary['wins'], 0, '.', ' ').' / '.number_format($summary['losses'], 0, '.', ' ')"
-                hint="Результаты в выборке"
+                hint="{{ __('ui.results_in_sample') }}"
             />
             <x-stat
-                label="Винрейт"
+                label="{{ __('ui.winrate') }}"
                 :value="$summary['winrate'] !== null ? number_format($summary['winrate'], 1, '.', '').'%' : '—'"
                 :hint="number_format($summary['wins'], 0, '.', ' ').' '.__('ui.wins_lower').' / '.number_format($summary['games'], 0, '.', ' ')"
             />
             <x-stat
-                label="Средний KDA"
+                label="{{ __('ui.average_kda') }}"
                 :value="$summary['kda'] !== null ? number_format($summary['kda'], 2, '.', '') : '—'"
-                :hint="$summary['kills'] !== null ? $summary['kills'].' / '.$summary['deaths'].' / '.$summary['assists'].' в среднем' : 'Недостаточно данных'"
+                :hint="$summary['kills'] !== null ? $summary['kills'].' / '.$summary['deaths'].' / '.$summary['assists'] : __('ui.not_enough_data')"
             />
         </div>
 
         <section class="mt-4 card overflow-hidden">
             <div class="flex flex-wrap items-start justify-between gap-3 border-b border-line px-4 py-3">
                 <div>
-                    <h2 class="section-heading">Бенчмарки</h2>
+                    <h2 class="section-heading">{{ __('ui.benchmarks') }}</h2>
                     <p class="mt-1 text-[11px] leading-relaxed text-mist-500">
-                        Перцентили OpenDota по последним матчам. Чем правее маркер, тем сильнее показатель относительно других игроков.
+                        {{ __('ui.benchmarks_hint') }}
                     </p>
                 </div>
             </div>
 
             @if (collect($benchmarks)->every(fn (array $benchmark) => ! $benchmark['available']))
                 <div class="p-8 text-center">
-                    <p class="text-sm text-mist-400">Бенчмарки для этого героя пока недоступны. OpenDota не вернула распределение.</p>
+                    <p class="text-sm text-mist-400">{{ __('ui.benchmarks_unavailable') }}</p>
                 </div>
             @else
                 <div class="grid gap-4 p-4 sm:p-5 lg:grid-cols-3">
@@ -144,7 +144,7 @@
                                 @if ($benchmark['available'])
                                     <span class="badge {{ $tone['badge'] }}">{{ $benchmark['rank_label'] }}</span>
                                 @else
-                                    <span class="badge border-line bg-ink-900/50 text-mist-400">Нет данных</span>
+                                    <span class="badge border-line bg-ink-900/50 text-mist-400">{{ __('ui.no_data') }}</span>
                                 @endif
                             </div>
 
@@ -154,7 +154,7 @@
                                 </p>
                                 @if ($benchmark['available'])
                                     <p class="pb-1 text-right text-[10px] leading-tight text-mist-500">
-                                        Сильнее<br><span class="font-mono text-sm font-bold text-mist-200">{{ $benchmark['percentile_label'] }}%</span> игроков
+                                        {!! __('ui.stronger_than', ['pct' => $benchmark['percentile_label']]) !!}
                                     </p>
                                 @endif
                             </div>
@@ -169,19 +169,19 @@
                                         ></span>
                                     </div>
                                     <div class="mt-2 flex items-center justify-between text-[9px] uppercase tracking-wider text-mist-500">
-                                        <span>Ниже</span>
-                                        <span>Среднее</span>
-                                        <span>Топ</span>
+                                        <span>{{ __('ui.below') }}</span>
+                                        <span>{{ __('ui.average') }}</span>
+                                        <span>{{ __('ui.top') }}</span>
                                     </div>
                                 </div>
 
                                 <div class="mt-4 grid grid-cols-2 gap-2 border-t border-line pt-3 text-[10px]">
                                     <div>
-                                        <p class="text-mist-500">Среднее</p>
+                                        <p class="text-mist-500">{{ __('ui.average') }}</p>
                                         <p class="mt-0.5 font-mono font-semibold text-mist-300">{{ $benchmark['average_label'] }}</p>
                                     </div>
                                     <div class="text-right">
-                                        <p class="text-mist-500">Топ 10%</p>
+                                        <p class="text-mist-500">{{ __('ui.top_10pct') }}</p>
                                         <p class="mt-0.5 font-mono font-semibold text-mist-300">{{ $benchmark['elite_label'] }}</p>
                                     </div>
                                 </div>
@@ -194,18 +194,18 @@
 
         <section class="mt-4 card overflow-hidden">
             <div class="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3">
-                <h2 class="section-heading">История матчей</h2>
+                <h2 class="section-heading">{{ __('ui.match_history') }}</h2>
                 <div class="flex items-center gap-3 text-[11px]">
-                    <span class="inline-flex items-center gap-1.5 text-green-500"><span class="h-2 w-2 rounded-none bg-green-500"></span> Победа</span>
-                    <span class="inline-flex items-center gap-1.5 text-red-500"><span class="h-2 w-2 rounded-none bg-red-500"></span> Поражение</span>
+                    <span class="inline-flex items-center gap-1.5 text-green-500"><span class="h-2 w-2 rounded-none bg-green-500"></span> {{ __('ui.win_label') }}</span>
+                    <span class="inline-flex items-center gap-1.5 text-red-500"><span class="h-2 w-2 rounded-none bg-red-500"></span> {{ __('ui.loss_label') }}</span>
                 </div>
             </div>
 
             @if ($matches === [])
                 <div class="p-10 text-center">
-                    <p class="text-sm text-mist-400">У игрока нет публичных матчей на этом герое.</p>
+                    <p class="text-sm text-mist-400">{{ __('ui.no_public_matches_hero') }}</p>
                     <a href="{{ $backUrl }}" class="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-accent-300 transition hover:text-accent-300">
-                        Вернуться в профиль
+                        {{ __('ui.back_to_profile') }}
                         <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke-linecap="round" /></svg>
                     </a>
                 </div>
@@ -214,15 +214,15 @@
                     <table class="w-full text-sm">
                         <thead class="table-head">
                             <tr>
-                                <th class="px-2 py-1 text-left font-semibold sm:px-3">Результат</th>
+                                <th class="px-2 py-1 text-left font-semibold sm:px-3">{{ __('ui.result_col') }}</th>
                                 <th class="px-2 py-1 text-left font-semibold">K / D / A</th>
                                 <th class="px-2 py-1 text-left font-semibold">KDA</th>
                                 <th class="px-2 py-1 text-left font-semibold">GPM</th>
                                 <th class="px-2 py-1 text-left font-semibold">XPM</th>
-                                <th class="px-2 py-1 text-left font-semibold">Нетворс</th>
+                                <th class="px-2 py-1 text-left font-semibold">{{ __('ui.networth') }}</th>
                                 <th class="px-2 py-1 text-left font-semibold">DMG</th>
-                                <th class="px-2 py-1 text-left font-semibold">Длит.</th>
-                                <th class="px-2 py-1 text-right font-semibold sm:px-3">Дата</th>
+                                <th class="px-2 py-1 text-left font-semibold">{{ __('ui.duration_short') }}</th>
+                                <th class="px-2 py-1 text-right font-semibold sm:px-3">{{ __('ui.date_col') }}</th>
                             </tr>
                         </thead>
                         <tbody class="table-rows">
@@ -242,7 +242,7 @@
                                         onclick="window.location.href = this.dataset.href"
                                         onkeydown="if (event.key === 'Enter') { window.location.href = this.dataset.href }"
                                         tabindex="0"
-                                        aria-label="Открыть матч {{ $match['match_id'] }}"
+                                        aria-label="{{ __('ui.open_match') }} {{ $match['match_id'] }}"
                                     @endif
                                 >
                                     <td @class([

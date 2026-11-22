@@ -1,15 +1,15 @@
 @php
     $accountId = (int) ($player['account_id'] ?? 0);
     $tabs = [
-        ['key' => 'overview', 'label' => 'Обзор', 'url' => route('dota.player', ['accountId' => $accountId])],
-        ['key' => 'matches', 'label' => 'Матчи', 'url' => route('dota.player.matches', ['accountId' => $accountId])],
-        ['key' => 'heroes', 'label' => 'Герои', 'url' => route('dota.player.heroes', ['accountId' => $accountId]), 'count' => count($player['heroes'] ?? [])],
-        ['key' => 'peers', 'label' => 'Союзники', 'url' => route('dota.player.peers', ['accountId' => $accountId])],
-        ['key' => 'records', 'label' => 'Рекорды', 'url' => route('dota.player.records', ['accountId' => $accountId])],
+        ['key' => 'overview', 'label' => __('ui.overview'), 'url' => route('dota.player', ['accountId' => $accountId])],
+        ['key' => 'matches', 'label' => __('ui.matches'), 'url' => route('dota.player.matches', ['accountId' => $accountId])],
+        ['key' => 'heroes', 'label' => __('ui.heroes'), 'url' => route('dota.player.heroes', ['accountId' => $accountId]), 'count' => count($player['heroes'] ?? [])],
+        ['key' => 'peers', 'label' => __('ui.peers'), 'url' => route('dota.player.peers', ['accountId' => $accountId])],
+        ['key' => 'records', 'label' => __('ui.records'), 'url' => route('dota.player.records', ['accountId' => $accountId])],
     ];
 @endphp
 
-<div class="mt-4 flex items-center gap-1 overflow-x-auto rounded-none bg-ink-900/60 p-1.5" role="tablist" aria-label="Разделы профиля">
+<div class="mt-4 flex items-center gap-1 overflow-x-auto rounded-none bg-ink-900/60 p-1.5" role="tablist" aria-label="{{ __('ui.profile_sections') }}">
     @foreach ($tabs as $tab)
         <a
             id="tab-{{ $tab['key'] }}"

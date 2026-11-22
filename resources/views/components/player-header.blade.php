@@ -36,14 +36,14 @@
 <section class="card relative overflow-hidden min-h-[220px] !bg-transparent">
     @if ($bannerImage)
         <div class="absolute inset-0 bg-cover bg-center blur-md opacity-30 dark:opacity-40" style="background-image: url('{{ $bannerImage }}')" aria-hidden="true"></div>
-        <div class="absolute inset-0 bg-black/40 dark:bg-black/60"></div>
+        <div class="absolute inset-0 bg-black/40 dark:bg-transparent"></div>
     @endif
     <div class="relative z-10 flex min-h-[220px] items-center px-4 py-4 sm:px-6 lg:px-8">
         <div class="flex w-full flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div class="flex min-w-0 items-center gap-4">
                 <div class="relative h-20 w-20 shrink-0 overflow-hidden rounded-none bg-ink-800    sm:h-24 sm:w-24">
                     @if ($player['avatar'])
-                        <img src="{{ $player['avatar'] }}" alt="Аватар {{ $player['nickname'] }}" class="h-full w-full object-cover" loading="eager">
+                        <img src="{{ $player['avatar'] }}" alt="{{ $player['nickname'] }}" class="h-full w-full object-cover" loading="eager">
                     @else
                         <span class="grid h-full w-full place-items-center text-3xl font-semibold text-mist-500">{{ mb_strtoupper(mb_substr($player['nickname'], 0, 1)) }}</span>
                     @endif
@@ -51,7 +51,7 @@
 
                 <div class="min-w-0">
                     <div class="flex flex-wrap items-center gap-2">@if ($player['is_offline_cache'] ?? false)
-                            <span class="badge border-line bg-[#2d313e] text-mist-300">Данные из кэша (Офлайн)</span>
+                            <span class="badge border-line bg-[#2d313e] text-mist-300">{{ __('ui.cached_offline') }}</span>
                         @endif
                     </div>
 
@@ -72,9 +72,9 @@
                                 :disabled="loading"
                                 :class="active ? 'border-accent-400/40 bg-accent-400/10 text-accent-300' : 'border-line bg-ink-900/40 text-mist-400 hover:border-accent-400/30 hover:text-accent-300'"
                                 class="grid h-8 w-8 shrink-0 place-items-center rounded-none border transition disabled:opacity-60"
-                                :aria-label="active ? 'Удалить из избранного' : 'Добавить в избранное'"
+                                :aria-label="active ? __('ui.remove_from_favorites') : __('ui.add_to_favorites')"
                                 :aria-pressed="active.toString()"
-                                :title="active ? 'В избранном' : 'В избранное'"
+                                :title="active ? __('ui.in_favorites') : __('ui.add_to_favorites')"
                                 data-favorite-star
                             >
                                 <svg class="h-4 w-4" viewBox="0 0 24 24" :fill="active ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
@@ -85,8 +85,8 @@
                             <a
                                 href="{{ route('auth.steam', ['intended' => url()->current()]) }}"
                                 class="grid h-8 w-8 shrink-0 place-items-center rounded-none border border-line bg-ink-900/40 text-mist-400 transition hover:border-accent-400/30 hover:text-accent-300"
-                                aria-label="Добавить в избранное"
-                                title="Добавить в избранное"
+                                aria-label="{{ __('ui.add_to_favorites') }}"
+                                title="{{ __('ui.add_to_favorites') }}"
                                 data-favorite-star
                             >
                                 <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
@@ -106,8 +106,8 @@
                                 type="submit"
                                 class="grid h-8 w-8 shrink-0 place-items-center rounded-none border border-line bg-ink-900/40 text-mist-400 transition hover:text-mist-200 disabled:opacity-60"
                                 :disabled="loading"
-                                aria-label="Обновить"
-                                title="Обновить"
+                                aria-label="{{ __('ui.update') }}"
+                                title="{{ __('ui.update') }}"
                             >
                                 <svg :class="loading ? 'animate-spin' : ''" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
                                     <path d="M20 11a8 8 0 1 0-2.3 6.3" stroke-linecap="round" />
@@ -117,11 +117,11 @@
                         </form>
                         @if ($nameHistory !== [])
                             <div class="relative">
-                                <button type="button" @click="open = !open" class="grid h-7 w-7 place-items-center rounded-none border border-line bg-ink-900/40 text-mist-400 transition hover:text-mist-200" :aria-expanded="open.toString()" aria-label="История никнеймов">
+                                <button type="button" @click="open = !open" class="grid h-7 w-7 place-items-center rounded-none border border-line bg-ink-900/40 text-mist-400 transition hover:text-mist-200" :aria-expanded="open.toString()" aria-label="{{ __('ui.nickname_history') }}">
                                     <svg class="h-3.5 w-3.5 transition" :class="open ? 'rotate-180' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round" /></svg>
                                 </button>
                                 <div x-show="open" x-cloak x-transition.opacity.duration.150ms @click.outside="open = false" class="absolute left-0 top-9 z-20 w-56 rounded-none border border-line bg-ink-950/95 p-2 ">
-                                    <p class="px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-mist-500">История никнеймов</p>
+                                    <p class="px-2 py-1 text-[10px] uppercase tracking-[0.16em] text-mist-500">{{ __('ui.nickname_history') }}</p>
                                     <div class="mt-1 max-h-56 space-y-1 overflow-y-auto">
                                         @foreach ($nameHistory as $entry)
                                             <div class="flex items-center justify-between gap-2 rounded-none px-2 py-1.5 text-[11px] hover:bg-ink-900/40">
@@ -139,13 +139,13 @@
                         <span class="font-mono">Dota ID {{ $player['account_id'] }}</span>
                         <span class="font-mono">SteamID64 {{ $steamProfile['steam_id'] ?? $player['steam_id'] ?? '—' }}</span>
                         @if ($steamProfile['account_created_at'] ?? null)
-                            <span>Регистрация {{ \Carbon\CarbonImmutable::parse($steamProfile['account_created_at'])->format('d.m.Y') }}</span>
+                            <span>{{ __('ui.registered') }} {{ \Carbon\CarbonImmutable::parse($steamProfile['account_created_at'])->format('d.m.Y') }}</span>
                         @endif
                         <a href="{{ $player['profile_url'] ?: 'https://steamcommunity.com/profiles/'.$player['steam_id'] }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 transition hover:text-accent-300">
                             Steam
                             <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 5h5v5M19 5l-8 8M10 5H5v14h14v-5" stroke-linecap="round" stroke-linejoin="round" /></svg>
                         </a>
-                        <span>{{ __('ui.updated') }} {{ isset($player['cached_at']) ? \Carbon\CarbonImmutable::parse($player['cached_at'])->diffForHumans(short: true) : 'только что' }}</span>
+                        <span>{{ __('ui.updated') }} {{ isset($player['cached_at']) ? \Carbon\CarbonImmutable::parse($player['cached_at'])->diffForHumans(short: true) : __('ui.just_now') }}</span>
                     </div>
                 </div>
             </div>

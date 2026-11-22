@@ -18,9 +18,8 @@
     }
     $firstMatch = $timestamps ? \Carbon\CarbonImmutable::createFromTimestampUTC(min($timestamps)) : null;
     $lastMatch = $timestamps ? \Carbon\CarbonImmutable::createFromTimestampUTC(max($timestamps)) : null;
-    $monthsRu = [1 => 'янв.', 2 => 'фев.', 3 => 'мар.', 4 => 'апр.', 5 => 'мая', 6 => 'июн.', 7 => 'июл.', 8 => 'авг.', 9 => 'сент.', 10 => 'окт.', 11 => 'нояб.', 12 => 'дек.'];
-    $fmt = function ($dt) use ($monthsRu) {
-        return $dt ? ($dt->day . ' ' . ($monthsRu[(int) $dt->format('n')] ?? $dt->format('M')) . ' ' . $dt->format('Y')) : '—';
+    $fmt = function ($dt) {
+        return $dt ? $dt->locale(app()->getLocale())->translatedFormat('j M Y') : '—';
     };
 
     $segmentCount = $games > 0 ? (int) ceil($games / 100) : 0;

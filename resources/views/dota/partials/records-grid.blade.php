@@ -1,6 +1,6 @@
 @if ($records === [])
     <div class="card mt-3 p-10 text-center text-sm text-mist-400">
-        Рекорды пока недоступны. Данные OpenDota могут отсутствовать для этого игрока.
+{{ __('ui.no_records_yet') }}
     </div>
 @else
     <div class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -14,7 +14,7 @@
                     </div>
                     @if ($record['hero_image'] || $record['hero_icon'])
                         <span class="h-12 w-20 shrink-0 overflow-hidden rounded-none bg-ink-800 border border-line">
-                            <img src="{{ $record['hero_image'] ?? $record['hero_icon'] }}" alt="{{ $record['hero_name'] ?? 'Герой' }}" class="h-full w-full object-cover" loading="lazy">
+                            <img src="{{ $record['hero_image'] ?? $record['hero_icon'] }}" alt="{{ $record['hero_name'] ?? __('ui.hero') }}" class="h-full w-full object-cover" loading="lazy">
                         </span>
                     @endif
                 </div>
@@ -27,8 +27,7 @@
                         <span>{{ \Carbon\CarbonImmutable::parse($record['played_at'])->format('d.m.Y') }}</span>
                     @endif
                     @if ($record['match_id'])
-                        <a href="{{ route('dota.match', ['matchId' => $record['match_id']]) }}" class="transition hover:text-accent-300">
-                            Матч #{{ $record['match_id'] }}
+                        <a href="{{ route('dota.match', ['matchId' =>{{ __('ui.match') }} #{{ $record['match_id'] }}
                         </a>
                     @endif
                     @if ($record['is_team'])
