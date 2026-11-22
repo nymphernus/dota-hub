@@ -49,7 +49,7 @@ class DotaPlayerController extends Controller
 
         return view('dota.player', [
             'player' => $player,
-            'pageTitle' => $player['nickname'].' - Обзор - DOTAHUB',
+            'pageTitle' => $player['nickname'].' - Обзор',
             'activeTab' => 'overview',
             'profileSection' => 'Обзор',
             'winrate' => $player['winrate'],
@@ -119,7 +119,7 @@ class DotaPlayerController extends Controller
 
         return view('dota.heroes', [
             'player' => $player,
-            'pageTitle' => $player['nickname'].' - ????? - DOTAHUB',
+            'pageTitle' => $player['nickname'].' - ?????',
             'activeTab' => 'heroes',
             'profileSection' => '?????',
             'steamProfile' => $steam->summary(
@@ -151,7 +151,7 @@ class DotaPlayerController extends Controller
 
         return view('dota.peers', [
             'player' => $player,
-            'pageTitle' => $player['nickname'].' - Союзники - DOTAHUB',
+            'pageTitle' => $player['nickname'].' - Союзники',
             'activeTab' => 'peers',
             'profileSection' => 'Союзники',
             'steamProfile' => $steam->summary(
@@ -184,7 +184,7 @@ class DotaPlayerController extends Controller
         // client-side and never reloads the profile.
         return view('dota.records', [
             'player' => $player,
-            'pageTitle' => $player['nickname'].' - Рекорды - DOTAHUB',
+            'pageTitle' => $player['nickname'].' - Рекорды',
             'activeTab' => 'records',
             'profileSection' => 'Рекорды',
             'records' => $openDota->playerRecords($accountId, $history, false),
@@ -321,7 +321,7 @@ class DotaPlayerController extends Controller
 
         return view('dota.matches', [
             'player' => $player,
-            'pageTitle' => $player['nickname'].' - Матчи - DOTAHUB',
+            'pageTitle' => $player['nickname'].' - Матчи',
             'activeTab' => 'matches',
             'profileSection' => 'Матчи',
             'steamProfile' => $steam->summary($steamId),

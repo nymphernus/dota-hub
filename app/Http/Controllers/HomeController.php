@@ -20,6 +20,7 @@ class HomeController extends Controller
         if (! SteamId::isSteamId64($steamId)) {
             return view('home', [
                 'dashboard' => null,
+                'pageTitle' => __('ui.home'),
             ]);
         }
 
@@ -45,6 +46,7 @@ class HomeController extends Controller
 
         return view('home', [
             'dashboard' => $dashboard,
+            'pageTitle' => __('ui.home'),
         ]);
     }
 }

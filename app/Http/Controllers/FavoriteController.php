@@ -22,6 +22,7 @@ class FavoriteController extends Controller
         return view('favorites.index', [
             'favorites' => $favorites->all($steamId),
             'steamId' => $steamId,
+            'pageTitle' => __('ui.favorites'),
         ]);
     }
 

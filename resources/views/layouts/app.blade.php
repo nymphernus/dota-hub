@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7,7 +7,17 @@
     <meta name="description" content="@yield('description', 'DOTAHUB — быстрая статистика игроков Dota 2. Профили, матчи, герои и активность.')">
     <meta name="theme-color" content="#111318">
 
-    <title>{{ $pageTitle ?? 'DOTAHUB' }}</title>
+    <title>{{ $pageTitle ?? 'DOTAHUB' }} - DOTAHUB</title>
+
+    <script>
+        (function () {
+            try {
+                var t = localStorage.getItem('theme');
+                if (t === 'light') document.documentElement.classList.remove('dark');
+                else document.documentElement.classList.add('dark');
+            } catch (e) { document.documentElement.classList.add('dark'); }
+        })();
+    </script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,8 +35,9 @@
         $navNickname = $navPlayer['nickname'] ?? null;
         $navAccountId = (int) ($navPlayer['account_id'] ?? request()->route('accountId') ?? 0);
         $showProfileNav = $navAccountId > 0 && $navNickname;
+        $currentLocale = app()->getLocale();
     @endphp
-    <header class="sticky top-0 z-50 border-b border-[#2d313e] bg-[#111318]/90 backdrop-blur-md">
+    <header class="sticky top-0 z-50 border-b border-[#2d313e] bg-[#111318]/90 backdrop-blur-md dark:bg-[#111318]/90 header-shell">
         <div class="mx-auto flex h-16 w-full max-w-7xl items-center px-4 sm:px-6 lg:px-8">
             <div class="flex min-w-0 items-center gap-3">
                 <a href="/" class="bg-[#d32f2f] px-2 py-1 text-white font-light uppercase text-2xl leading-none rounded-sm tracking-tighter">DOTAHUB</a>
@@ -35,7 +46,7 @@
                 @endif
             </div>
 
-            <div class="ml-auto flex items-center gap-4">
+            <div class="ml-auto flex items-center gap-3 sm:gap-4">
                 <form
                     x-data="{ open: false }"
                     x-cloak
@@ -53,8 +64,8 @@
                         class="grid h-9 w-9 shrink-0 place-items-center rounded-none text-mist-400 transition hover:bg-ink-700 hover:text-white"
                         :aria-expanded="open.toString()"
                         aria-controls="header-search-query"
-                        aria-label="Поиск игрока"
-                        title="Поиск игрока"
+                        aria-label="{{ __('ui.search_player') }}"
+                        title="{{ __('ui.search_player') }}"
                     >
                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                             <circle cx="11" cy="11" r="7"></circle>
@@ -70,13 +81,30 @@
                         value="{{ old('query', request('q', '')) }}"
                         required
                         autocomplete="off"
-                        placeholder="Steam ID, URL или никнейм"
-                        aria-label="Поиск игрока"
+                        placeholder="{{ __('ui.search_placeholder') }}"
+                        aria-label="{{ __('ui.search_player') }}"
                         class="h-9 min-w-0 bg-transparent p-0 text-xs text-mist-200 placeholder:text-mist-500 transition-all duration-200 focus:outline-none"
                         :class="open ? 'w-48 px-1 sm:w-64' : 'pointer-events-none w-0 opacity-0'"
                         :tabindex="open ? 0 : -1"
                     >
                 </form>
+
+                <div class="flex items-center gap-1 text-xs font-semibold">
+                    <a href="{{ route('lang.switch', ['locale' => 'ru']) }}" class="px-1.5 py-1 {{ $currentLocale === 'ru' ? 'text-white' : 'text-mist-400 hover:text-mist-200' }}">RU</a>
+                    <span class="text-mist-500">|</span>
+                    <a href="{{ route('lang.switch', ['locale' => 'en']) }}" class="px-1.5 py-1 {{ $currentLocale === 'en' ? 'text-white' : 'text-mist-400 hover:text-mist-200' }}">EN</a>
+                </div>
+
+                <button
+                    type="button"
+                    id="theme-toggle"
+                    class="grid h-9 w-9 place-items-center rounded-none text-mist-400 transition hover:bg-ink-700 hover:text-white"
+                    aria-label="{{ __('ui.theme') }}"
+                    title="{{ __('ui.theme') }}"
+                >
+                    <svg id="theme-icon-sun" class="h-4 w-4 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke-linecap="round"/></svg>
+                    <svg id="theme-icon-moon" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
 
                 @php
                     $steamId = (string) session('steam_id', '');
@@ -87,24 +115,24 @@
                 @endphp
                 @if ($steamAccountId)
                     <div class="flex items-center gap-2.5">
-                        <a href="{{ route('dota.player', ['accountId' => $steamAccountId]) }}" class="group flex items-center gap-2.5 rounded-none px-1 py-1 transition hover:bg-ink-700" aria-label="Открыть мой профиль">
+                        <a href="{{ route('dota.player', ['accountId' => $steamAccountId]) }}" class="group flex items-center gap-2.5 rounded-none px-1 py-1 transition hover:bg-ink-700" aria-label="{{ __('ui.my_profile') }}">
                             @if (session('steam_avatar'))
-                                <img src="{{ session('steam_avatar') }}" alt="Аватар Steam" class="h-8 w-8 rounded-none object-cover transition">
+                                <img src="{{ session('steam_avatar') }}" alt="Steam" class="h-8 w-8 rounded-none object-cover transition">
                             @endif
                             <span class="hidden max-w-[140px] truncate text-xs font-semibold text-mist-200 transition group-hover:text-mist-200 sm:block">
-                                {{ session('steam_nickname') ?: 'Steam аккаунт' }}
+                                {{ session('steam_nickname') ?: __('ui.steam_account') }}
                             </span>
                         </a>
 
-                        <a href="{{ route('favorites.index') }}" class="btn-ghost !px-2.5 !py-2" aria-label="Избранное" title="Избранное">
+                        <a href="{{ route('favorites.index') }}" class="btn-ghost !px-2.5 !py-2" aria-label="{{ __('ui.favorites') }}" title="{{ __('ui.favorites') }}">
                             <svg class="h-4 w-4 text-accent-300" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.5l6.1-.9L12 3Z"/></svg>
-                            <span class="hidden sm:inline">Избранное</span>
+                            <span class="hidden sm:inline">{{ __('ui.favorites') }}</span>
                         </a>
 
                         <form action="{{ route('auth.steam.logout') }}" method="POST">
                             @csrf
                             <input type="hidden" name="intended" value="{{ url()->current() }}">
-                            <button type="submit" class="btn-ghost !py-2">Выйти</button>
+                            <button type="submit" class="btn-ghost !py-2">{{ __('ui.logout') }}</button>
                         </form>
                     </div>
                 @else
@@ -112,21 +140,21 @@
                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                             <path d="M12 2a10 10 0 0 0-9.97 9.24l5.35 2.21a2.8 2.8 0 0 1 1.6-.49l2.37-3.43v-.5a3.74 3.74 0 1 1 3.74 3.74h-.1l-3.37 2.42c0 .07.01.14.01.21a2.8 2.8 0 0 1-5.58.37l-3.83-1.58A10 10 0 1 0 12 2Zm-5.6 15.08 1.2-.5a2.1 2.1 0 1 0-1.2.5Zm11.16-8.13a2.5 2.5 0 1 0-4.98.2 2.5 2.5 0 0 0 4.98-.2Z"/>
                         </svg>
-                        Войти через Steam
+                        {{ __('ui.login_steam') }}
                     </a>
                 @endif
             </div>
         </div>
 
         @if ($showProfileNav)
-            <nav class="border-t border-[#2d313e] bg-[#1c1e26]" aria-label="Основная навигация">
+            <nav class="border-t border-[#2d313e] bg-[#1c1e26] nav-shell" aria-label="Navigation">
                 <div class="mx-auto flex w-full max-w-7xl items-center gap-1 overflow-x-auto px-4 sm:px-6 lg:px-8">
-                                        @foreach ([
-                        'dota.player' => 'Обзор',
-                        'dota.player.matches' => 'Матчи',
-                        'dota.player.heroes' => 'Герои',
-                        'dota.player.records' => 'Рекорды',
-                        'dota.player.peers' => 'Союзники',
+                    @foreach ([
+                        'dota.player' => __('ui.overview'),
+                        'dota.player.matches' => __('ui.matches'),
+                        'dota.player.heroes' => __('ui.heroes'),
+                        'dota.player.records' => __('ui.records'),
+                        'dota.player.peers' => __('ui.allies'),
                     ] as $routeName => $label)
                         <a
                             href="{{ route($routeName, ['accountId' => $navAccountId]) }}"
@@ -141,7 +169,7 @@
 
                     @if (in_array($navRoute, ['dota.match', 'dota.player.hero'], true))
                         <span class="shrink-0 bg-[#2d313e] px-3 py-2 text-xs font-semibold text-white" aria-current="page">
-                            {{ $navRoute === 'dota.match' ? 'Матч #'.request()->route('matchId') : ($navHero['name'] ?? 'Герой') }}
+                            {{ $navRoute === 'dota.match' ? 'Match #'.request()->route('matchId') : ($navHero['name'] ?? 'Hero') }}
                         </span>
                     @endif
                 </div>
@@ -162,7 +190,7 @@
                         <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M12 8v4M12 16h.01" stroke-linecap="round" /></svg>
                         <p>{{ session('status') }}</p>
                     </div>
-                    <button type="button" @click="visible = false" class="rounded-none p-1 text-accent-300/70 transition hover:bg-ink-700 hover:text-mist-200" aria-label="Закрыть уведомление">
+                    <button type="button" @click="visible = false" class="rounded-none p-1 text-accent-300/70 transition hover:bg-ink-700 hover:text-mist-200" aria-label="{{ __('ui.close_notification') }}">
                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke-linecap="round" /></svg>
                     </button>
                 </div>
@@ -179,6 +207,24 @@
         </div>
     </footer>
 
+    <script>
+        (function () {
+            var btn = document.getElementById('theme-toggle');
+            var sun = document.getElementById('theme-icon-sun');
+            var moon = document.getElementById('theme-icon-moon');
+            function sync() {
+                var dark = document.documentElement.classList.contains('dark');
+                if (sun) sun.classList.toggle('hidden', dark);
+                if (moon) moon.classList.toggle('hidden', !dark);
+            }
+            sync();
+            if (btn) btn.addEventListener('click', function () {
+                var dark = document.documentElement.classList.toggle('dark');
+                try { localStorage.setItem('theme', dark ? 'dark' : 'light'); } catch (e) {}
+                sync();
+            });
+        })();
+    </script>
     @stack('scripts')
 </body>
 </html>

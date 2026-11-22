@@ -11,6 +11,13 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
 
+Route::get('/lang/{locale}', function (string $locale) {
+    if (in_array($locale, ['ru', 'en'], true)) {
+        session(['locale' => $locale]);
+    }
+    return redirect()->back(fallback: route('home'));
+})->whereIn('locale', ['ru', 'en'])->name('lang.switch');
+
 Route::get('/auth/steam', [SteamAuthController::class, 'redirect'])->name('auth.steam');
 Route::get('/auth/steam/callback', [SteamAuthController::class, 'callback'])->name('auth.steam.callback');
 Route::post('/auth/steam/logout', [SteamAuthController::class, 'logout'])->name('auth.steam.logout');
