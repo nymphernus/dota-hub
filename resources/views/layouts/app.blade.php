@@ -23,7 +23,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='32' fill='%23dc2626'/%3E%3Ctext x='32' y='44' font-family='Arial,sans-serif' font-size='36' font-weight='700' fill='white' text-anchor='middle'%3ED%3C/text%3E%3C/svg%3E">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -91,15 +91,15 @@
 
                 <div class="relative" x-data="{ open: false }" @click.outside="open = false" @keydown.escape.window="open = false">
                     <button type="button" @click="open = !open" class="flex items-center gap-1.5 h-9 px-2 rounded-none border-0 text-mist-400 transition hover:bg-ink-700 hover:text-white focus:outline-none focus:ring-0" :aria-expanded="open.toString()" aria-haspopup="true" title="{{ __('ui.language') }}">
-                        <span class="inline-flex items-center">@if($currentLocale === 'en')<div class="w-5 h-5 overflow-hidden rounded-sm shrink-0 flex items-center justify-center"><svg class="w-full h-full object-cover" viewBox="0 0 7410 3900" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="7410" height="3900" fill="#b22234"/><path d="M0,450H7410m0,600H0m0,600H7410m0,600H0m0,600H7410m0,600H0" stroke="#fff" stroke-width="300"/><rect width="2964" height="2100" fill="#3c3b6e"/><g fill="#fff"><g id="s18"><g id="s9"><g id="s5"><g id="s4"><path id="s" d="M247,90 317.534230,307.082039 132.873218,172.917961H361.126782L176.465770,307.082039z"/><use href="#s" y="420"/><use href="#s" y="840"/><use href="#s" y="1260"/></g><use href="#s" y="1680"/></g><use href="#s4" x="247" y="210"/></g><use href="#s9" x="494"/></g><use href="#s18" x="988"/><use href="#s9" x="1976"/></g></svg></div>@else<div class="w-5 h-5 overflow-hidden rounded-sm shrink-0 flex items-center justify-center"><svg class="w-full h-full object-cover" viewBox="0 0 3 2" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="3" height="2" fill="#fff"/><rect width="3" height="1.333" y="0.333" fill="#0039a6"/><rect width="3" height="0.667" y="1.333" fill="#d52b1e"/></svg></div>@endif</span>
+                        <span class="inline-flex items-center">@if($currentLocale === 'en')<img src="{{ asset('images/flags/us.svg') }}" alt="US" class="w-5 h-5 object-cover rounded-sm">@else<img src="{{ asset('images/flags/ru.svg') }}" alt="RU" class="w-5 h-5 object-cover rounded-sm">@endif</span>
                         <svg class="h-3 w-3 transition" :class="open ? 'rotate-180' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </button>
                     <div x-show="open" x-cloak x-transition.opacity.duration.150ms class="absolute right-0 top-10 z-50 w-40 border border-line bg-ink-800 py-1 shadow-lg">
                         <a href="{{ route('lang.switch', ['locale' => 'ru']) }}" class="flex items-center gap-2 px-3 py-2 text-sm {{ $currentLocale === 'ru' ? 'text-white bg-ink-700' : 'text-mist-300 hover:bg-ink-700 hover:text-white' }}">
-                            <span class="inline-flex items-center"><div class="w-5 h-5 overflow-hidden rounded-sm shrink-0 flex items-center justify-center"><svg class="w-full h-full object-cover" viewBox="0 0 3 2" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="3" height="2" fill="#fff"/><rect width="3" height="1.333" y="0.333" fill="#0039a6"/><rect width="3" height="0.667" y="1.333" fill="#d52b1e"/></svg></div></span><span>{{ __('ui.russian') }}</span>
+                            <span class="inline-flex items-center"><img src="{{ asset('images/flags/ru.svg') }}" alt="RU" class="w-5 h-5 object-cover rounded-sm"></span><span>{{ __('ui.russian') }}</span>
                         </a>
                         <a href="{{ route('lang.switch', ['locale' => 'en']) }}" class="flex items-center gap-2 px-3 py-2 text-sm {{ $currentLocale === 'en' ? 'text-white bg-ink-700' : 'text-mist-300 hover:bg-ink-700 hover:text-white' }}">
-                            <span class="inline-flex items-center"><div class="w-5 h-5 overflow-hidden rounded-sm shrink-0 flex items-center justify-center"><svg class="w-full h-full object-cover" viewBox="0 0 7410 3900" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><rect width="7410" height="3900" fill="#b22234"/><path d="M0,450H7410m0,600H0m0,600H7410m0,600H0m0,600H7410m0,600H0" stroke="#fff" stroke-width="300"/><rect width="2964" height="2100" fill="#3c3b6e"/><g fill="#fff"><g id="s18"><g id="s9"><g id="s5"><g id="s4"><path id="s" d="M247,90 317.534230,307.082039 132.873218,172.917961H361.126782L176.465770,307.082039z"/><use href="#s" y="420"/><use href="#s" y="840"/><use href="#s" y="1260"/></g><use href="#s" y="1680"/></g><use href="#s4" x="247" y="210"/></g><use href="#s9" x="494"/></g><use href="#s18" x="988"/><use href="#s9" x="1976"/></g></svg></div></span><span>{{ __('ui.english') }}</span>
+                            <span class="inline-flex items-center"><img src="{{ asset('images/flags/us.svg') }}" alt="US" class="w-5 h-5 object-cover rounded-sm"></span><span>{{ __('ui.english') }}</span>
                         </a>
                     </div>
                 </div>

@@ -33,11 +33,11 @@
         : 'border-accent-500/25 bg-accent-500/10 text-accent-300';
 @endphp
 
-<section class="card relative overflow-hidden">
+<section class="card relative overflow-hidden min-h-[280px]">
     @if ($bannerImage)
         <div class="absolute inset-0 bg-cover bg-center blur-md opacity-40" style="background-image: url('{{ $bannerImage }}')" aria-hidden="true"></div>
     @endif
-    <div class="relative z-10 px-4 pb-5 pt-8 sm:px-6 lg:px-8">
+    <div class="relative z-10 px-4 pb-8 pt-10 sm:px-6 lg:px-8">
         <div class="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div class="flex min-w-0 items-center gap-4">
                 <div class="relative h-20 w-20 shrink-0 overflow-hidden rounded-none bg-ink-800    sm:h-24 sm:w-24">

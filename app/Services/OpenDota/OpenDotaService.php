@@ -48,9 +48,7 @@ class OpenDotaService
         'DENIES' => 'Максимум отказов',
         'GOLD' => 'Максимум золота',
         'NET_WORTH' => 'Максимум нетворса',
-        'LEVEL' => 'Максимальный уровень',
         'LONGEST_WIN_STREAK' => 'Самая длинная серия побед',
-        'LONGEST_LOSS_STREAK' => 'Самая длинная серия поражений',
     ];
 
     /** Record fields available in the cached match history. */
@@ -69,7 +67,6 @@ class OpenDotaService
         'DENIES' => 'denies',
         'GOLD' => 'gold',
         'NET_WORTH' => 'net_worth',
-        'LEVEL' => 'level',
     ];
 
     private const MMR_SAMPLE_SIZE = 100;
@@ -1304,15 +1301,12 @@ class OpenDotaService
                 $losses = 0;
                 $key = 'LONGEST_WIN_STREAK';
                 $value = $wins;
+                if ($value > ($best[$key]['value'] ?? 0)) {
+                    $best[$key] = $this->historyRecordRow($key, $value, $match, $heroes);
+                }
             } else {
                 $losses++;
                 $wins = 0;
-                $key = 'LONGEST_LOSS_STREAK';
-                $value = $losses;
-            }
-
-            if ($value > ($best[$key]['value'] ?? 0)) {
-                $best[$key] = $this->historyRecordRow($key, $value, $match, $heroes);
             }
         }
 
@@ -1324,7 +1318,6 @@ class OpenDotaService
         return match ($name) {
             'DURATION', 'SHORTEST_DURATION' => $this->durationLabel($value),
             'LONGEST_WIN_STREAK' => $this->streakLabel($value, 'победа', 'победы', 'побед'),
-            'LONGEST_LOSS_STREAK' => $this->streakLabel($value, 'поражение', 'поражения', 'поражений'),
             default => number_format($value, 0, '.', ' '),
         };
     }
