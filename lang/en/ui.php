@@ -57,4 +57,8 @@ return [
     'view_all' => 'View all',
     'no_allies_data' => 'No allies data.',
     'no_matches_yet' => 'No matches found yet.',
+    'mmr' => 'MMR',
+    'most_played_heroes' => 'Most Played Heroes',
+    'privacy' => 'Privacy',
+    'api_unavailable' => 'Data temporarily unavailable (API limit)',
 ];

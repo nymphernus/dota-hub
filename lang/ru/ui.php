@@ -57,4 +57,8 @@ return [
     'view_all' => 'Смотреть все',
     'no_allies_data' => 'Нет данных о союзниках.',
     'no_matches_yet' => 'Матчи пока не найдены.',
+    'mmr' => 'MMR',
+    'most_played_heroes' => 'Самые играемые герои',
+    'privacy' => 'Приватность',
+    'api_unavailable' => 'Данные временно недоступны (Лимит API)',
 ];

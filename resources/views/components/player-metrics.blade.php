@@ -28,7 +28,7 @@
 
 <div class="mt-4 flex flex-wrap gap-3" role="list" aria-label="Ключевая статистика">
     <div class="card min-w-[150px] flex-1 p-3" role="listitem">
-        <p class="text-sm text-mist-400 font-bold uppercase">МАТЧИ</p>
+        <p class="text-sm text-mist-400 font-bold uppercase">{{ __('ui.matches') }}</p>
         <p class="mt-1 text-4xl font-black text-mist-200">{{ number_format($games, 0, '.', ' ') }}</p>
         <div class="mt-1 text-[10px] text-mist-500">
             <div>Первый: {{ $fmt($firstMatch) }}</div>
@@ -50,7 +50,7 @@
     </div>
 
     <div class="card min-w-[150px] flex-1 p-3" role="listitem">
-        <p class="text-sm text-mist-400 font-bold uppercase">ВИНРЕЙТ</p>
+        <p class="text-sm text-mist-400 font-bold uppercase">{{ __('ui.winrate') }}</p>
         <p class="mt-1 text-4xl font-black">
             @if ($winrate !== null)
                 <span class="{{ $winrateValue >= 50 ? 'text-green-500' : 'text-red-500' }}">{{ number_format($winrateValue, 1, '.', '') }}%</span>
@@ -69,7 +69,7 @@
     </div>
 
     <div class="card min-w-[150px] flex-1 p-3" role="listitem">
-        <p class="text-sm text-mist-400 font-bold uppercase">MMR</p>
+        <p class="text-sm text-mist-400 font-bold uppercase">{{ __('ui.mmr') }}</p>
         <p class="mt-1 text-4xl font-black text-mist-200">
             {{ $player['mmr_estimate'] !== null ? number_format($player['mmr_estimate'], 0, '.', ' ') : '—' }}
         </p>

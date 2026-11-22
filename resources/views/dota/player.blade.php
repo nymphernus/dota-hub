@@ -25,7 +25,7 @@
         @endphp
 
         <div class="mt-4 flex flex-wrap items-center gap-2 rounded-none bg-ink-900/60 px-4 py-3 text-[11px]">
-            <span class="uppercase tracking-[0.16em] text-mist-500">Приватность</span>
+            <span class="uppercase tracking-[0.16em] text-mist-500">{{ __('ui.privacy') }}</span>
             <span @class(['badge', $steamTone])>Steam: {{ $steamProfile['visibility'] ?? 'Неизвестно' }}</span>
             <span @class(['badge', $dotaTone])>Dota: {{ $dotaPublic ? 'Публичные матчи доступны' : 'Матчей пока нет' }}</span>
             @if (! $steamAvailable)
@@ -85,7 +85,7 @@
                     </div>
 
                     @if ($topHeroes === [])
-                        <div class="p-4 text-center text-xs text-mist-400">Нет данных</div>
+                        <div class="p-4 text-center text-xs text-mist-400">{{ __('ui.no_data') }}</div>
                     @else
                         <div class="grid gap-2 p-3 sm:grid-cols-2">
                             @foreach ($topHeroes as $index => $hero)
@@ -169,7 +169,7 @@
                                 <div class="min-w-0">
                                     <p class="section-heading mb-1">{{ $group['title'] }}</p>
                                     @if ($group['rows'] === [])
-                                        <p class="px-2 py-1 text-[10px] text-mist-500">Нет данных</p>
+                                        <p class="px-2 py-1 text-[10px] text-mist-500">{{ __('ui.no_data') }}</p>
                                     @else
                                         <div class="overflow-hidden border border-line bg-ink-900/30">
                                             <table class="w-full text-[11px]">
@@ -228,7 +228,7 @@
 
                     @php $topPeers = array_slice($player['peers'] ?? [], 0, 5); @endphp
                     @if ($topPeers === [])
-                        <div class="mt-2 border border-dashed border-line px-3 py-4 text-center text-[11px] text-mist-500">Нет данных о совместных матчах</div>
+                        <div class="mt-2 border border-dashed border-line px-3 py-4 text-center text-[11px] text-mist-500">{{ __('ui.no_data') }} о совместных матчах</div>
                     @else
                         <div class="mt-2 space-y-1.5">
                             @foreach ($topPeers as $peer)
