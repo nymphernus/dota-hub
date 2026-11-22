@@ -98,7 +98,7 @@
 
 @if ($sectors === [])
     <div class="mt-4 grid h-48 place-items-center rounded-none border border-dashed border-line text-xs text-mist-400">
-        Нет данных
+        {{ ($heroUsageUnavailable ?? false) ? __('ui.heroes_unavailable') : __('ui.no_data') }}
     </div>
 @else
     <div class="relative w-full max-w-[300px] mx-auto h-[300px]">

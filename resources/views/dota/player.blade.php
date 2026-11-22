@@ -118,12 +118,12 @@
                         <span class="text-[10px] text-mist-500">{{ $heroUsageTotal }} матчей</span>
                     </div>
 
-                    @include('dota.partials.hero-wheel', ['allHeroes' => $heroUsage, 'playerId' => $player['account_id']])
+                    @include('dota.partials.hero-wheel', ['allHeroes' => $heroUsage, 'playerId' => $player['account_id'], 'heroUsageUnavailable' => $heroUsageUnavailable ?? false])
                 </section>
 
                 <section class="border border-[#2d313e] bg-[#1c1e26] p-3 rounded-none">
                     <div class="flex items-start justify-between gap-2">
-                        <h2 class="section-heading">Активность</h2>
+                        <h2 class="section-heading">{{ __('ui.activity') }}</h2>
                         <span id="activity-total" class="text-[10px] text-mist-500">{{ number_format($activityTotal, 0, '.', ' ') }} игр</span>
                     </div>
 

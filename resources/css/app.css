@@ -65,10 +65,10 @@
 
 @layer base {
     :root {
-        --bg-color: #f3f4f6;
-        --text-color: #1f2937;
+        --bg-color: #f8fafc;
+        --text-color: #0f172a;
         --card-bg: #ffffff;
-        --card-border: #d1d5db;
+        --card-border: #e2e8f0;
         --muted-color: #6b7280;
     }
 
@@ -258,21 +258,21 @@
 
 /* Light theme overrides */
 html:not(.dark) {
-    --color-ink-950: #f9fafb;
-    --color-ink-900: #f3f4f6;
-    --color-ink-850: #f3f4f6;
+    --color-ink-950: #f8fafc;
+    --color-ink-900: #f8fafc;
+    --color-ink-850: #f8fafc;
     --color-ink-800: #ffffff;
-    --color-ink-700: #e5e7eb;
-    --color-ink-600: #d1d5db;
-    --color-line: #d1d5db;
-    --color-mist-200: #1f2937;
-    --color-mist-300: #374151;
-    --color-mist-400: #4b5563;
-    --color-mist-500: #6b7280;
-    --color-mist-600: #6b7280;
-    --color-accent-300: #374151;
-    --color-accent-400: #d1d5db;
-    --color-accent-500: #9ca3af;
+    --color-ink-700: #e2e8f0;
+    --color-ink-600: #cbd5e1;
+    --color-line: #e2e8f0;
+    --color-mist-200: #0f172a;
+    --color-mist-300: #1e293b;
+    --color-mist-400: #334155;
+    --color-mist-500: #64748b;
+    --color-mist-600: #64748b;
+    --color-accent-300: #334155;
+    --color-accent-400: #e2e8f0;
+    --color-accent-500: #94a3b8;
 }
 html:not(.dark) .header-shell { background: rgba(255,255,255,0.92) !important; border-color: #d1d5db !important; }
 html:not(.dark) .nav-shell { background: #f9fafb !important; border-color: #d1d5db !important; }
@@ -296,3 +296,10 @@ html:not(.dark) .bg-\[\#d32f2f\] { color: #fff !important; }
 html:not(.dark) .text-mist-100 { color: #111827 !important; }
 html:not(.dark) .from-\[\#111318\] { --tw-gradient-from: #f3f4f6 !important; }
 html:not(.dark) .via-\[\#111318\]\/30 { --tw-gradient-via: rgba(243,244,246,0.3) !important; }
+
+html:not(.dark) .text-gray-900 { color: #0f172a !important; }
+html:not(.dark) .header-shell .text-mist-400,
+html:not(.dark) .header-shell .text-mist-300,
+html:not(.dark) .nav-shell .text-mist-400 { color: #334155 !important; }
+html:not(.dark) .header-shell a:hover,
+html:not(.dark) .nav-shell a:hover { color: #0f172a !important; }

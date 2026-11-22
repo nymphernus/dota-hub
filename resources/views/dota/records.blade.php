@@ -7,7 +7,7 @@
     <section class="mt-4" x-data="{ tab: 'all' }">
         <div class="flex flex-wrap items-center justify-between gap-2 px-1">
             <div>
-                <h2 class="section-heading">Рекорды</h2>
+                <h2 class="section-heading">{{ __('ui.records') }}</h2>
                 <p class="mt-0.5 text-[11px] text-mist-400">Лучшие результаты игрока в отдельных матчах</p>
             </div>
             <span class="badge text-mist-400" x-text="tab === 'ranked' ? '{{ count($rankedRecords) }} достижений' : '{{ count($records) }} достижений'"></span>

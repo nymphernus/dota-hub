@@ -64,7 +64,7 @@
                             </div>
                         @elseif (($dashboard['recent_matches'] ?? []) === [])
                             <div class="mt-3 rounded-none border border-dashed border-line px-4 py-6 text-center text-sm text-mist-400">
-                                Матчи пока не найдены.
+                                {{ __('ui.no_matches_yet') }}
                             </div>
                         @else
                             <div class="mt-3 grid gap-3 md:grid-cols-3">
@@ -91,7 +91,7 @@
                                                     'mt-0.5 inline-flex rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide',
                                                     'bg-emerald-500/15 text-emerald-300' => $match['win'] ?? false,
                                                     'bg-rose-500/15 text-rose-300' => ! ($match['win'] ?? false),
-                                                ])>{{ ($match['win'] ?? false) ? 'Победа' : 'Поражение' }}</span>
+                                                ])>{{ ($match['win'] ?? false) ? __('ui.win') : __('ui.loss') }}</span>
                                             </span>
                                         </div>
                                         <div class="mt-3 flex items-center justify-between text-[11px]">

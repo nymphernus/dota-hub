@@ -89,10 +89,19 @@
                     >
                 </form>
 
-                <div class="flex items-center gap-1 text-xs font-semibold">
-                    <a href="{{ route('lang.switch', ['locale' => 'ru']) }}" class="px-1.5 py-1 {{ $currentLocale === 'ru' ? 'text-white' : 'text-mist-400 hover:text-mist-200' }}">RU</a>
-                    <span class="text-mist-500">|</span>
-                    <a href="{{ route('lang.switch', ['locale' => 'en']) }}" class="px-1.5 py-1 {{ $currentLocale === 'en' ? 'text-white' : 'text-mist-400 hover:text-mist-200' }}">EN</a>
+                <div class="relative" x-data="{ open: false }" @click.outside="open = false" @keydown.escape.window="open = false">
+                    <button type="button" @click="open = !open" class="flex items-center gap-1.5 h-9 px-2 rounded-none text-mist-400 transition hover:bg-ink-700 hover:text-white" :aria-expanded="open.toString()" aria-haspopup="true" title="{{ __('ui.language') }}">
+                        <span class="text-base leading-none">{{ $currentLocale === 'en' ? '🇬🇧' : '🇷🇺' }}</span>
+                        <svg class="h-3 w-3 transition" :class="open ? 'rotate-180' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+                    <div x-show="open" x-cloak x-transition.opacity.duration.150ms class="absolute right-0 top-10 z-50 w-40 border border-line bg-ink-800 py-1 shadow-lg">
+                        <a href="{{ route('lang.switch', ['locale' => 'ru']) }}" class="flex items-center gap-2 px-3 py-2 text-sm {{ $currentLocale === 'ru' ? 'text-white bg-ink-700' : 'text-mist-300 hover:bg-ink-700 hover:text-white' }}">
+                            <span class="text-base leading-none">🇷🇺</span><span>{{ __('ui.russian') }}</span>
+                        </a>
+                        <a href="{{ route('lang.switch', ['locale' => 'en']) }}" class="flex items-center gap-2 px-3 py-2 text-sm {{ $currentLocale === 'en' ? 'text-white bg-ink-700' : 'text-mist-300 hover:bg-ink-700 hover:text-white' }}">
+                            <span class="text-base leading-none">🇬🇧</span><span>{{ __('ui.english') }}</span>
+                        </a>
+                    </div>
                 </div>
 
                 <button

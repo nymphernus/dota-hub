@@ -6,12 +6,12 @@
 @section('profile-content')
     <section class="mt-4 border border-[#2d313e] bg-[#1c1e26]">
         <div class="flex items-center justify-between gap-2 border-b border-[#2d313e] px-4 py-3">
-            <h2 class="section-heading">Союзники</h2>
+            <h2 class="section-heading">{{ __('ui.allies') }}</h2>
             <span class="text-[10px] text-mist-500">{{ count($player['peers'] ?? []) }}</span>
         </div>
 
         @if (($player['peers'] ?? []) === [])
-            <div class="p-10 text-center text-sm text-mist-400">Нет данных о союзниках.</div>
+            <div class="p-10 text-center text-sm text-mist-400">{{ __('ui.no_allies_data') }}</div>
         @else
             <div class="divide-y divide-[#2d313e]">
                 @foreach ($player['peers'] as $peer)
