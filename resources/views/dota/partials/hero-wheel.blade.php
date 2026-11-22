@@ -16,7 +16,7 @@
         $wheelHeroes[] = [
             'hero_id' => (int) ($hero['hero_id'] ?? $hero['id'] ?? 0),
             'name' => $hero['name'] ?? 'Герой',
-            'icon' => $hero['icon'] ?? ($hero['image'] ?? ''),
+            'icon' => $hero['minimap_icon'] ?? $hero['icon'] ?? ($hero['image'] ?? ''),
             'image' => $hero['image'] ?? $hero['hero_image'] ?? $hero['icon'] ?? '',
             'games' => $games,
             'wins' => $wins,

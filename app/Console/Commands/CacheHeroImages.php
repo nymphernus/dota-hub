@@ -21,6 +21,8 @@ class CacheHeroImages extends Command
         if (! is_dir($itemDir)) mkdir($itemDir, 0777, true);
 
         $downloaded = 0;
+        $minimapDir = public_path('images/heroes/minimap');
+        if (! is_dir($minimapDir)) mkdir($minimapDir, 0777, true);
         foreach ($heroes as $hero) {
             $short = '';
             $cdn = (string) ($hero['image_cdn'] ?? $hero['image'] ?? '');
@@ -29,15 +31,20 @@ class CacheHeroImages extends Command
             }
             if ($short === '' || $cdn === '') continue;
             $path = $heroDir.DIRECTORY_SEPARATOR.$short.'.png';
-            if (! $this->option('force') && is_file($path)) continue;
-            try {
-                $res = Http::timeout(20)->get($cdn);
-                if ($res->ok()) {
-                    file_put_contents($path, $res->body());
-                    $downloaded++;
-                }
-            } catch (\Throwable $e) {
-                $this->warn("skip hero {$short}: {$e->getMessage()}");
+            if ($this->option('force') || ! is_file($path)) {
+                try {
+                    $res = Http::timeout(20)->get($cdn);
+                    if ($res->ok()) { file_put_contents($path, $res->body()); $downloaded++; }
+                } catch (\Throwable $e) { $this->warn("skip hero {$short}: {$e->getMessage()}"); }
+            }
+            // minimap icon
+            $mmPath = $minimapDir.DIRECTORY_SEPARATOR.$short.'.png';
+            if ($this->option('force') || ! is_file($mmPath)) {
+                $mmUrl = "https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/{$short}.png";
+                try {
+                    $res = Http::timeout(20)->get($mmUrl);
+                    if ($res->ok()) { file_put_contents($mmPath, $res->body()); $downloaded++; }
+                } catch (\Throwable $e) { $this->warn("skip minimap {$short}: {$e->getMessage()}"); }
             }
         }
 

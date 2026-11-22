@@ -148,11 +148,11 @@
                 </div>
             </div>
 
-            <div class="flex shrink-0 items-center gap-3 self-start lg:self-auto">
-                <div class="relative inline-flex h-16 w-16 items-center justify-center">
-                    <img src="{{ $rankIcon }}" alt="{{ $rankLabel }}" class="w-16 h-16 object-contain">
-                    @if ($rankStarIcon)
-                        <img src="{{ $rankStarIcon }}" alt="" class="absolute -bottom-1 left-1/2 h-4 w-14 -translate-x-1/2 object-contain">
+            <div class="flex shrink-0 items-center gap-4 self-start lg:self-auto">
+                <div class="relative inline-block w-24 h-24 shrink-0">
+                    <img src="{{ $rankIconBase }}/rank_icon_{{ $rankTier > 0 ? $rankTierBand : 0 }}.png" alt="{{ $rankLabel }}" class="w-24 h-24 object-contain">
+                    @if ($rankTier > 0 && $rankTierBand >= 1 && $rankTierBand <= 7 && $rankStars > 0)
+                        <img src="{{ $rankIconBase }}/rank_star_{{ min(5, $rankStars) }}.png" alt="" class="absolute inset-0 w-24 h-24 object-contain">
                     @endif
                 </div>
                 <div class="text-right">

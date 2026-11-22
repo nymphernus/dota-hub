@@ -1635,13 +1635,18 @@ class OpenDotaService
                 : (isset($hero['img']) ? 'https://cdn.cloudflare.steamstatic.com'.$hero['img'] : null);
             $localRel = $short !== '' ? 'images/heroes/'.$short.'.png' : null;
             $localImage = $localRel && is_file(public_path($localRel)) ? '/'.$localRel : $reactImage;
+            $iconCdn = isset($hero['icon']) ? 'https://cdn.cloudflare.steamstatic.com'.$hero['icon'] : null;
+            $minimapCdn = $short !== '' ? 'https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/'.$short.'.png' : $iconCdn;
+            $minimapRel = $short !== '' ? 'images/heroes/minimap/'.$short.'.png' : null;
+            $minimapIcon = $minimapRel && is_file(public_path($minimapRel)) ? '/'.$minimapRel : ($minimapCdn ?: $iconCdn);
 
             $map[(int) $hero['id']] = [
                 'id' => (int) $hero['id'],
                 'name' => $hero['localized_name'] ?? 'Hero #'.$hero['id'],
                 'image' => $localImage,
                 'image_cdn' => $reactImage,
-                'icon' => isset($hero['icon']) ? 'https://cdn.cloudflare.steamstatic.com'.$hero['icon'] : null,
+                'icon' => $iconCdn,
+                'minimap_icon' => $minimapIcon,
                 'primary_attr' => $hero['primary_attr'] ?? null,
                 'attack_type' => $hero['attack_type'] ?? null,
             ];
