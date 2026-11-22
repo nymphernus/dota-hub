@@ -310,3 +310,22 @@ html:not(.dark) .match-row:nth-child(even) { background: #f8fafc !important; }
 html:not(.dark) .text-gray-400 { color: #475569 !important; }
 html:not(.dark) .text-gray-500 { color: #64748b !important; }
 html:not(.dark) .bg-gray-50 { background: #f8fafc !important; }
+
+/* explicit light theme contrast */
+html:not(.dark) .text-white,
+html:not(.dark) .text-mist-200,
+html:not(.dark) .text-mist-300,
+[data-theme="light"] .text-white,
+[data-theme="light"] .text-mist-200,
+[data-theme="light"] .text-mist-300 {
+    color: #1f2937 !important;
+}
+html:not(.dark) .bg-ink-900,
+html:not(.dark) .bg-ink-800,
+[data-theme="light"] .bg-ink-900,
+[data-theme="light"] .bg-ink-800 {
+    background-color: #ffffff !important;
+    border-color: #e2e8f0 !important;
+}
+html:not(.dark) .bg-\[\#d32f2f\],
+html:not(.dark) .bg-\[\#d32f2f\].text-white { background-color: #d32f2f !important; color: #fff !important; }
