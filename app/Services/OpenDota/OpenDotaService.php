@@ -26,7 +26,7 @@ class OpenDotaService
 
     private const ITEM_STATS_CACHE_KEY = 'opendota:item-stats:v2';
 
-    private const RECENT_MATCH_DETAILS = 10;
+    private const RECENT_MATCH_DETAILS = 25;
 
     private const PROFILE_SCHEMA_VERSION = 7;
 
@@ -923,7 +923,7 @@ class OpenDotaService
         $total = count($rows);
         $offset = ($page - 1) * $perPage;
         $pageRows = array_slice($rows, $offset, $perPage);
-        $pageRows = $this->enrichMatches($pageRows, $accountId, count($pageRows), ! $servedFromFreshDb);
+        $pageRows = $this->enrichMatches($pageRows, $accountId, min(25, count($pageRows)), ! $servedFromFreshDb);
 
         return [
             'player' => $profile,
@@ -1607,10 +1607,19 @@ class OpenDotaService
                 continue;
             }
 
+            $short = isset($hero['name']) ? str_replace('npc_dota_hero_', '', (string) $hero['name']) : '';
+            $reactImage = $short !== ''
+                ? 'https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/'.$short.'.png'
+                : (isset($hero['img']) ? 'https://cdn.cloudflare.steamstatic.com'.$hero['img'] : null);
+            $localImage = $short !== '' && is_file(public_path('images/heroes/'.$short.'.png'))
+                ? asset('images/heroes/'.$short.'.png')
+                : $reactImage;
+
             $map[(int) $hero['id']] = [
                 'id' => (int) $hero['id'],
                 'name' => $hero['localized_name'] ?? 'Hero #'.$hero['id'],
-                'image' => isset($hero['img']) ? 'https://cdn.cloudflare.steamstatic.com'.$hero['img'] : null,
+                'image' => $localImage,
+                'image_cdn' => $reactImage,
                 'icon' => isset($hero['icon']) ? 'https://cdn.cloudflare.steamstatic.com'.$hero['icon'] : null,
                 'primary_attr' => $hero['primary_attr'] ?? null,
                 'attack_type' => $hero['attack_type'] ?? null,

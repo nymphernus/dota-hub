@@ -113,8 +113,8 @@ if (heatmapPayload && heatmapRoot) {
                 cell.className = className;
                 cell.dataset.date = day.date;
                 cell.dataset.count = String(count);
-                cell.setAttribute('title', title);
-                cell.setAttribute('aria-label', title);
+                cell.dataset.tip = tip;
+                cell.setAttribute('aria-label', tip);
                 cell.textContent = count > 0 ? String(count) : '';
                 console.log(`Дата: ${day.date}, Wins: ${wins}, Losses: ${losses}, Class: ${className}`);
                 cells.push(cell);
@@ -125,6 +125,30 @@ if (heatmapPayload && heatmapRoot) {
         heatmapRoot.style.gridAutoFlow = 'column';
         heatmapRoot.style.gridTemplateRows = 'repeat(7, minmax(0, 1fr))';
         heatmapRoot.replaceChildren(...cells);
+
+        const heatmapTooltip = document.getElementById('heatmap-tooltip');
+        if (heatmapTooltip) {
+            const showHeatmapTip = (event) => {
+                const cell = event.target.closest('[data-tip]');
+                if (!cell) {
+                    heatmapTooltip.classList.add('hidden');
+                    return;
+                }
+                heatmapTooltip.textContent = cell.dataset.tip || '';
+                heatmapTooltip.classList.remove('hidden');
+                const offset = 12;
+                const r = heatmapTooltip.getBoundingClientRect();
+                let left = event.clientX + offset;
+                let top = event.clientY + offset;
+                if (left + r.width > window.innerWidth - 8) left = event.clientX - r.width - offset;
+                if (top + r.height > window.innerHeight - 8) top = event.clientY - r.height - offset;
+                heatmapTooltip.style.left = `${Math.max(8, left)}px`;
+                heatmapTooltip.style.top = `${Math.max(8, top)}px`;
+            };
+            heatmapRoot.addEventListener('mouseover', showHeatmapTip);
+            heatmapRoot.addEventListener('mousemove', showHeatmapTip);
+            heatmapRoot.addEventListener('mouseleave', () => heatmapTooltip.classList.add('hidden'));
+        }
     }
 }
 

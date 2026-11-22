@@ -160,6 +160,48 @@ class DotaPlayerController extends Controller
     }
 
     /**
+     * Trophies / achievements page.
+     */
+    public function trophies(int $accountId, OpenDotaService $openDota, SteamService $steam, FavoriteService $favorites): View|Response
+    {
+        $player = $this->playerOrError($accountId, $openDota);
+
+        if ($player instanceof Response) {
+            return $player;
+        }
+
+        PlayerSearch::track(
+            (string) $accountId,
+            $player['is_private'] ? null : $player['nickname'],
+            $player['avatar'],
+        );
+
+        $history = $player['match_history'] ?? [];
+        $totalHours = (int) floor(collect($history)->sum(fn ($m) => (int) ($m['duration'] ?? 0)) / 3600);
+        $rankTier = (int) ($player['rank_tier'] ?? 0);
+
+        $trophies = [
+            ['key' => 'games_1000', 'label' => '1000 матчей', 'value' => (int) ($player['games'] ?? 0), 'target' => 1000, 'achieved' => (int) ($player['games'] ?? 0) >= 1000],
+            ['key' => 'wins_500', 'label' => '500 побед', 'value' => (int) ($player['wins'] ?? 0), 'target' => 500, 'achieved' => (int) ($player['wins'] ?? 0) >= 500],
+            ['key' => 'hours_1000', 'label' => '1000 часов в игре', 'value' => $totalHours, 'target' => 1000, 'achieved' => $totalHours >= 1000],
+            ['key' => 'max_rank', 'label' => 'Максимальный ранг', 'value' => $rankTier, 'target' => 80, 'achieved' => $rankTier >= 80],
+        ];
+
+        return view('dota.trophies', [
+            'player' => $player,
+            'pageTitle' => $player['nickname'].' - Трофеи - DotaHub',
+            'activeTab' => 'trophies',
+            'profileSection' => 'Трофеи',
+            'trophies' => $trophies,
+            'totalHours' => $totalHours,
+            'steamProfile' => $steam->summary(
+                ($player['steam_id'] ?? '') ?: SteamId::steamId64FromAccountId($accountId)
+            ),
+            'isFavorite' => $this->favoriteState($accountId, $favorites),
+        ]);
+    }
+
+    /**
      * Personal records rendered as tiles, backed by a 24-hour Redis cache.
      */
     public function records(int $accountId, OpenDotaService $openDota, SteamService $steam, FavoriteService $favorites): View|Response

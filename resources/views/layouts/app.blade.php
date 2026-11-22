@@ -29,7 +29,7 @@
     <header class="sticky top-0 z-50 border-b border-[#2d313e] bg-[#111318]/90 backdrop-blur-md">
         <div class="mx-auto flex h-16 w-full max-w-7xl items-center px-4 sm:px-6 lg:px-8">
             <div class="flex min-w-0 items-center gap-3">
-                <a href="/" class="bg-[#d32f2f] px-3 py-1 text-white font-light uppercase text-2xl tracking-widest leading-none rounded-none">DOTAHUB</a>
+                <a href="/" class="bg-[#d32f2f] px-2 py-0.5 text-white font-mono uppercase text-xl tracking-tighter leading-none rounded-sm">DOTAHUB</a>
                 @if ($showProfileNav && $navNickname)
                     <span class="min-w-0 truncate text-sm font-semibold text-white">{{ $navNickname }}</span>
                 @endif
@@ -125,6 +125,7 @@
                         'dota.player' => 'Обзор',
                         'dota.player.matches' => 'Матчи',
                         'dota.player.heroes' => 'Герои',
+                        'dota.player.trophies' => 'Трофеи',
                         'dota.player.records' => 'Рекорды',
                         'dota.player.peers' => 'Союзники',
                     ] as $routeName => $label)
