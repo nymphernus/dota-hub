@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', $pageTitle ?? 'DotaHub — статистика игроков Dota 2')
+@section('title', $pageTitle ?? 'DOTAHUB — статистика игроков Dota 2')
 @section('description', 'Ищите игроков Dota 2 по ссылке на Steam, SteamID64 или никнейму. KDA, GPM, XPM, топ героев, активность и последние матчи.')
 
 @php
@@ -114,7 +114,7 @@
         @else
             <div class="mx-auto w-full max-w-4xl px-4 pb-8 pt-12 text-center sm:px-6 lg:px-8">
                 <h1 class="text-5xl font-semibold tracking-tight text-mist-200 sm:text-7xl">
-                    DotaHub
+                    DOTAHUB
                 </h1>
 
             </div>

@@ -63,7 +63,7 @@ class HeroPlayerController extends Controller
 
         return view('dota.hero', [
             'player' => $player,
-            'pageTitle' => ($stats['hero']['name'] ?? 'Герой').' - '.$player['nickname'].' - DotaHub',
+            'pageTitle' => ($stats['hero']['name'] ?? 'Герой').' - '.$player['nickname'].' - DOTAHUB',
             'hero' => $stats['hero'],
             'summary' => $stats['summary'],
             'matches' => $stats['matches'],

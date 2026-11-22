@@ -923,7 +923,7 @@ class OpenDotaService
         $total = count($rows);
         $offset = ($page - 1) * $perPage;
         $pageRows = array_slice($rows, $offset, $perPage);
-        $pageRows = $this->enrichMatches($pageRows, $accountId, min(25, count($pageRows)), ! $servedFromFreshDb);
+        $pageRows = $this->enrichMatches($pageRows, $accountId, count($pageRows), ! $servedFromFreshDb);
 
         return [
             'player' => $profile,

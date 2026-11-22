@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Ошибка сервера — DotaHub')
-@section('description', 'Не удалось загрузить данные DotaHub.')
+@section('title', 'Ошибка сервера — DOTAHUB')
+@section('description', 'Не удалось загрузить данные DOTAHUB.')
 
 @section('content')
     <div class="relative overflow-hidden">

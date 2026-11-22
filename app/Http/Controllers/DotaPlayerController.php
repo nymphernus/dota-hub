@@ -49,7 +49,7 @@ class DotaPlayerController extends Controller
 
         return view('dota.player', [
             'player' => $player,
-            'pageTitle' => $player['nickname'].' - Обзор - DotaHub',
+            'pageTitle' => $player['nickname'].' - Обзор - DOTAHUB',
             'activeTab' => 'overview',
             'profileSection' => 'Обзор',
             'winrate' => $player['winrate'],
@@ -117,7 +117,7 @@ class DotaPlayerController extends Controller
 
         return view('dota.heroes', [
             'player' => $player,
-            'pageTitle' => $player['nickname'].' - Герои - DotaHub',
+            'pageTitle' => $player['nickname'].' - Герои - DOTAHUB',
             'activeTab' => 'heroes',
             'profileSection' => 'Герои',
             'steamProfile' => $steam->summary(
@@ -149,51 +149,9 @@ class DotaPlayerController extends Controller
 
         return view('dota.peers', [
             'player' => $player,
-            'pageTitle' => $player['nickname'].' - Союзники - DotaHub',
+            'pageTitle' => $player['nickname'].' - Союзники - DOTAHUB',
             'activeTab' => 'peers',
             'profileSection' => 'Союзники',
-            'steamProfile' => $steam->summary(
-                ($player['steam_id'] ?? '') ?: SteamId::steamId64FromAccountId($accountId)
-            ),
-            'isFavorite' => $this->favoriteState($accountId, $favorites),
-        ]);
-    }
-
-    /**
-     * Trophies / achievements page.
-     */
-    public function trophies(int $accountId, OpenDotaService $openDota, SteamService $steam, FavoriteService $favorites): View|Response
-    {
-        $player = $this->playerOrError($accountId, $openDota);
-
-        if ($player instanceof Response) {
-            return $player;
-        }
-
-        PlayerSearch::track(
-            (string) $accountId,
-            $player['is_private'] ? null : $player['nickname'],
-            $player['avatar'],
-        );
-
-        $history = $player['match_history'] ?? [];
-        $totalHours = (int) floor(collect($history)->sum(fn ($m) => (int) ($m['duration'] ?? 0)) / 3600);
-        $rankTier = (int) ($player['rank_tier'] ?? 0);
-
-        $trophies = [
-            ['key' => 'games_1000', 'label' => '1000 матчей', 'value' => (int) ($player['games'] ?? 0), 'target' => 1000, 'achieved' => (int) ($player['games'] ?? 0) >= 1000],
-            ['key' => 'wins_500', 'label' => '500 побед', 'value' => (int) ($player['wins'] ?? 0), 'target' => 500, 'achieved' => (int) ($player['wins'] ?? 0) >= 500],
-            ['key' => 'hours_1000', 'label' => '1000 часов в игре', 'value' => $totalHours, 'target' => 1000, 'achieved' => $totalHours >= 1000],
-            ['key' => 'max_rank', 'label' => 'Максимальный ранг', 'value' => $rankTier, 'target' => 80, 'achieved' => $rankTier >= 80],
-        ];
-
-        return view('dota.trophies', [
-            'player' => $player,
-            'pageTitle' => $player['nickname'].' - Трофеи - DotaHub',
-            'activeTab' => 'trophies',
-            'profileSection' => 'Трофеи',
-            'trophies' => $trophies,
-            'totalHours' => $totalHours,
             'steamProfile' => $steam->summary(
                 ($player['steam_id'] ?? '') ?: SteamId::steamId64FromAccountId($accountId)
             ),
@@ -224,7 +182,7 @@ class DotaPlayerController extends Controller
         // client-side and never reloads the profile.
         return view('dota.records', [
             'player' => $player,
-            'pageTitle' => $player['nickname'].' - Рекорды - DotaHub',
+            'pageTitle' => $player['nickname'].' - Рекорды - DOTAHUB',
             'activeTab' => 'records',
             'profileSection' => 'Рекорды',
             'records' => $openDota->playerRecords($accountId, $history, false),
@@ -332,7 +290,7 @@ class DotaPlayerController extends Controller
 
         return view('dota.matches', [
             'player' => $player,
-            'pageTitle' => $player['nickname'].' - Матчи - DotaHub',
+            'pageTitle' => $player['nickname'].' - Матчи - DOTAHUB',
             'activeTab' => 'matches',
             'profileSection' => 'Матчи',
             'steamProfile' => $steam->summary($steamId),

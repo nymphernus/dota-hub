@@ -1,6 +1,6 @@
 ﻿@extends('dota.layouts.profile')
 
-@section('title', $pageTitle ?? ($player['nickname'].' - Матчи - DotaHub'))
+@section('title', $pageTitle ?? ($player['nickname'].' - Матчи - DOTAHUB'))
 @section('description', 'Полный список матчей игрока '.$player['nickname'].' с фильтрами по герою, результату, режиму, роли и дате.')
 
 @section('profile-content')

@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', $pageTitle ?? 'Избранное - DotaHub')
-@section('description', 'Избранные игроки Dota 2 в DotaHub.')
+@section('title', $pageTitle ?? 'Избранное - DOTAHUB')
+@section('description', 'Избранные игроки Dota 2 в DOTAHUB.')
 
 @section('content')
     <section class="mx-auto w-full max-w-5xl px-4 pt-8 sm:px-6 lg:px-8">

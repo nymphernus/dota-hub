@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Слишком много запросов — DotaHub')
+@section('title', 'Слишком много запросов — DOTAHUB')
 @section('description', 'Превышен лимит запросов к API. Попробуйте позже.')
 
 @section('content')

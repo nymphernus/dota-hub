@@ -4,10 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="description" content="@yield('description', 'DotaHub — быстрая статистика игроков Dota 2. Профили, матчи, герои и активность.')">
+    <meta name="description" content="@yield('description', 'DOTAHUB — быстрая статистика игроков Dota 2. Профили, матчи, герои и активность.')">
     <meta name="theme-color" content="#111318">
 
-    <title>@yield('title', 'DOTAHUB')</title>
+    <title>DOTAHUB</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -29,7 +29,7 @@
     <header class="sticky top-0 z-50 border-b border-[#2d313e] bg-[#111318]/90 backdrop-blur-md">
         <div class="mx-auto flex h-16 w-full max-w-7xl items-center px-4 sm:px-6 lg:px-8">
             <div class="flex min-w-0 items-center gap-3">
-                <a href="/" class="bg-[#d32f2f] px-2 py-0.5 text-white font-mono uppercase text-xl tracking-tighter leading-none rounded-sm">DOTAHUB</a>
+                <a href="/" class="bg-[#d32f2f] px-2 py-1 text-white font-light uppercase text-2xl leading-none rounded-sm tracking-tighter">DOTAHUB</a>
                 @if ($showProfileNav && $navNickname)
                     <span class="min-w-0 truncate text-sm font-semibold text-white">{{ $navNickname }}</span>
                 @endif
@@ -125,7 +125,6 @@
                         'dota.player' => 'Обзор',
                         'dota.player.matches' => 'Матчи',
                         'dota.player.heroes' => 'Герои',
-                        'dota.player.trophies' => 'Трофеи',
                         'dota.player.records' => 'Рекорды',
                         'dota.player.peers' => 'Союзники',
                     ] as $routeName => $label)

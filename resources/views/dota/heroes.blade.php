@@ -1,6 +1,6 @@
 ﻿@extends('dota.layouts.profile')
 
-@section('title', $pageTitle ?? ($player['nickname'].' - Герои - DotaHub'))
+@section('title', $pageTitle ?? ($player['nickname'].' - Герои - DOTAHUB'))
 @section('description', 'Герои игрока '.$player['nickname'].': матчи, винрейт и KDA.')
 
 @section('profile-content')

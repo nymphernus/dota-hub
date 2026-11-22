@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Не удалось загрузить данные — DotaHub')
+@section('title', 'Не удалось загрузить данные — DOTAHUB')
 @section('description', 'OpenDota временно недоступна. Попробуйте обновить страницу позже.')
 
 @section('content')

@@ -1,6 +1,6 @@
 ﻿@extends('dota.layouts.profile')
 
-@section('title', $pageTitle ?? ($player['nickname'].' - Рекорды - DotaHub'))
+@section('title', $pageTitle ?? ($player['nickname'].' - Рекорды - DOTAHUB'))
 @section('description', 'Личные рекорды игрока '.$player['nickname'].' в Dota 2: самый длинный и короткий матч, максимум убийств, урона, GPM и серии побед и поражений.')
 
 @section('profile-content')
