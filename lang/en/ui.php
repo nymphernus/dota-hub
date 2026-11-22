@@ -95,4 +95,10 @@ return [
     'dota_public' => 'Public match history',
     'dota_private' => 'Matches hidden',
     'steam_api_unavailable' => 'Steam API unavailable',
+    'first_match' => 'First:',
+    'last_match' => 'Last:',
+    'wins_lower' => 'wins',
+    'losses_lower' => 'losses',
+    'matches_count' => ':count matches',
+    'last_25' => 'Last 25',
 ];

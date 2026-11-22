@@ -26,13 +26,13 @@
     $segmentCount = $games > 0 ? (int) ceil($games / 100) : 0;
 @endphp
 
-<div class="mt-4 flex flex-wrap gap-3" role="list" aria-label="Ключевая статистика">
+<div class="mt-4 flex flex-wrap gap-3" role="list" aria-label="{{ __('ui.lifetime_stats') }}">
     <div class="card min-w-[150px] flex-1 p-3" role="listitem">
         <p class="text-sm text-mist-400 font-bold uppercase">{{ __('ui.matches') }}</p>
         <p class="mt-1 text-4xl font-black text-mist-200">{{ number_format($games, 0, '.', ' ') }}</p>
         <div class="mt-1 text-[10px] text-mist-500">
-            <div>Первый: {{ $fmt($firstMatch) }}</div>
-            <div>Последний: {{ $fmt($lastMatch) }}</div>
+            <div>{{ __('ui.first_match') }} {{ $fmt($firstMatch) }}</div>
+            <div>{{ __('ui.last_match') }} {{ $fmt($lastMatch) }}</div>
         </div>
         @if ($segmentCount > 0)
             <div class="mt-2 flex gap-1">
@@ -63,8 +63,8 @@
             <div class="h-full bg-red-500" style="width: {{ max(0, 100 - $winrateValue) }}%"></div>
         </div>
         <div class="flex justify-between text-xs text-mist-400 mt-1">
-            <span class="text-yellow-500">{{ $wins }} побед</span>
-            <span class="text-red-500">{{ $losses }} поражений</span>
+            <span class="text-yellow-500">{{ $wins }} {{ __('ui.wins_lower') }}</span>
+            <span class="text-red-500">{{ $losses }} {{ __('ui.losses_lower') }}</span>
         </div>
     </div>
 

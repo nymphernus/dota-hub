@@ -1,7 +1,7 @@
 @extends('dota.layouts.profile')
 
 @section('title', $pageTitle ?? ($player['nickname'].' - DOTAHUB'))
-@section('description', 'Игроки, с которыми '.$player['nickname'].' чаще всего играл в Dota 2: совместные игры и {{ __('ui.ally_winrate') }}.')
+@section('description', 'Игроки, с которыми '.$player['nickname'].' чаще всего играл в Dota 2: совместные игры и '.__('ui.ally_winrate').'.')
 
 @section('profile-content')
     <section class="mt-4 border border-[#2d313e] bg-[#1c1e26]">

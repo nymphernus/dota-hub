@@ -95,4 +95,10 @@ return [
     'dota_public' => 'Публичная история матчей',
     'dota_private' => 'Матчи скрыты',
     'steam_api_unavailable' => 'Steam API недоступен',
+    'first_match' => 'Первый:',
+    'last_match' => 'Последний:',
+    'wins_lower' => 'побед',
+    'losses_lower' => 'поражений',
+    'matches_count' => ':count матчей',
+    'last_25' => '25 матчей',
 ];

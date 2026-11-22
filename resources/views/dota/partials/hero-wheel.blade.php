@@ -131,12 +131,12 @@
                     class="cursor-pointer hover:opacity-80 focus:outline-none outline-none ring-0"
                     tabindex="0"
                     role="link"
-                    aria-label="{{ $sector['name'] }}: {{ $sector['games'] }} игр, {{ $sector['winrate'] }}% побед"
+                    aria-label="{{ $sector['name'] }}: {{ $sector['games'] }} {{ __('ui.games') }}, {{ $sector['winrate'] }}%"
                 >
                     <g
                         class="hero-wheel__slice"
                         role="img"
-                        aria-label="{{ $sector['name'] }}: {{ $sector['games'] }} игр, {{ $sector['winrate'] }}% побед"
+                        aria-label="{{ $sector['name'] }}: {{ $sector['games'] }} {{ __('ui.games') }}, {{ $sector['winrate'] }}%"
                         data-wheel-tooltip
                         data-hero-name="{{ $sector['name'] }}"
                         data-hero-image="{{ $sector['image'] }}"
@@ -168,9 +168,9 @@
                 </a>
             @endforeach
 
-            <circle cx="150" cy="150" r="80" fill="#1c1e26" />
+            <circle cx="150" cy="150" r="80" class="fill-white dark:fill-[#1c1e26]" />
             <text x="150" y="145" text-anchor="middle" dominant-baseline="middle" class="text-2xl font-bold {{ $wheelOverallWinrate >= 50 ? 'fill-green-500' : 'fill-red-500' }}">{{ number_format($wheelOverallWinrate, 1, '.', '') }}%</text>
-            <text x="150" y="170" text-anchor="middle" dominant-baseline="middle" class="text-sm font-semibold" fill="#d1d5db">
+            <text x="150" y="170" text-anchor="middle" dominant-baseline="middle" class="text-sm font-semibold fill-gray-900 dark:fill-[#d1d5db]">
                 <tspan fill="#10b981">{{ $wheelTotalWins }} {{ app()->getLocale() === 'ru' ? 'П' : 'W' }}</tspan>
                 <tspan fill="#8b94a5"> / </tspan>
                 <tspan fill="#ef4444">{{ $wheelTotalLosses }} {{ app()->getLocale() === 'ru' ? 'П' : 'L' }}</tspan>

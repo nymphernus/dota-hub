@@ -99,7 +99,7 @@
             <x-stat
                 label="Винрейт"
                 :value="$summary['winrate'] !== null ? number_format($summary['winrate'], 1, '.', '').'%' : '—'"
-                :hint="number_format($summary['wins'], 0, '.', ' ').' побед из '.number_format($summary['games'], 0, '.', ' ').' матчей'"
+                :hint="number_format($summary['wins'], 0, '.', ' ').' '.__('ui.wins_lower').' / '.number_format($summary['games'], 0, '.', ' ')"
             />
             <x-stat
                 label="Средний KDA"
