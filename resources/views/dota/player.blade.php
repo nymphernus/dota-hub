@@ -1,6 +1,6 @@
 @extends('dota.layouts.profile')
 
-@section('title', $pageTitle ?? ($player['nickname'].' - Обзор - DOTAHUB'))
+@section('title', $pageTitle ?? ($player['nickname'].' - DOTAHUB'))
 @section('description', 'Статистика Dota 2 игрока '.$player['nickname'].': ранг, винрейт, KDA, GPM, XPM, топ героев и последние матчи.')
 
 @php
@@ -26,7 +26,7 @@
 
         <div class="mt-4 flex flex-wrap items-center gap-2 rounded-none bg-ink-900/60 px-4 py-3 text-[11px]">
             <span class="uppercase tracking-[0.16em] text-mist-500">{{ __('ui.privacy') }}</span>
-            <span @class(['badge', $steamTone])>Steam: {{ $steamProfile['visibility'] ?? 'Неизвестно' }}</span>
+            <span @class(['badge', $steamTone])>Steam: {{ $steamProfile['visibility'] ?? __('ui.steam_unknown') }}</span>
             <span @class(['badge', $dotaTone])>Dota: {{ $dotaPublic ? 'Публичные матчи доступны' : 'Матчей пока нет' }}</span>
             @if (! $steamAvailable)
                 <span class="text-accent-300/80">{{ $steamProfile['error'] ?? 'Steam API недоступна' }}</span>
@@ -56,7 +56,7 @@
                     </div>
 
                     @if ($recentMatches === [])
-                        <div class="p-4 text-center text-xs text-mist-400">Матчи не найдены. Возможно, у игрока пока мало игр или данные ещё не проиндексированы.</div>
+                        <div class="p-4 text-center text-xs text-mist-400">{{ __('ui.no_matches_found_hint') }}</div>
                     @else
                         <table class="w-full text-sm">
                                 <thead class="table-head">
@@ -66,7 +66,7 @@
                                         <th class="px-2 py-1 text-left font-semibold">K / D / A</th>
                                         <th class="px-2 py-1 text-left font-semibold">GPM / XPM</th>
                                         <th class="px-2 py-1 text-left font-semibold">Предметы</th>
-                                        <th class="px-2 py-1 text-right font-semibold">Дата</th>
+                                        <th class="px-2 py-1 text-right font-semibold">{{ __('ui.date') }}</th>
                                     </tr>
                                 </thead>
                                 <tbody class="table-rows">
@@ -80,8 +80,8 @@
 
                 <section class="overflow-hidden border border-[#2d313e] bg-[#1c1e26] rounded-none">
                     <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[#2d313e] px-3 py-2">
-                        <h2 class="section-heading">Самые играемые герои</h2>
-                        <span class="badge border-line bg-ink-900/50 text-mist-400">За всё время</span>
+                        <h2 class="section-heading">{{ __('ui.most_played_heroes') }}</h2>
+                        <span class="badge border-line bg-ink-900/50 text-mist-400">{{ __('ui.all_time') }}</span>
                     </div>
 
                     @if ($topHeroes === [])
@@ -99,7 +99,7 @@
                                     </span>
                                     <span class="min-w-0 flex-1">
                                         <span class="block truncate text-[12px] font-bold text-mist-200 transition group-hover:text-accent-300">{{ $hero['name'] }}</span>
-                                        <span class="block text-[10px] text-mist-500">{{ $hero['games'] }} игр</span>
+                                        <span class="block text-[10px] text-mist-500">{{ $hero['games'] }} {{ __('ui.games') }}</span>
                                     </span>
                                     <span class="font-mono text-[12px] font-bold {{ ($hero['winrate'] ?? 0) >= 50 ? 'text-green-500' : 'text-red-500' }}">
                                         {{ $hero['winrate'] !== null ? number_format($hero['winrate'], 1, '.', '').'%' : '—' }}
@@ -114,7 +114,7 @@
             <aside class="col-span-12 min-w-0 space-y-4 lg:col-span-4">
                 <section class="border border-[#2d313e] bg-[#1c1e26] p-3 rounded-none">
                     <div class="flex items-start justify-between gap-2">
-                        <h2 class="section-heading">Колесо героев</h2>
+                        <h2 class="section-heading">{{ __('ui.hero_wheel') }}</h2>
                         <span class="text-[10px] text-mist-500">{{ $heroUsageTotal }} матчей</span>
                     </div>
 
@@ -124,7 +124,7 @@
                 <section class="border border-[#2d313e] bg-[#1c1e26] p-3 rounded-none">
                     <div class="flex items-start justify-between gap-2">
                         <h2 class="section-heading">{{ __('ui.activity') }}</h2>
-                        <span id="activity-total" class="text-[10px] text-mist-500">{{ number_format($activityTotal, 0, '.', ' ') }} игр</span>
+                        <span id="activity-total" class="text-[10px] text-mist-500">{{ number_format($activityTotal, 0, '.', ' ') }} {{ __('ui.games') }}</span>
                     </div>
 
                     <div class="mt-3 flex gap-2" aria-label="Активность за последние 13 недель">
@@ -146,8 +146,8 @@
                         </div>
                     </div>
                     <div class="mt-2 flex items-center justify-between text-[10px] text-mist-500">
-                        <span>90 дней назад</span>
-                        <span>Сегодня</span>
+                        <span>{{ __('ui.last_90_days') }}</span>
+                        <span>{{ __('ui.today') }}</span>
                     </div>
                 </section>
 
@@ -155,13 +155,13 @@
                     <section class="border border-[#2d313e] bg-[#1c1e26] p-3 rounded-none">
                         <div class="flex items-start justify-between gap-2">
                             <div>
-                                <h2 class="section-heading">Статистика за всё время</h2>
+                                <h2 class="section-heading">{{ __('ui.lifetime_stats') }}</h2>
                                 <p class="mt-0.5 text-[10px] text-mist-500">Сводка по {{ number_format($lifetimeStats['total'], 0, '.', ' ') }} матчам</p>
                             </div>
                             @php
                                 $totalPlayHours = (int) floor(collect($history ?? [])->sum(fn ($m) => (int) ($m['duration'] ?? 0)) / 3600);
                             @endphp
-                            <span class="text-[10px] text-mist-500">{{ $totalPlayHours }} ч.</span>
+                            <span class="text-[10px] text-mist-500">{{ $totalPlayHours }} {{ __('ui.hours_short') }}</span>
                         </div>
 
                         <div class="mt-2 space-y-3">
@@ -177,7 +177,7 @@
                                                     <tr>
                                                         <th class="px-2 py-1 text-left font-semibold">{{ $group['key'] === 'mode' ? 'Режим' : 'Фракция' }}</th>
                                                         <th class="px-2 py-1 text-right font-semibold">Матчи</th>
-                                                        <th class="px-2 py-1 text-right font-semibold">Винрейт</th>
+                                                        <th class="px-2 py-1 text-right font-semibold">{{ __('ui.winrate') }}</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody class="table-rows">
@@ -202,15 +202,15 @@
                                     <p class="section-heading mb-1">Средние показатели</p>
                                     <div class="grid grid-cols-3 gap-2">
                                         <div class="border border-line bg-ink-900/30 px-2 py-2 text-center">
-                                            <div class="text-[10px] text-mist-500 uppercase">Средний KDA</div>
+                                            <div class="text-[10px] text-mist-500 uppercase">{{ __('ui.avg_kda') }}</div>
                                             <div class="text-sm font-semibold text-mist-200 font-mono">{{ $lifetimeStats['averages']['kda'] !== null ? number_format($lifetimeStats['averages']['kda'], 2, '.', '') : '—' }}</div>
                                         </div>
                                         <div class="border border-line bg-ink-900/30 px-2 py-2 text-center">
-                                            <div class="text-[10px] text-mist-500 uppercase">Средний GPM</div>
+                                            <div class="text-[10px] text-mist-500 uppercase">{{ __('ui.avg_gpm') }}</div>
                                             <div class="text-sm font-semibold text-mist-200 font-mono">{{ $lifetimeStats['averages']['gpm'] !== null ? number_format($lifetimeStats['averages']['gpm'], 0, '.', ' ') : '—' }}</div>
                                         </div>
                                         <div class="border border-line bg-ink-900/30 px-2 py-2 text-center">
-                                            <div class="text-[10px] text-mist-500 uppercase">Средний XPM</div>
+                                            <div class="text-[10px] text-mist-500 uppercase">{{ __('ui.avg_xpm') }}</div>
                                             <div class="text-sm font-semibold text-mist-200 font-mono">{{ $lifetimeStats['averages']['xpm'] !== null ? number_format($lifetimeStats['averages']['xpm'], 0, '.', ' ') : '—' }}</div>
                                         </div>
                                     </div>
@@ -222,7 +222,7 @@
 
                 <section class="border border-[#2d313e] bg-[#1c1e26] p-3 rounded-none">
                     <div class="flex items-start justify-between gap-2">
-                        <h2 class="section-heading">Союзники</h2>
+                        <h2 class="section-heading">{{ __('ui.allies') }}</h2>
                         <span class="text-[10px] text-mist-500">{{ min(5, count($player['peers'] ?? [])) }}</span>
                     </div>
 

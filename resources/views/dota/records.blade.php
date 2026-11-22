@@ -1,6 +1,6 @@
 ﻿@extends('dota.layouts.profile')
 
-@section('title', $pageTitle ?? ($player['nickname'].' - Рекорды - DOTAHUB'))
+@section('title', $pageTitle ?? ($player['nickname'].' - DOTAHUB'))
 @section('description', 'Личные рекорды игрока '.$player['nickname'].' в Dota 2: самый длинный и короткий матч, максимум убийств, урона, GPM и серии побед и поражений.')
 
 @section('profile-content')
@@ -13,7 +13,7 @@
             <span class="badge text-mist-400" x-text="tab === 'ranked' ? '{{ count($rankedRecords) }} достижений' : '{{ count($records) }} достижений'"></span>
         </div>
 
-        <div class="mt-3 inline-flex rounded-none bg-ink-900/40 p-1" role="tablist" aria-label="Тип рекордов">
+        <div class="mt-3 inline-flex rounded-none bg-ink-900/40 p-1" role="tablist" aria-label="{{ __('ui.records') }}">
             <button
                 type="button"
                 role="tab"

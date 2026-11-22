@@ -1,18 +1,19 @@
 @php
-    $bannerHero = collect($player['heroes'] ?? [])->first(fn (array $hero) => ! empty($hero['image']));
-    $bannerImage = $bannerHero['image'] ?? ($player['avatar'] ?? null);
+    $bannerImage = $player['avatar'] ?? null;
     $rankTier = (int) ($player['rank_tier'] ?? 0);
     $rankIconBase = asset('images/dota/ranks');
     $rankTierBand = 0;
     $rankStars = 0;
     $rankIcon = $rankIconBase.'/rank_icon_0.png';
-    $rankLabel = $player['rank_label'] ?: __('ui.no_rank');
     $rankStarIcon = null;
+    $rankLabel = __('ui.no_rank');
 
     if ($rankTier > 0) {
         $rankTierBand = intdiv($rankTier, 10);
         $rankStars = $rankTier % 10;
         $rankIcon = $rankIconBase.'/rank_icon_'.$rankTierBand.'.png';
+        $rankName = __('ui.rank_'.$rankTierBand);
+        $rankLabel = ($rankTierBand >= 1 && $rankTierBand <= 7) ? $rankName.' '.$rankStars : $rankName;
         if ($rankTierBand >= 1 && $rankTierBand <= 7 && $rankStars >= 1) {
             $rankStarIcon = $rankIconBase.'/rank_star_'.min(5, $rankStars).'.png';
         }
@@ -34,7 +35,7 @@
 
 <section class="card relative overflow-hidden">
     @if ($bannerImage)
-        <div class="absolute inset-0 bg-cover bg-center filter blur-sm opacity-20" style="background-image: url('{{ $bannerImage }}')" aria-hidden="true"></div>
+        <div class="absolute inset-0 bg-cover bg-center blur-md opacity-40" style="background-image: url('{{ $bannerImage }}')" aria-hidden="true"></div>
     @endif
     <div class="relative z-10 px-4 pb-5 pt-8 sm:px-6 lg:px-8">
         <div class="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
