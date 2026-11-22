@@ -149,16 +149,16 @@
             </div>
 
             <div class="flex shrink-0 items-center gap-4 self-start lg:self-auto">
-                <div class="relative inline-block w-24 h-24 shrink-0">
-                    <img src="{{ $rankIconBase }}/rank_icon_{{ $rankTier > 0 ? $rankTierBand : 0 }}.png" alt="{{ $rankLabel }}" class="w-24 h-24 object-contain">
-                    @if ($rankTier > 0 && $rankTierBand >= 1 && $rankTierBand <= 7 && $rankStars > 0)
-                        <img src="{{ $rankIconBase }}/rank_star_{{ min(5, $rankStars) }}.png" alt="" class="absolute inset-0 w-24 h-24 object-contain">
-                    @endif
-                </div>
                 <div class="text-right">
                     <div class="text-xl font-bold text-mist-100 sm:text-2xl">{{ $rankLabel }}</div>
                     @if (! empty($player['leaderboard_rank']))
                         <div class="text-sm text-accent-300">#{{ number_format((int) $player['leaderboard_rank'], 0, '.', ' ') }}</div>
+                    @endif
+                </div>
+                <div class="relative inline-block w-24 h-24 shrink-0">
+                    <img src="{{ $rankIconBase }}/rank_icon_{{ $rankTier > 0 ? $rankTierBand : 0 }}.png" alt="{{ $rankLabel }}" class="w-24 h-24 object-contain">
+                    @if ($rankTier > 0 && $rankTierBand >= 1 && $rankTierBand <= 7 && $rankStars > 0)
+                        <img src="{{ $rankIconBase }}/rank_star_{{ min(5, $rankStars) }}.png" alt="" class="absolute inset-0 w-24 h-24 object-contain">
                     @endif
                 </div>
             </div>

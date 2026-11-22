@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="mx-auto w-full max-w-[1400px] px-4 pt-6 sm:px-6 lg:px-8">
+    <div class="mx-auto w-full max-w-[1420px] px-4 pt-6 sm:px-6 lg:px-8">
         <x-player-header :player="$player" :steamProfile="$steamProfile" :isFavorite="$isFavorite ?? false" />
 
         @if (!empty($player['api_warning']))
