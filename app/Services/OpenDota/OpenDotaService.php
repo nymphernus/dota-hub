@@ -28,7 +28,7 @@ class OpenDotaService
 
     private const RECENT_MATCH_DETAILS = 10;
 
-    private const PROFILE_SCHEMA_VERSION = 6;
+    private const PROFILE_SCHEMA_VERSION = 7;
 
     /**
      * Human-readable labels for OpenDota /players/{id}/records keys.
