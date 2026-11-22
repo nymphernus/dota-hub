@@ -208,7 +208,7 @@ class SteamService
             return null;
         }
 
-        $cacheKey = 'steam:background:v1:'.$steamId64;
+        $cacheKey = 'steam:background:v2:'.$steamId64;
 
         return Cache::remember($cacheKey, 86400, function () use ($steamId64) {
             try {
@@ -216,24 +216,52 @@ class SteamService
                     ->withHeaders([
                         'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
                         'Accept' => 'text/html,application/xhtml+xml',
+                        'Accept-Language' => 'en-US,en;q=0.9',
                     ])
                     ->get("https://steamcommunity.com/profiles/{$steamId64}");
 
                 if ($response->failed()) {
+                    Log::debug('Steam background: request failed', ['steam_id' => $steamId64, 'status' => $response->status()]);
                     return null;
                 }
 
                 $html = $response->body();
-                if (preg_match('/profile_background_image_content\s*"?[^>]*?background-image\s*:\s*url\((?:&quot;|\'|")?(.*?)(?:&quot;|\'|")?\)/si', $html, $m)) {
-                    $url = html_entity_decode(trim($m[1]), ENT_QUOTES | ENT_HTML5);
-                    return filter_var($url, FILTER_VALIDATE_URL) ? $url : null;
-                }
-                if (preg_match('/background-image\s*:\s*url\(\s*[\'"]?([^\'")]+)[\'"]?\s*\)/i', $html, $m)) {
-                    $url = html_entity_decode(trim($m[1]), ENT_QUOTES | ENT_HTML5);
-                    if (str_contains($url, 'steamstatic') || str_contains($url, 'steamcdn')) {
-                        return filter_var($url, FILTER_VALIDATE_URL) ? $url : null;
+
+                $patterns = [
+                    '/profile_background_image_content[^>]*style\s*=\s*(?:&quot;|\")[^"\']*?background-image\s*:\s*url\(\s*(?:&quot;|\\\'|")?([^"\'\)&]+)(?:&quot;|\\\'|")?\s*\)/si',
+                    '/class\s*=\s*(?:&quot;|\")[^"\']*profile_background_image_content[^"\']*(?:&quot;|\")[^>]*style\s*=\s*(?:&quot;|\")[^"\']*?url\(\s*(?:&quot;|\\\'|")?([^"\'\)&]+)(?:&quot;|\\\'|")?\s*\)/si',
+                    '/background-image\s*:\s*url\(\s*[\\\'"]?([^\\\'"\)]+)[\\\'"]?\s*\)[^>]*class\s*=\s*[\\\'"][^\\\'"]*profile_background_image_content/si',
+                    '/"profile_background_image"\s*:\s*"([^"]+)"/i',
+                ];
+
+                foreach ($patterns as $pattern) {
+                    if (preg_match($pattern, $html, $m)) {
+                        $url = html_entity_decode(trim($m[1]), ENT_QUOTES | ENT_HTML5);
+                        $url = stripslashes($url);
+                        if (filter_var($url, FILTER_VALIDATE_URL)) {
+                            return $url;
+                        }
                     }
                 }
+
+                // Fallback: any steamstatic/steamcdn background image in profile area
+                if (preg_match_all('/background-image\s*:\s*url\(\s*[\\\'"]?([^\\\'"\)]+)[\\\'"]?\s*\)/i', $html, $matches)) {
+                    foreach ($matches[1] as $candidate) {
+                        $url = html_entity_decode(trim($candidate), ENT_QUOTES | ENT_HTML5);
+                        if (filter_var($url, FILTER_VALIDATE_URL)
+                            && (str_contains($url, 'steamstatic') || str_contains($url, 'steamcdn') || str_contains($url, 'akamai'))
+                            && str_contains($url, 'profile')
+                        ) {
+                            return $url;
+                        }
+                    }
+                }
+
+                Log::debug('Steam background: no match found', [
+                    'steam_id' => $steamId64,
+                    'has_profile_background' => str_contains($html, 'profile_background'),
+                    'html_snippet' => mb_substr($html, 0, 500),
+                ]);
             } catch (\Throwable $e) {
                 Log::debug('Steam background scrape failed', ['steam_id' => $steamId64, 'error' => $e->getMessage()]);
             }
