@@ -7,7 +7,7 @@
         <div class="card mt-4 overflow-hidden">
             <div class="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-4 sm:px-5">
                 <h2 class="section-heading">Союзники</h2>
-                <span class="text-xs text-[#8b94a5]">{{ count($player['peers'] ?? []) }}</span>
+                <span class="text-[10px] text-mist-500">{{ count($player['peers'] ?? []) }}</span>
             </div>
 
             @if (($player['peers'] ?? []) === [])

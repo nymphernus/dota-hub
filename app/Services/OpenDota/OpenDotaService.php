@@ -1424,79 +1424,83 @@ class OpenDotaService
      */
     private function fetchMatchHistory(int $accountId): array
     {
-        $matches = [];
-        $seen = [];
-        $cursor = null;
+        $allMatches = [];
+        $lessThanMatchId = null;
+        $hasMore = true;
 
-        while (true) {
-            $query = ['limit' => 500, 'significant' => 0];
+        while ($hasMore) {
+            $query = [
+                'limit' => 500,
+                'significant' => 0,
+            ];
 
-            if ($cursor !== null) {
-                $query['less_than_match_id'] = $cursor;
+            if ($lessThanMatchId !== null) {
+                $query['less_than_match_id'] = $lessThanMatchId;
             }
 
             try {
                 $batch = $this->optionalGet("players/{$accountId}/matches", $query);
-            } catch (ApiUnavailableException) {
+            } catch (ApiUnavailableException $e) {
+                Log::error('Ошибка API OpenDota при загрузке матчей: '.$e->getMessage());
                 break;
             }
 
-            if (! is_array($batch) || $batch === []) {
+            if (! is_array($batch) || empty($batch)) {
+                $hasMore = false;
                 break;
             }
 
-            $nextCursor = null;
+            $allMatches = array_merge($allMatches, $batch);
+            Log::info('Загружено матчей: '.count($allMatches).'. Текущая пачка: '.count($batch));
 
-            foreach ($batch as $match) {
-                if (! is_array($match)) {
-                    continue;
-                }
-
-                $matchId = isset($match['match_id']) && is_numeric($match['match_id'])
-                    ? (int) $match['match_id']
-                    : 0;
-
-                if ($matchId > 0) {
-                    if (isset($seen[$matchId])) {
-                        continue;
-                    }
-
-                    $seen[$matchId] = true;
-                    $nextCursor = $nextCursor === null ? $matchId : min($nextCursor, $matchId);
-                }
-
-                $matches[] = $match;
-            }
-
-            // Stop instead of looping if the API ignores the cursor or returns
-            // a page without usable match ids.
-            if ($nextCursor === null || ($cursor !== null && $nextCursor >= $cursor)) {
+            if (count($batch) < 500) {
+                $hasMore = false;
                 break;
             }
 
-            $cursor = $nextCursor;
+            $lastMatch = end($batch);
+            $lessThanMatchId = is_array($lastMatch) ? ($lastMatch['match_id'] ?? null) : null;
+
+            if (! $lessThanMatchId) {
+                $hasMore = false;
+                break;
+            }
+
+            usleep(250000);
         }
 
-        $oldest = null;
-        foreach ($matches as $m) {
-            if (! is_array($m)) {
+        $uniqueMatches = [];
+        foreach ($allMatches as $match) {
+            if (! is_array($match)) {
                 continue;
             }
+            $matchId = $match['match_id'] ?? null;
+            if ($matchId !== null) {
+                $uniqueMatches[(string) $matchId] = $match;
+            }
+        }
+
+        $result = array_values($uniqueMatches);
+        usort($result, function ($a, $b) {
+            return (int) ($b['start_time'] ?? 0) <=> (int) ($a['start_time'] ?? 0);
+        });
+
+        $oldest = null;
+        foreach ($result as $m) {
             $st = isset($m['start_time']) && is_numeric($m['start_time']) ? (int) $m['start_time'] : 0;
             if ($st > 0 && ($oldest === null || $st < $oldest)) {
                 $oldest = $st;
             }
         }
 
-        \Illuminate\Support\Facades\Log::info('fetchMatchHistory debug', [
+        Log::info('ИТОГО загружено матчей: '.count($result), [
             'account_id' => $accountId,
-            'total' => count($matches),
-            'turbo_game_mode_23' => count(array_filter($matches, fn ($m) => is_array($m) && (int) ($m['game_mode'] ?? -1) === 23)),
+            'turbo_game_mode_23' => count(array_filter($result, fn ($m) => is_array($m) && (int) ($m['game_mode'] ?? -1) === 23)),
             'oldest_start_time' => $oldest,
             'oldest_date' => $oldest ? date('Y-m-d H:i:s', $oldest) : null,
         ]);
 
-        return $matches;
+        return $result;
     }
 
     /**
