@@ -72,11 +72,11 @@ class OpenDotaService
         'LEVEL' => 'level',
     ];
 
-    private const MMR_SAMPLE_SIZE = 20;
+    private const MMR_SAMPLE_SIZE = 100;
 
     private const MMR_WIN = 25;
 
-    private const MMR_LOSS = -20;
+    private const MMR_LOSS = -25;
 
     /**
      * Official rank medal base values: five stars per medal, then Immortal.
