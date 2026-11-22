@@ -33,12 +33,12 @@
         : 'border-accent-500/25 bg-accent-500/10 text-accent-300';
 @endphp
 
-<section class="card relative overflow-hidden min-h-[280px]">
+<section class="card relative overflow-hidden min-h-[220px]">
     @if ($bannerImage)
         <div class="absolute inset-0 bg-cover bg-center blur-md opacity-40" style="background-image: url('{{ $bannerImage }}')" aria-hidden="true"></div>
     @endif
-    <div class="relative z-10 px-4 pb-8 pt-10 sm:px-6 lg:px-8">
-        <div class="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+    <div class="relative z-10 flex min-h-[220px] items-center px-4 py-4 sm:px-6 lg:px-8">
+        <div class="flex w-full flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
             <div class="flex min-w-0 items-center gap-4">
                 <div class="relative h-20 w-20 shrink-0 overflow-hidden rounded-none bg-ink-800    sm:h-24 sm:w-24">
                     @if ($player['avatar'])
@@ -149,7 +149,7 @@
                 </div>
             </div>
 
-            <div class="flex shrink-0 items-center gap-4 self-start lg:self-auto">
+            <div class="flex shrink-0 items-center gap-4">
                 <div class="text-right">
                     <div class="text-xl font-bold text-mist-100 sm:text-2xl">{{ $rankLabel }}</div>
                     @if (! empty($player['leaderboard_rank']))
