@@ -16,6 +16,7 @@
         }
     }
 
+    $rankStars5 = ($rankTierBand >= 1 && $rankTierBand <= 7) ? max(1, min(5, $rankTier % 10)) : 0;
     $nameHistory = $player['name_history'] ?? [];
     $steamAvailable = (bool) ($steamProfile['available'] ?? false);
     $steamPublic = $steamProfile['is_public'] ?? null;
@@ -146,17 +147,23 @@
                 </div>
             </div>
 
-            <div class="flex shrink-0 items-center self-start lg:self-auto">
-
-                        <span class="inline-flex items-center gap-2 rounded-none bg-ink-900/40 px-2.5 py-1.5" title="Ранг: {{ $player['rank_label'] ?: 'Не откалиброван' }}">
-                            <span class="relative inline-flex h-9 w-9 items-center justify-center">
-                                <img src="{{ $rankIcon }}" alt="Иконка ранга {{ $player['rank_label'] ?: 'без ранга' }}" class="h-9 w-9 object-contain">
-                                @if ($rankStarIcon)
-                                    <img src="{{ $rankStarIcon }}" alt="" class="absolute -bottom-1 left-1/2 h-3 w-8 -translate-x-1/2 object-contain">
-                                @endif
-                            </span>
-                            <span class="text-xs font-bold text-mist-200">{{ $player['rank_label'] ?: 'Без ранга' }}</span>
-                        </span>
+            <div class="flex shrink-0 items-center gap-3 self-start lg:self-auto">
+                <div class="flex flex-col items-center gap-1">
+                    <img src="{{ $rankIcon }}" alt="{{ $rankLabel ?? ($player['rank_label'] ?: __('ui.no_rank')) }}" class="h-16 w-16 object-contain">
+                    @if ($rankTierBand >= 1 && $rankTierBand <= 7)
+                        <div class="flex items-center gap-0.5" aria-label="{{ $rankStars5 }} / 5">
+                            @for ($i = 1; $i <= 5; $i++)
+                                <svg class="h-3.5 w-3.5 {{ $i <= $rankStars5 ? 'text-yellow-400' : 'text-gray-600' }}" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.5l6.1-.9L12 3Z"/></svg>
+                            @endfor
+                        </div>
+                    @endif
+                </div>
+                <div class="text-right">
+                    <div class="text-xl font-bold text-mist-100 sm:text-2xl">{{ $player['rank_label'] ?: __('ui.no_rank') }}</div>
+                    @if (! empty($player['leaderboard_rank']))
+                        <div class="text-sm text-accent-300">#{{ number_format((int) $player['leaderboard_rank'], 0, '.', ' ') }}</div>
+                    @endif
+                </div>
             </div>
         </div>
     </div>
