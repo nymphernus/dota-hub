@@ -26,11 +26,14 @@
     <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @php
+        $dotahubI18n = [
+            'weekdays' => [__('ui.wd_mon'), __('ui.wd_tue'), __('ui.wd_wed'), __('ui.wd_thu'), __('ui.wd_fri'), __('ui.wd_sat'), __('ui.wd_sun')],
+            'months' => [__('ui.mo_jan'), __('ui.mo_feb'), __('ui.mo_mar'), __('ui.mo_apr'), __('ui.mo_may'), __('ui.mo_jun'), __('ui.mo_jul'), __('ui.mo_aug'), __('ui.mo_sep'), __('ui.mo_oct'), __('ui.mo_nov'), __('ui.mo_dec')],
+        ];
+    @endphp
     <script>
-        window.dotahubI18n = {
-            weekdays: @json([__('ui.wd_mon'),__('ui.wd_tue'),__('ui.wd_wed'),__('ui.wd_thu'),__('ui.wd_fri'),__('ui.wd_sat'),__('ui.wd_sun')]),
-            months: @json([__('ui.mo_jan'),__('ui.mo_feb'),__('ui.mo_mar'),__('ui.mo_apr'),__('ui.mo_may'),__('ui.mo_jun'),__('ui.mo_jul'),__('ui.mo_aug'),__('ui.mo_sep'),__('ui.mo_oct'),__('ui.mo_nov'),__('ui.mo_dec')])
-        };
+        window.dotahubI18n = @json($dotahubI18n);
     </script>
 </head>
 <body class="flex min-h-screen flex-col">

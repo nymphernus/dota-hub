@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', $pageTitle ?? 'DOTAHUB')
+@section('title', $pageTitle ?? 'DOTAHUB - '.__('ui.home_subtitle'))
 @section('description', __('ui.home_subtitle'))
 
 @php
@@ -17,18 +17,18 @@
                 <section class="card overflow-hidden p-5 sm:p-4">
                     <div class="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
                         <a href="{{ route('dota.player', ['accountId' => $dashboard['account_id']]) }}" class="group flex min-w-0 items-center gap-4">
-                            <span class="h-16 w-16 shrink-0 overflow-hidden rounded-none bg-ink-800   transition ">
+                            <span class="h-16 w-16 shrink-0 overflow-hidden rounded-none bg-ink-800 transition">
                                 @if (! empty($dashboard['avatar']))
                                     <img src="{{ $dashboard['avatar'] }}" alt="{{ $dashboard['nickname'] }}" class="h-full w-full object-cover">
                                 @endif
                             </span>
                             <span class="min-w-0">
-                                <span class="block text-[11px] font-semibold uppercase tracking-[0.18em] text-mist-500">DOTAHUB</span>
+                                <span class="block text-[11px] font-semibold uppercase tracking-[0.18em] text-mist-500">{{ __('ui.dashboard') }}</span>
                                 <span class="mt-1 block truncate text-2xl font-semibold text-mist-200 transition group-hover:text-accent-300">
-                                    {{ $dashboard['nickname'] }}
+                                    {{ __('ui.welcome_back', ['name' => $dashboard['nickname']]) }}
                                 </span>
                                 <span class="mt-1 block text-xs text-mist-400">
-                                    {{ $dashboard['rank_label'] ?: 'Dota 2 }}
+                                    {{ $dashboard['rank_label'] ?: __('ui.dota2_profile') }}
                                 </span>
                             </span>
                         </a>
@@ -40,26 +40,28 @@
                                     {{ $dashboard['mmr_estimate'] !== null ? number_format((int) $dashboard['mmr_estimate'], 0, '.', ' ') : '—' }}
                                 </p>
                                 <p class="mt-1 text-[10px] text-mist-500">
-                                    {{ $dashboard['mmr_is_estimated'] ? '}}
+                                    {{ $dashboard['mmr_is_estimated'] ? __('ui.estimate') : __('ui.open') }}
                                 </p>
                             </div>
                             <a href="{{ route('dota.player', ['accountId' => $dashboard['account_id']]) }}" class="group grid place-items-center rounded-none bg-accent-500/10 px-4 py-3 text-center transition hover:bg-accent-500/[0.16]">
-                                <span class="text-xs font-bold text-accent-300"></span>
-                                <span class="mt-1 text-[10px] text-mist-400 transition group-hover:text-accent-300">→</span>
+                                <span class="text-xs font-bold text-accent-300">{{ __('ui.my_profile') }}</span>
+                                <span class="mt-1 text-[10px] text-mist-400 transition group-hover:text-accent-300">{{ __('ui.open_action') }}</span>
                             </a>
                         </div>
                     </div>
 
                     <div class="mt-6">
                         <div class="flex flex-wrap items-center justify-between gap-2">
-                            <h2 class="section-heading"></h2>
+                            <h2 class="section-heading">{{ __('ui.recent_matches') }}</h2>
                             <a href="{{ route('dota.player', ['accountId' => $dashboard['account_id']]) }}" class="text-[11px] font-semibold text-mist-400 transition hover:text-accent-300">
-                                </a>
+                                {{ __('ui.view_all') }}
+                            </a>
                         </div>
 
                         @if (! ($dashboard['available'] ?? false))
                             <div class="mt-3 rounded-none border border-dashed border-line px-4 py-6 text-center text-sm text-mist-400">
-                                </div>
+                                {{ __('ui.profile_load_failed') }}
+                            </div>
                         @elseif (($dashboard['recent_matches'] ?? []) === [])
                             <div class="mt-3 rounded-none border border-dashed border-line px-4 py-6 text-center text-sm text-mist-400">
                                 {{ __('ui.no_matches_yet') }}
@@ -78,7 +80,7 @@
                                         'bg-rose-500/[0.08] hover:bg-rose-500/[0.14]' => ! ($match['win'] ?? false),
                                     ])>
                                         <div class="flex items-center gap-3">
-                                            <span class="h-10 w-[70px] shrink-0 overflow-hidden rounded-none bg-ink-800  ">
+                                            <span class="h-10 w-[70px] shrink-0 overflow-hidden rounded-none bg-ink-800">
                                                 @if (! empty($match['hero_image']))
                                                     <img src="{{ $match['hero_image'] }}" alt="{{ $match['hero_name'] }}" class="h-full w-full object-cover" loading="lazy">
                                                 @endif
@@ -114,7 +116,6 @@
                 <h1 class="text-5xl font-semibold tracking-tight text-mist-200 sm:text-7xl">
                     DOTAHUB
                 </h1>
-
             </div>
 
             <div id="search" class="mx-auto w-full max-w-3xl px-4 pb-16 sm:px-6 lg:px-8">

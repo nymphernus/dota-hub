@@ -155,4 +155,11 @@ return [
     'mo_oct' => 'Oct',
     'mo_nov' => 'Nov',
     'mo_dec' => 'Dec',
+    'dashboard' => 'Dashboard',
+    'welcome_back' => 'Welcome back, :name',
+    'dota2_profile' => 'Dota 2 profile',
+    'estimate' => 'Estimate',
+    'open' => 'Open',
+    'open_action' => 'Open →',
+    'profile_load_failed' => 'Could not load profile right now. Try opening the profile page a bit later.',
 ];
