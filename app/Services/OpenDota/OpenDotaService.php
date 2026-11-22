@@ -1070,26 +1070,37 @@ class OpenDotaService
         $total = count($history);
         $wins = count(array_filter($history, fn (array $match) => (bool) ($match['win'] ?? false)));
 
-        $buckets = ['lobby' => [], 'mode' => [], 'side' => []];
+        $buckets = ['role' => [], 'mode' => [], 'side' => []];
+        $roleLabels = [1 => 'Safe', 2 => 'Mid', 3 => 'Off', 4 => 'Jungle'];
 
         foreach ($history as $match) {
             if (! is_array($match)) {
                 continue;
             }
 
-            $lobby = $this->lifetimeLobbyLabel($match);
-            $mode = (string) ($match['game_mode_label'] ?? 'Другой');
+            $mode = (string) ($match['game_mode_label'] ?? 'Неизвестно');
             $side = ($match['is_radiant'] ?? ((int) ($match['player_slot'] ?? 0) < 128)) ? 'Radiant' : 'Dire';
             $win = (bool) ($match['win'] ?? false);
 
-            foreach ([['lobby', $lobby], ['mode', $mode], ['side', $side]] as [$group, $label]) {
+            foreach ([['mode', $mode], ['side', $side]] as [$group, $label]) {
                 $buckets[$group][$label] ??= ['label' => $label, 'games' => 0, 'wins' => 0, 'losses' => 0];
                 $buckets[$group][$label]['games']++;
-
                 if ($win) {
                     $buckets[$group][$label]['wins']++;
                 } else {
                     $buckets[$group][$label]['losses']++;
+                }
+            }
+
+            $laneRole = isset($match['lane_role']) && is_numeric($match['lane_role']) ? (int) $match['lane_role'] : null;
+            if ($laneRole !== null && isset($roleLabels[$laneRole])) {
+                $label = $roleLabels[$laneRole];
+                $buckets['role'][$label] ??= ['label' => $label, 'games' => 0, 'wins' => 0, 'losses' => 0];
+                $buckets['role'][$label]['games']++;
+                if ($win) {
+                    $buckets['role'][$label]['wins']++;
+                } else {
+                    $buckets['role'][$label]['losses']++;
                 }
             }
         }
@@ -1109,15 +1120,26 @@ class OpenDotaService
             return $rows;
         };
 
+        $roleRows = [];
+        foreach ($roleLabels as $label) {
+            if (isset($buckets['role'][$label])) {
+                $roleRows[] = $buckets['role'][$label];
+            }
+        }
+        foreach ($roleRows as &$row) {
+            $row['winrate'] = $row['games'] > 0 ? round($row['wins'] / $row['games'] * 100, 1) : null;
+        }
+        unset($row);
+
         return [
             'total' => $total,
             'wins' => $wins,
             'losses' => $total - $wins,
             'winrate' => $total > 0 ? round($wins / $total * 100, 1) : null,
             'groups' => [
-                ['key' => 'lobby', 'title' => 'По типу игры', 'rows' => $rows($buckets['lobby'])],
+                ['key' => 'role', 'title' => 'По ролям', 'rows' => $roleRows],
                 ['key' => 'mode', 'title' => 'По режиму', 'rows' => $rows($buckets['mode'])],
-                ['key' => 'side', 'title' => 'По фракции', 'rows' => $rows($buckets['side'])],
+                ['key' => 'side', 'title' => 'По стороне', 'rows' => $rows($buckets['side'])],
             ],
         ];
     }

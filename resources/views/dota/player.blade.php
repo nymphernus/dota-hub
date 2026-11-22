@@ -158,9 +158,10 @@
                                 <h2 class="section-heading">Статистика за всё время</h2>
                                 <p class="mt-0.5 text-[10px] text-mist-500">Сводка по {{ number_format($lifetimeStats['total'], 0, '.', ' ') }} матчам</p>
                             </div>
-                            <span class="badge border-line bg-ink-900/50 text-mist-400">
-                                {{ $lifetimeStats['winrate'] !== null ? number_format($lifetimeStats['winrate'], 1, '.', '').'%' : '—' }}
-                            </span>
+                            @php
+                                $totalPlayHours = (int) floor(collect($history ?? [])->sum(fn ($m) => (int) ($m['duration'] ?? 0)) / 3600);
+                            @endphp
+                            <span class="text-xs text-gray-400">{{ $totalPlayHours }} ч.</span>
                         </div>
 
                         <div class="mt-2 space-y-3">
@@ -202,7 +203,7 @@
                 <section class="border border-[#2d313e] bg-[#1c1e26] p-3 rounded-none">
                     <div class="flex items-start justify-between gap-2">
                         <h2 class="section-heading">Союзники</h2>
-                        <span class="badge border-line bg-ink-900/50 text-mist-400">{{ min(5, count($player['peers'] ?? [])) }}</span>
+                        <span class="text-xs text-gray-400">{{ min(5, count($player['peers'] ?? [])) }}</span>
                     </div>
 
                     @php $topPeers = array_slice($player['peers'] ?? [], 0, 5); @endphp

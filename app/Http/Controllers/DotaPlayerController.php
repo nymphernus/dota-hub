@@ -54,6 +54,7 @@ class DotaPlayerController extends Controller
             'profileSection' => 'Обзор',
             'winrate' => $player['winrate'],
             'recentMatches' => array_slice($player['matches'], 0, 25),
+            'history' => $history,
             'activityHeatmap' => $this->activityHeatmap($heatmapMatches),
             'heroUsage' => $this->heroUsage(array_slice($history, 0, 25), $openDota),
             'lifetimeStats' => $openDota->lifetimeStats($accountId, $history),
