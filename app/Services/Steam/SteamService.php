@@ -9,6 +9,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Factory;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -197,11 +198,56 @@ class SteamService
         ];
     }
 
+    /**
+     * Scrape Steam community profile background image. Cached for 24h.
+     */
+    public function getProfileBackground(?string $steamId64): ?string
+    {
+        $steamId64 = is_string($steamId64) ? trim($steamId64) : '';
+        if (! SteamId::isSteamId64($steamId64)) {
+            return null;
+        }
+
+        $cacheKey = 'steam:background:v1:'.$steamId64;
+
+        return Cache::remember($cacheKey, 86400, function () use ($steamId64) {
+            try {
+                $response = Http::timeout(10)
+                    ->withHeaders([
+                        'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+                        'Accept' => 'text/html,application/xhtml+xml',
+                    ])
+                    ->get("https://steamcommunity.com/profiles/{$steamId64}");
+
+                if ($response->failed()) {
+                    return null;
+                }
+
+                $html = $response->body();
+                if (preg_match('/profile_background_image_content\s*"?[^>]*?background-image\s*:\s*url\((?:&quot;|\'|")?(.*?)(?:&quot;|\'|")?\)/si', $html, $m)) {
+                    $url = html_entity_decode(trim($m[1]), ENT_QUOTES | ENT_HTML5);
+                    return filter_var($url, FILTER_VALIDATE_URL) ? $url : null;
+                }
+                if (preg_match('/background-image\s*:\s*url\(\s*[\'"]?([^\'")]+)[\'"]?\s*\)/i', $html, $m)) {
+                    $url = html_entity_decode(trim($m[1]), ENT_QUOTES | ENT_HTML5);
+                    if (str_contains($url, 'steamstatic') || str_contains($url, 'steamcdn')) {
+                        return filter_var($url, FILTER_VALIDATE_URL) ? $url : null;
+                    }
+                }
+            } catch (\Throwable $e) {
+                Log::debug('Steam background scrape failed', ['steam_id' => $steamId64, 'error' => $e->getMessage()]);
+            }
+
+            return null;
+        });
+    }
+
     public function forget(?string $steamId64): void
     {
         if (is_string($steamId64) && SteamId::isSteamId64($steamId64)) {
             Cache::forget('steam:summary:v1:'.$steamId64);
             Cache::forget('steam:bans:v1:'.$steamId64);
+            Cache::forget('steam:background:v1:'.$steamId64);
         }
     }
 

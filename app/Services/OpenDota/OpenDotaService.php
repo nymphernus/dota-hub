@@ -342,30 +342,24 @@ class OpenDotaService
             return ['value' => null, 'is_estimated' => false, 'source' => null, 'games' => 0];
         }
 
+        $ranked = array_values(array_filter($matches, static function ($m): bool {
+            return is_array($m)
+                && ! empty($m['start_time'])
+                && (int) ($m['lobby_type'] ?? -1) === 7;
+        }));
+
+        usort($ranked, static fn (array $a, array $b): int => (int) ($b['start_time'] ?? 0) <=> (int) ($a['start_time'] ?? 0));
+        $ranked = array_slice($ranked, 0, self::MMR_SAMPLE_SIZE);
+
         $wins = 0;
         $losses = 0;
-
-        foreach ($matches as $match) {
-            if (! is_array($match) || empty($match['start_time'])) {
-                continue;
-            }
-
-            // Ranked game modes only: turbo and normal games do not move MMR.
-            if (! $this->isRankedMode((int) ($match['game_mode'] ?? 0))) {
-                continue;
-            }
-
+        foreach ($ranked as $match) {
             $radiantWin = (bool) ($match['radiant_win'] ?? false);
             $isRadiant = (int) ($match['player_slot'] ?? 0) < 128;
-
             if ($radiantWin === $isRadiant) {
                 $wins++;
             } else {
                 $losses++;
-            }
-
-            if ($wins + $losses >= self::MMR_SAMPLE_SIZE) {
-                break;
             }
         }
 
