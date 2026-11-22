@@ -1429,7 +1429,7 @@ class OpenDotaService
         $cursor = null;
 
         while (true) {
-            $query = ['limit' => 500, 'significant' => 0];
+            $query = ['limit' => 500, 'significant' => 0, 'date' => 0];
 
             if ($cursor !== null) {
                 $query['less_than_match_id'] = $cursor;
@@ -1477,10 +1477,23 @@ class OpenDotaService
             $cursor = $nextCursor;
         }
 
+        $oldest = null;
+        foreach ($matches as $m) {
+            if (! is_array($m)) {
+                continue;
+            }
+            $st = isset($m['start_time']) && is_numeric($m['start_time']) ? (int) $m['start_time'] : 0;
+            if ($st > 0 && ($oldest === null || $st < $oldest)) {
+                $oldest = $st;
+            }
+        }
+
         \Illuminate\Support\Facades\Log::info('fetchMatchHistory debug', [
             'account_id' => $accountId,
             'total' => count($matches),
             'turbo_game_mode_23' => count(array_filter($matches, fn ($m) => is_array($m) && (int) ($m['game_mode'] ?? -1) === 23)),
+            'oldest_start_time' => $oldest,
+            'oldest_date' => $oldest ? date('Y-m-d H:i:s', $oldest) : null,
         ]);
 
         return $matches;
