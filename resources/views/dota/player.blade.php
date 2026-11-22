@@ -115,7 +115,7 @@
                 <section class="border border-[#2d313e] bg-[#1c1e26] p-3 rounded-none">
                     <div class="flex items-start justify-between gap-2">
                         <h2 class="section-heading">Колесо героев</h2>
-                        <span class="badge border-line bg-ink-900/50 text-mist-400" aria-label="Матчей в колесе: {{ $heroUsageTotal }}">{{ $heroUsageTotal }}</span>
+                        <span class="badge border-line bg-ink-900/50 text-mist-400" aria-label="Матчей в колесе: {{ $heroUsageTotal }}">{{ $heroUsageTotal }} матчей</span>
                     </div>
 
                     @include('dota.partials.hero-wheel', ['allHeroes' => $heroUsage, 'playerId' => $player['account_id']])

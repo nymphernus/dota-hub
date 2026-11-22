@@ -171,19 +171,27 @@ if (wheelTooltip) {
         const image = document.createElement('img');
         image.src = slice.dataset.heroImage || '';
         image.alt = '';
-        image.className = 'w-10 h-10 object-cover';
+        image.className = 'w-20 h-11 object-cover rounded shadow border border-gray-600';
 
         const content = document.createElement('div');
 
         const name = document.createElement('div');
-        name.className = 'font-bold';
-        name.textContent = slice.dataset.heroName || 'Герой';
+        name.className = 'text-sm text-white';
+        const bold = document.createElement('b');
+        bold.textContent = slice.dataset.heroName || 'Герой';
+        name.appendChild(bold);
 
-        const details = document.createElement('div');
-        details.className = 'text-sm text-gray-400';
-        details.textContent = `${slice.dataset.heroGames || 0} игр, ${slice.dataset.heroWinrate || 0}%`;
+        const games = document.createElement('div');
+        games.className = 'text-sm text-gray-400';
+        games.textContent = `${slice.dataset.heroGames || 0} игр`;
 
-        content.append(name, details);
+        const wl = document.createElement('div');
+        wl.className = 'text-sm text-gray-400';
+        const wins = Number(slice.dataset.heroWins || 0);
+        const losses = Number(slice.dataset.heroLosses || 0);
+        wl.innerHTML = `<span class="text-green-500">${wins} W</span> / <span class="text-red-500">${losses} L</span>`;
+
+        content.append(name, games, wl);
         wheelTooltip.append(image, content);
         wheelTooltip.classList.remove('hidden');
         positionTooltip(event);

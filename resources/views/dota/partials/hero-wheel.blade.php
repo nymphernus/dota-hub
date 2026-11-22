@@ -11,17 +11,24 @@
         }
 
         $wins = max(0, (int) ($hero['win'] ?? $hero['wins'] ?? 0));
+        $losses = max(0, $games - $wins);
 
         $wheelHeroes[] = [
             'hero_id' => (int) ($hero['hero_id'] ?? $hero['id'] ?? 0),
             'name' => $hero['name'] ?? 'Герой',
             'icon' => $hero['icon'] ?? ($hero['image'] ?? ''),
             'games' => $games,
+            'wins' => $wins,
+            'losses' => $losses,
             'winrate' => $games > 0 ? round($wins / $games * 100, 1) : 0,
         ];
     }
 
     $wheelTotal = max(1, array_sum(array_column($wheelHeroes, 'games')));
+    $wheelTotalWins = array_sum(array_column($wheelHeroes, 'wins'));
+    $wheelTotalLosses = array_sum(array_column($wheelHeroes, 'losses'));
+    $wheelOverallWinrate = $wheelTotal > 0 ? round($wheelTotalWins / $wheelTotal * 100, 1) : 0;
+    $topHeroIds = collect($wheelHeroes)->sortByDesc('games')->take(3)->pluck('hero_id')->all();
     $wheelMax = max([1, ...array_column($wheelHeroes, 'games')]);
     $wheelGap = count($wheelHeroes) > 1 ? 1.4 : 0;
     $wheelCursor = -90.0;
@@ -73,7 +80,10 @@
             'name' => $hero['name'],
             'icon' => $hero['icon'],
             'games' => $hero['games'],
+            'wins' => $hero['wins'],
+            'losses' => $hero['losses'],
             'winrate' => $hero['winrate'],
+            'is_top' => in_array($hero['hero_id'], $topHeroIds, true),
             'path' => $sectorPath,
             'x' => sprintf('%.2f', $cx + $iconRadius * cos($iconRadians) - $iconSize / 2),
             'y' => sprintf('%.2f', $cy + $iconRadius * sin($iconRadians) - $iconSize / 2),
@@ -89,61 +99,64 @@
         Нет данных
     </div>
 @else
-    <svg
-        id="hero-wheel"
-        class="hero-wheel mx-auto mt-4 block h-56 w-56 max-w-full"
-        viewBox="0 0 240 240"
-        role="img"
-        aria-label="Колесо героев"
-        xmlns="http://www.w3.org/2000/svg"
-        xmlns:xlink="http://www.w3.org/1999/xlink"
-    >
-        <title>Колесо героев</title>
+    <div class="relative w-full max-w-[400px] mx-auto h-[400px] mt-4">
+        <svg
+            id="hero-wheel"
+            class="hero-wheel block w-full h-full"
+            viewBox="0 0 240 240"
+            role="img"
+            aria-label="Колесо героев"
+            xmlns="http://www.w3.org/2000/svg"
+            xmlns:xlink="http://www.w3.org/1999/xlink"
+        >
+            <circle cx="120" cy="120" r="112" fill="#111318" />
 
-        <circle cx="120" cy="120" r="112" fill="#111318" />
-
-        @foreach ($sectors as $sector)
-            <a
-                href="{{ route('dota.player.hero', [$playerId, $sector['hero_id']]) }}"
-                class="cursor-pointer hover:opacity-80 focus:outline-none outline-none ring-0"
-                tabindex="0"
-                role="link"
-                aria-label="{{ $sector['name'] }}: {{ $sector['games'] }} игр, {{ $sector['winrate'] }}% побед"
-            >
-                <g
-                    class="hero-wheel__slice"
-                    role="img"
+            @foreach ($sectors as $sector)
+                <a
+                    href="{{ route('dota.player.hero', [$playerId, $sector['hero_id']]) }}"
+                    class="cursor-pointer hover:opacity-80 focus:outline-none outline-none ring-0"
+                    tabindex="0"
+                    role="link"
                     aria-label="{{ $sector['name'] }}: {{ $sector['games'] }} игр, {{ $sector['winrate'] }}% побед"
-                    data-wheel-tooltip
-                    data-hero-name="{{ $sector['name'] }}"
-                    data-hero-image="{{ $sector['icon'] }}"
-                    data-hero-games="{{ $sector['games'] }}"
-                    data-hero-winrate="{{ $sector['winrate'] }}"
                 >
-                    <title>{{ $sector['name'] }}: {{ $sector['games'] }} игр, {{ $sector['winrate'] }}% побед</title>
-                    <path
-                        class="hero-wheel__sector"
-                        d="{{ $sector['path'] }}"
-                        fill="#1c1e26"
-                        stroke="#2d313e"
-                        stroke-width="1.5"
-                    />
-                    @if ($sector['icon'] !== '')
-                        <image
-                            class="hero-wheel__icon"
-                            x="{{ $sector['x'] }}"
-                            y="{{ $sector['y'] }}"
-                            width="{{ $sector['size'] }}"
-                            height="{{ $sector['size'] }}"
-                            href="{{ $sector['icon'] }}"
-                            xlink:href="{{ $sector['icon'] }}"
-                            preserveAspectRatio="xMidYMid slice"
+                    <g
+                        class="hero-wheel__slice"
+                        role="img"
+                        aria-label="{{ $sector['name'] }}: {{ $sector['games'] }} игр, {{ $sector['winrate'] }}% побед"
+                        data-wheel-tooltip
+                        data-hero-name="{{ $sector['name'] }}"
+                        data-hero-image="{{ $sector['icon'] }}"
+                        data-hero-games="{{ $sector['games'] }}"
+                        data-hero-wins="{{ $sector['wins'] }}"
+                        data-hero-losses="{{ $sector['losses'] }}"
+                        data-hero-winrate="{{ $sector['winrate'] }}"
+                    >
+                        <path
+                            class="hero-wheel__sector"
+                            d="{{ $sector['path'] }}"
+                            fill="{{ $sector['is_top'] ? '#4b5563' : '#2d313e' }}"
+                            stroke="#2d313e"
+                            stroke-width="1.5"
                         />
-                    @endif
-                </g>
-            </a>
-        @endforeach
+                        @if ($sector['icon'] !== '')
+                            <image
+                                class="hero-wheel__icon"
+                                x="{{ $sector['x'] }}"
+                                y="{{ $sector['y'] }}"
+                                width="{{ $sector['size'] }}"
+                                height="{{ $sector['size'] }}"
+                                href="{{ $sector['icon'] }}"
+                                xlink:href="{{ $sector['icon'] }}"
+                                preserveAspectRatio="xMidYMid slice"
+                            />
+                        @endif
+                    </g>
+                </a>
+            @endforeach
 
-        <circle class="hero-wheel__hub" cx="120" cy="120" r="45" fill="#1c1e26" stroke="#2d313e" stroke-width="1" />
-    </svg>
+            <circle class="hero-wheel__hub" cx="120" cy="120" r="45" fill="#1c1e26" stroke="#2d313e" stroke-width="1" />
+            <text x="120" y="114" text-anchor="middle" dominant-baseline="middle" class="text-2xl font-bold" fill="{{ $wheelOverallWinrate >= 50 ? '#10b981' : '#ef4444' }}">{{ number_format($wheelOverallWinrate, 1, '.', '') }}%</text>
+            <text x="120" y="132" text-anchor="middle" dominant-baseline="middle" class="text-xs font-semibold fill-white">{{ $wheelTotalWins }} / {{ $wheelTotalLosses }}</text>
+        </svg>
+    </div>
 @endif
