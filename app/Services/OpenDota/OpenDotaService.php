@@ -1070,8 +1070,13 @@ class OpenDotaService
         $total = count($history);
         $wins = count(array_filter($history, fn (array $match) => (bool) ($match['win'] ?? false)));
 
-        $buckets = ['role' => [], 'mode' => [], 'side' => []];
-        $roleLabels = [1 => 'Safe', 2 => 'Mid', 3 => 'Off', 4 => 'Jungle'];
+        $buckets = ['mode' => [], 'side' => []];
+        $sumKills = 0;
+        $sumDeaths = 0;
+        $sumAssists = 0;
+        $sumGpm = 0;
+        $sumXpm = 0;
+        $counted = 0;
 
         foreach ($history as $match) {
             if (! is_array($match)) {
@@ -1092,17 +1097,12 @@ class OpenDotaService
                 }
             }
 
-            $laneRole = isset($match['lane_role']) && is_numeric($match['lane_role']) ? (int) $match['lane_role'] : null;
-            if ($laneRole !== null && isset($roleLabels[$laneRole])) {
-                $label = $roleLabels[$laneRole];
-                $buckets['role'][$label] ??= ['label' => $label, 'games' => 0, 'wins' => 0, 'losses' => 0];
-                $buckets['role'][$label]['games']++;
-                if ($win) {
-                    $buckets['role'][$label]['wins']++;
-                } else {
-                    $buckets['role'][$label]['losses']++;
-                }
-            }
+            $sumKills += (int) ($match['kills'] ?? 0);
+            $sumDeaths += (int) ($match['deaths'] ?? 0);
+            $sumAssists += (int) ($match['assists'] ?? 0);
+            $sumGpm += (int) ($match['gpm'] ?? $match['gold_per_min'] ?? 0);
+            $sumXpm += (int) ($match['xpm'] ?? $match['xp_per_min'] ?? 0);
+            $counted++;
         }
 
         $rows = function (array $bucket): array {
@@ -1120,26 +1120,23 @@ class OpenDotaService
             return $rows;
         };
 
-        $roleRows = [];
-        foreach ($roleLabels as $label) {
-            if (isset($buckets['role'][$label])) {
-                $roleRows[] = $buckets['role'][$label];
-            }
-        }
-        foreach ($roleRows as &$row) {
-            $row['winrate'] = $row['games'] > 0 ? round($row['wins'] / $row['games'] * 100, 1) : null;
-        }
-        unset($row);
+        $avgKda = $counted > 0 ? round(($sumKills + $sumAssists) / max(1, $sumDeaths), 2) : null;
+        $avgGpm = $counted > 0 ? (int) round($sumGpm / $counted) : null;
+        $avgXpm = $counted > 0 ? (int) round($sumXpm / $counted) : null;
 
         return [
             'total' => $total,
             'wins' => $wins,
             'losses' => $total - $wins,
             'winrate' => $total > 0 ? round($wins / $total * 100, 1) : null,
+            'averages' => [
+                'kda' => $avgKda,
+                'gpm' => $avgGpm,
+                'xpm' => $avgXpm,
+            ],
             'groups' => [
-                ['key' => 'role', 'title' => 'По ролям', 'rows' => $roleRows],
-                ['key' => 'mode', 'title' => 'По режиму', 'rows' => $rows($buckets['mode'])],
-                ['key' => 'side', 'title' => 'По стороне', 'rows' => $rows($buckets['side'])],
+                ['key' => 'mode', 'title' => 'По режимам игры', 'rows' => $rows($buckets['mode'])],
+                ['key' => 'side', 'title' => 'По фракциям', 'rows' => $rows($buckets['side'])],
             ],
         ];
     }
@@ -1432,7 +1429,7 @@ class OpenDotaService
         $cursor = null;
 
         while (true) {
-            $query = ['limit' => 500];
+            $query = ['limit' => 500, 'significant' => 0];
 
             if ($cursor !== null) {
                 $query['less_than_match_id'] = $cursor;
@@ -1479,6 +1476,12 @@ class OpenDotaService
 
             $cursor = $nextCursor;
         }
+
+        \Illuminate\Support\Facades\Log::info('fetchMatchHistory debug', [
+            'account_id' => $accountId,
+            'total' => count($matches),
+            'turbo_game_mode_23' => count(array_filter($matches, fn ($m) => is_array($m) && (int) ($m['game_mode'] ?? -1) === 23)),
+        ]);
 
         return $matches;
     }

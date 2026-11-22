@@ -161,7 +161,7 @@
                             @php
                                 $totalPlayHours = (int) floor(collect($history ?? [])->sum(fn ($m) => (int) ($m['duration'] ?? 0)) / 3600);
                             @endphp
-                            <span class="text-xs text-gray-400">{{ $totalPlayHours }} ч.</span>
+                            <span class="text-xs text-gray-400 font-medium">{{ $totalPlayHours }} ч.</span>
                         </div>
 
                         <div class="mt-2 space-y-3">
@@ -175,7 +175,7 @@
                                             <table class="w-full text-[11px]">
                                                 <thead class="table-head">
                                                     <tr>
-                                                        <th class="px-2 py-1 text-left font-semibold">Категория</th>
+                                                        <th class="px-2 py-1 text-left font-semibold">{{ $group['key'] === 'mode' ? 'Режим' : 'Фракция' }}</th>
                                                         <th class="px-2 py-1 text-right font-semibold">Матчи</th>
                                                         <th class="px-2 py-1 text-right font-semibold">Винрейт</th>
                                                     </tr>
@@ -196,6 +196,26 @@
                                     @endif
                                 </div>
                             @endforeach
+
+                            @if (!empty($lifetimeStats['averages']))
+                                <div class="min-w-0">
+                                    <p class="section-heading mb-1">Средние показатели</p>
+                                    <div class="grid grid-cols-3 gap-2">
+                                        <div class="border border-line bg-ink-900/30 px-2 py-2 text-center">
+                                            <div class="text-[10px] text-mist-500 uppercase">Средний KDA</div>
+                                            <div class="text-sm font-semibold text-mist-200 font-mono">{{ $lifetimeStats['averages']['kda'] !== null ? number_format($lifetimeStats['averages']['kda'], 2, '.', '') : '—' }}</div>
+                                        </div>
+                                        <div class="border border-line bg-ink-900/30 px-2 py-2 text-center">
+                                            <div class="text-[10px] text-mist-500 uppercase">Средний GPM</div>
+                                            <div class="text-sm font-semibold text-mist-200 font-mono">{{ $lifetimeStats['averages']['gpm'] !== null ? number_format($lifetimeStats['averages']['gpm'], 0, '.', ' ') : '—' }}</div>
+                                        </div>
+                                        <div class="border border-line bg-ink-900/30 px-2 py-2 text-center">
+                                            <div class="text-[10px] text-mist-500 uppercase">Средний XPM</div>
+                                            <div class="text-sm font-semibold text-mist-200 font-mono">{{ $lifetimeStats['averages']['xpm'] !== null ? number_format($lifetimeStats['averages']['xpm'], 0, '.', ' ') : '—' }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endif
                         </div>
                     </section>
                 @endif
@@ -203,7 +223,7 @@
                 <section class="border border-[#2d313e] bg-[#1c1e26] p-3 rounded-none">
                     <div class="flex items-start justify-between gap-2">
                         <h2 class="section-heading">Союзники</h2>
-                        <span class="text-xs text-gray-400">{{ min(5, count($player['peers'] ?? [])) }}</span>
+                        <span class="text-xs text-gray-400 font-medium">{{ min(5, count($player['peers'] ?? [])) }}</span>
                     </div>
 
                     @php $topPeers = array_slice($player['peers'] ?? [], 0, 5); @endphp
