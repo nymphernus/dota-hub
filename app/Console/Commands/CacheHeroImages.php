@@ -30,10 +30,14 @@ class CacheHeroImages extends Command
             if ($short === '' || $cdn === '') continue;
             $path = $heroDir.DIRECTORY_SEPARATOR.$short.'.png';
             if (! $this->option('force') && is_file($path)) continue;
-            $res = Http::timeout(20)->get($cdn);
-            if ($res->ok()) {
-                file_put_contents($path, $res->body());
-                $downloaded++;
+            try {
+                $res = Http::timeout(20)->get($cdn);
+                if ($res->ok()) {
+                    file_put_contents($path, $res->body());
+                    $downloaded++;
+                }
+            } catch (\Throwable $e) {
+                $this->warn("skip hero {$short}: {$e->getMessage()}");
             }
         }
 
@@ -44,10 +48,14 @@ class CacheHeroImages extends Command
             if ($name === '' || $img === '') continue;
             $path = $itemDir.DIRECTORY_SEPARATOR.$name.'.png';
             if (! $this->option('force') && is_file($path)) continue;
-            $res = Http::timeout(20)->get($img);
-            if ($res->ok()) {
-                file_put_contents($path, $res->body());
-                $downloaded++;
+            try {
+                $res = Http::timeout(20)->get($img);
+                if ($res->ok()) {
+                    file_put_contents($path, $res->body());
+                    $downloaded++;
+                }
+            } catch (\Throwable $e) {
+                $this->warn("skip item {$name}: {$e->getMessage()}");
             }
         }
 

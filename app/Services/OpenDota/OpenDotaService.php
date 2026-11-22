@@ -458,6 +458,14 @@ class OpenDotaService
         }
 
         $games = $wins + $losses;
+
+        // When STRATZ returns full history, trust its count for the profile total.
+        if (count($history) > $games) {
+            $games = count($history);
+            $wins = count(array_filter($history, static fn (array $m): bool => ! empty($m['win'])));
+            $losses = max(0, $games - $wins);
+        }
+
         $averages = $this->averages($totalsByField, $matches);
 
         $rankTier = isset($profileResponse['rank_tier']) && is_numeric($profileResponse['rank_tier'])
@@ -1687,12 +1695,17 @@ class OpenDotaService
                 continue;
             }
 
-            $map[(string) $key] = [
+            $itemKey = (string) $key;
+            $cdnImage = isset($item['img'])
+                ? 'https://cdn.cloudflare.steamstatic.com'.$item['img']
+                : $this->itemImage($itemKey);
+            $localItem = public_path('images/items/'.$itemKey.'.png');
+            $image = is_file($localItem) ? asset('images/items/'.$itemKey.'.png') : $cdnImage;
+
+            $map[$itemKey] = [
                 'id' => (int) ($item['id'] ?? 0),
                 'name' => (string) $item['dname'],
-                'image' => isset($item['img'])
-                    ? 'https://cdn.cloudflare.steamstatic.com'.$item['img']
-                    : $this->itemImage((string) $key),
+                'image' => $image,
                 'cost' => (int) ($item['cost'] ?? 0),
             ];
         }

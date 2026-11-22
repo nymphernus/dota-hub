@@ -5,6 +5,7 @@ namespace App\Services\Stratz;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Factory;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -497,6 +498,28 @@ class StratzService
             'RANKED' => 7, 'SOLO_MID' => 8, 'BATTLE_CUP' => 9,
             default => null,
         };
+    }
+
+    /**
+     * Quick connectivity/token test requested for debugging.
+     */
+    public function testConnection(): array
+    {
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . config('services.stratz.token'),
+            'User-Agent' => 'STRATZ_API',
+        ])->post((string) config('services.stratz.endpoint', 'https://api.stratz.com/graphql'), [
+            'query' => '{ player(steamAccountId: 179749744) { steamAccountId } }',
+        ]);
+
+        $payload = [
+            'status' => $response->status(),
+            'body' => $response->body(),
+            'json' => $response->json(),
+        ];
+        Log::info('STRATZ TEST:', $payload);
+
+        return $payload;
     }
 
     /**
