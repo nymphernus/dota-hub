@@ -63,7 +63,7 @@
     $isRanked = (int) ($match['lobby_type'] ?? 0) === 7 || $gameMode === 22;
 @endphp
 <tr @class([
-    'group transition odd:bg-[#1c1e26] even:bg-[#111318] hover:bg-ink-700/60',
+    'group transition odd:bg-[#1c1e26] even:bg-[#111318] hover:bg-ink-700/60 match-row',
 ])
     @if ($matchUrl)
         data-href="{{ $matchUrl }}"

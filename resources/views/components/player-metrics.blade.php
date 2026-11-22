@@ -28,8 +28,8 @@
 
 <div class="mt-4 flex flex-wrap gap-3" role="list" aria-label="Ключевая статистика">
     <div class="card min-w-[150px] flex-1 p-3" role="listitem">
-        <p class="text-sm text-gray-400 font-bold uppercase">МАТЧИ</p>
-        <p class="mt-1 text-4xl font-black text-white">{{ number_format($games, 0, '.', ' ') }}</p>
+        <p class="text-sm text-mist-400 font-bold uppercase">МАТЧИ</p>
+        <p class="mt-1 text-4xl font-black text-mist-200">{{ number_format($games, 0, '.', ' ') }}</p>
         <div class="mt-1 text-[10px] text-mist-500">
             <div>Первый: {{ $fmt($firstMatch) }}</div>
             <div>Последний: {{ $fmt($lastMatch) }}</div>
@@ -50,27 +50,27 @@
     </div>
 
     <div class="card min-w-[150px] flex-1 p-3" role="listitem">
-        <p class="text-sm text-gray-400 font-bold uppercase">ВИНРЕЙТ</p>
+        <p class="text-sm text-mist-400 font-bold uppercase">ВИНРЕЙТ</p>
         <p class="mt-1 text-4xl font-black">
             @if ($winrate !== null)
                 <span class="{{ $winrateValue >= 50 ? 'text-green-500' : 'text-red-500' }}">{{ number_format($winrateValue, 1, '.', '') }}%</span>
             @else
-                <span class="text-white">—</span>
+                <span class="text-mist-200">—</span>
             @endif
         </p>
         <div class="mt-2 flex h-2 w-full rounded overflow-hidden">
             <div class="h-full bg-yellow-500" style="width: {{ $winrateValue }}%"></div>
             <div class="h-full bg-red-500" style="width: {{ max(0, 100 - $winrateValue) }}%"></div>
         </div>
-        <div class="flex justify-between text-xs text-gray-400 mt-1">
+        <div class="flex justify-between text-xs text-mist-400 mt-1">
             <span class="text-yellow-500">{{ $wins }} побед</span>
             <span class="text-red-500">{{ $losses }} поражений</span>
         </div>
     </div>
 
     <div class="card min-w-[150px] flex-1 p-3" role="listitem">
-        <p class="text-sm text-gray-400 font-bold uppercase">MMR</p>
-        <p class="mt-1 text-4xl font-black text-white">
+        <p class="text-sm text-mist-400 font-bold uppercase">MMR</p>
+        <p class="mt-1 text-4xl font-black text-mist-200">
             {{ $player['mmr_estimate'] !== null ? number_format($player['mmr_estimate'], 0, '.', ' ') : '—' }}
         </p>
     </div>

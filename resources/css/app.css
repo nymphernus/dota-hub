@@ -303,3 +303,10 @@ html:not(.dark) .header-shell .text-mist-300,
 html:not(.dark) .nav-shell .text-mist-400 { color: #334155 !important; }
 html:not(.dark) .header-shell a:hover,
 html:not(.dark) .nav-shell a:hover { color: #0f172a !important; }
+
+html:not(.dark) .match-row.odd\:bg-\[\#1c1e26\]:nth-child(odd),
+html:not(.dark) .match-row:nth-child(odd) { background: #ffffff !important; }
+html:not(.dark) .match-row:nth-child(even) { background: #f8fafc !important; }
+html:not(.dark) .text-gray-400 { color: #475569 !important; }
+html:not(.dark) .text-gray-500 { color: #64748b !important; }
+html:not(.dark) .bg-gray-50 { background: #f8fafc !important; }

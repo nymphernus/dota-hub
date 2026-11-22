@@ -103,12 +103,12 @@
 
                     <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-mist-500">
                         <span class="font-mono">Dota ID {{ $player['account_id'] }}</span>
-                        <span class="font-mono">SteamID64 {{ $steamProfile['steam_id'] ?? $player['steam_id'] }}</span>
+                        <span class="font-mono">SteamID64 {{ $steamProfile['steam_id'] ?? $player['steam_id'] ?? '—' }}</span>
                         @if ($steamProfile['account_created_at'] ?? null)
                             <span>{{ __('ui.registration') }} {{ \Carbon\CarbonImmutable::parse($steamProfile['account_created_at'])->format('d.m.Y') }}</span>
                         @endif
                         <a href="{{ $player['profile_url'] ?: 'https://steamcommunity.com/profiles/'.$player['steam_id'] }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 transition hover:text-accent-300">Steam <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 5h5v5M19 5l-8 8M10 5H5v14h14v-5" stroke-linecap="round" stroke-linejoin="round" /></svg></a>
-                        <span>{{ __('ui.updated') }} {{ \Carbon\CarbonImmutable::parse($player['cached_at'])->diffForHumans(short: true) }}</span>
+                        <span>{{ __('ui.updated') }} {{ isset($player['cached_at']) ? \Carbon\CarbonImmutable::parse($player['cached_at'])->diffForHumans(short: true) : 'только что' }}</span>
                     </div>
                 </div>
             </div>
