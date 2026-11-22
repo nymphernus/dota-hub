@@ -15,7 +15,8 @@ mkdir -p \
     storage/framework/sessions \
     storage/framework/views \
     storage/logs
-chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
+chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache 2>/dev/null || true
+chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache 2>/dev/null || true
 
 # ---------------------------------------------------------------------------
 # Application key
