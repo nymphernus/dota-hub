@@ -161,7 +161,7 @@
                             @php
                                 $totalPlayHours = (int) floor(collect($history ?? [])->sum(fn ($m) => (int) ($m['duration'] ?? 0)) / 3600);
                             @endphp
-                            <span class="text-xs text-gray-400 font-medium">{{ $totalPlayHours }} ч.</span>
+                            <span class="text-xs text-[#8b94a5]">{{ $totalPlayHours }} ч.</span>
                         </div>
 
                         <div class="mt-2 space-y-3">
@@ -223,7 +223,7 @@
                 <section class="border border-[#2d313e] bg-[#1c1e26] p-3 rounded-none">
                     <div class="flex items-start justify-between gap-2">
                         <h2 class="section-heading">Союзники</h2>
-                        <span class="text-xs text-gray-400 font-medium">{{ min(5, count($player['peers'] ?? [])) }}</span>
+                        <span class="text-xs text-[#8b94a5]">{{ min(5, count($player['peers'] ?? [])) }}</span>
                     </div>
 
                     @php $topPeers = array_slice($player['peers'] ?? [], 0, 5); @endphp
