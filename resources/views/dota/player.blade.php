@@ -1,7 +1,7 @@
 @extends('dota.layouts.profile')
 
 @section('title', $pageTitle ?? ($player['nickname'].' - DOTAHUB'))
-@section('description', 'Статистика Dota 2 игрока '.$player['nickname'].': ранг, винрейт, KDA, GPM, XPM, топ героев и последние матчи.')
+@section('description', $player['nickname'].' - '.__('ui.overview'))
 
 @php
     $topHeroes = $player['top_heroes'] ?? array_slice($player['heroes'], 0, 5);
@@ -29,10 +29,10 @@
             <span @class(['badge', $steamTone])>Steam: {{ $steamProfile['visibility'] ?? __('ui.steam_unknown') }}</span>
             <span @class(['badge', $dotaTone])>{{ $dotaPublic ? __('ui.dota_public') : __('ui.dota_no_matches') }}</span>
             @if (! $steamAvailable)
-                <span class="text-accent-300/80">{{ $steamProfile['error'] ?? 'Steam API недоступна' }}</span>
+                <span class="text-accent-300/80">{{ $steamProfile['error'] ?? __('ui.steam_unavailable') }}</span>
             @endif
             @if ($player['is_private'])
-                <span class="badge border-accent-500/25 bg-accent-500/10 text-accent-300">Данные скрыты</span>
+                <span class="badge border-accent-500/25 bg-accent-500/10 text-accent-300">{{ __('ui.hidden_data') }}</span>
             @endif
         </div>
 
@@ -42,8 +42,8 @@
             <div class="mt-4 flex items-start gap-3 border border-accent-500/25 bg-accent-500/[0.08] p-3 text-sm text-accent-300">
                 <svg class="mt-0.5 h-5 w-5 shrink-0 text-accent-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2" /><path d="M8 10V7a4 4 0 018 0v3" stroke-linecap="round" /></svg>
                 <div>
-                    <p class="font-semibold">Профиль игрока скрыт. Данные недоступны.</p>
-                    <p class="mt-1 text-xs leading-relaxed text-accent-300/70">Это может быть чужой аккаунт с закрытыми матчами или профиль ещё не проиндексирован.</p>
+                    <p class="font-semibold">{{ __('ui.profile_hidden') }}</p>
+                    <p class="mt-1 text-xs leading-relaxed text-accent-300/70">{{ __('ui.profile_hidden_hint') }}</p>
                 </div>
             </div>
         @endif
@@ -61,11 +61,11 @@
                         <table class="w-full text-sm">
                                 <thead class="table-head">
                                     <tr>
-                                        <th class="px-2 py-1 text-left font-semibold">Герой / режим</th>
-                                        <th class="px-2 py-1 text-left font-semibold">Роль</th>
+                                        <th class="px-2 py-1 text-left font-semibold">{{ __('ui.hero_mode') }}</th>
+                                        <th class="px-2 py-1 text-left font-semibold">{{ __('ui.role') }}</th>
                                         <th class="px-2 py-1 text-left font-semibold">K / D / A</th>
                                         <th class="px-2 py-1 text-left font-semibold">GPM / XPM</th>
-                                        <th class="px-2 py-1 text-left font-semibold">Предметы</th>
+                                        <th class="px-2 py-1 text-left font-semibold">{{ __('ui.items') }}</th>
                                         <th class="px-2 py-1 text-right font-semibold">{{ __('ui.date') }}</th>
                                     </tr>
                                 </thead>
@@ -127,7 +127,7 @@
                         <span id="activity-total" class="text-[10px] text-mist-500">{{ number_format($activityTotal, 0, '.', ' ') }} {{ __('ui.games') }}</span>
                     </div>
 
-                    <div class="mt-3 flex gap-2" aria-label="Активность за последние 13 недель">
+                    <div class="mt-3 flex gap-2" aria-label="{{ __('ui.activity') }}">
                         <div id="heatmap-weekdays" class="grid w-7 shrink-0 grid-rows-7 gap-[3px] pt-4 text-[9px] font-semibold leading-none text-mist-500" aria-hidden="true">
                             @foreach ($activityHeatmap['weekdays'] as $weekday)
                                 <span class="flex items-center justify-end">{{ $weekday }}</span>
@@ -140,7 +140,7 @@
                                 id="activity-heatmap"
                                 class="grid w-full gap-[3px]"
                                 role="grid"
-                                aria-label="Дни по неделям"
+                                aria-hidden="true"
                                 data-match-url-template="{{ route('dota.player.matches', ['accountId' => $player['account_id'], 'date' => '__DATE__']) }}"
                             ></div>
                         </div>
@@ -156,7 +156,7 @@
                         <div class="flex items-start justify-between gap-2">
                             <div>
                                 <h2 class="section-heading">{{ __('ui.lifetime_stats') }}</h2>
-                                <p class="mt-0.5 text-[10px] text-mist-500">Сводка по {{ number_format($lifetimeStats['total'], 0, '.', ' ') }} матчам</p>
+                                <p class="mt-0.5 text-[10px] text-mist-500">{{ __('ui.summary_by_matches', ['count' => number_format($lifetimeStats['total'], 0, '.', ' ')]) }}</p>
                             </div>
                             @php
                                 $totalPlayHours = (int) floor(collect($history ?? [])->sum(fn ($m) => (int) ($m['duration'] ?? 0)) / 3600);
@@ -175,8 +175,8 @@
                                             <table class="w-full text-[11px]">
                                                 <thead class="table-head">
                                                     <tr>
-                                                        <th class="px-2 py-1 text-left font-semibold">{{ $group['key'] === 'mode' ? 'Режим' : 'Фракция' }}</th>
-                                                        <th class="px-2 py-1 text-right font-semibold">Матчи</th>
+                                                        <th class="px-2 py-1 text-left font-semibold">{{ $group['key'] === 'mode' ? __('ui.mode') : __('ui.faction') }}</th>
+                                                        <th class="px-2 py-1 text-right font-semibold">{{ __('ui.matches') }}</th>
                                                         <th class="px-2 py-1 text-right font-semibold">{{ __('ui.winrate') }}</th>
                                                     </tr>
                                                 </thead>
@@ -199,7 +199,7 @@
 
                             @if (!empty($lifetimeStats['averages']))
                                 <div class="min-w-0">
-                                    <p class="section-heading mb-1">Средние показатели</p>
+                                    <p class="section-heading mb-1">{{ __('ui.averages') }}</p>
                                     <div class="grid grid-cols-3 gap-2">
                                         <div class="border border-line bg-ink-900/30 px-2 py-2 text-center">
                                             <div class="text-[10px] text-mist-500 uppercase">{{ __('ui.avg_kda') }}</div>
@@ -228,7 +228,7 @@
 
                     @php $topPeers = array_slice($player['peers'] ?? [], 0, 5); @endphp
                     @if ($topPeers === [])
-                        <div class="mt-2 border border-dashed border-line px-3 py-4 text-center text-[11px] text-mist-500">{{ __('ui.no_data') }} о совместных матчах</div>
+                        <div class="mt-2 border border-dashed border-line px-3 py-4 text-center text-[11px] text-mist-500">{{ __('ui.no_peers_data') }}</div>
                     @else
                         <div class="mt-2 space-y-1.5">
                             @foreach ($topPeers as $peer)
@@ -240,7 +240,7 @@
                                     </span>
                                     <span class="min-w-0 flex-1">
                                         <span class="block truncate text-[11px] font-bold text-mist-200 transition group-hover:text-accent-300">{{ $peer['nickname'] }}</span>
-                                        <span class="block text-[9px] text-mist-500">{{ $peer['games'] }} совм. игр · {{ $peer['winrate'] !== null ? number_format($peer['winrate'], 1, '.', '').'%' : '—' }}</span>
+                                        <span class="block text-[9px] text-mist-500">{{ $peer['games'] }} {{ __('ui.games_together') }} · {{ $peer['winrate'] !== null ? number_format($peer['winrate'], 1, '.', '').'%' : '—' }}</span>
                                     </span>
                                 </a>
                             @endforeach

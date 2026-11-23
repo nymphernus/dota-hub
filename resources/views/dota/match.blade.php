@@ -127,15 +127,15 @@
                             <th class="px-2 py-1 font-semibold">K / D / A</th>
                             <th class="px-2 py-1 font-semibold">GPM</th>
                             <th class="px-2 py-1 font-semibold">XPM</th>
-                            <th class="px-2 py-1 font-semibold">Урон</th>
+                            <th class="px-2 py-1 font-semibold">{{ __('ui.damage') }}</th>
                             @if ($showTowerDamage)
-                                <th class="px-2 py-1 font-semibold">Башни</th>
+                                <th class="px-2 py-1 font-semibold">{{ __('ui.towers') }}</th>
                             @endif
                             @if ($showHealing)
                                 <th class="px-2 py-1 font-semibold">HEAL</th>
                             @endif
                             @if ($showPurchases)
-                                <th class="px-2 py-1 text-right font-semibold">Закуп</th>
+                                <th class="px-2 py-1 text-right font-semibold">{{ __('ui.items') }}</th>
                             @endif
                         </tr>
                     </thead>
@@ -148,8 +148,8 @@
                             ])>
                                 <td colspan="{{ $columnCount }}" class="px-2 py-1">
                                     <div class="flex flex-wrap items-center justify-between gap-2">
-                                        <span class="text-[11px] font-semibold uppercase tracking-[0.16em] {{ $teamKey === 'radiant' ? 'text-green-500' : 'text-red-500' }}">Команда {{ $team['label'] }}</span>
-                                        <span class="text-[10px] font-semibold {{ $team['won'] ? 'text-green-500' : 'text-red-500' }}">{{ $team['won'] ? 'Победа' : 'Поражение' }} · {{ $team['score'] }}</span>
+                                        <span class="text-[11px] font-semibold uppercase tracking-[0.16em] {{ $teamKey === 'radiant' ? 'text-green-500' : 'text-red-500' }}">{{ __('ui.team') }} {{ $team['label'] }}</span>
+                                        <span class="text-[10px] font-semibold {{ $team['won'] ? 'text-green-500' : 'text-red-500' }}">{{ $team['won'] ? __('ui.win_label') : __('ui.loss_label') }} · {{ $team['score'] }}</span>
                                     </div>
                                 </td>
                             </tr>
@@ -190,18 +190,18 @@
                                                 <div class="min-w-0">
                                                     @if ($accountId > 0)
                                                         <a href="{{ route('dota.player', ['accountId' => $accountId]) }}" class="block truncate text-lg font-bold text-mist-200 transition hover:text-accent-300">
-                                                            {{ $player['nickname'] ?: 'Игрок '.$accountId }}
+                                                            {{ $player['nickname'] ?: __('ui.player_hash', ['id' => $accountId]) }}
                                                         </a>
                                                     @else
-                                                        <p class="block truncate text-lg font-bold text-mist-200">{{ $player['nickname'] ?: 'Неизвестный игрок' }}</p>
+                                                        <p class="block truncate text-lg font-bold text-mist-200">{{ $player['nickname'] ?: __('ui.unknown_player') }}</p>
                                                     @endif
                                                     <p class="mt-0.5 flex flex-wrap items-center gap-1.5 truncate text-gray-400 text-sm">
                                                         <span>{{ $player['hero_name'] }}</span>
                                                         @if (! empty($player['rank_label']))
-                                                            <span class="rounded bg-accent-500/10 px-1 py-0.5 text-[8px] font-bold uppercase tracking-wide text-accent-300" title="Ранг">{{ $player['rank_label'] }}</span>
+                                                            <span class="rounded bg-accent-500/10 px-1 py-0.5 text-[8px] font-bold uppercase tracking-wide text-accent-300" title="{{ __('ui.rank') }}">{{ $player['rank_label'] }}</span>
                                                         @endif
                                                         @if ($player['level'] > 0)
-                                                            <span>ур. {{ $player['level'] }}</span>
+                                                            <span>{{ __('ui.lvl') }} {{ $player['level'] }}</span>
                                                         @endif
                                                         @if ($roleLabel)
                                                             <span class="badge !px-1.5 !py-0.5 !text-[9px] {{ $roleClasses }}" title="{{ $roleName }}{{ $roleSource ? ' · '.$roleSource : '' }}">{{ $roleLabel }}</span>
@@ -240,7 +240,7 @@
                                                         :aria-expanded="(openPlayer === {{ $playerIndex }}).toString()"
                                                         aria-controls="purchases-{{ $teamKey }}-{{ $playerIndex }}"
                                                     >
-                                                        Закуп
+                                                        {{ __('ui.items') }}
                                                         <span class="rounded bg-white/[0.06] px-1.5 py-0.5 text-[10px] text-mist-400">{{ count($player['purchases']) }}</span>
                                                         <svg class="h-3 w-3 transition" :class="openPlayer === {{ $playerIndex }} ? 'rotate-180' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round" /></svg>
                                                     </button>
@@ -256,8 +256,8 @@
                                             <td colspan="{{ $columnCount }}" class="px-2 py-1">
                                                 <div class="rounded-none bg-ink-900/70 p-3">
                                                     <div class="flex flex-wrap items-center justify-between gap-2">
-                                                        <p class="label">Закуп · {{ $player['hero_name'] }}</p>
-                                                        <p class="text-[10px] text-mist-500">{{ $player['purchase_log_count'] }} покупок · показаны ключевые предметы</p>
+                                                        <p class="label">{{ __('ui.items') }} · {{ $player['hero_name'] }}</p>
+                                                        <p class="text-[10px] text-mist-500">{{ $player['purchase_log_count'] }} {{ __('ui.purchases') }}</p>
                                                     </div>
                                                     <div class="mt-3 flex flex-wrap gap-2">
                                                         @foreach ($player['purchases'] as $item)
@@ -280,7 +280,7 @@
                                     @endif
                             @empty
                                 <tr>
-                                    <td colspan="{{ $columnCount }}" class="px-4 py-8 text-center text-sm text-mist-400">{{ __('ui.no_data') }} по игрокам.</td>
+                                    <td colspan="{{ $columnCount }}" class="px-4 py-8 text-center text-sm text-mist-400">{{ __('ui.no_player_data') }}</td>
                                 </tr>
                             @endforelse
                         @endforeach
@@ -289,6 +289,6 @@
             </div>
         </section>
 
-        <p class="mt-4 text-[11px] text-mist-500">Данные OpenDota · кэш матча 1 час</p>
+        <p class="mt-4 text-[11px] text-mist-500">{{ __('ui.match_cache_note') }}</p>
     </div>
 @endsection

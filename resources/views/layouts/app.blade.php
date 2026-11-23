@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="description" content="@yield('description', 'DOTAHUB — быстрая статистика игроков Dota 2. Профили, матчи, герои и активность.')">
+    <meta name="description" content="@yield('description', '{{ __('ui.site_description') }}')">
     <meta name="theme-color" content="#111318">
 
     <title>{{ $pageTitle ?? 'DOTAHUB' }} - DOTAHUB</title>
@@ -30,6 +30,11 @@
         $dotahubI18n = [
             'weekdays' => [__('ui.wd_mon'), __('ui.wd_tue'), __('ui.wd_wed'), __('ui.wd_thu'), __('ui.wd_fri'), __('ui.wd_sat'), __('ui.wd_sun')],
             'months' => [__('ui.mo_jan'), __('ui.mo_feb'), __('ui.mo_mar'), __('ui.mo_apr'), __('ui.mo_may'), __('ui.mo_jun'), __('ui.mo_jul'), __('ui.mo_aug'), __('ui.mo_sep'), __('ui.mo_oct'), __('ui.mo_nov'), __('ui.mo_dec')],
+            'games' => __('ui.games_word'),
+            'wins' => __('ui.wins_short'),
+            'losses' => __('ui.losses_short'),
+            'no_games' => __('ui.no_games'),
+            'future_day' => __('ui.future_day'),
         ];
     @endphp
     <script>

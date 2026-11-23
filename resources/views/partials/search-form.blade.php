@@ -30,10 +30,10 @@
                     name="query"
                     x-model="query"
                     value="{{ old('query') }}"
-                    placeholder="Никнейм, SteamID64 или ссылка на Steam-профиль"
+                    placeholder="{{ __('ui.search_placeholder_long') }}"
                     autocomplete="off"
                     spellcheck="false"
-                    aria-label="Поисковый запрос"
+                    aria-label="{{ __('ui.search_query') }}"
                     class="input !py-3.5 !pl-12 !pr-4 text-base"
                 >
             </div>
@@ -47,7 +47,7 @@
                     <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" opacity=".25" />
                     <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
                 </svg>
-                <span x-text="loading ? 'Ищем…' : 'Найти'">Найти</span>
+                <span x-text="loading ? '{{ __('ui.searching') }}' : '{{ __('ui.search_button') }}'">{{ __('ui.search_button') }}</span>
             </button>
         </div>
 

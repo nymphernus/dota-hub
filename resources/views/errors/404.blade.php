@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Игрок или матч не найден — DOTAHUB')
-@section('description', 'Запрошенный игрок, матч или страница не найдены.')
+@section('title', __('ui.not_found_title').' - DOTAHUB')
+@section('description', __('ui.not_found_desc'))
 
 @section('content')
     <div class="relative overflow-hidden">
@@ -10,7 +10,7 @@
 
         <div class="mx-auto flex min-h-[calc(100vh-8rem)] w-full max-w-3xl flex-col items-center justify-center px-4 py-20 text-center sm:px-6 lg:px-8">
             <span class="inline-flex items-center gap-2 rounded-none border border-accent-500/20 bg-accent-500/[0.08] px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-accent-300">
-                Ошибка 404
+                404
             </span>
 
             <span class="mt-6 grid h-16 w-16 place-items-center rounded-none border border-accent-500/20 bg-accent-500/[0.07] text-accent-300">
@@ -21,15 +21,15 @@
             </span>
 
             <h1 class="mt-6 text-balance text-3xl font-semibold tracking-tight text-mist-200 sm:text-4xl">
-                Игрок или матч не найден
+                {{ __('ui.not_found_title') }}
             </h1>
             <p class="mt-3 max-w-xl text-sm leading-relaxed text-mist-400">
-                Проверьте SteamID64, ссылку на профиль или адрес страницы. Возможно, профиль закрыт или данные ещё не проиндексированы.
+                {{ __('ui.not_found_hint') }}
             </p>
 
             <div class="mt-8 flex flex-wrap justify-center gap-2">
                 <a href="{{ route('home') }}" class="btn-primary">{{ __('ui.back_home') }}</a>
-                <a href="{{ route('home') }}#search" class="btn-ghost">К поиску игрока</a>
+                <a href="{{ route('home') }}#search" class="btn-ghost">{{ __('ui.find_player') }}</a>
             </div>
         </div>
     </div>

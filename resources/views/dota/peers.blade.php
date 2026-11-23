@@ -1,7 +1,7 @@
 @extends('dota.layouts.profile')
 
 @section('title', $pageTitle ?? ($player['nickname'].' - DOTAHUB'))
-@section('description', 'Игроки, с которыми '.$player['nickname'].' чаще всего играл в Dota 2: совместные игры и '.__('ui.ally_winrate').'.')
+@section('description', $player['nickname'].' - '.__('ui.peers'))
 
 @section('profile-content')
     <section class="mt-4 border border-[#2d313e] bg-[#1c1e26]">
@@ -33,7 +33,7 @@
                             <div class="flex items-center gap-2">
                                 <span class="truncate text-sm font-semibold text-mist-200">{{ $peer['nickname'] ?? __('ui.teammate') }}</span>
                                 @if ($peer['is_private'] ?? false)
-                                    <span class="text-[10px] text-accent-300/80">Приватный</span>
+                                    <span class="text-[10px] text-accent-300/80">{{ __('ui.private_profile') }}</span>
                                 @endif
                             </div>
                             <div class="mt-1 flex h-1.5 w-full max-w-[240px] overflow-hidden bg-ink-900/60">

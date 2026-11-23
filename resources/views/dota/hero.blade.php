@@ -79,7 +79,7 @@
 
                     <a href="{{ $backUrl }}" class="btn-ghost !py-2">
                         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M15 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                        К профилю
+                        {{ __('ui.to_profile') }}
                     </a>
                 </div>
             </div>
@@ -137,7 +137,7 @@
                                     <p class="mt-1 text-[10px] text-mist-500">
                                         {{ $benchmark['hint'] }}
                                         @if (in_array($benchmark['key'], ['gpm', 'xpm'], true) && ($summary[$benchmark['key'].'_games'] ?? 0) > 0)
-                                            <span class="text-mist-500/70">· по {{ $summary[$benchmark['key'].'_games'] }} матчам</span>
+                                            <span class="text-mist-500/70">· {{ $summary[$benchmark['key'].'_games'] }} {{ __('ui.matches_word') }}</span>
                                         @endif
                                     </p>
                                 </div>

@@ -150,7 +150,7 @@ Alpine.data('favoriteStar', (config) => ({
                 this.active = payload.favorite === true;
             }
         } catch (error) {
-            console.warn('Не удалось обновить избранное', error);
+            console.warn('Favorite toggle failed', error);
         } finally {
             this.loading = false;
         }

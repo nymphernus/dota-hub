@@ -15,7 +15,7 @@
 
         $wheelHeroes[] = [
             'hero_id' => (int) ($hero['hero_id'] ?? $hero['id'] ?? 0),
-            'name' => $hero['name'] ?? 'Герой',
+            'name' => $hero['name'] ?? __('ui.hero'),
             'icon' => $hero['minimap_icon'] ?? $hero['icon'] ?? ($hero['image'] ?? ''),
             'image' => $hero['image'] ?? $hero['hero_image'] ?? $hero['icon'] ?? '',
             'games' => $games,
@@ -108,17 +108,17 @@
             viewBox="-10 -10 320 320"
             overflow="visible"
             role="img"
-            aria-label="Колесо героев"
+            aria-label="{{ __('ui.hero_wheel') }}"
             xmlns="http://www.w3.org/2000/svg"
             xmlns:xlink="http://www.w3.org/1999/xlink"
         >
             <defs>
-                <!-- Градиент для обычных героев -->
+                
                 <radialGradient id="grad-normal" cx="50%" cy="50%" r="50%">
                     <stop offset="0%" stop-color="var(--wheel-normal-start, #374151)" />
                     <stop offset="100%" stop-color="var(--wheel-normal-end, #1f2937)" />
                 </radialGradient>
-                <!-- Градиент для Топ-3 героев (чуть светлее) -->
+                
                 <radialGradient id="grad-top" cx="50%" cy="50%" r="50%">
                     <stop offset="0%" stop-color="var(--wheel-top-start, #4b5563)" />
                     <stop offset="100%" stop-color="var(--wheel-top-end, #2d313e)" />
@@ -171,9 +171,9 @@
             <circle cx="150" cy="150" r="80" class="fill-white dark:fill-[#1c1e26]" />
             <text x="150" y="145" text-anchor="middle" dominant-baseline="middle" class="text-2xl font-bold {{ $wheelOverallWinrate >= 50 ? 'fill-green-500' : 'fill-red-500' }}">{{ number_format($wheelOverallWinrate, 1, '.', '') }}%</text>
             <text x="150" y="170" text-anchor="middle" dominant-baseline="middle" class="text-sm font-semibold fill-gray-900 dark:fill-[#d1d5db]">
-                <tspan fill="#10b981">{{ $wheelTotalWins }} {{ app()->getLocale() === 'ru' ? 'П' : 'W' }}</tspan>
+                <tspan fill="#10b981">{{ $wheelTotalWins }} {{ __('ui.wins_short') }}</tspan>
                 <tspan fill="#8b94a5"> / </tspan>
-                <tspan fill="#ef4444">{{ $wheelTotalLosses }} {{ app()->getLocale() === 'ru' ? 'П' : 'L' }}</tspan>
+                <tspan fill="#ef4444">{{ $wheelTotalLosses }} {{ __('ui.losses_short') }}</tspan>
             </text>
         </svg>
     </div>

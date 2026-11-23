@@ -20,7 +20,7 @@
         'hard_support' => 'Hard',
         default => $roleKey ? ucfirst((string) $roleKey) : null,
     };
-    $roleTitle = $laneLabels[$laneRole] ?? ($roleLabel ?: 'Роль не определена');
+    $roleTitle = $laneLabels[$laneRole] ?? ($roleLabel ?: __('ui.role_undefined'));
 
     $roleClass = match ($roleLabel) {
         'Safe' => 'text-green-500',
@@ -70,7 +70,7 @@
         onclick="window.location.href = this.dataset.href"
         onkeydown="if (event.key === 'Enter') { window.location.href = this.dataset.href }"
         tabindex="0"
-        aria-label="Открыть матч {{ $match['match_id'] }}"
+        aria-label="{{ __('ui.open_match') }} {{ $match['match_id'] }}"
     @endif
 >
     <td @class([
@@ -80,7 +80,7 @@
     ])>
         <div class="flex items-center gap-2.5">
             @if ($heroUrl)
-                <a href="{{ $heroUrl }}" class="relative block h-10 w-16 shrink-0 overflow-hidden rounded-none bg-ink-800 transition" onclick="event.stopPropagation()" aria-label="Статистика по герою {{ $match['hero_name'] }}">
+                <a href="{{ $heroUrl }}" class="relative block h-10 w-16 shrink-0 overflow-hidden rounded-none bg-ink-800 transition" onclick="event.stopPropagation()" aria-label="{{ $match['hero_name'] }}">
                     @if ($match['hero_image'])
                         <img src="{{ $match['hero_image'] }}" alt="{{ $match['hero_name'] }}" class="h-full w-full object-cover" loading="lazy">
                     @else
@@ -121,7 +121,7 @@
         @if ($roleLabel)
             <span class="inline-flex items-center text-[10px] font-semibold {{ $roleClass }}" title="{{ $roleTitle }}">{{ $roleLabel }}</span>
         @else
-            <span class="text-[10px] text-mist-400" title="Роль не определена">—</span>
+            <span class="text-[10px] text-mist-400" title="{{ __('ui.role_undefined') }}">—</span>
         @endif
     </td>
 

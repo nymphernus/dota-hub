@@ -15,8 +15,8 @@
         <p class="mt-3 max-w-xl text-sm leading-relaxed text-mist-400">{{ $message }}</p>
 
         <div class="mt-8 flex flex-wrap justify-center gap-2">
-            <a href="{{ $backUrl ?? route('home') }}" class="btn-primary">Вернуться к поиску</a>
-            <a href="{{ route('home') }}#search" class="btn-ghost">Найти другого игрока</a>
+            <a href="{{ $backUrl ?? route('home') }}" class="btn-primary">{{ __('ui.back_to_search') }}</a>
+            <a href="{{ route('home') }}#search" class="btn-ghost">{{ __('ui.find_another_player') }}</a>
         </div>
     </div>
 @endsection

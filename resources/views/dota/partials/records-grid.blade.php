@@ -31,7 +31,7 @@
                         </a>
                     @endif
                     @if ($record['is_team'])
-                        <span class="badge text-mist-400">Командный</span>
+                        <span class="badge text-mist-400">{{ __('ui.team_record') }}</span>
                     @endif
                 </div>
             </article>

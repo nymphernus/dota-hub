@@ -152,23 +152,6 @@ if (heatmapPayload && heatmapRoot) {
     }
 }
 
-function gameLabel(count) {
-    if (count % 10 === 1 && count % 100 !== 11) return 'игра';
-    if ([2, 3, 4].includes(count % 10) && ![12, 13, 14].includes(count % 100)) return 'игры';
-    return 'игр';
-}
-
-function winLabel(count) {
-    if (count % 10 === 1 && count % 100 !== 11) return 'победа';
-    if ([2, 3, 4].includes(count % 10) && ![12, 13, 14].includes(count % 100)) return 'победы';
-    return 'побед';
-}
-
-function lossLabel(count) {
-    if (count % 10 === 1 && count % 100 !== 11) return 'поражение';
-    if ([2, 3, 4].includes(count % 10) && ![12, 13, 14].includes(count % 100)) return 'поражения';
-    return 'поражений';
-}
 
 /**
  * Rich hero-wheel tooltip. Each slice carries its own image and stats so the
@@ -207,13 +190,15 @@ if (wheelTooltip) {
 
         const games = document.createElement('div');
         games.className = 'text-sm text-gray-400';
-        games.textContent = `${slice.dataset.heroGames || 0} игр`;
+        games.textContent = `${slice.dataset.heroGames || 0} ${(window.dotahubI18n && window.dotahubI18n.games) || 'games'}`;
 
         const wl = document.createElement('div');
         wl.className = 'text-sm text-gray-400';
         const wins = Number(slice.dataset.heroWins || 0);
         const losses = Number(slice.dataset.heroLosses || 0);
-        wl.innerHTML = `<span class="text-green-500">${wins} W</span> / <span class="text-red-500">${losses} L</span>`;
+                const wLabel = (window.dotahubI18n && window.dotahubI18n.wins) || 'W';
+        const lLabel = (window.dotahubI18n && window.dotahubI18n.losses) || 'L';
+        wl.innerHTML = `<span class="text-green-500">${wins} ${wLabel}</span> / <span class="text-red-500">${losses} ${lLabel}</span>`;
 
         content.append(name, games, wl);
         wheelTooltip.append(image, content);

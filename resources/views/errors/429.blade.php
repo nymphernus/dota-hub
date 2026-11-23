@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('title', '{{ __('ui.too_many_requests') }} — DOTAHUB')
-@section('description', 'Превышен лимит запросов к API. Попробуйте позже.')
+@section('description', __('ui.too_many_requests'))
 
 @section('content')
     <div class="relative overflow-hidden">
@@ -10,7 +10,7 @@
 
         <div class="mx-auto flex min-h-[calc(100vh-8rem)] w-full max-w-3xl flex-col items-center justify-center px-4 py-20 text-center sm:px-6 lg:px-8">
             <span class="inline-flex items-center gap-2 rounded-none border border-accent-500/20 bg-accent-500/[0.08] px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-accent-300">
-                Ошибка 429
+                429
             </span>
 
             <span class="mt-6 grid h-16 w-16 place-items-center rounded-none border border-accent-500/20 bg-accent-500/[0.07] text-accent-300">
@@ -24,12 +24,12 @@
                 {{ __('ui.too_many_requests') }}
             </h1>
             <p class="mt-3 max-w-xl text-sm leading-relaxed text-mist-400">
-                OpenDota ограничила частоту обращений. Подождите минуту и попробуйте снова — уже закэшированные профили откроются без задержки.
+                {{ __('ui.rate_limit_hint') }}
             </p>
 
             <div class="mt-8 flex flex-wrap justify-center gap-2">
                 <a href="{{ route('home') }}" class="btn-primary">{{ __('ui.back_home') }}</a>
-                <button type="button" onclick="window.location.reload()" class="btn-ghost">Повторить запрос</button>
+                <button type="button" onclick="window.location.reload()" class="btn-ghost">{{ __('ui.try_again') }}</button>
             </div>
         </div>
     </div>
