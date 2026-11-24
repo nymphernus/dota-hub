@@ -1003,63 +1003,8 @@ class OpenDotaService
             return is_array($cached['records'] ?? null) ? $cached['records'] : [];
         }
 
-        $heroes = [];
-        $derived = $history !== [] ? $this->recordsFromHistory($history, $heroes) : [];
-
-        if ($rankedOnly) {
-            try {
-                $heroes = $this->heroStats();
-                $derived = $history !== [] ? $this->recordsFromHistory($history, $heroes) : [];
-            } catch (ApiUnavailableException) {
-                // Hero names are optional; derived values still work.
-            }
-
-            $records = $this->orderRecords($derived);
-
-            Cache::put($cacheKey, [
-                '_fingerprint' => $fingerprint,
-                'records' => $records,
-            ], $ttl);
-
-            return $records;
-        }
-
-        try {
-            $raw = $this->optionalGet("players/{$accountId}/records");
-            $heroes = $this->heroStats();
-            $derived = $history !== [] ? $this->recordsFromHistory($history, $heroes) : [];
-        } catch (ApiUnavailableException $exception) {
-            Log::warning('OpenDota player records are unavailable', [
-                'account_id' => $accountId,
-                'message' => $exception->getMessage(),
-            ]);
-
-            Cache::put($cacheKey, [
-                '_fingerprint' => $fingerprint,
-                'records' => $derived,
-            ], $ttl);
-
-            return $derived;
-        }
-
-        if (isset($raw['records']) && is_array($raw['records'])) {
-            $raw = $raw['records'];
-        }
-
-        $records = [];
-
-        foreach ($this->transformRecords($raw, $heroes) as $row) {
-            $records[$row['key']] = $row;
-        }
-
-        // OpenDota's records endpoint is frequently unavailable (404) and only
-        // reports a few keys. The cached history of the last 500 matches is the
-        // source of truth for the rest of the record tiles.
-        foreach ($derived as $row) {
-            $records[$row['key']] ??= $row;
-        }
-
-        $records = $this->orderRecords(array_values($records));
+        $derived = $history !== [] ? $this->recordsFromHistory($history, []) : [];
+        $records = $this->orderRecords($derived);
 
         Cache::put($cacheKey, [
             '_fingerprint' => $fingerprint,
@@ -2065,30 +2010,14 @@ class OpenDotaService
     private function gameModeLabel(?int $mode): ?string
     {
         return match ($mode) {
-            1 => __('ui.mode_all_pick'),
-            2 => __('ui.mode_captains_mode'),
-            3 => __('ui.mode_random_draft'),
-            4 => __('ui.mode_single_draft'),
-            5 => __('ui.mode_all_random'),
-            6 => __('ui.mode_intro'),
-            7 => __('ui.mode_diretide'),
-            8 => __('ui.mode_reverse_captains'),
-            9 => __('ui.mode_greeviling'),
-            10 => __('ui.mode_tutorial'),
-            11 => __('ui.mode_mid_only'),
-            12 => __('ui.mode_least_played'),
-            13 => __('ui.mode_limited_heroes'),
-            14 => __('ui.mode_compendium'),
-            15 => __('ui.mode_custom'),
-            16 => __('ui.mode_captains_mode'),
-            17 => __('ui.mode_balanced_draft'),
-            18 => __('ui.mode_ability_draft'),
-            19 => __('ui.mode_event'),
-            20 => __('ui.mode_ardm'),
-            21 => __('ui.mode_1v1_mid'),
-            22 => __('ui.mode_ranked'),
-            23 => __('ui.mode_turbo'),
-            24 => __('ui.mode_mutation'),
+            1 => __('ui.mode_1'),
+            2 => __('ui.mode_2'),
+            4 => __('ui.mode_4'),
+            5 => __('ui.mode_5'),
+            16 => __('ui.mode_16'),
+            18 => __('ui.mode_18'),
+            22 => __('ui.mode_22'),
+            23 => __('ui.mode_23'),
             default => null,
         };
     }

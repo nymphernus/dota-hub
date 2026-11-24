@@ -245,7 +245,8 @@
                                     <span class="min-w-0 flex-1">
                                         <span class="block truncate text-[12px] font-bold text-mist-200 transition group-hover:text-accent-300">{{ $peer['nickname'] }}</span>
                                         <span class="mt-1 flex h-1.5 w-full overflow-hidden rounded bg-ink-900/60">
-                                            <span class="{{ $wrColor }}" style="width: {{ $wr !== null ? min(100, max(0, $wr)) : 0 }}%"></span>
+                                            <span class="bg-green-500" style="width: {{ $wr !== null ? min(100, max(0, $wr)) : 0 }}%"></span>
+                                            <span class="bg-red-500" style="width: {{ $wr !== null ? max(0, 100 - min(100, max(0, $wr))) : 100 }}%"></span>
                                         </span>
                                         <span class="mt-1 block text-[10px] text-mist-500">{{ $peer['games'] }} {{ __('ui.games_together') }} · {{ $wr !== null ? number_format($wr, 1, '.', '').'%' : '—' }}</span>
                                     </span>

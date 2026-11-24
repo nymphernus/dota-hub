@@ -108,8 +108,6 @@
                         <span class="inline-flex items-center">
                             @if($currentLocale === 'en')
                                 <img src="{{ asset('images/flags/us.svg') }}" alt="US" class="w-5 h-5 object-cover rounded-sm">
-                            @elseif($currentLocale === 'de')
-                                <img src="{{ asset('images/flags/de.svg') }}" alt="DE" class="w-5 h-5 object-cover rounded-sm">
                             @else
                                 <img src="{{ asset('images/flags/ru.svg') }}" alt="RU" class="w-5 h-5 object-cover rounded-sm">
                             @endif

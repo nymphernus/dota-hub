@@ -35,16 +35,14 @@
     $modeLabel = $match['game_mode_label'] ?? $match['match_type_label'] ?? null;
     if ($modeLabel === null || $modeLabel === '') {
         $modeLabel = match ($gameMode) {
-            1 => __('ui.mode_all_pick'),
-            2 => __('ui.mode_captains_mode'),
-            3 => __('ui.mode_random_draft'),
-            4 => __('ui.mode_single_draft'),
-            5 => __('ui.mode_all_random'),
-            11 => __('ui.mode_mid_only'),
-            16 => __('ui.mode_captains_mode'),
-            18 => __('ui.mode_ability_draft'),
-            22 => __('ui.mode_ranked'),
-            23 => __('ui.mode_turbo'),
+            1 => __('ui.mode_1'),
+            2 => __('ui.mode_2'),
+            4 => __('ui.mode_4'),
+            5 => __('ui.mode_5'),
+            16 => __('ui.mode_16'),
+            18 => __('ui.mode_18'),
+            22 => __('ui.mode_22'),
+            23 => __('ui.mode_23'),
             default => null,
         };
     }

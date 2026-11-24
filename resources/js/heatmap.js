@@ -97,9 +97,15 @@ if (heatmapPayload && heatmapRoot) {
                 const count = Number(day.count) || 0;
                 const wins = Number(day.wins) || 0;
                 const losses = Number(day.losses) || 0;
+                const i18n = window.dotahubI18n || {};
+                const gamesWord = i18n.games || 'games';
+                const winsWord = i18n.wins || 'W';
+                const lossesWord = i18n.losses || 'L';
+                const noGamesWord = i18n.no_games || 'No games';
+                const futureWord = i18n.future_day || 'Future day';
                 const title = count > 0
-                    ? `${day.label}: ${count} ${gameLabel(count)} (${wins} ${winLabel(wins)}, ${losses} ${lossLabel(losses)})`
-                    : `${day.label}: ${day.level === 'future' ? 'будущий день' : 'нет игр'}`;
+                    ? `${day.label}: ${count} ${gamesWord} (${wins} ${winsWord}, ${losses} ${lossesWord})`
+                    : `${day.label}: ${day.level === 'future' ? futureWord : noGamesWord}`;
                 const matchUrlTemplate = heatmapRoot.dataset.matchUrlTemplate;
                 const cell = matchUrlTemplate && count > 0
                     ? document.createElement('a')

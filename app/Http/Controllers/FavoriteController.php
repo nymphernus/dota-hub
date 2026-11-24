@@ -57,7 +57,7 @@ class FavoriteController extends Controller
             ]);
         }
 
-        return back()->with('status', '__('ui.favorite_added')');
+        return back()->with('status', __('ui.favorite_added'));
     }
 
     public function destroy(Request $request, int $accountId, FavoriteService $favorites): RedirectResponse|JsonResponse
@@ -78,7 +78,7 @@ class FavoriteController extends Controller
             ]);
         }
 
-        return back()->with('status', '__('ui.favorite_removed')');
+        return back()->with('status', __('ui.favorite_removed'));
     }
 
     private function steamId(): ?string
