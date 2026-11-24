@@ -56,7 +56,10 @@ class DotaProfileTest extends TestCase
                 && $player['matches'][1]['level'] === 18
                 && $player['matches'][1]['net_worth'] === 14500
                 && count($player['match_history']) === 6
-                && count($player['heroes']) === 2;
+                && count($player['heroes']) === 2
+                && $player['heroes'][0]['games'] === 12
+                && $player['heroes'][0]['wins'] === 8
+                && $player['heroes'][0]['losses'] === 4;
         });
 
         // Lazy detail loading may touch at most the newest 25 history matches.

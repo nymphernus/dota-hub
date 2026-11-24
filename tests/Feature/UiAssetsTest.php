@@ -69,10 +69,15 @@ class UiAssetsTest extends TestCase
         $this->assertStringContainsString('flex flex-col p-1', $profile);
         $this->assertStringContainsString('class="w-16 h-9 object-cover shrink-0 rounded-sm"', $profile);
         $this->assertStringContainsString('class="flex items-center gap-4 py-2 border-b border-ink-700/50 hover:bg-ink-800/50 px-2 transition"', $profile);
-        $this->assertStringContainsString('w-40 shrink-0', $profile);
-        $this->assertStringContainsString('flex items-center gap-2 w-28 shrink-0', $profile);
-        $this->assertStringContainsString('class="w-full bg-ink-900 h-1 rounded overflow-hidden"', $profile);
-        $this->assertStringContainsString('flex-1 bg-ink-900 h-1.5 rounded overflow-hidden ml-auto', $profile);
+        $this->assertStringContainsString('w-32 shrink-0 text-sm font-bold text-mist-200 truncate', $profile);
+        $this->assertStringContainsString('flex items-center gap-2 w-32 shrink-0', $profile);
+        $this->assertStringContainsString('class="w-full bg-ink-900 h-1.5 rounded overflow-hidden"', $profile);
+        $this->assertStringContainsString('w-32 shrink-0 bg-ink-900 h-1.5 rounded overflow-hidden', $profile);
+        $this->assertStringContainsString("__('ui.hero_games_word')", $profile);
+        $this->assertStringContainsString("__('ui.hero_win_short')", $profile);
+        $this->assertStringContainsString("__('ui.hero_loss_short')", $profile);
+        $this->assertStringContainsString("\$hero['wins']", $profile);
+        $this->assertStringContainsString("\$hero['losses']", $profile);
         $this->assertStringContainsString('$maxHeroGames', $profile);
         $this->assertStringNotContainsString('bg-blue-500 h-full', $profile);
         $this->assertStringNotContainsString('h-3 rounded overflow-hidden', $profile);
@@ -80,11 +85,14 @@ class UiAssetsTest extends TestCase
         $this->assertStringContainsString('class="w-10 h-10 object-cover shrink-0"', $profile);
         $this->assertStringContainsString('class="w-10 h-10 object-cover shrink-0"', $peers);
         $this->assertStringContainsString('flex items-center gap-2 w-24 shrink-0', $profile);
-        $this->assertStringContainsString('flex items-center gap-2 w-24 shrink-0', $peers);
+        $this->assertStringContainsString('flex items-center gap-2 w-32 shrink-0', $peers);
         $this->assertStringContainsString('flex items-center gap-2 w-20 shrink-0 justify-end', $profile);
-        $this->assertStringContainsString('flex items-center gap-2 w-20 shrink-0 justify-end', $peers);
+        $this->assertStringContainsString('flex items-center gap-2 w-24 shrink-0 justify-end', $peers);
+        $this->assertStringContainsString('flex items-center gap-6 py-2 border-b border-ink-700/50', $peers);
         $this->assertStringContainsString('w-full bg-ink-900 h-1.5 flex rounded overflow-hidden', $profile);
-        $this->assertStringContainsString('w-full bg-ink-900 h-1.5 flex rounded overflow-hidden', $peers);
+        $this->assertStringContainsString('w-full bg-ink-900 h-2.5 flex rounded overflow-hidden', $peers);
+        $this->assertStringContainsString('w-full bg-ink-900 h-1.5 rounded overflow-hidden', $profile);
+        $this->assertStringContainsString('w-full bg-ink-900 h-2.5 rounded overflow-hidden', $peers);
         $this->assertStringContainsString('bg-yellow-500 h-full', $profile);
         $this->assertStringContainsString('bg-yellow-500 h-full', $peers);
         $this->assertStringContainsString('maxPeerGames', $controller);
@@ -322,5 +330,57 @@ class UiAssetsTest extends TestCase
         $this->assertStringContainsString("__('ui.winrate_word')", $metrics);
         $this->assertStringContainsString("__('ui.ranked')", $matches);
         $this->assertStringContainsString("__('ui.turbo')", $matches);
+    }
+
+    public function test_hero_picker_reset_button_and_record_labels_follow_current_ui(): void
+    {
+        $partial = (string) file_get_contents(resource_path('views/dota/partials/filter-hero.blade.php'));
+        $matches = (string) file_get_contents(resource_path('views/dota/matches.blade.php'));
+        $heroes = (string) file_get_contents(resource_path('views/dota/heroes.blade.php'));
+        $service = (string) file_get_contents(app_path('Services/OpenDota/OpenDotaService.php'));
+        $ru = require lang_path('ru/ui.php');
+        $en = require lang_path('en/ui.php');
+
+        $this->assertStringContainsString("__('ui.attr_strength')", $partial);
+        $this->assertStringContainsString("__('ui.attr_agility')", $partial);
+        $this->assertStringContainsString("__('ui.attr_intelligence')", $partial);
+        $this->assertStringContainsString("__('ui.attr_universal')", $partial);
+        $this->assertStringContainsString('h-10 w-10 object-cover', $partial);
+        $this->assertStringContainsString("@include('dota.partials.filter-hero'", $matches);
+        $this->assertStringContainsString("@include('dota.partials.filter-hero'", $heroes);
+        $this->assertStringNotContainsString('grid grid-cols-8 gap-1 max-h-[60vh]', $matches);
+        $this->assertStringNotContainsString('<select name="hero_id"', $heroes);
+
+        $this->assertStringContainsString('hasActiveFilters:', $matches);
+        $this->assertStringContainsString(':disabled="!hasActiveFilters"', $matches);
+        $this->assertStringContainsString("!hasActiveFilters ? 'opacity-50 cursor-not-allowed' : ''", $matches);
+        $this->assertStringContainsString(
+            'px-4 py-2 bg-ink-800 border border-line text-mist-300 rounded hover:bg-ink-700 transition',
+            $matches
+        );
+
+        $expectedRecords = [
+            'record_longest_match' => ['Самый длинный матч', 'Longest match'],
+            'record_shortest_match' => ['Самый короткий матч', 'Shortest match'],
+            'record_max_kills' => ['Максимум убийств', 'Most kills'],
+            'record_max_deaths' => ['Максимум смертей', 'Most deaths'],
+            'record_max_assists' => ['Максимум помощи', 'Most assists'],
+            'record_max_gpm' => ['Максимальный GPM', 'Highest GPM'],
+            'record_max_xpm' => ['Максимальный XPM', 'Highest XPM'],
+            'record_max_hero_damage' => ['Максимальный урон по героям', 'Most hero damage'],
+            'record_max_tower_damage' => ['Максимальный урон по строениям', 'Most tower damage'],
+            'record_max_hero_healing' => ['Максимальное лечение', 'Most hero healing'],
+            'record_max_last_hits' => ['Максимум добиваний', 'Most last hits'],
+            'record_max_denies' => ['Максимум добиваний союзников', 'Most denies'],
+            'record_max_gold' => ['Максимум золота', 'Most gold'],
+            'record_max_net_worth' => ['Максимальная ценность', 'Highest net worth'],
+            'record_longest_win_streak' => ['Самая длинная серия побед', 'Longest win streak'],
+        ];
+
+        foreach ($expectedRecords as $key => [$russian, $english]) {
+            $this->assertSame($russian, $ru[$key], $key);
+            $this->assertSame($english, $en[$key], $key);
+            $this->assertStringContainsString("__('ui.{$key}')", $service, $key);
+        }
     }
 }

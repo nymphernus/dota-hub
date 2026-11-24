@@ -105,6 +105,21 @@ class LifetimeStatsTest extends TestCase
         });
     }
 
+    public function test_records_page_uses_english_labels_when_locale_is_english(): void
+    {
+        $this->app->setLocale('en');
+        $this->fakeOpenDota([]);
+
+        $response = $this->get(route('player.records', ['accountId' => self::ACCOUNT_ID]));
+
+        $response->assertOk();
+        $response->assertSee('Longest match');
+        $response->assertSee('Most kills');
+        $response->assertSee('Highest GPM');
+        $response->assertDontSee('Самый длинный матч');
+        $response->assertDontSee('Максимум убийств');
+    }
+
     public function test_records_fall_back_to_match_history_when_endpoint_is_empty(): void
     {
         $this->fakeOpenDota([]);

@@ -145,6 +145,7 @@ class DotaPlayerController extends Controller
                 'name' => $hero['name'] ?? $hero['localized_name'] ?? '?????',
                 'icon' => $hero['icon'] ?? null,
                 'image' => $hero['image'] ?? null,
+                'primary_attr' => $hero['primary_attr'] ?? null,
             ])
             ->sortBy(fn (array $hero) => $hero['localized_name'])
             ->values()

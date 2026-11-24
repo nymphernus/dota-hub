@@ -98,24 +98,28 @@
                                 @php $heroUrl = route('player.hero', ['accountId' => $player['account_id'], 'heroId' => $hero['hero_id']]); @endphp
                                 <a href="{{ $heroUrl }}" class="block">
                                     <div class="flex items-center gap-4 py-2 border-b border-ink-700/50 hover:bg-ink-800/50 px-2 transition">
-                                        <!-- Hero image -->
                                         <img src="{{ $hero['image'] }}" class="w-16 h-9 object-cover shrink-0 rounded-sm">
 
-                                        <!-- Hero name -->
-                                        <div class="w-40 shrink-0">
-                                            <div class="text-sm font-bold text-mist-200 truncate">{{ $hero['name'] }}</div>
-                                        </div>
+                                        <!-- Name and statistics -->
+                                        <div class="flex-1 min-w-0 flex items-center justify-between">
+                                            <div class="w-32 shrink-0 text-sm font-bold text-mist-200 truncate">{{ $hero['name'] }}</div>
 
-                                        <!-- Winrate (value + bar) -->
-                                        <div class="flex items-center gap-2 w-28 shrink-0">
-                                            <span class="text-xs font-bold {{ $hero['winrate'] >= 50 ? 'text-green-500' : 'text-red-500' }}">{{ $hero['winrate'] }}%</span>
-                                            <div class="w-full bg-ink-900 h-1 rounded overflow-hidden">
-                                                <div class="{{ $hero['winrate'] >= 50 ? 'bg-green-500' : 'bg-red-500' }} h-full" style="width: {{ $hero['winrate'] }}%"></div>
+                                            <div class="w-24 shrink-0 text-xs text-mist-400">
+                                                {{ $hero['games'] }} {{ __('ui.hero_games_word') }}<br>
+                                                <span class="text-green-500">{{ $hero['wins'] }} {{ __('ui.hero_win_short') }}</span> / <span class="text-red-500">{{ $hero['losses'] ?? max(0, (int) $hero['games'] - (int) $hero['wins']) }} {{ __('ui.hero_loss_short') }}</span>
+                                            </div>
+
+                                            <!-- Winrate (value + thin bar) -->
+                                            <div class="flex items-center gap-2 w-32 shrink-0">
+                                                <span class="text-xs font-bold {{ $hero['winrate'] >= 50 ? 'text-green-500' : 'text-red-500' }}">{{ $hero['winrate'] }}%</span>
+                                                <div class="w-full bg-ink-900 h-1.5 rounded overflow-hidden">
+                                                    <div class="{{ $hero['winrate'] >= 50 ? 'bg-green-500' : 'bg-red-500' }} h-full" style="width: {{ $hero['winrate'] }}%"></div>
+                                                </div>
                                             </div>
                                         </div>
 
-                                        <!-- Games bar (thin, like the original) -->
-                                        <div class="flex-1 bg-ink-900 h-1.5 rounded overflow-hidden ml-auto">
+                                        <!-- Yellow games bar (thin, not full width) -->
+                                        <div class="w-32 shrink-0 bg-ink-900 h-1.5 rounded overflow-hidden">
                                             <div class="bg-yellow-500 h-full" style="width: {{ ($hero['games'] / $maxHeroGames) * 100 }}%"></div>
                                         </div>
                                     </div>

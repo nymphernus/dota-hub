@@ -10,9 +10,14 @@
     $roleFilterOptions = ['' => __('ui.all_roles'), 'carry' => 'Carry', 'mid' => 'Mid', 'offlane' => 'Offlane', 'support' => 'Support', 'hard_support' => 'Hard Support'];
     $selectedHeroId = (int) ($filters['hero_id'] ?? 0);
     $selectedHero = collect($heroOptions ?? [])->firstWhere('hero_id', $selectedHeroId);
+    $hasActiveFilters = $selectedHeroId > 0
+        || ($filters['result'] ?? '') !== ''
+        || ($filters['mode'] ?? '') !== ''
+        || ($filters['role'] ?? '') !== ''
+        || ($filters['date'] ?? '') !== '';
 @endphp
 
-<section class="card mt-4 p-4 sm:p-5" x-data="{ heroModal: false }">
+<section class="card mt-4 p-4 sm:p-5" x-data="{ heroModal: false, hasActiveFilters: {{ $hasActiveFilters ? 'true' : 'false' }} }">
     <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
         <h2 class="section-heading">{{ __('ui.matches') }}</h2>
         <span class="badge border-line bg-ink-900/50 text-mist-400">{{ $matches->total() }} {{ __('ui.matches_word') }}</span>
@@ -65,38 +70,21 @@
             </div>
         </label>
 
-        @if ($selectedHeroId > 0 || ($filters['result'] ?? '') !== '' || ($filters['mode'] ?? '') !== '' || ($filters['role'] ?? '') !== '' || ($filters['date'] ?? '') !== '')
-            <a href="{{ route('player.matches', ['accountId' => $player['account_id']]) }}" class="button-ghost h-10 px-4">{{ __('ui.reset') }}</a>
-        @endif
+        <button type="button"
+                class="px-4 py-2 bg-ink-800 border border-line text-mist-300 rounded hover:bg-ink-700 transition"
+                :class="!hasActiveFilters ? 'opacity-50 cursor-not-allowed' : ''"
+                :disabled="!hasActiveFilters"
+                @click="window.location.href = '{{ route('player.matches', ['accountId' => $player['account_id']]) }}'">
+            {{ __('ui.reset') }}
+        </button>
     </form>
 
-    <!-- Hero picker modal -->
-    <div x-show="heroModal" x-cloak class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4" @click.self="heroModal=false">
-        <div class="w-full max-w-3xl border border-line bg-[#1c1e26] p-4">
-            <div class="mb-3 flex items-center justify-between">
-                <h3 class="text-sm font-semibold text-mist-200">{{ __('ui.pick_hero') }}</h3>
-                <button type="button" @click="heroModal=false" class="text-mist-400 hover:text-white">?</button>
-            </div>
-            <div class="mb-3">
-                <button type="button" class="border border-[#2d313e] px-2 py-1 text-xs text-mist-300 hover:bg-ink-900/40"
-                    @click="document.getElementById('hero_id_input').value='0'; document.getElementById('matches-filter-form').submit()">{{ __('ui.all_heroes') }}</button>
-            </div>
-            <div class="grid grid-cols-8 gap-1 max-h-[60vh] overflow-y-auto pr-1">
-                @foreach (($heroOptions ?? []) as $hero)
-                    @php $hid = (int) ($hero['hero_id'] ?? 0); $himg = $hero['image'] ?? $hero['icon'] ?? null; $hname = $hero['localized_name'] ?? $hero['name'] ?? __('ui.hero'); @endphp
-                    <button type="button" title="{{ $hname }}"
-                        class="aspect-square overflow-hidden border {{ $selectedHeroId === $hid ? 'border-accent-400' : 'border-[#2d313e]' }} bg-ink-800 hover:border-accent-400"
-                        @click="document.getElementById('hero_id_input').value='{{ $hid }}'; document.getElementById('matches-filter-form').submit()">
-                        @if ($himg)
-                            <img src="{{ $himg }}" alt="{{ $hname }}" class="h-full w-full object-cover" loading="lazy">
-                        @else
-                            <span class="grid h-full w-full place-items-center text-[10px] text-mist-400">{{ mb_substr($hname, 0, 1) }}</span>
-                        @endif
-                    </button>
-                @endforeach
-            </div>
-        </div>
-    </div>
+    @include('dota.partials.filter-hero', [
+        'heroOptions' => $heroOptions ?? [],
+        'selectedHeroId' => $selectedHeroId,
+        'formId' => 'matches-filter-form',
+        'inputId' => 'hero_id_input',
+    ])
 
     @if ($matches->isEmpty())
         <div class="mt-6 p-10 text-center text-sm text-mist-400">{{ __('ui.no_matches_filter') }}</div>
