@@ -99,8 +99,8 @@ if (heatmapPayload && heatmapRoot) {
                 const losses = Number(day.losses) || 0;
                 const i18n = window.dotahubI18n || {};
                 const gamesWord = i18n.games || 'games';
-                const winsWord = i18n.wins || 'W';
-                const lossesWord = i18n.losses || 'L';
+                const winsWord = i18n.wins_tooltip || i18n.wins || 'wins';
+                const lossesWord = i18n.losses_tooltip || i18n.losses || 'losses';
                 const noGamesWord = i18n.no_games || 'No games';
                 const futureWord = i18n.future_day || 'Future day';
                 const title = count > 0
@@ -180,10 +180,12 @@ if (wheelTooltip) {
     const showTooltip = (slice, event) => {
         wheelTooltip.replaceChildren();
 
+        const heroImage = slice.dataset.heroImage || '';
+
         const image = document.createElement('img');
-        image.src = slice.dataset.heroImage || '';
+        image.src = heroImage;
         image.alt = '';
-        image.className = 'w-20 h-11 object-cover rounded shadow border border-gray-600';
+        image.className = 'w-16 h-9 object-cover rounded';
 
         const content = document.createElement('div');
 
@@ -201,7 +203,7 @@ if (wheelTooltip) {
         wl.className = 'text-sm text-gray-400';
         const wins = Number(slice.dataset.heroWins || 0);
         const losses = Number(slice.dataset.heroLosses || 0);
-                const wLabel = (window.dotahubI18n && window.dotahubI18n.wins) || 'W';
+        const wLabel = (window.dotahubI18n && window.dotahubI18n.wins) || 'W';
         const lLabel = (window.dotahubI18n && window.dotahubI18n.losses) || 'L';
         wl.innerHTML = `<span class="text-green-500">${wins} ${wLabel}</span> / <span class="text-red-500">${losses} ${lLabel}</span>`;
 

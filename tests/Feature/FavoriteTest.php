@@ -77,6 +77,9 @@ class FavoriteTest extends TestCase
                 ->twice()
                 ->with($accountId, [])
                 ->andReturn(['total' => 0, 'groups' => []]);
+            $mock->shouldReceive('loadMatchDetails')
+                ->twice()
+                ->andReturnUsing(fn (array $matches): array => $matches);
         });
 
         $this->mock(SteamService::class, function ($mock): void {

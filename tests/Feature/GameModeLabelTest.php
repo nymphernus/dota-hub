@@ -12,7 +12,7 @@ class GameModeLabelTest extends TestCase
     {
         return [
             'all pick' => [1, 'All Pick'],
-            'ranked all pick' => [22, 'Ranked All Pick'],
+            'ranked all pick' => [22, 'Ranked'],
             'turbo' => [23, 'Turbo'],
             'single draft' => [4, 'Single Draft'],
             'ability draft' => [18, 'Ability Draft'],

@@ -24,6 +24,8 @@
             'games' => __('ui.games_word'),
             'wins' => __('ui.wins_short'),
             'losses' => __('ui.losses_short'),
+            'wins_tooltip' => __('ui.wins_tooltip'),
+            'losses_tooltip' => __('ui.losses_tooltip'),
             'no_games' => __('ui.no_games'),
             'future_day' => __('ui.future_day'),
         ];

@@ -48,7 +48,7 @@ class MatchTest extends TestCase
         $response->assertSee('Dire');
         $response->assertDontSee('Вы');
         $response->assertSee('Ranked');
-        $response->assertSee(__('ui.mode_1'));
+        $response->assertSee(__('ui.mode_22'));
         $response->assertSee('odd:bg-[#1c1e26] even:bg-[#111318]', false);
         $response->assertDontSee('P1');
         $response->assertDontSee('Party #', false);

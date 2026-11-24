@@ -4,6 +4,10 @@
 @section('description', __('ui.match_details_title', ['id' => $match['match_id']]))
 
 @php
+    $gameMode = (int) ($match['game_mode'] ?? 0);
+    $gameModeLabel = in_array($gameMode, [1, 2, 4, 5, 16, 18, 22, 23], true)
+        ? __('ui.mode_'.$gameMode)
+        : null;
     $profilePlayerId = request()->integer('player_id') ?: null;
     $radiantWin = $match['radiant_win'];
     $winner = $radiantWin ? 'Radiant' : 'Dire';
@@ -67,8 +71,8 @@
                             @elseif ($match['lobby_type_label'])
                                 <span class="badge border-line bg-ink-900/50 text-mist-300">{{ $match['lobby_type_label'] }}</span>
                             @endif
-                            @if ($match['game_mode_label'])
-                                <span class="badge border-line bg-ink-900/50 text-mist-300">{{ $match['game_mode_label'] }}</span>
+                            @if ($gameModeLabel)
+                                <span class="badge border-line bg-ink-900/50 text-mist-300">{{ $gameModeLabel }}</span>
                             @endif
                         </div>
 

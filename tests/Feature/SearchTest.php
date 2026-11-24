@@ -81,6 +81,8 @@ class SearchTest extends TestCase
             ]),
             'api.opendota.com/api/heroStats*' => Http::response([]),
             'api.opendota.com/api/*' => Http::response([], 404),
+            'api.steampowered.com/ISteamUser/GetPlayerSummaries/*' => Http::response(['response' => ['players' => []]]),
+            'api.stratz.com/graphql' => Http::response(['data' => []]),
         ]);
 
         $response = $this->post('/search', [
@@ -149,6 +151,8 @@ class SearchTest extends TestCase
                 ['id' => 1, 'localized_name' => 'Anti-Mage', 'img' => '/apps/dota2/images/heroes/antimage_full.png'],
             ]),
             'api.opendota.com/api/*' => Http::response([], 404),
+            'api.steampowered.com/ISteamUser/GetPlayerSummaries/*' => Http::response(['response' => ['players' => []]]),
+            'api.stratz.com/graphql' => Http::response(['data' => []]),
         ]);
 
         $response = $this->post('/search', ['query' => '76561198030654385']);

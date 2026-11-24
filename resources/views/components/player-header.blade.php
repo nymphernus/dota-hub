@@ -35,7 +35,7 @@
 
 <section class="card relative overflow-hidden min-h-[220px] !bg-transparent">
     @if ($bannerImage)
-        <div class="absolute inset-0 bg-cover bg-center blur-md opacity-40" style="background-image: url('{{ $bannerImage }}')" aria-hidden="true"></div>
+        <div class="absolute inset-0 bg-cover bg-center blur-md opacity-45" style="background-image: url('{{ $bannerImage }}')" aria-hidden="true"></div>
         <div class="absolute inset-0 bg-black/20"></div>
     @endif
     <div class="relative z-10 flex min-h-[220px] items-center px-4 py-4 sm:px-6 lg:px-8">
@@ -50,12 +50,7 @@
                 </div>
 
                 <div class="min-w-0">
-                    <div class="flex flex-wrap items-center gap-2">@if ($player['is_offline_cache'] ?? false)
-                            <span class="badge border-line bg-[#2d313e] text-mist-300">{{ __('ui.cached_offline') }}</span>
-                        @endif
-                    </div>
-
-                    <div class="mt-2 flex flex-wrap items-center gap-x-2" x-data="{ open: false }">
+                    <div class="flex flex-wrap items-center gap-x-2" x-data="{ open: false }">
                         <h1 class="min-w-0 truncate text-3xl font-semibold tracking-tight text-mist-200 sm:text-4xl">{{ $player['nickname'] }}</h1>
                         @if (session('steam_id'))
                             <button

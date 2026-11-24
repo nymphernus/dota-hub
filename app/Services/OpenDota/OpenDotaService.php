@@ -1036,7 +1036,8 @@ class OpenDotaService
                 continue;
             }
 
-            $mode = (string) ($match['game_mode_label'] ?? 'Неизвестно');
+            $mode = $this->gameModeLabel((int) ($match['game_mode'] ?? 0))
+                ?? (string) ($match['game_mode_label'] ?? 'Неизвестно');
             $side = ($match['is_radiant'] ?? ((int) ($match['player_slot'] ?? 0) < 128)) ? 'Radiant' : 'Dire';
             $win = (bool) ($match['win'] ?? false);
 
@@ -2009,17 +2010,11 @@ class OpenDotaService
 
     private function gameModeLabel(?int $mode): ?string
     {
-        return match ($mode) {
-            1 => __('ui.mode_1'),
-            2 => __('ui.mode_2'),
-            4 => __('ui.mode_4'),
-            5 => __('ui.mode_5'),
-            16 => __('ui.mode_16'),
-            18 => __('ui.mode_18'),
-            22 => __('ui.mode_22'),
-            23 => __('ui.mode_23'),
-            default => null,
-        };
+        if ($mode !== null && in_array($mode, [1, 2, 4, 5, 16, 18, 22, 23], true)) {
+            return __('ui.mode_'.$mode);
+        }
+
+        return null;
     }
 
     private function lobbyTypeLabel(?int $lobbyType): ?string
@@ -2214,6 +2209,34 @@ class OpenDotaService
         }
 
         return $transformed;
+    }
+
+    /**
+     * Lazily load detail fields for a bounded slice of cached match rows.
+     *
+     * Only the requested slice is allowed to hit OpenDota /matches/{id}; every
+     * older row keeps its basic hero/KDA data. Detail summaries are cached per
+     * match, so repeat views never spend additional API calls.
+     *
+     * @param  array<int, array<string, mixed>>  $matches
+     * @return array<int, array<string, mixed>>
+     */
+    public function loadMatchDetails(array $matches, int $accountId, int $limit, bool $allowExternalFetch = true): array
+    {
+        $rows = $this->enrichMatches(array_values($matches), $accountId, $limit, $allowExternalFetch);
+
+        foreach ($rows as &$row) {
+            $duration = (int) ($row['duration'] ?? 0);
+            $kills = (int) ($row['kills'] ?? 0);
+            $deaths = (int) ($row['deaths'] ?? 0);
+            $assists = (int) ($row['assists'] ?? 0);
+
+            $row['duration_label'] ??= $this->durationLabel($duration);
+            $row['kda'] ??= round(($kills + $assists) / max($deaths, 1), 2);
+        }
+        unset($row);
+
+        return $rows;
     }
 
     /**
@@ -2475,7 +2498,7 @@ class OpenDotaService
                 'hero_id' => $hero['id'],
                 'hero_name' => $hero['name'],
                 'hero_image' => $hero['image'],
-                'hero_icon' => $hero['icon'] ?? null,
+                'hero_icon' => $hero['icon'] ?? ($hero['minimap_icon'] ?? null),
                 'win' => $radiantWin === $isRadiant,
                 'is_radiant' => $isRadiant,
                 'start_time' => $startTime,

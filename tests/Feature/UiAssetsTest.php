@@ -25,7 +25,11 @@ class UiAssetsTest extends TestCase
         $this->assertStringContainsString('data-hero-wins="{{ $sector[\'wins\'] }}"', $source);
         $this->assertStringContainsString('data-hero-losses="{{ $sector[\'losses\'] }}"', $source);
         $this->assertStringContainsString('id="wheel-tooltip"', $source);
-        $this->assertStringContainsString("'icon' => \$hero['image'] ?? \$hero['minimap_icon'] ?? (\$hero['icon'] ?? '')", $source);
+        $this->assertStringContainsString("'icon' => \$hero['icon'] ?? \$hero['minimap_icon'] ?? ''", $source);
+        $this->assertStringContainsString("__('ui.wins_short_ru')", $source);
+        $this->assertStringContainsString("__('ui.losses_short_ru')", $source);
+        $this->assertStringContainsString("'image' => \$hero['image'] ?? \$hero['hero_image']", $source);
+        $this->assertStringContainsString("'image' => \$hero['image']", $source);
 
         $this->assertStringNotContainsString('<title>', $source);
         $this->assertStringNotContainsString('<canvas', $source);
@@ -35,9 +39,42 @@ class UiAssetsTest extends TestCase
 
         $this->assertStringContainsString("document.getElementById('wheel-tooltip')", $javascript);
         $this->assertStringContainsString("slice.dataset.heroImage", $javascript);
+        $this->assertStringContainsString("const heroImage = slice.dataset.heroImage || '';", $javascript);
+        $this->assertStringContainsString("image.className = 'w-16 h-9 object-cover rounded';", $javascript);
         $this->assertStringContainsString("slice.dataset.heroWins", $javascript);
         $this->assertStringContainsString("slice.dataset.heroLosses", $javascript);
         $this->assertStringContainsString("window.dotahubI18n", $javascript);
+    }
+
+    public function test_profile_header_tabs_and_lists_follow_current_layout(): void
+    {
+        $header = (string) file_get_contents(resource_path('views/components/player-header.blade.php'));
+        $profile = (string) file_get_contents(resource_path('views/dota/player.blade.php'));
+        $peers = (string) file_get_contents(resource_path('views/dota/peers.blade.php'));
+        $layout = (string) file_get_contents(resource_path('views/dota/layouts/profile.blade.php'));
+        $controller = (string) file_get_contents(app_path('Http/Controllers/DotaPlayerController.php'));
+
+        $this->assertStringContainsString('blur-md opacity-45', $header);
+        $this->assertStringNotContainsString("__('ui.cached_offline')", $header);
+        $this->assertStringContainsString("@include('components.player-tabs'", $layout);
+        $this->assertStringNotContainsString('player-tabs', $profile);
+
+        $this->assertStringContainsString('flex flex-col p-1', $profile);
+        $this->assertStringContainsString('h-9 w-16', $profile);
+        $this->assertStringContainsString('class="w-16 h-9 object-cover rounded"', $profile);
+        $this->assertStringContainsString('w-20 flex flex-col items-end gap-1', $profile);
+        $this->assertStringContainsString('w-20 flex flex-col items-end gap-1', $peers);
+        $this->assertStringContainsString('flex h-1 w-full mt-1 rounded overflow-hidden', $peers);
+        $this->assertStringContainsString('w-10 h-10 object-cover rounded-sm shrink-0', $peers);
+        $this->assertStringContainsString('bg-yellow-500', $peers);
+        $this->assertStringContainsString('maxPeerGames', $controller);
+        $this->assertStringContainsString('$peerGamesScale', $profile);
+        $this->assertStringContainsString('$maxPeerGames', $peers);
+        $this->assertStringNotContainsString("__('ui.games_together')", $peers);
+        $this->assertStringNotContainsString("__('ui.games_together')", $profile);
+
+        $this->assertStringContainsString("'pageTitle' => \$player['nickname'].' - '.__('ui.overview').' - DOTAHUB'", $controller);
+        $this->assertStringContainsString('loadMatchDetails(', $controller);
     }
 
     public function test_heatmap_uses_native_date_i18n_and_tooltip(): void
@@ -49,11 +86,43 @@ class UiAssetsTest extends TestCase
         $this->assertStringContainsString('(date.getUTCDay() + 6) % 7', $source);
         $this->assertStringContainsString('columnCount', $source);
         $this->assertStringContainsString('window.dotahubI18n', $source);
+        $this->assertStringContainsString('i18n.wins_tooltip', $source);
+        $this->assertStringContainsString('i18n.losses_tooltip', $source);
         $this->assertStringContainsString("document.getElementById('heatmap-tooltip')", $source);
         $this->assertStringContainsString('data-match-url-template=', $player);
         $this->assertStringContainsString("'date' => '__DATE__'", $player);
         $this->assertStringContainsString("matchUrlTemplate.replace('__DATE__', day.date)", $source);
         $this->assertStringNotContainsString('chart.js', $source);
+    }
+
+    public function test_mode_labels_and_activity_tooltip_wordings_follow_strict_translations(): void
+    {
+        $ru = (string) file_get_contents(lang_path('ru/ui.php'));
+        $en = (string) file_get_contents(lang_path('en/ui.php'));
+        $layout = (string) file_get_contents(resource_path('views/layouts/app.blade.php'));
+        $service = (string) file_get_contents(app_path('Services/OpenDota/OpenDotaService.php'));
+        $row = (string) file_get_contents(resource_path('views/dota/partials/match-row.blade.php'));
+        $matches = (string) file_get_contents(resource_path('views/dota/matches.blade.php'));
+        $matchPage = (string) file_get_contents(resource_path('views/dota/match.blade.php'));
+
+        $this->assertStringContainsString("'peers' => 'Союзники'", $ru);
+        $this->assertStringContainsString("'peers' => 'Allies'", $en);
+        $this->assertStringContainsString("'mode_1' => 'All Pick'", $ru);
+        $this->assertStringContainsString("'mode_22' => 'Ranked'", $ru);
+        $this->assertStringContainsString("'mode_23' => 'Turbo'", $ru);
+        $this->assertStringContainsString("'mode_1' => 'All Pick'", $en);
+        $this->assertStringContainsString("'mode_22' => 'Ranked'", $en);
+        $this->assertStringContainsString("'mode_23' => 'Turbo'", $en);
+        $this->assertStringContainsString("'wins_tooltip' => 'Побед'", $ru);
+        $this->assertStringContainsString("'losses_tooltip' => 'Поражений'", $ru);
+        $this->assertStringContainsString("'wins_tooltip' => __('ui.wins_tooltip')", $layout);
+        $this->assertStringContainsString("'losses_tooltip' => __('ui.losses_tooltip')", $layout);
+        $this->assertStringContainsString("__('ui.mode_'.\$mode)", $service);
+        $this->assertStringContainsString("__('ui.mode_'.\$gameMode)", $row);
+        $this->assertStringContainsString("__('ui.mode_'.\$rowMode)", $matches);
+        $this->assertStringContainsString("__('ui.mode_'.\$gameMode)", $matchPage);
+        $this->assertStringNotContainsString("{{ \$match['game_mode_label'] }}", $matchPage);
+        $this->assertStringContainsString("\$this->gameModeLabel((int) (\$match['game_mode'] ?? 0))", $service);
     }
 
     public function test_assets_use_dark_only_flat_palette(): void

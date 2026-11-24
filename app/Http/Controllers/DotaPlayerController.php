@@ -47,18 +47,45 @@ class DotaPlayerController extends Controller
         // match, including normal/turbo games. No lobby_type filter is applied
         // here — ranked-only filtering belongs to the records page alone.
         $heatmapMatches = array_values($history);
+        $recentHistory = array_slice($history, 0, 25);
 
-        $heroUsage = $this->heroUsage(array_slice($history, 0, 25));
+        // Details (items, net worth) are lazy: only the newest 25 cached
+        // matches may call OpenDota /matches/{id}. Older rows keep basic
+        // hero/KDA data. A fresh database profile never spends API calls here.
+        $recentMatches = $openDota->loadMatchDetails(
+            $recentHistory,
+            (int) ($player['account_id'] ?? $accountId),
+            25,
+            ! (bool) ($player['served_from_fresh_db'] ?? false),
+        );
+
+        // Role metadata is supplied by the lightweight recent-matches endpoint.
+        $roleById = [];
+        foreach ($player['matches'] ?? [] as $match) {
+            if (! empty($match['match_id'])) {
+                $roleById[(int) $match['match_id']] = $match;
+            }
+        }
+        foreach ($recentMatches as &$match) {
+            $basic = $roleById[(int) ($match['match_id'] ?? 0)] ?? null;
+            if (is_array($basic)) {
+                $match['lane_role'] ??= $basic['lane_role'] ?? null;
+                $match['role_key'] ??= $basic['role_key'] ?? null;
+            }
+        }
+        unset($match);
+
+        $heroUsage = $this->heroUsage($recentHistory);
         $heroUsageUnavailable = $heroUsage === [];
         $activityHeatmap = $this->activityHeatmap($heatmapMatches);
 
         return view('dota.player', [
             'player' => $player,
-            'pageTitle' => $player['nickname'].' - '.__('ui.overview'),
+            'pageTitle' => $player['nickname'].' - '.__('ui.overview').' - DOTAHUB',
             'activeTab' => 'overview',
             'profileSection' => __('ui.overview'),
             'winrate' => $player['winrate'],
-            'recentMatches' => array_slice($player['matches'], 0, 25),
+            'recentMatches' => $recentMatches,
             'history' => $history,
             'activityHeatmap' => $activityHeatmap,
             'heroUsage' => $heroUsage,
@@ -67,6 +94,7 @@ class DotaPlayerController extends Controller
             'rankStats' => $this->rankStats($history),
             'steamProfile' => $steam->summary($steamId),
             'isFavorite' => $this->favoriteState($accountId, $favorites),
+            'maxPeerGames' => max(array_merge([1], array_column($player['peers'] ?? [], 'games'))),
         ]);
     }
 
@@ -125,9 +153,9 @@ class DotaPlayerController extends Controller
 
         return view('dota.heroes', [
             'player' => $player,
-            'pageTitle' => $player['nickname'].' - ?????',
+            'pageTitle' => $player['nickname'].' - '.__('ui.heroes').' - DOTAHUB',
             'activeTab' => 'heroes',
-            'profileSection' => '?????',
+            'profileSection' => __('ui.heroes'),
             'steamProfile' => $steam->summary(
                 ($player['steam_id'] ?? '') ?: SteamId::steamId64FromAccountId($accountId)
             ),
@@ -157,13 +185,14 @@ class DotaPlayerController extends Controller
 
         return view('dota.peers', [
             'player' => $player,
-            'pageTitle' => $player['nickname'].' - '.__('ui.peers'),
+            'pageTitle' => $player['nickname'].' - '.__('ui.peers').' - DOTAHUB',
             'activeTab' => 'peers',
             'profileSection' => __('ui.peers'),
             'steamProfile' => $steam->summary(
                 ($player['steam_id'] ?? '') ?: SteamId::steamId64FromAccountId($accountId)
             ),
             'isFavorite' => $this->favoriteState($accountId, $favorites),
+            'maxPeerGames' => max(array_merge([1], array_column($player['peers'] ?? [], 'games'))),
         ]);
     }
 
@@ -190,7 +219,7 @@ class DotaPlayerController extends Controller
         // client-side and never reloads the profile.
         return view('dota.records', [
             'player' => $player,
-            'pageTitle' => $player['nickname'].' - '.__('ui.records'),
+            'pageTitle' => $player['nickname'].' - '.__('ui.records').' - DOTAHUB',
             'activeTab' => 'records',
             'profileSection' => __('ui.records'),
             'records' => $openDota->playerRecords($accountId, $history, false),
@@ -327,7 +356,7 @@ class DotaPlayerController extends Controller
 
         return view('dota.matches', [
             'player' => $player,
-            'pageTitle' => $player['nickname'].' - '.__('ui.matches'),
+            'pageTitle' => $player['nickname'].' - '.__('ui.matches').' - DOTAHUB',
             'activeTab' => 'matches',
             'profileSection' => __('ui.matches'),
             'steamProfile' => $steam->summary($steamId),
@@ -484,7 +513,7 @@ class DotaPlayerController extends Controller
                 'hero_id' => $heroId,
                 'name' => $match['hero_name'] ?? 'Hero #'.$heroId,
                 'image' => $match['hero_image'] ?? null,
-                'icon' => $match['hero_icon'] ?? ($match['hero_image'] ?? null),
+                'icon' => $match['hero_icon'] ?? null,
                 'primary_attr' => null,
                 'games' => 0,
                 'wins' => 0,

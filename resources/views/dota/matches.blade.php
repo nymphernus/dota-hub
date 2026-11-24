@@ -121,6 +121,10 @@
                                 ? route('player.hero', ['accountId' => $player['account_id'], 'heroId' => $match['hero_id']])
                                 : null;
                             $items = $match['items'] ?? [];
+                            $rowMode = (int) ($match['game_mode'] ?? 0);
+                            $rowModeLabel = in_array($rowMode, [1, 2, 4, 5, 16, 18, 22, 23], true)
+                                ? __('ui.mode_'.$rowMode)
+                                : ($match['match_type_label'] ?? null);
                         @endphp
                         <tr class="group transition odd:bg-[#1c1e26] even:bg-[#111318] hover:bg-ink-700/60 text-mist-200"
                             @if ($matchUrl)
@@ -156,7 +160,7 @@
                                         @else
                                             <span class="block truncate text-[13px] font-bold leading-tight text-mist-200">{{ $match['hero_name'] ?? __('ui.hero') }}</span>
                                         @endif
-                                        <div class="text-[10px] text-mist-500">{{ $match['duration_label'] ?? '' }} @if(!empty($match['game_mode_label'] ?? $match['match_type_label'])) ? {{ $match['game_mode_label'] ?? $match['match_type_label'] }} @endif</div>
+                                        <div class="text-[10px] text-mist-500">{{ $match['duration_label'] ?? '' }} @if(!empty($rowModeLabel)) ? {{ $rowModeLabel }} @endif</div>
                                     </div>
                                 </div>
                             </td>
