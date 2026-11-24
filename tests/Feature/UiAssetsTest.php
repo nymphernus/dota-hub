@@ -404,6 +404,12 @@ class UiAssetsTest extends TestCase
         $this->assertStringNotContainsString('migrate:fresh', $entrypoint);
         $this->assertStringNotContainsString('db:wipe', $entrypoint);
 
+        $this->assertStringContainsString('chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache', $entrypoint);
+        $this->assertStringContainsString('chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache', $entrypoint);
+        $this->assertStringNotContainsString('chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache 2>/dev/null || true', $entrypoint);
+        $this->assertStringNotContainsString('chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache 2>/dev/null || true', $entrypoint);
+
+
         $this->assertStringContainsString('хранятся в PostgreSQL бессрочно', $readme);
         $this->assertStringContainsString('инкрементально', $readme);
         $this->assertStringNotContainsString('Сброс кэша профиля', $readme);

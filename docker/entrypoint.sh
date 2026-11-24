@@ -15,8 +15,11 @@ mkdir -p \
     storage/framework/sessions \
     storage/framework/views \
     storage/logs
-chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache 2>/dev/null || true
-chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache 2>/dev/null || true
+# Fail fast if permissions cannot be prepared: a silent failure here causes
+# "Permission denied" when Laravel writes cached views/data at runtime.
+chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+log "Storage permissions prepared."
 
 # ---------------------------------------------------------------------------
 # Application key
