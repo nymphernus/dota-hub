@@ -474,10 +474,9 @@ class DotaPlayerController extends Controller
      * @param  array<int, array<string, mixed>>  $matches
      * @return array<int, array<string, mixed>>
      */
-    private function heroUsage(array $matches, OpenDotaService $openDota): array
+    private function heroUsage(array $matches): array
     {
         $aggregated = [];
-        $heroStats = $openDota->heroStats();
 
         foreach ($matches as $match) {
             $heroId = (int) ($match['hero_id'] ?? 0);
@@ -486,13 +485,12 @@ class DotaPlayerController extends Controller
                 continue;
             }
 
-            $meta = $heroStats[$heroId] ?? [];
             $aggregated[$heroId] ??= [
                 'hero_id' => $heroId,
-                'name' => $match['hero_name'] ?? ($meta['localized_name'] ?? $meta['name'] ?? 'Hero #'.$heroId),
-                'image' => $match['hero_image'] ?? ($meta['image'] ?? null),
-                'icon' => $match['hero_icon'] ?? ($meta['icon'] ?? null),
-                'primary_attr' => $meta['primary_attr'] ?? null,
+                'name' => $match['hero_name'] ?? 'Hero #'.$heroId,
+                'image' => $match['hero_image'] ?? null,
+                'icon' => $match['hero_icon'] ?? ($match['hero_image'] ?? null),
+                'primary_attr' => null,
                 'games' => 0,
                 'wins' => 0,
             ];

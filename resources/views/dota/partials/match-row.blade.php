@@ -35,16 +35,16 @@
     $modeLabel = $match['game_mode_label'] ?? $match['match_type_label'] ?? null;
     if ($modeLabel === null || $modeLabel === '') {
         $modeLabel = match ($gameMode) {
-            1 => 'All Pick',
-            2 => 'Captains Mode',
-            3 => 'Random Draft',
-            4 => 'Single Draft',
-            5 => 'All Random',
-            11 => 'Mid Only',
-            16 => 'Captains Draft',
-            18 => 'Ability Draft',
-            22 => 'Ranked',
-            23 => 'Turbo',
+            1 => __('ui.mode_all_pick'),
+            2 => __('ui.mode_captains_mode'),
+            3 => __('ui.mode_random_draft'),
+            4 => __('ui.mode_single_draft'),
+            5 => __('ui.mode_all_random'),
+            11 => __('ui.mode_mid_only'),
+            16 => __('ui.mode_captains_mode'),
+            18 => __('ui.mode_ability_draft'),
+            22 => __('ui.mode_ranked'),
+            23 => __('ui.mode_turbo'),
             default => null,
         };
     }
@@ -110,7 +110,7 @@
                 <div class="mt-1 flex flex-wrap items-center gap-1.5 text-[9px] text-mist-500">
                     <span class="font-mono">{{ $match['duration_label'] ?? '—' }}</span>
                     @if ($modeLabel)
-                        <span class="rounded px-1.5 py-0.5 text-[9px] font-semibold tracking-wide {{ $modeClass }}">{{ $isRanked ? 'Ranked' : $modeLabel }}</span>
+                        <span class="rounded px-1.5 py-0.5 text-[9px] font-semibold tracking-wide {{ $modeClass }}">{{ $isRanked ? __('ui.ranked') : $modeLabel }}</span>
                     @endif
                 </div>
             </div>
