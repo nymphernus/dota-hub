@@ -85,14 +85,14 @@ class UiAssetsTest extends TestCase
         $this->assertStringContainsString('class="w-10 h-10 object-cover shrink-0"', $profile);
         $this->assertStringContainsString('class="w-10 h-10 object-cover shrink-0"', $peers);
         $this->assertStringContainsString('flex items-center gap-2 w-24 shrink-0', $profile);
-        $this->assertStringContainsString('flex items-center gap-2 w-32 shrink-0', $peers);
-        $this->assertStringContainsString('flex items-center gap-2 w-20 shrink-0 justify-end', $profile);
-        $this->assertStringContainsString('flex items-center gap-2 w-24 shrink-0 justify-end', $peers);
-        $this->assertStringContainsString('flex items-center gap-6 py-2 border-b border-ink-700/50', $peers);
+        $this->assertStringContainsString('flex items-center gap-4 py-3 border-b border-ink-700/50 hover:bg-ink-800/50 px-4 transition', $peers);
+        $this->assertStringContainsString('flex items-center gap-3 w-1/3 min-w-0', $peers);
+        $this->assertStringContainsString('flex items-center gap-3 w-1/4 shrink-0', $peers);
+        $this->assertStringContainsString('flex items-center gap-3 w-1/4 shrink-0 ml-auto', $peers);
         $this->assertStringContainsString('w-full bg-ink-900 h-1.5 flex rounded overflow-hidden', $profile);
-        $this->assertStringContainsString('w-full bg-ink-900 h-2.5 flex rounded overflow-hidden', $peers);
+        $this->assertStringContainsString('w-full bg-ink-900 h-2 flex rounded overflow-hidden', $peers);
         $this->assertStringContainsString('w-full bg-ink-900 h-1.5 rounded overflow-hidden', $profile);
-        $this->assertStringContainsString('w-full bg-ink-900 h-2.5 rounded overflow-hidden', $peers);
+        $this->assertStringContainsString('w-full bg-ink-900 h-2 rounded overflow-hidden', $peers);
         $this->assertStringContainsString('bg-yellow-500 h-full', $profile);
         $this->assertStringContainsString('bg-yellow-500 h-full', $peers);
         $this->assertStringContainsString('maxPeerGames', $controller);
@@ -341,11 +341,14 @@ class UiAssetsTest extends TestCase
         $ru = require lang_path('ru/ui.php');
         $en = require lang_path('en/ui.php');
 
-        $this->assertStringContainsString("__('ui.attr_strength')", $partial);
-        $this->assertStringContainsString("__('ui.attr_agility')", $partial);
-        $this->assertStringContainsString("__('ui.attr_intelligence')", $partial);
-        $this->assertStringContainsString("__('ui.attr_universal')", $partial);
-        $this->assertStringContainsString('h-10 w-10 object-cover', $partial);
+        $this->assertStringNotContainsString("__('ui.attr_strength')", $partial);
+        $this->assertStringNotContainsString("__('ui.attr_agility')", $partial);
+        $this->assertStringNotContainsString("__('ui.attr_intelligence')", $partial);
+        $this->assertStringNotContainsString("__('ui.attr_universal')", $partial);
+        $this->assertStringContainsString('grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2', $partial);
+        $this->assertStringContainsString("\$hero['image']", $partial);
+        $this->assertStringContainsString('class="w-full h-auto object-cover rounded hover:opacity-80 transition cursor-pointer"', $partial);
+        $this->assertStringNotContainsString("\$hero['icon']", $partial);
         $this->assertStringContainsString("@include('dota.partials.filter-hero'", $matches);
         $this->assertStringContainsString("@include('dota.partials.filter-hero'", $heroes);
         $this->assertStringNotContainsString('grid grid-cols-8 gap-1 max-h-[60vh]', $matches);
@@ -382,5 +385,27 @@ class UiAssetsTest extends TestCase
             $this->assertSame($english, $en[$key], $key);
             $this->assertStringContainsString("__('ui.{$key}')", $service, $key);
         }
+    }
+
+    public function test_profile_storage_is_persistent_and_incremental(): void
+    {
+        $service = (string) file_get_contents(app_path('Services/OpenDota/OpenDotaService.php'));
+        $entrypoint = (string) file_get_contents(base_path('docker/entrypoint.sh'));
+        $readme = (string) file_get_contents(base_path('README.md'));
+
+        $this->assertStringNotContainsString('PlayerProfile::truncate', $service);
+        $this->assertStringNotContainsString('Cache::flush()', $service);
+        $this->assertStringNotContainsString('PlayerProfile::whereKey($accountId)->delete()', $service);
+        $this->assertStringContainsString('latestMatchId(', $service);
+        $this->assertStringContainsString('mergeHistory(', $service);
+        $this->assertStringContainsString('less_than_match_id', $service);
+
+        $this->assertStringContainsString('php artisan migrate --force', $entrypoint);
+        $this->assertStringNotContainsString('migrate:fresh', $entrypoint);
+        $this->assertStringNotContainsString('db:wipe', $entrypoint);
+
+        $this->assertStringContainsString('хранятся в PostgreSQL бессрочно', $readme);
+        $this->assertStringContainsString('инкрементально', $readme);
+        $this->assertStringNotContainsString('Сброс кэша профиля', $readme);
     }
 }

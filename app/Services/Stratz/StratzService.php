@@ -330,14 +330,14 @@ class StratzService
      *
      * @return array<int, array<string, mixed>>
      */
-    public function playerMatches(int $accountId, int $take = 100, int $maxMatches = 0): array
+    public function playerMatches(int $accountId, int $take = 100, int $maxMatches = 0, bool $fresh = false): array
     {
         if (! $this->enabled() || $accountId <= 0) {
             return [];
         }
 
         $cacheKey = "stratz:player:{$accountId}:matches:v1";
-        $cached = Cache::get($cacheKey);
+        $cached = $fresh ? null : Cache::get($cacheKey);
         if (is_array($cached)) {
             return $cached;
         }
@@ -425,7 +425,7 @@ class StratzService
             }
         }
 
-        if ($all !== []) {
+        if ($all !== [] && ! $fresh) {
             Cache::put($cacheKey, $all, (int) config('stats.cache.dota_player', 3600));
         }
 

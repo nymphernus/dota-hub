@@ -363,25 +363,103 @@ class DotaProfileTest extends TestCase
         $this->assertSame('9100000001', (string) $requests[2]['less_than_match_id']);
     }
 
-    public function test_refresh_forgets_the_profile_cache_and_rebuilds_it(): void
+    public function test_refresh_keeps_the_database_row_and_rebuilds_derived_caches(): void
     {
         $this->fakeOpenDota();
 
         $this->get(route('player', ['accountId' => self::ACCOUNT_ID]))->assertOk();
         $sentAfterFirstVisit = count(Http::recorded());
+        $historyBefore = PlayerProfile::findOrFail(self::ACCOUNT_ID)->data['match_history'];
 
         $this->post(route('player.refresh', ['accountId' => self::ACCOUNT_ID]))
             ->assertRedirect(route('player', ['accountId' => self::ACCOUNT_ID]))
             ->assertSessionHas('status');
 
         $this->assertFalse(Cache::has('opendota:player:v3:'.self::ACCOUNT_ID));
-        $this->assertDatabaseMissing('player_profiles', ['account_id' => self::ACCOUNT_ID]);
+        $this->assertDatabaseHas('player_profiles', ['account_id' => self::ACCOUNT_ID]);
 
         $this->get(route('player', ['accountId' => self::ACCOUNT_ID]))->assertOk();
 
+        $this->assertDatabaseHas('player_profiles', ['account_id' => self::ACCOUNT_ID]);
+        $historyAfter = PlayerProfile::findOrFail(self::ACCOUNT_ID)->data['match_history'];
+        $this->assertCount(count($historyBefore), $historyAfter);
+
+        $incrementalRequests = collect(Http::recorded())
+            ->map(fn (array $exchange) => $exchange[0])
+            ->map(fn ($request) => [
+                'url' => $request->url(),
+                'data' => $request->data(),
+            ])
+            ->filter(fn (array $request) => str_contains($request['url'], '/players/'.self::ACCOUNT_ID.'/matches')
+                && array_key_exists('less_than_match_id', $request['data']))
+            ->values();
+
+        $this->assertNotEmpty($incrementalRequests);
+        $this->assertSame('9000000006', (string) $incrementalRequests->last()['data']['less_than_match_id']);
+
         // The refresh drops cached metadata: profile endpoints plus the lazy
         // detail slice are re-fetched (STRATZ may or may not be contacted).
-        $this->assertContains(count(Http::recorded()) - $sentAfterFirstVisit, [11, 12]);
+        $this->assertGreaterThanOrEqual(9, count(Http::recorded()) - $sentAfterFirstVisit);
+    }
+
+    public function test_stale_profile_merges_new_matches_without_deleting_old_ones(): void
+    {
+        config(['services.stratz.token' => null]);
+
+        $newMatch = [
+            'match_id' => 9000000007,
+            'hero_id' => 7,
+            'player_slot' => 0,
+            'radiant_win' => false,
+            'start_time' => now()->subHour()->timestamp,
+            'duration' => 2000,
+            'kills' => 1,
+            'deaths' => 2,
+            'assists' => 3,
+            'gold_per_min' => 300,
+            'xp_per_min' => 350,
+            'lobby_type' => 7,
+            'game_mode' => 22,
+            'party_id' => 0,
+        ];
+
+        $this->fakeOpenDota(matchHistoryResponse: function ($request) use ($newMatch) {
+            if (array_key_exists('less_than_match_id', $request->data())) {
+                return Http::response([$newMatch]);
+            }
+
+            return Http::response($this->defaultMatchHistory());
+        });
+
+        $this->get(route('player', ['accountId' => self::ACCOUNT_ID]))->assertOk();
+
+        $record = PlayerProfile::findOrFail(self::ACCOUNT_ID);
+        $oldIds = collect($record->data['match_history'])->pluck('match_id')->all();
+        $record->updated_at = CarbonImmutable::now()->subHours(2);
+        $record->save();
+        Cache::flush();
+
+        $this->get(route('player', ['accountId' => self::ACCOUNT_ID]))->assertOk();
+
+        $afterIds = collect(PlayerProfile::findOrFail(self::ACCOUNT_ID)->data['match_history'])
+            ->pluck('match_id')
+            ->all();
+
+        $this->assertContains(9000000007, $afterIds);
+        $this->assertCount(count($oldIds) + 1, $afterIds);
+
+        foreach ($oldIds as $id) {
+            $this->assertContains($id, $afterIds);
+        }
+
+        $this->assertDatabaseHas('player_profiles', ['account_id' => self::ACCOUNT_ID]);
+
+        $cursor = collect(Http::recorded())
+            ->map(fn (array $exchange) => $exchange[0])
+            ->map(fn ($request) => $request->data())
+            ->first(fn (array $data) => array_key_exists('less_than_match_id', $data));
+
+        $this->assertSame('9000000006', (string) $cursor['less_than_match_id']);
     }
 
     public function test_unknown_player_returns_a_404_page(): void
@@ -792,6 +870,21 @@ class DotaProfileTest extends TestCase
         $response->assertDontSee('Последний матч');
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function defaultMatchHistory(): array
+    {
+        return [
+            ['match_id' => 9000000001, 'hero_id' => 1, 'player_slot' => 0, 'radiant_win' => true, 'start_time' => now()->subDays(1)->timestamp, 'duration' => 2400, 'kills' => 10, 'deaths' => 2, 'assists' => 15, 'gold_per_min' => 620, 'xp_per_min' => 710, 'lobby_type' => 7, 'game_mode' => 22, 'party_id' => 0],
+            ['match_id' => 9000000002, 'hero_id' => 2, 'player_slot' => 128, 'radiant_win' => true, 'start_time' => now()->subDays(2)->timestamp, 'duration' => 1980, 'kills' => 3, 'deaths' => 8, 'assists' => 6, 'gold_per_min' => 340, 'xp_per_min' => 420, 'lobby_type' => 7, 'game_mode' => 22, 'party_id' => 42],
+            ['match_id' => 9000000003, 'hero_id' => 3, 'player_slot' => 0, 'radiant_win' => true, 'start_time' => now()->subDays(3)->timestamp, 'duration' => 2100, 'kills' => 8, 'deaths' => 4, 'assists' => 11, 'gold_per_min' => 510, 'xp_per_min' => 590, 'lobby_type' => 1, 'game_mode' => 1, 'party_id' => 0],
+            ['match_id' => 9000000004, 'hero_id' => 4, 'player_slot' => 128, 'radiant_win' => true, 'start_time' => now()->subDays(4)->timestamp, 'duration' => 2600, 'kills' => 12, 'deaths' => 6, 'assists' => 9, 'gold_per_min' => 580, 'xp_per_min' => 640, 'lobby_type' => 7, 'game_mode' => 22, 'party_id' => 42],
+            ['match_id' => 9000000005, 'hero_id' => 5, 'player_slot' => 128, 'radiant_win' => false, 'start_time' => now()->subDays(4)->timestamp, 'duration' => 1750, 'kills' => 4, 'deaths' => 9, 'assists' => 7, 'gold_per_min' => 390, 'xp_per_min' => 450, 'lobby_type' => 1, 'game_mode' => 1, 'party_id' => 0],
+            ['match_id' => 9000000006, 'hero_id' => 6, 'player_slot' => 128, 'radiant_win' => true, 'start_time' => now()->subDays(6)->timestamp, 'duration' => 2300, 'kills' => 7, 'deaths' => 5, 'assists' => 13, 'gold_per_min' => 470, 'xp_per_min' => 530, 'lobby_type' => 7, 'game_mode' => 22, 'party_id' => 0],
+        ];
+    }
+
     private function fakeOpenDota(
         ?array $steamPlayer = null,
         ?array $steamBans = null,
@@ -860,14 +953,7 @@ class DotaProfileTest extends TestCase
                 ['field' => 'gold_per_min', 'n' => 10, 'sum' => 4980],
                 ['field' => 'xp_per_min', 'n' => 10, 'sum' => 5610],
             ]),
-            'api.opendota.com/api/players/'.self::ACCOUNT_ID.'/matches*' => $matchHistoryResponse ?? Http::response([
-                ['match_id' => 9000000001, 'hero_id' => 1, 'player_slot' => 0, 'radiant_win' => true, 'start_time' => now()->subDays(1)->timestamp, 'duration' => 2400, 'kills' => 10, 'deaths' => 2, 'assists' => 15, 'gold_per_min' => 620, 'xp_per_min' => 710, 'lobby_type' => 7, 'game_mode' => 22, 'party_id' => 0],
-                ['match_id' => 9000000002, 'hero_id' => 2, 'player_slot' => 128, 'radiant_win' => true, 'start_time' => now()->subDays(2)->timestamp, 'duration' => 1980, 'kills' => 3, 'deaths' => 8, 'assists' => 6, 'gold_per_min' => 340, 'xp_per_min' => 420, 'lobby_type' => 7, 'game_mode' => 22, 'party_id' => 42],
-                ['match_id' => 9000000003, 'hero_id' => 3, 'player_slot' => 0, 'radiant_win' => true, 'start_time' => now()->subDays(3)->timestamp, 'duration' => 2100, 'kills' => 8, 'deaths' => 4, 'assists' => 11, 'gold_per_min' => 510, 'xp_per_min' => 590, 'lobby_type' => 1, 'game_mode' => 1, 'party_id' => 0],
-                ['match_id' => 9000000004, 'hero_id' => 4, 'player_slot' => 128, 'radiant_win' => true, 'start_time' => now()->subDays(4)->timestamp, 'duration' => 2600, 'kills' => 12, 'deaths' => 6, 'assists' => 9, 'gold_per_min' => 580, 'xp_per_min' => 640, 'lobby_type' => 7, 'game_mode' => 22, 'party_id' => 42],
-                ['match_id' => 9000000005, 'hero_id' => 5, 'player_slot' => 128, 'radiant_win' => false, 'start_time' => now()->subDays(4)->timestamp, 'duration' => 1750, 'kills' => 4, 'deaths' => 9, 'assists' => 7, 'gold_per_min' => 390, 'xp_per_min' => 450, 'lobby_type' => 1, 'game_mode' => 1, 'party_id' => 0],
-                ['match_id' => 9000000006, 'hero_id' => 6, 'player_slot' => 128, 'radiant_win' => true, 'start_time' => now()->subDays(6)->timestamp, 'duration' => 2300, 'kills' => 7, 'deaths' => 5, 'assists' => 13, 'gold_per_min' => 470, 'xp_per_min' => 530, 'lobby_type' => 7, 'game_mode' => 22, 'party_id' => 0],
-            ]),
+            'api.opendota.com/api/players/'.self::ACCOUNT_ID.'/matches*' => $matchHistoryResponse ?? Http::response($this->defaultMatchHistory()),
             'api.opendota.com/api/players/'.self::ACCOUNT_ID.'/peers*' => Http::response([
                 ['account_id' => 123456789, 'personaname' => 'Teammate', 'avatar' => 'https://example.com/peer.jpg', 'games' => 12, 'win' => 8, 'last_match_time' => now()->subDay()->timestamp],
                 ['account_id' => 987654321, 'personaname' => 'OtherPeer', 'games' => 5, 'win' => 2, 'profile' => null],

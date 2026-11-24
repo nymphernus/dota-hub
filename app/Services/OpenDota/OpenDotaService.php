@@ -188,7 +188,11 @@ class OpenDotaService
         }
 
         try {
-            $profile = $this->fetchPlayer($accountId, $ttl);
+            $existingHistory = $record !== null && is_array($record->data['match_history'] ?? null)
+                ? $record->data['match_history']
+                : [];
+
+            $profile = $this->fetchPlayer($accountId, $ttl, $existingHistory);
             $this->storeProfile($accountId, $profile);
             $profile['name_history'] = $this->nameHistory($accountId);
 
@@ -360,9 +364,14 @@ class OpenDotaService
         $wins = 0;
         $losses = 0;
         foreach ($ranked as $match) {
-            $radiantWin = (bool) ($match['radiant_win'] ?? false);
-            $isRadiant = (int) ($match['player_slot'] ?? 0) < 128;
-            if ($radiantWin === $isRadiant) {
+            $isRadiant = array_key_exists('is_radiant', $match)
+                ? (bool) $match['is_radiant']
+                : (int) ($match['player_slot'] ?? 0) < 128;
+            $won = array_key_exists('win', $match)
+                ? (bool) $match['win']
+                : (bool) ($match['radiant_win'] ?? false) === $isRadiant;
+
+            if ($won) {
                 $wins++;
             } else {
                 $losses++;
@@ -401,7 +410,7 @@ class OpenDotaService
     /**
      * @return array<string, mixed>
      */
-    private function fetchPlayer(int $accountId, int $ttl): array
+    private function fetchPlayer(int $accountId, int $ttl, array $existingHistory = []): array
     {
         $profileResponse = $this->client->get("players/{$accountId}");
 
@@ -417,19 +426,9 @@ class OpenDotaService
         $recentMatches = $this->optionalGet('players/'.$accountId.'/recentMatches');
         $heroStats = $this->optionalGet('players/'.$accountId.'/heroes');
         $totals = $this->optionalGet('players/'.$accountId.'/totals');
-        $matchHistory = $this->fetchMatchHistory($accountId);
 
-        // OpenDota's hero endpoint is not always populated. STRATZ exposes the
-        // same aggregate through GraphQL, so use it before showing an empty pool.
-        if ($heroStats === []) {
-            $heroStats = $this->stratz->playerHeroes($accountId);
-        }
-
-        // If STRATZ is blocked (403 Cloudflare) or returns no rows, aggregate the
-        // cached match history instead of leaving "Most Played Heroes" empty.
-        if ($heroStats === []) {
-            $heroStats = $this->heroesFromHistory($matchHistory);
-        }
+        $lastMatchId = $this->latestMatchId($existingHistory);
+        $newMatches = $this->fetchMatchHistory($accountId, $lastMatchId, $recentMatches);
 
         $peers = $recentMatches === []
             ? []
@@ -439,12 +438,27 @@ class OpenDotaService
         $matches = $this->transformMatches($recentMatches, $heroes);
         $matches = $this->enrichMatches($matches, $accountId, self::RECENT_MATCH_DETAILS);
         $favoriteHeroes = $this->peersFavoriteHeroes(array_column($matches, 'match_id'), $heroes);
-        $history = $this->transformHistory($matchHistory, $heroes);
 
-        // The history endpoint can be unavailable even when recent matches are
-        // not. The last 20 games are still a useful (if shorter) fallback.
-        if ($history === []) {
+        $history = $this->transformHistory($newMatches, $heroes);
+
+        // Never replace stored games with an empty response. New rows are merged
+        // on top of the persisted history, so restarts and refreshes only add data.
+        if ($history !== [] || $existingHistory !== []) {
+            $history = $this->mergeHistory($existingHistory, $history);
+        } else {
             $history = $this->transformHistory($recentMatches, $heroes);
+        }
+
+        // OpenDota's hero endpoint is not always populated. STRATZ exposes the
+        // same aggregate through GraphQL, so use it before showing an empty pool.
+        if ($heroStats === []) {
+            $heroStats = $this->stratz->playerHeroes($accountId);
+        }
+
+        // If STRATZ is blocked (403 Cloudflare) or returns no rows, aggregate the
+        // persisted history instead of leaving "Most Played Heroes" empty.
+        if ($heroStats === []) {
+            $heroStats = $this->heroesFromHistory($history);
         }
 
         $totalsByField = $this->indexTotals($totals);
@@ -475,7 +489,7 @@ class OpenDotaService
         $rank = $this->rank($rankTier);
         $mmr = $this->estimateMmr(
             $rankTier,
-            $matchHistory,
+            $history,
             isset($profileResponse['mmr_estimate']['estimate'])
                 ? (int) $profileResponse['mmr_estimate']['estimate']
                 : null,
@@ -679,9 +693,16 @@ class OpenDotaService
 
     public function forget(int $accountId): void
     {
-        PlayerProfile::whereKey($accountId)->delete();
+        // The profile row is permanent. Refresh only expires its freshness and
+        // drops derived caches; the next load merges new matches into the
+        // persisted match_history instead of rebuilding it from scratch.
+        PlayerProfile::whereKey($accountId)->update([
+            'updated_at' => CarbonImmutable::now()->subSeconds((int) config('stats.cache.dota_profile', 3600) + 1),
+        ]);
+
         Cache::forget($this->cacheKey($accountId));
         Cache::forget($this->playerHeaderCacheKey($accountId));
+        Cache::forget("stratz:player:{$accountId}:matches:v1");
         Cache::forget("opendota:records:v1:{$accountId}");
         Cache::forget("opendota:records:v2:{$accountId}");
         Cache::forget("opendota:records:v4:{$accountId}:all");
@@ -1367,13 +1388,71 @@ class OpenDotaService
     }
 
     /**
-     * Request the full match history. Prefer STRATZ (no OpenDota daily limit),
-     * fallback to OpenDota pagination when STRATZ is unavailable.
+     * Highest stored match id. Used as the incremental cursor so a refresh only
+     * asks for games played after the last saved one.
+     */
+    private function latestMatchId(array $history): ?int
+    {
+        $latest = null;
+
+        foreach ($history as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+
+            $id = (int) ($row['match_id'] ?? 0);
+
+            if ($id > 0 && ($latest === null || $id > $latest)) {
+                $latest = $id;
+            }
+        }
+
+        return $latest;
+    }
+
+    /**
+     * Merge newly fetched games into the persisted history without ever dropping
+     * an existing row. New rows win when the same match id appears in both.
      *
+     * @param  array<int, array<string, mixed>>  $existing
+     * @param  array<int, array<string, mixed>>  $new
      * @return array<int, array<string, mixed>>
      */
-    private function fetchMatchHistory(int $accountId): array
+    private function mergeHistory(array $existing, array $new): array
     {
+        $merged = [];
+
+        foreach ([$existing, $new] as $batch) {
+            foreach ($batch as $index => $row) {
+                if (! is_array($row)) {
+                    continue;
+                }
+
+                $matchId = $row['match_id'] ?? null;
+                $key = $matchId !== null ? 'id:'.(string) $matchId : 'row:'.$index;
+                $merged[$key] = $row;
+            }
+        }
+
+        $rows = array_values($merged);
+        usort($rows, static fn (array $a, array $b): int => (int) ($b['start_time'] ?? 0) <=> (int) ($a['start_time'] ?? 0));
+
+        return $rows;
+    }
+
+    /**
+     * Request the full match history on a cold profile, or only the games newer
+     * than the stored cursor when the database already has history.
+     *
+     * @param  array<int, array<string, mixed>>  $recentMatches
+     * @return array<int, array<string, mixed>>
+     */
+    private function fetchMatchHistory(int $accountId, ?int $lastMatchId = null, array $recentMatches = []): array
+    {
+        if ($lastMatchId !== null) {
+            return $this->fetchNewMatchesSince($accountId, $lastMatchId, $recentMatches);
+        }
+
         try {
             $stratzMatches = $this->stratz->playerMatches($accountId);
             if (is_array($stratzMatches) && $stratzMatches !== []) {
@@ -1385,6 +1464,59 @@ class OpenDotaService
         }
 
         return $this->fetchMatchHistoryFromOpenDota($accountId);
+    }
+
+    /**
+     * Incremental update: keep the stored cursor and only return matches newer
+     * than it. STRATZ is queried fresh (no cached full history) and OpenDota
+     * receives the less_than_match_id cursor required by the incremental flow.
+     *
+     * @param  array<int, array<string, mixed>>  $recentMatches
+     * @return array<int, array<string, mixed>>
+     */
+    private function fetchNewMatchesSince(int $accountId, int $lastMatchId, array $recentMatches): array
+    {
+        $candidates = is_array($recentMatches) ? $recentMatches : [];
+
+        try {
+            $candidates = array_merge($candidates, $this->stratz->playerMatches($accountId, 100, 100, true));
+        } catch (\Throwable $e) {
+            Log::warning('STRATZ incremental match history failed', [
+                'account_id' => $accountId,
+                'message' => $e->getMessage(),
+            ]);
+        }
+
+        try {
+            $page = $this->optionalGet("players/{$accountId}/matches", [
+                'limit' => 100,
+                'significant' => 0,
+                'less_than_match_id' => $lastMatchId,
+            ]);
+
+            $candidates = array_merge($candidates, $page);
+        } catch (ApiUnavailableException $e) {
+            Log::error('OpenDota incremental match request failed: '.$e->getMessage());
+        }
+
+        $newMatches = [];
+
+        foreach ($candidates as $match) {
+            if (! is_array($match)) {
+                continue;
+            }
+
+            $id = (int) ($match['match_id'] ?? 0);
+
+            if ($id > $lastMatchId) {
+                $newMatches[(string) $id] = $match;
+            }
+        }
+
+        $rows = array_values($newMatches);
+        usort($rows, static fn (array $a, array $b): int => (int) ($b['start_time'] ?? 0) <=> (int) ($a['start_time'] ?? 0));
+
+        return $rows;
     }
 
     /**
@@ -2577,8 +2709,12 @@ class OpenDotaService
                 continue;
             }
 
-            $isRadiant = (int) ($match['player_slot'] ?? 0) < 128;
-            $win = (bool) ($match['radiant_win'] ?? false) === $isRadiant;
+            $isRadiant = array_key_exists('is_radiant', $match)
+                ? (bool) $match['is_radiant']
+                : (int) ($match['player_slot'] ?? 0) < 128;
+            $win = array_key_exists('win', $match)
+                ? (bool) $match['win']
+                : (bool) ($match['radiant_win'] ?? false) === $isRadiant;
             $playedAt = (int) ($match['start_time'] ?? 0);
 
             $aggregated[$heroId] ??= [

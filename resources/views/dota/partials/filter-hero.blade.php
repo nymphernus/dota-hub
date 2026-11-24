@@ -1,30 +1,7 @@
 @php
-    $attributeGroups = [
-        'str' => ['label' => __('ui.attr_strength'), 'heroes' => []],
-        'agi' => ['label' => __('ui.attr_agility'), 'heroes' => []],
-        'int' => ['label' => __('ui.attr_intelligence'), 'heroes' => []],
-        'all' => ['label' => __('ui.attr_universal'), 'heroes' => []],
-    ];
-
-    foreach (($heroOptions ?? []) as $hero) {
-        $attribute = strtolower((string) ($hero['primary_attr'] ?? $hero['attribute'] ?? ''));
-        $group = match ($attribute) {
-            'str', 'strength' => 'str',
-            'agi', 'agility' => 'agi',
-            'int', 'intelligence' => 'int',
-            default => 'all',
-        };
-
-        $attributeGroups[$group]['heroes'][] = $hero;
-    }
-
-    foreach ($attributeGroups as &$group) {
-        usort($group['heroes'], static fn (array $a, array $b): int => strcasecmp(
-            (string) ($a['localized_name'] ?? $a['name'] ?? ''),
-            (string) ($b['localized_name'] ?? $b['name'] ?? '')
-        ));
-    }
-    unset($group);
+    $heroes = collect($heroOptions ?? [])
+        ->sortBy(fn (array $hero) => $hero['localized_name'] ?? $hero['name'] ?? '')
+        ->values();
 @endphp
 
 <div x-show="heroModal" x-cloak class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4"
@@ -50,36 +27,22 @@
         </div>
 
         <div class="max-h-[65vh] overflow-y-auto px-4 py-3">
-            @foreach ($attributeGroups as $group)
-                <section class="mb-5 last:mb-0">
-                    <h4 class="mb-2 border-b border-line pb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-mist-400">
-                        {{ $group['label'] }}
-                    </h4>
-
-                    @if ($group['heroes'] === [])
-                        <p class="py-2 text-[11px] text-mist-500">&mdash;</p>
-                    @else
-                        <div class="grid grid-cols-8 gap-1.5 sm:grid-cols-10 lg:grid-cols-12">
-                            @foreach ($group['heroes'] as $hero)
-                                @php
-                                    $heroId = (int) ($hero['hero_id'] ?? 0);
-                                    $heroImage = $hero['icon'] ?? $hero['image'] ?? null;
-                                    $heroName = $hero['localized_name'] ?? $hero['name'] ?? __('ui.hero');
-                                @endphp
-                                <button type="button" title="{{ $heroName }}" aria-label="{{ $heroName }}"
-                                        class="h-10 w-10 overflow-hidden border {{ (int) ($selectedHeroId ?? 0) === $heroId ? 'border-accent-400' : 'border-line' }} bg-ink-800 hover:border-accent-400"
-                                        @click="document.getElementById('{{ $inputId }}').value='{{ $heroId }}'; document.getElementById('{{ $formId }}').submit()">
-                                    @if ($heroImage)
-                                        <img src="{{ $heroImage }}" alt="{{ $heroName }}" class="h-10 w-10 object-cover" loading="lazy">
-                                    @else
-                                        <span class="grid h-10 w-10 place-items-center text-[10px] text-mist-400">{{ mb_substr($heroName, 0, 1) }}</span>
-                                    @endif
-                                </button>
-                            @endforeach
-                        </div>
+            <div class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2">
+                @foreach ($heroes as $hero)
+                    @php
+                        $heroId = (int) ($hero['hero_id'] ?? 0);
+                        $heroName = $hero['localized_name'] ?? $hero['name'] ?? __('ui.hero');
+                    @endphp
+                    @if (! empty($hero['image']))
+                        <button type="button" title="{{ $heroName }}" aria-label="{{ $heroName }}"
+                                class="overflow-hidden border {{ (int) ($selectedHeroId ?? 0) === $heroId ? 'border-accent-400' : 'border-line' }} bg-ink-800 hover:border-accent-400"
+                                @click="document.getElementById('{{ $inputId }}').value='{{ $heroId }}'; document.getElementById('{{ $formId }}').submit()">
+                            <img src="{{ $hero['image'] }}" alt="{{ $heroName }}"
+                                 class="w-full h-auto object-cover rounded hover:opacity-80 transition cursor-pointer" loading="lazy">
+                        </button>
                     @endif
-                </section>
-            @endforeach
+                @endforeach
+            </div>
         </div>
     </div>
 </div>

@@ -16,28 +16,32 @@
             <div class="divide-y divide-[#2d313e]">
                 @foreach ($player['peers'] as $peer)
                     <a href="{{ route('player', ['accountId' => $peer['account_id']]) }}" class="block">
-                        <div class="flex items-center gap-6 py-2 border-b border-ink-700/50">
-                            <img src="{{ $peer['avatar'] }}" class="w-10 h-10 object-cover shrink-0">
-
-                            <div class="flex-1 min-w-0 truncate text-sm text-mist-200">
-                                {{ $peer['nickname'] ?? __('ui.teammate') }}
-                                @if ($peer['is_private'] ?? false)
-                                    <span class="text-[10px] text-accent-300/80">{{ __('ui.private_profile') }}</span>
-                                @endif
-                            </div>
-
-                            <div class="flex items-center gap-2 w-32 shrink-0">
-                                <span class="text-xs {{ ($peer['winrate'] ?? 0) >= 50 ? 'text-green-500' : 'text-red-500' }}">{{ number_format((float) ($peer['winrate'] ?? 0), 1) }}%</span>
-                                <div class="w-full bg-ink-900 h-2.5 flex rounded overflow-hidden">
-                                    <div class="bg-green-500" style="width: {{ (float) ($peer['winrate'] ?? 0) }}%"></div>
-                                    <div class="bg-red-500" style="width: {{ 100 - (float) ($peer['winrate'] ?? 0) }}%"></div>
+                        <div class="flex items-center gap-4 py-3 border-b border-ink-700/50 hover:bg-ink-800/50 px-4 transition">
+                            <!-- Avatar + nickname -->
+                            <div class="flex items-center gap-3 w-1/3 min-w-0">
+                                <img src="{{ $peer['avatar'] }}" class="w-10 h-10 object-cover shrink-0">
+                                <div class="min-w-0">
+                                    <div class="text-sm font-bold text-mist-200 truncate">{{ $peer['nickname'] ?? __('ui.teammate') }}</div>
+                                    @if ($peer['is_private'] ?? false)
+                                        <div class="text-[10px] text-accent-300/80">{{ __('ui.private_profile') }}</div>
+                                    @endif
                                 </div>
                             </div>
 
-                            <div class="flex items-center gap-2 w-24 shrink-0 justify-end">
-                                <span class="text-xs text-mist-400">{{ (int) ($peer['games'] ?? 0) }}</span>
-                                <div class="w-full bg-ink-900 h-2.5 rounded overflow-hidden">
-                                    <div class="bg-yellow-500 h-full" style="width: {{ ((int) ($peer['games'] ?? 0) / $maxPeerGames) * 100 }}%"></div>
+                            <!-- Winrate (bar + value) -->
+                            <div class="flex items-center gap-3 w-1/4 shrink-0">
+                                <span class="text-xs w-12 text-right {{ (float) $peer['winrate'] >= 50 ? 'text-green-500' : 'text-red-500' }}">{{ number_format((float) $peer['winrate'], 1) }}%</span>
+                                <div class="w-full bg-ink-900 h-2 flex rounded overflow-hidden">
+                                    <div class="bg-green-500 h-full" style="width: {{ (float) $peer['winrate'] }}%"></div>
+                                    <div class="bg-red-500 h-full" style="width: {{ 100 - (float) $peer['winrate'] }}%"></div>
+                                </div>
+                            </div>
+
+                            <!-- Games (bar + value) -->
+                            <div class="flex items-center gap-3 w-1/4 shrink-0 ml-auto">
+                                <span class="text-xs w-12 text-right text-mist-400">{{ $peer['games'] }}</span>
+                                <div class="w-full bg-ink-900 h-2 rounded overflow-hidden">
+                                    <div class="bg-yellow-500 h-full" style="width: {{ ($peer['games'] / $maxPeerGames) * 100 }}%"></div>
                                 </div>
                             </div>
                         </div>
