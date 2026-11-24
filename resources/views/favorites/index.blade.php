@@ -7,7 +7,7 @@
     <section class="mx-auto w-full max-w-5xl px-4 pt-8 sm:px-6 lg:px-8">
         <div class="flex flex-wrap items-end justify-between gap-3">
             <div>
-                <h1 class="mt-1 text-2xl font-semibold text-gray-900 dark:text-mist-200 sm:text-3xl">{{ __('ui.favorites') }}</h1>
+                <h1 class="mt-1 text-2xl font-semibold text-mist-200 sm:text-3xl">{{ __('ui.favorites') }}</h1>
             </div>
             <span class="badge border-accent-500/25 bg-accent-500/10 text-accent-300">{{ count($favorites) }}</span>
         </div>
@@ -17,7 +17,7 @@
                 <span class="grid h-12 w-12 place-items-center rounded-none border border-accent-500/25 bg-accent-500/10 text-accent-300">
                     <svg class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.5l6.1-.9L12 3Z"/></svg>
                 </span>
-                <p class="mt-4 text-sm font-semibold text-gray-900 dark:text-mist-200">{{ __('ui.favorites_empty') }}</p>
+                <p class="mt-4 text-sm font-semibold text-mist-200">{{ __('ui.favorites_empty') }}</p>
                 <a href="{{ route('home') }}" class="btn-ghost mt-5">{{ __('ui.home') }}</a>
             </div>
         @else

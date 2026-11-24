@@ -15,7 +15,7 @@
     <form method="GET" action="{{ route('player.heroes', ['accountId' => $player['account_id']]) }}" class="flex flex-row flex-wrap items-end gap-2">
         <label class="min-w-[180px] flex-1">
             <span class="label mb-1 block">{{ __('ui.hero') }}</span>
-            <select name="hero_id" onchange="this.form.submit()" class="h-10 w-full rounded border border-[#2d313e] bg-white text-gray-900 dark:bg-[#1c1e26] px-3 text-sm dark:text-mist-200 focus:border-accent-400/50 focus:outline-none">
+            <select name="hero_id" onchange="this.form.submit()" class="h-10 w-full rounded border border-[#2d313e] bg-[#1c1e26] text-mist-200 px-3 text-sm text-mist-200 focus:border-accent-400/50 focus:outline-none">
                 <option value="0">{{ __('ui.all_heroes') }}</option>
                 @foreach (($heroOptions ?? []) as $hero)
                     <option value="{{ $hero['hero_id'] }}" @selected((int) ($filters['hero_id'] ?? 0) === (int) $hero['hero_id'])>{{ $hero['localized_name'] ?? $hero['name'] ?? __('ui.hero') }}</option>
@@ -25,7 +25,7 @@
 
         <label class="min-w-[180px] flex-1">
             <span class="label mb-1 block">{{ __('ui.sort') }}</span>
-            <select name="sort" onchange="this.form.submit()" class="h-10 w-full rounded border border-[#2d313e] bg-white text-gray-900 dark:bg-[#1c1e26] px-3 text-sm dark:text-mist-200 focus:border-accent-400/50 focus:outline-none">
+            <select name="sort" onchange="this.form.submit()" class="h-10 w-full rounded border border-[#2d313e] bg-[#1c1e26] text-mist-200 px-3 text-sm text-mist-200 focus:border-accent-400/50 focus:outline-none">
                 <option value="games" @selected(($filters['sort'] ?? 'games') === 'games')>{{ __('ui.sort_by_games') }}</option>
                 <option value="winrate" @selected(($filters['sort'] ?? '') === 'winrate')>{{ __('ui.sort_by_winrate') }}</option>
                 <option value="kda" @selected(($filters['sort'] ?? '') === 'kda')>{{ __('ui.sort_by_kda') }}</option>
@@ -40,7 +40,7 @@
     @if ($heroes->isEmpty())
         <div class="mt-6 p-10 text-center text-sm text-mist-400">{{ __('ui.no_heroes_found') }}</div>
     @else
-        <div class="mt-4 overflow-hidden border border-line bg-white dark:bg-[#1c1e26]">
+        <div class="mt-4 overflow-hidden border border-line bg-[#1c1e26]">
             <table class="w-full text-sm">
                 <thead class="table-head">
                     <tr>
@@ -61,7 +61,7 @@
                             $winrate = $hero['win_rate'] ?? $hero['winrate'] ?? null;
                             $kda = $hero['kda'] ?? null;
                         @endphp
-                        <tr class="transition odd:bg-white even:bg-slate-50 hover:bg-slate-100 text-gray-900 dark:text-mist-200 dark:odd:bg-[#1c1e26] dark:even:bg-[#111318] dark:hover:bg-ink-700/60">
+                        <tr class="transition odd:bg-[#1c1e26] even:bg-[#111318] hover:bg-ink-700/60 text-mist-200">
                             <td class="px-2 py-1">
                                 <div class="flex items-center gap-3">
                                     @if ($heroUrl)

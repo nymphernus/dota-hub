@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', '429 - '.__('ui.too_many_requests').' - DOTAHUB') }} — DOTAHUB')
+@section('title', '429 - '.__('ui.too_many_requests').' - DOTAHUB')
 @section('description', __('ui.too_many_requests'))
 
 @section('content')

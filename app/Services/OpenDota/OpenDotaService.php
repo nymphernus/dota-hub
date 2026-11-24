@@ -1088,8 +1088,8 @@ class OpenDotaService
                 'xpm' => $avgXpm,
             ],
             'groups' => [
-                ['key' => 'mode', 'title' => 'По режимам игры', 'rows' => $rows($buckets['mode'])],
-                ['key' => 'side', 'title' => 'По фракциям', 'rows' => $rows($buckets['side'])],
+                ['key' => 'mode', 'title' => __('ui.by_game_mode'), 'rows' => $rows($buckets['mode'])],
+                ['key' => 'side', 'title' => __('ui.by_faction'), 'rows' => $rows($buckets['side'])],
             ],
         ];
     }

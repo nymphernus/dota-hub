@@ -16,7 +16,7 @@
         $wheelHeroes[] = [
             'hero_id' => (int) ($hero['hero_id'] ?? $hero['id'] ?? 0),
             'name' => $hero['name'] ?? __('ui.hero'),
-            'icon' => $hero['minimap_icon'] ?? $hero['icon'] ?? ($hero['image'] ?? ''),
+            'icon' => $hero['image'] ?? $hero['minimap_icon'] ?? ($hero['icon'] ?? ''),
             'image' => $hero['image'] ?? $hero['hero_image'] ?? $hero['icon'] ?? '',
             'games' => $games,
             'wins' => $wins,
@@ -168,9 +168,9 @@
                 </a>
             @endforeach
 
-            <circle cx="150" cy="150" r="80" class="fill-white dark:fill-[#1c1e26]" />
+            <circle cx="150" cy="150" r="80" class="fill-[#1c1e26]" />
             <text x="150" y="145" text-anchor="middle" dominant-baseline="middle" class="text-2xl font-bold {{ $wheelOverallWinrate >= 50 ? 'fill-green-500' : 'fill-red-500' }}">{{ number_format($wheelOverallWinrate, 1, '.', '') }}%</text>
-            <text x="150" y="170" text-anchor="middle" dominant-baseline="middle" class="text-sm font-semibold fill-gray-900 dark:fill-[#d1d5db]">
+            <text x="150" y="170" text-anchor="middle" dominant-baseline="middle" class="text-sm font-semibold fill-[#d1d5db]">
                 <tspan fill="#10b981">{{ $wheelTotalWins }} {{ __('ui.wins_short') }}</tspan>
                 <tspan fill="#8b94a5"> / </tspan>
                 <tspan fill="#ef4444">{{ $wheelTotalLosses }} {{ __('ui.losses_short') }}</tspan>

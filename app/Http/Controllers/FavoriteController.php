@@ -95,7 +95,7 @@ class FavoriteController extends Controller
         if (request()->expectsJson()) {
             return response()->json([
                 'ok' => false,
-                'message' => '__('ui.login_to_manage_favorites')',
+                'message' => __('ui.login_to_manage_favorites'),
                 'login_url' => $loginUrl,
             ], 401);
         }

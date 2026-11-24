@@ -16,13 +16,14 @@ class GameModeLabelTest extends TestCase
             'turbo' => [23, 'Turbo'],
             'single draft' => [4, 'Single Draft'],
             'ability draft' => [18, 'Ability Draft'],
-            "captain's mode" => [16, "Captain's Mode"],
+            'captains mode' => [16, 'Captains Mode'],
         ];
     }
 
     #[DataProvider('gameModeProvider')]
     public function test_game_mode_ids_map_to_readable_labels(int $mode, string $expected): void
     {
+        $this->app->setLocale('en');
         $service = $this->app->make(OpenDotaService::class);
         $method = new \ReflectionMethod($service, 'gameModeLabel');
 
@@ -32,6 +33,7 @@ class GameModeLabelTest extends TestCase
     #[DataProvider('gameModeProvider')]
     public function test_match_type_label_prefers_the_game_mode_over_lobby_type(int $mode, string $expected): void
     {
+        $this->app->setLocale('en');
         $service = $this->app->make(OpenDotaService::class);
         $method = new \ReflectionMethod($service, 'matchTypeLabel');
 

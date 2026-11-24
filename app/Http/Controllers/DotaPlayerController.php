@@ -17,7 +17,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\Log;
+
 
 class DotaPlayerController extends Controller
 {
@@ -48,14 +48,9 @@ class DotaPlayerController extends Controller
         // here — ranked-only filtering belongs to the records page alone.
         $heatmapMatches = array_values($history);
 
-        $heroUsageUnavailable = false;
-        try {
-            $heroUsage = $this->heroUsage(array_slice($history, 0, 25), $openDota);
-        } catch (\App\Exceptions\ApiUnavailableException|\App\Exceptions\ExternalApiException $e) {
-            Log::warning('Failed to load hero usage for ' . $accountId, ['error' => $e->getMessage()]);
-            $heroUsage = [];
-            $heroUsageUnavailable = true;
-        }
+        $heroUsage = $this->heroUsage(array_slice($history, 0, 25));
+        $heroUsageUnavailable = $heroUsage === [];
+        $activityHeatmap = $this->activityHeatmap($heatmapMatches);
 
         return view('dota.player', [
             'player' => $player,
@@ -65,7 +60,7 @@ class DotaPlayerController extends Controller
             'winrate' => $player['winrate'],
             'recentMatches' => array_slice($player['matches'], 0, 25),
             'history' => $history,
-            'activityHeatmap' => $this->activityHeatmap($heatmapMatches),
+            'activityHeatmap' => $activityHeatmap,
             'heroUsage' => $heroUsage,
             'heroUsageUnavailable' => $heroUsageUnavailable,
             'lifetimeStats' => $openDota->lifetimeStats($accountId, $history),

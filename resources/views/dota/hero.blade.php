@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('title', $pageTitle ?? ($hero['name'].' - '.$player['nickname'].' - DOTAHUB'))
-@section('description', '$player['nickname'].' - '.$hero['name']')
+@section('description', $player['nickname'].' - '.$hero['name'])
 
 @php
     $backUrl = route('player', ['accountId' => $player['account_id']]);

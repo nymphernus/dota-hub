@@ -119,10 +119,9 @@ if (heatmapPayload && heatmapRoot) {
                 cell.className = className;
                 cell.dataset.date = day.date;
                 cell.dataset.count = String(count);
-                cell.dataset.tip = tip;
-                cell.setAttribute('aria-label', tip);
+                cell.dataset.tip = title;
+                cell.setAttribute('aria-label', title);
                 cell.textContent = count > 0 ? String(count) : '';
-                console.log(`Дата: ${day.date}, Wins: ${wins}, Losses: ${losses}, Class: ${className}`);
                 cells.push(cell);
             });
         });

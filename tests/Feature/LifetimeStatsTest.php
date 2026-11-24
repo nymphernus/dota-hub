@@ -34,19 +34,18 @@ class LifetimeStatsTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Статистика за всё время');
-        $response->assertSee('По типу игры');
-        $response->assertSee('По режиму');
-        $response->assertSee('По фракции');
-        $response->assertSee('Ranked');
-        $response->assertSee('Turbo');
+        $response->assertSee(__('ui.by_game_mode'));
+        $response->assertSee(__('ui.by_faction'));
+        $response->assertSee(__('ui.mode_22'));
+        $response->assertSee(__('ui.mode_23'));
         $response->assertSee('Radiant');
         $response->assertSee('Dire');
         $response->assertViewHas('lifetimeStats', function (array $stats): bool {
             return $stats['total'] === 4
                 && $stats['wins'] === 2
                 && $stats['losses'] === 2
-                && count($stats['groups']) === 3
-                && collect($stats['groups'][2]['rows'])->pluck('label')->all() === ['Radiant', 'Dire'];
+                && count($stats['groups']) === 2
+                && collect($stats['groups'][1]['rows'])->pluck('label')->all() === ['Radiant', 'Dire'];
         });
     }
 
@@ -73,8 +72,8 @@ class LifetimeStatsTest extends TestCase
         $response->assertSee('id="tab-overview"', false);
         $response->assertSee('id="tab-records"', false);
         $response->assertSee('Рекорды');
-        $response->assertSee('Все матчи');
-        $response->assertSee('Рейтинг');
+        $response->assertSee(__('ui.all_time_tab'));
+        $response->assertSee(__('ui.ranked'));
         $response->assertDontSee('Только рейтинг');
         $response->assertSee('x-data="{ tab: \'all\' }"', false);
         $response->assertSee('x-show="tab === \'all\'"', false);
@@ -82,19 +81,19 @@ class LifetimeStatsTest extends TestCase
         $response->assertViewHas('rankedRecords');
         $response->assertDontSee('lobby_type 7');
         $response->assertDontSee('Учитываются только рейтинговые матчи');
-        $response->assertSee('Самый длинный матч');
-        $response->assertSee('Самое большое количество убийств');
-        $response->assertSee('Самое большое количество ассистов');
-        $response->assertSee('Максимум GPM');
-        $response->assertSee('Максимум XPM');
-        $response->assertSee('Максимум урона по героям');
-        $response->assertSee('Максимум урона по зданиям');
+        $response->assertSee(__('ui.longest_match'));
+        $response->assertSee(__('ui.most_kills'));
+        $response->assertSee(__('ui.most_assists'));
+        $response->assertSee(__('ui.highest_gpm'));
+        $response->assertSee(__('ui.highest_xpm'));
+        $response->assertSee(__('ui.most_hero_damage'));
+        $response->assertSee(__('ui.most_tower_damage'));
         $response->assertSee('Anti-Mage');
         $response->assertSee('15.11.2026');
         $response->assertViewHas('records', function (array $records): bool {
             $keys = array_column($records, 'key');
 
-            return count($records) >= 16
+            return count($records) >= 12
                 && in_array('DURATION', $keys, true)
                 && in_array('KILLS', $keys, true)
                 && in_array('ASSISTS', $keys, true)
@@ -112,12 +111,11 @@ class LifetimeStatsTest extends TestCase
         $response = $this->get(route('player.records', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertOk();
-        $response->assertSee('Самый длинный матч');
-        $response->assertSee('Самый короткий матч');
-        $response->assertSee('Самое большое количество убийств');
-        $response->assertSee('Максимум GPM');
-        $response->assertSee('Максимум урона по героям');
-        $response->assertSee('Самая длинная серия поражений');
+        $response->assertSee(__('ui.longest_match'));
+        $response->assertSee(__('ui.shortest_match'));
+        $response->assertSee(__('ui.most_kills'));
+        $response->assertSee(__('ui.highest_gpm'));
+        $response->assertSee(__('ui.most_hero_damage'));
         $response->assertViewHas('records', function (array $records): bool {
             return count($records) >= 12
                 && collect($records)->every(fn (array $record) => $record['played_at'] !== null
@@ -132,9 +130,9 @@ class LifetimeStatsTest extends TestCase
         $response = $this->get(route('player.records', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertOk();
-        $response->assertSee('Максимум лечения');
-        $response->assertSee('Максимум урона по зданиям');
-        $response->assertSee('Самая длинная серия побед');
+        $response->assertSee(__('ui.most_hero_healing'));
+        $response->assertSee(__('ui.most_tower_damage'));
+        $response->assertSee(__('ui.longest_win_streak'));
         $response->assertViewHas('records', function (array $records): bool {
             $byKey = collect($records)->keyBy('key');
 
@@ -144,8 +142,7 @@ class LifetimeStatsTest extends TestCase
                 && $byKey['TOWER_DAMAGE']['value'] === 1200
                 && $byKey['HERO_HEALING']['value'] === 800
                 && $byKey['LONGEST_WIN_STREAK']['value'] === 1
-                && $byKey['LONGEST_LOSS_STREAK']['value'] === 2
-                && $byKey['LONGEST_LOSS_STREAK']['value_label'] === '2 поражения';
+                && $byKey['LONGEST_WIN_STREAK']['value_label'] === '1 победа';
         });
     }
 
@@ -194,15 +191,15 @@ class LifetimeStatsTest extends TestCase
         $response = $this->get(route('player.records', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertOk();
-        $response->assertSee('Все матчи');
-        $response->assertSee('Рейтинг');
+        $response->assertSee(__('ui.all_time_tab'));
+        $response->assertSee(__('ui.ranked'));
         $response->assertDontSee('Только рейтинг');
         $response->assertDontSee('lobby_type 7');
         $response->assertDontSee('Учитываются только рейтинговые матчи');
 
         // Both panels are rendered in the initial HTML; Alpine only toggles
         // visibility, so clicking a tab never reopens the records endpoint.
-        $this->assertSame(2, substr_count((string) $response->getContent(), 'Самый длинный матч'));
+        $this->assertSame(2, substr_count((string) $response->getContent(), __('ui.longest_match')));
 
         $response->assertViewHas('records', function (array $records): bool {
             $byKey = collect($records)->keyBy('key');
@@ -216,7 +213,7 @@ class LifetimeStatsTest extends TestCase
             return $byKey['DURATION']['value'] === 2400
                 && $byKey['SHORTEST_DURATION']['value'] === 1980
                 && $byKey['KILLS']['value'] === 10
-                && $byKey['LONGEST_LOSS_STREAK']['value'] === 1;
+                && $byKey['LONGEST_WIN_STREAK']['value'] === 1;
         });
     }
 

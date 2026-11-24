@@ -24,7 +24,7 @@
                             </span>
                             <span class="min-w-0">
                                 <span class="block text-[11px] font-semibold uppercase tracking-[0.18em] text-mist-500">{{ __('ui.dashboard') }}</span>
-                                <span class="mt-1 block truncate text-2xl font-semibold text-gray-900 dark:text-gray-900 dark:text-mist-200 transition group-hover:text-accent-300">
+                                <span class="mt-1 block truncate text-2xl font-semibold text-mist-200 transition group-hover:text-accent-300">
                                     {{ __('ui.welcome_back', ['name' => $dashboard['nickname']]) }}
                                 </span>
                                 <span class="mt-1 block text-xs text-mist-400">
@@ -36,7 +36,7 @@
                         <div class="grid min-w-[220px] grid-cols-2 gap-2">
                             <div class="rounded-none bg-ink-900/30 px-4 py-3">
                                 <p class="label">MMR</p>
-                                <p class="mt-1 text-xl font-semibold text-gray-900 dark:text-mist-200">
+                                <p class="mt-1 text-xl font-semibold text-mist-200">
                                     {{ $dashboard['mmr_estimate'] !== null ? number_format((int) $dashboard['mmr_estimate'], 0, '.', ' ') : '—' }}
                                 </p>
                                 <p class="mt-1 text-[10px] text-mist-500">
@@ -86,7 +86,7 @@
                                                 @endif
                                             </span>
                                             <span class="min-w-0 flex-1">
-                                                <span class="block truncate text-[12px] font-bold text-gray-900 dark:text-mist-200">{{ $match['hero_name'] }}</span>
+                                                <span class="block truncate text-[12px] font-bold text-mist-200">{{ $match['hero_name'] }}</span>
                                                 <span @class([
                                                     'mt-0.5 inline-flex rounded px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide',
                                                     'bg-emerald-500/15 text-emerald-300' => $match['win'] ?? false,
@@ -95,7 +95,7 @@
                                             </span>
                                         </div>
                                         <div class="mt-3 flex items-center justify-between text-[11px]">
-                                            <span class="font-mono font-bold text-gray-900 dark:text-mist-200">
+                                            <span class="font-mono font-bold text-mist-200">
                                                 {{ $match['kills'] ?? 0 }}/<span class="text-rose-300">{{ $match['deaths'] ?? 0 }}</span>/{{ $match['assists'] ?? 0 }}
                                             </span>
                                             <span class="text-mist-400">{{ $match['duration_label'] ?? '' }}</span>
@@ -113,7 +113,7 @@
             </div>
         @else
             <div class="mx-auto w-full max-w-4xl px-4 pb-8 pt-12 text-center sm:px-6 lg:px-8">
-                <h1 class="text-5xl font-semibold tracking-tight text-gray-900 dark:text-mist-200 sm:text-7xl">
+                <h1 class="text-5xl font-semibold tracking-tight text-mist-200 sm:text-7xl">
                     DOTAHUB
                 </h1>
             </div>

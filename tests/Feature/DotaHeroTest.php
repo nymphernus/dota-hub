@@ -42,7 +42,7 @@ class DotaHeroTest extends TestCase
         $response->assertSee('GPM');
         $response->assertSee('XPM');
         $response->assertSee('Нетворс');
-        $response->assertSee('Урон');
+        $response->assertSee('DMG');
         $response->assertSee('28 000');
         $response->assertSee('21 500');
         $response->assertSee('KDA');

@@ -60,7 +60,7 @@ class FavoriteTest extends TestCase
             ->get(route('favorites.index'))
             ->assertOk()
             ->assertDontSee('Dendi')
-            ->assertSee('Вы ещё не добавили игроков в избранное', false);
+            ->assertSee(__('ui.favorites_empty'), false);
     }
 
     public function test_player_page_shows_favorite_star_for_authenticated_user(): void

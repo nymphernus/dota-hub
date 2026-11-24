@@ -18,8 +18,8 @@ class HomeTest extends TestCase
         $response = $this->get(route('home'));
 
         $response->assertOk();
-        $response->assertSee('DotaHub');
-        $response->assertDontSee('Статистика игроков Dota 2', false);
+        $response->assertSee('DOTAHUB');
+        $response->assertSee(__('ui.home_subtitle'));
         $response->assertDontSee('Например:');
         $response->assertDontSee('70388657');
         $response->assertDontSee('Последние поиски');
@@ -32,11 +32,12 @@ class HomeTest extends TestCase
         $response = $this->get(route('home'));
 
         $response->assertOk();
-        $response->assertSee('class="header-search"', false);
+        $response->assertSee('role="search"', false);
+        $response->assertSee('id="header-search-query"', false);
         $response->assertSee('action="'.route('search').'"', false);
         $response->assertSee('name="query"', false);
-        $response->assertSee('Поиск игрока', false);
-        $response->assertSee('Steam ID, URL или никнейм', false);
+        $response->assertSee(__('ui.search_player'), false);
+        $response->assertSee(__('ui.search_placeholder'), false);
     }
 
     public function test_guest_home_does_not_show_recent_searches_even_if_they_exist(): void
@@ -48,7 +49,7 @@ class HomeTest extends TestCase
         $response->assertOk();
         $response->assertDontSee('Последние поиски');
         $response->assertDontSee('История');
-        $response->assertSee('DotaHub');
+        $response->assertSee('DOTAHUB');
     }
 
     public function test_tracking_the_same_player_increments_the_counter(): void

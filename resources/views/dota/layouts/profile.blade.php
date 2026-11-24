@@ -10,6 +10,8 @@
             </div>
         @endif
 
+        @include('components.player-tabs', ['player' => $player, 'active' => $activeTab ?? 'overview'])
+
         @yield('profile-content')
     </div>
 @endsection

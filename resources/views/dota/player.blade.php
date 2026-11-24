@@ -226,29 +226,43 @@
                         <span class="text-[10px] text-mist-500">{{ min(5, count($player['peers'] ?? [])) }}</span>
                     </div>
 
-                    @php $topPeers = array_slice($player['peers'] ?? [], 0, 5); @endphp
+                    @php
+                        $topPeers = array_slice($player['peers'] ?? [], 0, 5);
+                        $maxPeerGames = max(1, max(array_map(fn ($p) => (int) ($p['games'] ?? 0), $topPeers ?: [['games' => 0]])));
+                    @endphp
                     @if ($topPeers === [])
                         <div class="mt-2 border border-dashed border-line px-3 py-4 text-center text-[11px] text-mist-500">{{ __('ui.no_peers_data') }}</div>
                     @else
                         <div class="mt-2 space-y-2">
                             @foreach ($topPeers as $peer)
                                 @php
-                                    $wr = $peer['winrate'] !== null ? (float) $peer['winrate'] : null;
-                                    $wrColor = $wr === null ? 'bg-mist-500' : ($wr >= 50 ? 'bg-green-500' : 'bg-red-500');
+                                    $games = (int) ($peer['games'] ?? 0);
+                                    $wr = $peer['winrate'] !== null ? min(100, max(0, (float) $peer['winrate'])) : 0;
+                                    $wrClass = $peer['winrate'] !== null && (float) $peer['winrate'] >= 50 ? 'text-green-500' : 'text-red-500';
+                                    $gamesPct = min(100, max(0, ($games / $maxPeerGames) * 100));
                                 @endphp
                                 <a href="{{ route('player', ['accountId' => $peer['account_id']]) }}" class="group flex items-center gap-2.5 border border-line bg-ink-900/30 p-2 transition hover:border-accent-500/30 hover:bg-accent-500/[0.06]">
-                                    <span class="h-9 w-9 shrink-0 overflow-hidden bg-ink-800">
+                                    <span class="h-10 w-10 shrink-0 overflow-hidden bg-ink-800">
                                         @if ($peer['avatar'])
                                             <img src="{{ $peer['avatar'] }}" alt="{{ $peer['nickname'] }}" class="h-full w-full object-cover" loading="lazy">
                                         @endif
                                     </span>
                                     <span class="min-w-0 flex-1">
-                                        <span class="block truncate text-[12px] font-bold text-mist-200 transition group-hover:text-accent-300">{{ $peer['nickname'] }}</span>
-                                        <span class="mt-1 flex h-1.5 w-full overflow-hidden rounded bg-ink-900/60">
-                                            <span class="bg-green-500" style="width: {{ $wr !== null ? min(100, max(0, $wr)) : 0 }}%"></span>
-                                            <span class="bg-red-500" style="width: {{ $wr !== null ? max(0, 100 - min(100, max(0, $wr))) : 100 }}%"></span>
+                                        <span class="flex items-center justify-between gap-2">
+                                            <span class="truncate text-[12px] font-bold text-mist-200 transition group-hover:text-accent-300">{{ $peer['nickname'] }}</span>
+                                            <span class="shrink-0 font-mono text-[11px] font-bold {{ $wrClass }}">{{ $peer['winrate'] !== null ? number_format((float) $peer['winrate'], 1, '.', '').'%' : '—' }}</span>
                                         </span>
-                                        <span class="mt-1 block text-[10px] text-mist-500">{{ $peer['games'] }} {{ __('ui.games_together') }} · {{ $wr !== null ? number_format($wr, 1, '.', '').'%' : '—' }}</span>
+                                        <span class="mt-1 flex h-1.5 w-full overflow-hidden bg-gray-700">
+                                            <span class="bg-green-500" style="width: {{ $wr }}%"></span>
+                                            <span class="bg-red-500" style="width: {{ max(0, 100 - $wr) }}%"></span>
+                                        </span>
+                                        <span class="mt-1 flex items-center justify-between gap-2">
+                                            <span class="text-[10px] text-mist-500">{{ __('ui.games_together') }}</span>
+                                            <span class="font-mono text-[10px] font-semibold text-mist-300">{{ number_format($games, 0, '.', ' ') }}</span>
+                                        </span>
+                                        <span class="mt-1 flex h-1.5 w-full overflow-hidden bg-gray-700">
+                                            <span class="bg-yellow-500" style="width: {{ $gamesPct }}%"></span>
+                                        </span>
                                     </span>
                                 </a>
                             @endforeach

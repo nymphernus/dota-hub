@@ -10,18 +10,18 @@ class ErrorPageTest extends TestCase
     {
         $this->get('/this-page-does-not-exist')
             ->assertNotFound()
-            ->assertSee('Игрок или матч не найден')
-            ->assertSee('Вернуться на главную');
+            ->assertSee(__('ui.not_found_title'))
+            ->assertSee(__('ui.back_home'));
     }
 
     public function test_server_and_rate_limit_error_views_render(): void
     {
         $this->view('errors.500')
-            ->assertSee('Ошибка сервера')
-            ->assertSee('Вернуться на главную');
+            ->assertSee(__('ui.server_error'))
+            ->assertSee(__('ui.back_home'));
 
         $this->view('errors.429')
-            ->assertSee('Слишком много запросов')
-            ->assertSee('Вернуться на главную');
+            ->assertSee(__('ui.too_many_requests'))
+            ->assertSee(__('ui.back_home'));
     }
 }

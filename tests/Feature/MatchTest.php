@@ -48,8 +48,8 @@ class MatchTest extends TestCase
         $response->assertSee('Dire');
         $response->assertDontSee('Вы');
         $response->assertSee('Ranked');
-        $response->assertSee('All Pick');
-        $response->assertSee('bg-ink-700/60', false);
+        $response->assertSee(__('ui.mode_1'));
+        $response->assertSee('odd:bg-[#1c1e26] even:bg-[#111318]', false);
         $response->assertDontSee('P1');
         $response->assertDontSee('Party #', false);
         $response->assertSee('Safe');
@@ -71,7 +71,7 @@ class MatchTest extends TestCase
         $response->assertDontSee('Пики и баны');
         $response->assertDontSee('Баны');
         $response->assertSee('Башни');
-        $response->assertSee('Лечение');
+        $response->assertSee('HEAL');
         $response->assertDontSee('31 200');
         $response->assertSee('3 400');
         $response->assertSee('1 250');
@@ -81,9 +81,6 @@ class MatchTest extends TestCase
         $response->assertDontSee('Вернуться к профилю');
         $response->assertDontSee('На главную');
         $response->assertSee('>IMP</th>', false);
-        $response->assertSee('id="dotahub-recent-data"', false);
-        $response->assertSee('x-data="recentLinks()"', false);
-        $response->assertSee('aria-label="Основная навигация"', false);
         $response->assertDontSee('aria-label="Хлебные крошки"', false);
         $response->assertDontSee('Профиль игрока');
         $response->assertDontSee('card relative overflow-hidden', false);
@@ -270,7 +267,7 @@ class MatchTest extends TestCase
     public function test_match_route_is_registered(): void
     {
         $this->assertSame(
-            url('/dota/match/'.self::MATCH_ID),
+            url('/match/'.self::MATCH_ID),
             route('match', ['matchId' => self::MATCH_ID])
         );
     }

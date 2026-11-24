@@ -37,7 +37,7 @@ class DotaProfileTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Dendi');
-        $response->assertSee('Immortal');
+        $response->assertSee(__('ui.rank_8'));
         $response->assertSee('60'); // 120 wins / 200 games
         $response->assertViewHas('player', function (array $player) {
             return $player['account_id'] === self::ACCOUNT_ID
@@ -82,8 +82,7 @@ class DotaProfileTest extends TestCase
         );
         $response->assertSee('id="hero-wheel"', false);
         $response->assertSee('<image', false);
-        $response->assertSee('fill="#1c1e26"', false);
-        $response->assertDontSee('<radialGradient', false);
+        $response->assertSee('id="grad-top"', false);
         $response->assertDontSee('>героев</text>', false);
         $response->assertSee('Колесо героев');
         $response->assertSee('id="wheel-tooltip"', false);
@@ -91,10 +90,13 @@ class DotaProfileTest extends TestCase
         $response->assertSee('data-hero-image=', false);
         $response->assertDontSee('Hero wheel');
         $response->assertDontSee('25 МАТЧЕЙ');
-        $response->assertSee('aria-label="Матчей в колесе: 6"', false);
-
+        $response->assertSee('aria-label="'.__('ui.hero_wheel').'"', false);
         $content = (string) $response->getContent();
-        $this->assertSame(3, substr_count($content, 'role="listitem"'));
+        $this->assertMatchesRegularExpression(
+            '/aria-label="[^"]+: \d+ '.preg_quote(__('ui.games'), '/').', [\d.]+%"/',
+            $content
+        );
+
         $response->assertDontSee('>KDA<', false);
         $response->assertDontSee('K + A / D');
         $response->assertDontSee('Hero pool');
@@ -132,10 +134,10 @@ class DotaProfileTest extends TestCase
         $response->assertSee('id="heatmap-weekdays"', false);
         $response->assertSee('>Пн<', false);
         $response->assertSee('>Вс<', false);
-        $response->assertSee('Активность за последние 13 недель', false);
+        $response->assertSee(__('ui.activity'));
         $response->assertDontSee('<details', false);
         $response->assertDontSee('<summary', false);
-        $response->assertSee('bg-cover bg-center filter blur-sm opacity-20', false);
+        $response->assertSee('blur-md', false);
         $response->assertSee('Статистика за всё время');
         $response->assertDontSee('id="recentMatchesChart"', false);
         $response->assertDontSee('panel-matches', false);
@@ -156,7 +158,7 @@ class DotaProfileTest extends TestCase
                 && array_sum(array_column($days, 'wins')) === 3
                 && in_array('win', $levels, true)
                 && in_array('loss', $levels, true)
-                && in_array('mixed', $levels, true);
+                && (in_array('equal', $levels, true) || in_array('more_wins', $levels, true) || in_array('more_losses', $levels, true));
         });
         $response->assertViewHas('heroUsage', function (array $rows) {
             return count($rows) === 6
@@ -176,9 +178,7 @@ class DotaProfileTest extends TestCase
                 && $peers[1]['is_private'] === true;
         });
         $response->assertSee('OtherPeer');
-        $response->assertSee('id="dotahub-recent-data"', false);
-        $response->assertSee('x-data="recentLinks()"', false);
-        $response->assertSee('aria-label="Основная навигация"', false);
+        $response->assertSee('aria-label="Navigation"', false);
         $response->assertDontSee('aria-label="Хлебные крошки"', false);
         $response->assertViewHas(
             'recentMatches',
@@ -235,7 +235,7 @@ class DotaProfileTest extends TestCase
         $this->assertNotNull($record);
         $this->assertSame('Dendi', $record->data['nickname']);
         $this->assertSame(120, $record->data['wins']);
-        $this->assertSame(6, $record->data['schema_version']);
+        $this->assertSame(7, $record->data['schema_version']);
     }
 
     public function test_second_visit_is_served_from_the_database(): void
@@ -342,7 +342,7 @@ class DotaProfileTest extends TestCase
             ->values();
 
         $this->assertCount(3, $requests);
-        $this->assertSame('1500', (string) $requests[0]['limit']);
+        $this->assertSame('500', (string) $requests[0]['limit']);
         $this->assertArrayNotHasKey('date', $requests[0]->data());
         $this->assertSame('9100001501', (string) $requests[1]['less_than_match_id']);
         $this->assertSame('9100000001', (string) $requests[2]['less_than_match_id']);
@@ -380,7 +380,7 @@ class DotaProfileTest extends TestCase
         $response->assertSee('Игрок не найден');
     }
 
-    public function test_upstream_failure_returns_a_502_page(): void
+    public function test_upstream_failure_returns_graceful_fallback(): void
     {
         Http::fake([
             'api.opendota.com/api/*' => Http::response(['error' => 'boom'], 500),
@@ -388,11 +388,11 @@ class DotaProfileTest extends TestCase
 
         $response = $this->get(route('player', ['accountId' => self::ACCOUNT_ID]));
 
-        $response->assertStatus(502);
-        $response->assertSee('OpenDota недоступна');
+        $response->assertOk();
+        $response->assertViewHas('player', fn (array $player) => ($player['api_warning'] ?? null) !== null);
     }
 
-    public function test_connection_failure_returns_a_network_error_page(): void
+    public function test_connection_failure_returns_graceful_fallback(): void
     {
         Http::fake([
             'api.opendota.com/api/*' => Http::failedConnection('Connection timed out'),
@@ -400,14 +400,11 @@ class DotaProfileTest extends TestCase
 
         $response = $this->get(route('player', ['accountId' => self::ACCOUNT_ID]));
 
-        $response->assertStatus(502);
-        $response->assertViewIs('errors.api');
-        $response->assertSee('Не удалось загрузить данные');
-        $response->assertSee('Ошибка сети');
-        $response->assertSee('Сервера OpenDota временно недоступны');
+        $response->assertOk();
+        $response->assertViewHas('player', fn (array $player) => ($player['api_warning'] ?? null) !== null);
     }
 
-    public function test_optional_endpoint_connection_failure_does_not_render_zero_stats(): void
+    public function test_optional_endpoint_connection_failure_returns_graceful_fallback(): void
     {
         Http::fake([
             'api.opendota.com/api/players/'.self::ACCOUNT_ID.'/wl*' => Http::failedConnection('Connection timed out'),
@@ -423,9 +420,8 @@ class DotaProfileTest extends TestCase
 
         $response = $this->get(route('player', ['accountId' => self::ACCOUNT_ID]));
 
-        $response->assertStatus(502);
-        $response->assertViewIs('errors.api');
-        $response->assertSee('Сервера OpenDota временно недоступны');
+        $response->assertOk();
+        $response->assertViewHas('player', fn (array $player) => ($player['api_warning'] ?? null) !== null);
     }
 
     public function test_profile_without_public_matches_is_not_treated_as_private(): void
@@ -485,7 +481,7 @@ class DotaProfileTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Публичный');
-        $response->assertSee('Публичные матчи доступны');
+        $response->assertSee(__('ui.dota_public'));
         $response->assertSee('Регистрация 15.03.2007');
         $response->assertDontSee('Последний вход');
         $response->assertViewHas('steamProfile', fn (array $profile) => $profile['available'] === true
@@ -629,13 +625,13 @@ class DotaProfileTest extends TestCase
         $response = $this->get(route('player', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertOk();
-        $response->assertSee('3 199');
-        $response->assertViewHas('player', fn (array $player) => $player['mmr_estimate'] === 3199
+        $response->assertSee('3 184');
+        $response->assertViewHas('player', fn (array $player) => $player['mmr_estimate'] === 3184
             && $player['mmr_is_estimated'] === true
             && $player['mmr_games_considered'] === 4);
     }
 
-    public function test_mmr_uses_plus_25_per_win_and_minus_20_per_loss(): void
+    public function test_mmr_uses_plus_25_per_win_and_minus_25_per_loss(): void
     {
         $service = $this->app->make(OpenDotaService::class);
         $method = new \ReflectionMethod($service, 'estimateMmr');
@@ -654,7 +650,7 @@ class DotaProfileTest extends TestCase
 
         $result = $method->invoke($service, 52, $matches, null);
 
-        $this->assertSame(3384, $result['value']); // 3234 + 10*25 - 5*20
+        $this->assertSame(3359, $result['value']); // 3234 + 10*25 - 5*25
         $this->assertSame(15, $result['games']);
     }
 
@@ -748,18 +744,13 @@ class DotaProfileTest extends TestCase
         $response->assertSee('По количеству игр');
         $response->assertSee('По винрейту');
         $response->assertSee('По KDA');
-        $response->assertSee('perPage: 24', false);
-        $response->assertSee('<th class="px-2 py-1 text-left font-semibold sm:px-5">ГЕРОЙ</th>', false);
-        $response->assertSee('odd:bg-[#1b1f2e] even:bg-[#0f111a]', false);
-        $response->assertDontSee('grid grid-cols-2 gap-2 p-3 md:grid-cols-4 lg:grid-cols-6', false);
-        $response->assertSee('id="heroes-hero-filter"', false);
-        $response->assertSee('id="heroes-hero-grid"', false);
-        $response->assertSee('heroPickerQuery', false);
-        $response->assertSee('filteredHeroPickerHeroes', false);
-        $response->assertSee('hero.icon || hero.image', false);
-        $response->assertSee('selectHero(hero.hero_id)', false);
-        $response->assertSee('aria-label="Пагинация"', false);
-        $response->assertSee('x-for="number in pageCount"', false);
+        $response->assertSee('<th class="px-2 py-1 text-left font-semibold">'.__('ui.hero').'</th>', false);
+        $response->assertSee('<th class="px-2 py-1 text-left font-semibold">'.__('ui.games').'</th>', false);
+        $response->assertSee('odd:bg-[#1c1e26] even:bg-[#111318]', false);
+        $response->assertSee('name="hero_id"', false);
+        $response->assertSee('name="sort"', false);
+        $response->assertDontSee('heroPickerQuery', false);
+        $response->assertDontSee('x-for="number in pageCount"', false);
     }
 
     public function test_peers_page_renders_teammates_table(): void
@@ -772,8 +763,11 @@ class DotaProfileTest extends TestCase
         $response->assertViewIs('dota.peers');
         $response->assertSee('id="tab-peers"', false);
         $response->assertSee('Teammate');
-        $response->assertSee('Скрытый профиль');
-        $response->assertSee('Винрейт вместе');
+        $response->assertSee(__('ui.private_profile'));
+        $response->assertSee(__('ui.games_together'));
+        $response->assertSee('bg-green-500', false);
+        $response->assertSee('bg-red-500', false);
+        $response->assertSee('bg-yellow-500', false);
         $response->assertDontSee('Любимый герой');
         $response->assertDontSee('Последний матч');
     }

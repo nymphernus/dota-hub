@@ -6,7 +6,7 @@
 @section('profile-content')
 @php
     $resultFilterOptions = ['' => __('ui.all_results'), 'win' => __('ui.win'), 'loss' => __('ui.loss')];
-    $modeFilterOptions = ['' => __('ui.all_modes'), 'ranked' => 'Ranked', 'turbo' => 'Turbo', 'normal' => 'Normal'];
+    $modeFilterOptions = ['' => __('ui.all_modes'), 'ranked' => __('ui.ranked'), 'turbo' => __('ui.turbo'), 'normal' => __('ui.normal')];
     $roleFilterOptions = ['' => __('ui.all_roles'), 'carry' => 'Carry', 'mid' => 'Mid', 'offlane' => 'Offlane', 'support' => 'Support', 'hard_support' => 'Hard Support'];
     $selectedHeroId = (int) ($filters['hero_id'] ?? 0);
     $selectedHero = collect($heroOptions ?? [])->firstWhere('hero_id', $selectedHeroId);
@@ -22,14 +22,14 @@
         <div class="min-w-[160px] flex-1">
             <span class="label mb-1 block">{{ __('ui.hero') }}</span>
             <input type="hidden" name="hero_id" id="hero_id_input" value="{{ $selectedHeroId }}">
-            <button type="button" @click="heroModal = true" class="h-10 w-full rounded border border-[#2d313e] bg-[#1c1e26] px-3 text-left text-sm text-mist-200 hover:border-accent-400/50 focus:outline-none">
+            <button type="button" @click="heroModal = true" class="h-10 w-full border border-[#2d313e] bg-[#1c1e26] px-3 text-left text-sm text-mist-200 hover:border-accent-400/50 focus:outline-none">
                 {{ $selectedHero['localized_name'] ?? $selectedHero['name'] ?? __('ui.pick_hero') }}
             </button>
         </div>
 
         <label class="min-w-[140px] flex-1">
             <span class="label mb-1 block">{{ __('ui.result') }}</span>
-            <select name="result" onchange="this.form.submit()" class="h-10 w-full rounded border border-[#2d313e] bg-white text-gray-900 dark:bg-[#1c1e26] px-3 text-sm dark:text-mist-200 focus:border-accent-400/50 focus:outline-none">
+            <select name="result" onchange="this.form.submit()" class="h-10 w-full border border-[#2d313e] bg-[#1c1e26] text-mist-200 px-3 text-sm text-mist-200 focus:border-accent-400/50 focus:outline-none">
                 @foreach ($resultFilterOptions as $value => $label)
                     <option value="{{ $value }}" @selected(($filters['result'] ?? '') === $value)>{{ $label }}</option>
                 @endforeach
@@ -37,8 +37,8 @@
         </label>
 
         <label class="min-w-[140px] flex-1">
-            <span class="label mb-1 block">{{ __('ui.hero') }}</span>
-            <select name="mode" onchange="this.form.submit()" class="h-10 w-full rounded border border-[#2d313e] bg-white text-gray-900 dark:bg-[#1c1e26] px-3 text-sm dark:text-mist-200 focus:border-accent-400/50 focus:outline-none">
+            <span class="label mb-1 block">{{ __('ui.game_mode') }}</span>
+            <select name="mode" onchange="this.form.submit()" class="h-10 w-full border border-[#2d313e] bg-[#1c1e26] text-mist-200 px-3 text-sm text-mist-200 focus:border-accent-400/50 focus:outline-none">
                 @foreach ($modeFilterOptions as $value => $label)
                     <option value="{{ $value }}" @selected(($filters['mode'] ?? '') === $value)>{{ $label }}</option>
                 @endforeach
@@ -47,7 +47,7 @@
 
         <label class="min-w-[140px] flex-1">
             <span class="label mb-1 block">{{ __('ui.role') }}</span>
-            <select name="role" onchange="this.form.submit()" class="h-10 w-full rounded border border-[#2d313e] bg-white text-gray-900 dark:bg-[#1c1e26] px-3 text-sm dark:text-mist-200 focus:border-accent-400/50 focus:outline-none">
+            <select name="role" onchange="this.form.submit()" class="h-10 w-full border border-[#2d313e] bg-[#1c1e26] text-mist-200 px-3 text-sm text-mist-200 focus:border-accent-400/50 focus:outline-none">
                 @foreach ($roleFilterOptions as $value => $label)
                     <option value="{{ $value }}" @selected(($filters['role'] ?? '') === $value)>{{ $label }}</option>
                 @endforeach
@@ -58,7 +58,7 @@
             <span class="label mb-1 block">{{ __('ui.date') }}</span>
             <div class="relative">
                 <input type="text" id="date_filter" name="date" value="{{ $filters['date'] ?? '' }}" placeholder="{{ __('ui.pick_date') }}" autocomplete="off"
-                    class="h-10 w-full rounded border border-[#2d313e] bg-[#1c1e26] px-3 pr-9 text-sm text-mist-200 focus:border-accent-400/50 focus:outline-none" />
+                    class="h-10 w-full border border-[#2d313e] bg-[#1c1e26] px-3 pr-9 text-sm text-mist-200 focus:border-accent-400/50 focus:outline-none" />
                 <span class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-mist-400">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
                 </span>
@@ -72,13 +72,13 @@
 
     <!-- Hero picker modal -->
     <div x-show="heroModal" x-cloak class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4" @click.self="heroModal=false">
-        <div class="w-full max-w-3xl border border-line bg-white dark:bg-[#1c1e26] p-4 shadow-xl">
+        <div class="w-full max-w-3xl border border-line bg-[#1c1e26] p-4">
             <div class="mb-3 flex items-center justify-between">
                 <h3 class="text-sm font-semibold text-mist-200">{{ __('ui.pick_hero') }}</h3>
                 <button type="button" @click="heroModal=false" class="text-mist-400 hover:text-white">?</button>
             </div>
             <div class="mb-3">
-                <button type="button" class="rounded border border-[#2d313e] px-2 py-1 text-xs text-mist-300 hover:bg-ink-900/40"
+                <button type="button" class="border border-[#2d313e] px-2 py-1 text-xs text-mist-300 hover:bg-ink-900/40"
                     @click="document.getElementById('hero_id_input').value='0'; document.getElementById('matches-filter-form').submit()">{{ __('ui.all_heroes') }}</button>
             </div>
             <div class="grid grid-cols-8 gap-1 max-h-[60vh] overflow-y-auto pr-1">
@@ -101,7 +101,7 @@
     @if ($matches->isEmpty())
         <div class="mt-6 p-10 text-center text-sm text-mist-400">{{ __('ui.no_matches_filter') }}</div>
     @else
-        <div class="mt-4 overflow-hidden border border-line bg-white dark:bg-[#1c1e26]">
+        <div class="mt-4 overflow-hidden border border-line bg-[#1c1e26]">
             <table class="w-full text-sm">
                 <thead class="table-head">
                     <tr>
@@ -122,7 +122,7 @@
                                 : null;
                             $items = $match['items'] ?? [];
                         @endphp
-                        <tr class="group transition odd:bg-white even:bg-slate-50 hover:bg-slate-100 text-gray-900 dark:text-mist-200 dark:odd:bg-[#1c1e26] dark:even:bg-[#111318] dark:hover:bg-ink-700/60"
+                        <tr class="group transition odd:bg-[#1c1e26] even:bg-[#111318] hover:bg-ink-700/60 text-mist-200"
                             @if ($matchUrl)
                                 data-href="{{ $matchUrl }}"
                                 onclick="window.location.href = this.dataset.href"
@@ -136,13 +136,13 @@
                             ])>
                                 <div class="flex items-center gap-2">
                                     @if ($heroUrl)
-                                        <a href="{{ $heroUrl }}" onclick="event.stopPropagation()" class="h-8 w-8 shrink-0 overflow-hidden rounded bg-ink-800" aria-label="{{ $match['hero_name'] ?? __('ui.hero') }}">
+                                        <a href="{{ $heroUrl }}" onclick="event.stopPropagation()" class="h-8 w-8 shrink-0 overflow-hidden bg-ink-800" aria-label="{{ $match['hero_name'] ?? __('ui.hero') }}">
                                             @if (!empty($match['hero_image']))
                                                 <img src="{{ $match['hero_image'] }}" alt="{{ $match['hero_name'] ?? __('ui.hero') }}" class="h-full w-full object-cover" loading="lazy">
                                             @endif
                                         </a>
                                     @else
-                                        <span class="h-8 w-8 shrink-0 overflow-hidden rounded bg-ink-800">
+                                        <span class="h-8 w-8 shrink-0 overflow-hidden bg-ink-800">
                                             @if (!empty($match['hero_image']))
                                                 <img src="{{ $match['hero_image'] }}" alt="{{ $match['hero_name'] ?? __('ui.hero') }}" class="h-full w-full object-cover" loading="lazy">
                                             @endif
@@ -170,13 +170,13 @@
                                     @for ($slot = 0; $slot < 6; $slot++)
                                         @php $item = $items[$slot] ?? null; @endphp
                                         @if (is_array($item) && ! empty($item['image']))
-                                            <span class="block h-6 w-6 overflow-hidden rounded bg-ink-800" title="{{ $item['name'] ?? '' }}">
+                                            <span class="block h-6 w-6 overflow-hidden bg-ink-800" title="{{ $item['name'] ?? '' }}">
                                                 <img src="{{ $item['image'] }}" alt="{{ $item['name'] ?? '' }}" class="h-full w-full object-cover" loading="lazy">
                                             </span>
                                         @elseif (is_array($item))
-                                            <span class="grid h-6 w-6 place-items-center rounded bg-ink-800 text-[8px] font-bold text-mist-400" title="{{ $item['name'] ?? '' }}">?</span>
+                                            <span class="grid h-6 w-6 place-items-center bg-ink-800 text-[8px] font-bold text-mist-400" title="{{ $item['name'] ?? '' }}">?</span>
                                         @else
-                                            <span class="block h-6 w-6 rounded border border-dashed border-line bg-ink-900/15"></span>
+                                            <span class="block h-6 w-6 border border-dashed border-line bg-ink-900/15"></span>
                                         @endif
                                     @endfor
                                 </div>
@@ -213,3 +213,4 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 @endsection
+

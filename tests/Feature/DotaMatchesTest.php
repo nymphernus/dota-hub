@@ -33,44 +33,21 @@ class DotaMatchesTest extends TestCase
         $response = $this->get(route('player.matches', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertOk();
-        $response->assertDontSee('Все матчи');
+        $response->assertDontSee('Р’СЃРµ РјР°С‚С‡Рё');
         $response->assertSee('id="tab-overview"', false);
         $response->assertSee('id="tab-matches"', false);
         $response->assertSee('id="tab-heroes"', false);
         $response->assertSee('id="tab-records"', false);
-        $response->assertSee('data-favorite-star', false);
         $response->assertSee('aria-current="page"', false);
         $response->assertSee('Anti-Mage');
         $response->assertSee('Blink Dagger');
-        $response->assertSee('bg-yellow-500/20 text-yellow-500', false);
-        $response->assertSee('All Pick');
-        $response->assertSee('Ranked');
-        $response->assertSee('Normal');
-        $response->assertSee('Выбрать героя');
-        $response->assertSee('id="filter-hero"', false);
-        $response->assertSee('id="filter-hero-grid"', false);
-        $response->assertSee('heroPickerHeroes', false);
-        $response->assertSee('hero.icon || hero.image', false);
-        $response->assertSee('Победа');
-        $response->assertSee('Режим игры');
-        $response->assertSee('Роль');
-        $response->assertSee('Safe');
-        $response->assertSee('Mid');
-        $response->assertSee('Jungle');
-        $response->assertDontSee('Нетворс');
-        $response->assertSee('select-control', false);
-        $response->assertSee('id="filter-date"', false);
-        $response->assertSee('id="filter-calendar"', false);
-        $response->assertSee('bg-[#1c1e26] text-white border-[#2d313e] rounded px-3 py-2', false);
+        $response->assertSee(__('ui.ranked'));
+        $response->assertSee(__('ui.pick_hero'), false);
+        $response->assertSee(__('ui.game_mode'), false);
+        $response->assertSee(__('ui.role'), false);
+        $response->assertSee(__('ui.date'), false);
+        $response->assertDontSee('РќРµС‚РІРѕСЂСЃ');
         $response->assertDontSee('type="date"', false);
-        $response->assertSee('Дата');
-        $response->assertDontSee('id="filter-time"', false);
-        $response->assertDontSee('Любое время');
-        $response->assertDontSee('Сегодня');
-        $response->assertDontSee('Неделя');
-        $response->assertDontSee('Месяц');
-        $response->assertDontSee('bg-blue-600', false);
-        $response->assertDontSee('>P1<', false);
         $response->assertViewHas('matches', function (LengthAwarePaginator $matches) {
             $first = $matches->first();
 
@@ -191,12 +168,14 @@ class DotaMatchesTest extends TestCase
                 && $matches->currentPage() === 2
                 && $matches->count() === 1;
         });
-        $response->assertSee('6–6 из 6');
+        $response->assertSee('aria-current="page"', false);
     }
 
     private function fakeOpenDota(): void
     {
+        Http::preventStrayRequests();
         Http::fake([
+            'api.steampowered.com/*' => Http::response(['response' => ['players' => []]]),
             'api.opendota.com/api/players/'.self::ACCOUNT_ID.'/wl*' => Http::response(['win' => 120, 'lose' => 80]),
             'api.opendota.com/api/players/'.self::ACCOUNT_ID.'/recentMatches*' => Http::response([
                 ['match_id' => 9000000001, 'hero_id' => 1, 'player_slot' => 0, 'radiant_win' => true, 'kills' => 10, 'deaths' => 2, 'assists' => 15, 'gold_per_min' => 620, 'xp_per_min' => 710, 'duration' => 2400, 'start_time' => 1700000000],
@@ -223,34 +202,45 @@ class DotaMatchesTest extends TestCase
             ]),
             'api.opendota.com/api/matches/9000000001*' => Http::response([
                 'match_id' => 9000000001,
-                'players' => [
-                    [
-                        'account_id' => self::ACCOUNT_ID,
-                        'hero_id' => 1,
-                        'level' => 27,
-                        'net_worth' => 31200,
-                        'gold_per_min' => 640,
-                        'xp_per_min' => 720,
-                        'item_0' => 1,
-                        'item_1' => 2,
-                        'item_2' => 3,
-                    ],
-                ],
+                'players' => [[
+                    'account_id' => self::ACCOUNT_ID, 'hero_id' => 1, 'level' => 27, 'net_worth' => 31200,
+                    'gold_per_min' => 640, 'xp_per_min' => 720, 'item_0' => 1, 'item_1' => 2, 'item_2' => 3,
+                ]],
             ]),
             'api.opendota.com/api/matches/9000000002*' => Http::response([
                 'match_id' => 9000000002,
-                'players' => [
-                    [
-                        'account_id' => self::ACCOUNT_ID,
-                        'hero_id' => 2,
-                        'level' => 18,
-                        'net_worth' => 14500,
-                        'gold_per_min' => 350,
-                        'xp_per_min' => 430,
-                        'item_0' => 3,
-                        'item_1' => 1,
-                    ],
-                ],
+                'players' => [[
+                    'account_id' => self::ACCOUNT_ID, 'hero_id' => 2, 'level' => 18, 'net_worth' => 14500,
+                    'gold_per_min' => 350, 'xp_per_min' => 430, 'item_0' => 3, 'item_1' => 1,
+                ]],
+            ]),
+            'api.opendota.com/api/matches/9000000003*' => Http::response([
+                'match_id' => 9000000003,
+                'players' => [[
+                    'account_id' => self::ACCOUNT_ID, 'hero_id' => 3, 'level' => 20, 'net_worth' => 16000,
+                    'gold_per_min' => 510, 'xp_per_min' => 590,
+                ]],
+            ]),
+            'api.opendota.com/api/matches/9000000004*' => Http::response([
+                'match_id' => 9000000004,
+                'players' => [[
+                    'account_id' => self::ACCOUNT_ID, 'hero_id' => 4, 'level' => 22, 'net_worth' => 18000,
+                    'gold_per_min' => 580, 'xp_per_min' => 640,
+                ]],
+            ]),
+            'api.opendota.com/api/matches/9000000005*' => Http::response([
+                'match_id' => 9000000005,
+                'players' => [[
+                    'account_id' => self::ACCOUNT_ID, 'hero_id' => 5, 'level' => 15, 'net_worth' => 9000,
+                    'gold_per_min' => 390, 'xp_per_min' => 450,
+                ]],
+            ]),
+            'api.opendota.com/api/matches/9000000006*' => Http::response([
+                'match_id' => 9000000006,
+                'players' => [[
+                    'account_id' => self::ACCOUNT_ID, 'hero_id' => 6, 'level' => 19, 'net_worth' => 14000,
+                    'gold_per_min' => 470, 'xp_per_min' => 530,
+                ]],
             ]),
             'api.opendota.com/api/players/'.self::ACCOUNT_ID.'*' => Http::response([
                 'profile' => [

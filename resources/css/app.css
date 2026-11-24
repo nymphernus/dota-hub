@@ -65,31 +65,23 @@
 
 @layer base {
     :root {
-        --bg-color: #f8fafc;
-        --text-color: #0f172a;
-        --card-bg: #ffffff;
-        --card-border: #e2e8f0;
-        --muted-color: #6b7280;
+        --bg-color: #111318;
+        --text-color: #d1d5db;
+        --card-bg: #1c1e26;
+        --card-border: #2d313e;
+        --muted-color: #8b94a5;
     }
 
     html {
-        color-scheme: light;
+        color-scheme: dark;
         scroll-behavior: smooth;
     }
 
-    html.dark {
-        color-scheme: dark;
-    }
-
     body {
-        @apply font-sans antialiased;
+        @apply font-sans antialiased bg-ink-900 text-mist-200;
         background: var(--bg-color);
         color: var(--text-color);
         min-height: 100vh;
-    }
-
-    html.dark body {
-        @apply bg-ink-900 text-mist-200;
     }
 
     /* Flat design guardrails: no shadows and no card-like rounding. */
@@ -256,89 +248,8 @@
 }
 
 
-/* Light theme overrides */
-html:not(.dark) {
-    --color-ink-950: #f8fafc;
-    --color-ink-900: #f8fafc;
-    --color-ink-850: #f8fafc;
-    --color-ink-800: #ffffff;
-    --color-ink-700: #e2e8f0;
-    --color-ink-600: #cbd5e1;
-    --color-line: #e2e8f0;
-    --color-mist-200: #0f172a;
-    --color-mist-300: #1e293b;
-    --color-mist-400: #334155;
-    --color-mist-500: #64748b;
-    --color-mist-600: #64748b;
-    --color-accent-300: #334155;
-    --color-accent-400: #e2e8f0;
-    --color-accent-500: #94a3b8;
-}
-html:not(.dark) .header-shell { background: rgba(255,255,255,0.92) !important; border-color: #d1d5db !important; }
-html:not(.dark) .nav-shell { background: #f9fafb !important; border-color: #d1d5db !important; }
-html:not(.dark) .card { background: #ffffff !important; border-color: #d1d5db !important; }
-html:not(.dark) .bg-\[\#111318\],
-html:not(.dark) .bg-\[\#111318\]\/90 { background: #ffffff !important; }
-html:not(.dark) .bg-\[\#1c1e26\] { background: #f9fafb !important; }
-html:not(.dark) .bg-\[\#2d313e\] { background: #e5e7eb !important; color: #111827 !important; }
-html:not(.dark) .border-\[\#2d313e\] { border-color: #d1d5db !important; }
-html:not(.dark) .text-white { color: #111827 !important; }
-html:not(.dark) .text-mist-200 { color: #1f2937 !important; }
-html:not(.dark) .text-mist-300 { color: #374151 !important; }
-html:not(.dark) .text-mist-400 { color: #4b5563 !important; }
-html:not(.dark) .text-mist-500 { color: #6b7280 !important; }
-html:not(.dark) .bg-ink-900\/40, html:not(.dark) .bg-ink-900\/50, html:not(.dark) .bg-ink-900\/80, html:not(.dark) .bg-ink-950\/95 { background: rgba(255,255,255,0.9) !important; }
-html:not(.dark) footer { background: #ffffff; border-top: 1px solid #d1d5db; }
-html:not(.dark) option { background: #ffffff; color: #1f2937; }
-html:not(.dark) input[type='date']::-webkit-calendar-picker-indicator { filter: none; }
-
-html:not(.dark) .bg-\[\#d32f2f\] { color: #fff !important; }
-html:not(.dark) .text-mist-100 { color: #111827 !important; }
-html:not(.dark) .from-\[\#111318\] { --tw-gradient-from: #f3f4f6 !important; }
-html:not(.dark) .via-\[\#111318\]\/30 { --tw-gradient-via: rgba(243,244,246,0.3) !important; }
-
-html:not(.dark) .text-gray-900 { color: #0f172a !important; }
-html:not(.dark) .header-shell .text-mist-400,
-html:not(.dark) .header-shell .text-mist-300,
-html:not(.dark) .nav-shell .text-mist-400 { color: #334155 !important; }
-html:not(.dark) .header-shell a:hover,
-html:not(.dark) .nav-shell a:hover { color: #0f172a !important; }
-
-html:not(.dark) .match-row.odd\:bg-\[\#1c1e26\]:nth-child(odd),
-html:not(.dark) .match-row:nth-child(odd) { background: #ffffff !important; }
-html:not(.dark) .match-row:nth-child(even) { background: #f8fafc !important; }
-html:not(.dark) .text-gray-400 { color: #475569 !important; }
-html:not(.dark) .text-gray-500 { color: #64748b !important; }
-html:not(.dark) .bg-gray-50 { background: #f8fafc !important; }
-
-/* explicit light theme contrast */
-html:not(.dark) .text-white,
-html:not(.dark) .text-mist-200,
-html:not(.dark) .text-mist-300,
-[data-theme="light"] .text-white,
-[data-theme="light"] .text-mist-200,
-[data-theme="light"] .text-mist-300 {
-    color: #1f2937 !important;
-}
-html:not(.dark) .bg-ink-900,
-html:not(.dark) .bg-ink-800,
-[data-theme="light"] .bg-ink-900,
-[data-theme="light"] .bg-ink-800 {
-    background-color: #ffffff !important;
-    border-color: #e2e8f0 !important;
-}
-html:not(.dark) .bg-\[\#d32f2f\],
-html:not(.dark) .bg-\[\#d32f2f\].text-white { background-color: #d32f2f !important; color: #fff !important; }
-
-
 /* Hero wheel theme vars */
 :root {
-  --wheel-normal-start: #cbd5e1;
-  --wheel-normal-end: #94a3b8;
-  --wheel-top-start: #e2e8f0;
-  --wheel-top-end: #cbd5e1;
-}
-.dark {
   --wheel-normal-start: #374151;
   --wheel-normal-end: #1f2937;
   --wheel-top-start: #4b5563;

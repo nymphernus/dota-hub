@@ -9,15 +9,6 @@
 
     <title>@yield('title', 'DOTAHUB')</title>
 
-    <script>
-        (function () {
-            try {
-                var t = localStorage.getItem('theme');
-                if (t === 'light') document.documentElement.classList.remove('dark');
-                else document.documentElement.classList.add('dark');
-            } catch (e) { document.documentElement.classList.add('dark'); }
-        })();
-    </script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -51,10 +42,10 @@
         $showProfileNav = $navAccountId > 0 && $navNickname;
         $currentLocale = app()->getLocale();
     @endphp
-    <header class="sticky top-0 z-50 border-b border-[#2d313e] bg-[#111318]/90 backdrop-blur-md dark:bg-[#111318]/90 header-shell">
+    <header class="sticky top-0 z-50 border-b border-[#2d313e] bg-[#111318]/90 backdrop-blur-md header-shell">
         <div class="mx-auto flex h-16 w-full max-w-7xl items-center px-4 sm:px-6 lg:px-8">
             <div class="flex min-w-0 items-center gap-3">
-                <a href="/" class="bg-[#d32f2f] px-2 py-1 text-white font-light uppercase text-2xl leading-none rounded-sm tracking-tighter">DOTAHUB</a>
+                <a href="/" class="bg-[#d32f2f] px-2 py-1 text-2xl leading-none tracking-tighter text-white">DOTAHUB</a>
                 @if ($showProfileNav && $navNickname)
                     <span class="min-w-0 truncate text-sm font-semibold text-white">{{ $navNickname }}</span>
                 @endif
@@ -114,7 +105,7 @@
                         </span>
                         <svg class="h-3 w-3 transition" :class="open ? 'rotate-180' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </button>
-                    <div x-show="open" x-cloak x-transition.opacity.duration.150ms class="absolute right-0 top-10 z-50 w-40 border border-line bg-ink-800 py-1 shadow-lg">
+                    <div x-show="open" x-cloak x-transition.opacity.duration.150ms class="absolute right-0 top-10 z-50 w-40 border border-line bg-ink-800 py-1">
                         <a href="{{ route('lang.switch', ['locale' => 'ru']) }}" class="flex items-center gap-2 px-3 py-2 text-sm {{ $currentLocale === 'ru' ? 'text-white bg-ink-700' : 'text-mist-300 hover:bg-ink-700 hover:text-white' }}">
                             <span class="inline-flex items-center"><img src="{{ asset('images/flags/ru.svg') }}" alt="RU" class="w-5 h-5 object-cover rounded-sm"></span><span>{{ __('ui.russian') }}</span>
                         </a>
@@ -124,16 +115,6 @@
                     </div>
                 </div>
 
-                <button
-                    type="button"
-                    id="theme-toggle"
-                    class="grid h-9 w-9 place-items-center rounded-none text-mist-400 transition hover:bg-ink-700 hover:text-white"
-                    aria-label="{{ __('ui.theme') }}"
-                    title="{{ __('ui.theme') }}"
-                >
-                    <svg id="theme-icon-sun" class="h-4 w-4 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" stroke-linecap="round"/></svg>
-                    <svg id="theme-icon-moon" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                </button>
 
                 @php
                     $steamId = (string) session('steam_id', '');
@@ -236,24 +217,6 @@
         </div>
     </footer>
 
-    <script>
-        (function () {
-            var btn = document.getElementById('theme-toggle');
-            var sun = document.getElementById('theme-icon-sun');
-            var moon = document.getElementById('theme-icon-moon');
-            function sync() {
-                var dark = document.documentElement.classList.contains('dark');
-                if (sun) sun.classList.toggle('hidden', dark);
-                if (moon) moon.classList.toggle('hidden', !dark);
-            }
-            sync();
-            if (btn) btn.addEventListener('click', function () {
-                var dark = document.documentElement.classList.toggle('dark');
-                try { localStorage.setItem('theme', dark ? 'dark' : 'light'); } catch (e) {}
-                sync();
-            });
-        })();
-    </script>
     @stack('scripts')
 </body>
 </html>
