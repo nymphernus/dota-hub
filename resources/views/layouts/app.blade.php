@@ -7,7 +7,7 @@
     <meta name="description" content="@yield('description', __('ui.site_description'))">
     <meta name="theme-color" content="#111318">
 
-    <title>{{ $pageTitle ?? 'DOTAHUB' }} - DOTAHUB</title>
+    <title>@yield('title', 'DOTAHUB')</title>
 
     <script>
         (function () {

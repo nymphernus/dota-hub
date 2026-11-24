@@ -57,7 +57,7 @@ class DotaPlayerController extends Controller
             $heroUsageUnavailable = true;
         }
 
-        return view('player', [
+        return view('dota.player', [
             'player' => $player,
             'pageTitle' => $player['nickname'].' - '.__('ui.overview'),
             'activeTab' => 'overview',
@@ -330,7 +330,7 @@ class DotaPlayerController extends Controller
         $player = $result['player'];
         $steamId = ($player['steam_id'] ?? '') ?: SteamId::steamId64FromAccountId($accountId);
 
-        return view('matches', [
+        return view('dota.matches', [
             'player' => $player,
             'pageTitle' => $player['nickname'].' - '.__('ui.matches'),
             'activeTab' => 'matches',

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', __('ui.server_error').' - DOTAHUB')
+@section('title', '500 - '.__('ui.server_error').' - DOTAHUB').' - DOTAHUB')
 @section('description', __('ui.server_error_desc'))
 
 @section('content')

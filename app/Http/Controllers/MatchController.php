@@ -21,7 +21,7 @@ class MatchController extends Controller
             return back()->with('error', $exception->getMessage());
         }
 
-        return view('match', [
+        return view('dota.match', [
             'match' => $match,
             'pageTitle' => 'Матч '.$match['match_id'].' - DOTAHUB',
         ]);

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', __('ui.not_found_title').' - DOTAHUB')
+@section('title', '404 - '.__('ui.not_found_title').' - DOTAHUB').' - DOTAHUB')
 @section('description', __('ui.not_found_desc'))
 
 @section('content')
