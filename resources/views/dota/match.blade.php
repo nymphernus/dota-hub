@@ -189,7 +189,7 @@
                                                 </div>
                                                 <div class="min-w-0">
                                                     @if ($accountId > 0)
-                                                        <a href="{{ route('dota.player', ['accountId' => $accountId]) }}" class="block truncate text-lg font-bold text-mist-200 transition hover:text-accent-300">
+                                                        <a href="{{ route('player', ['accountId' => $accountId]) }}" class="block truncate text-lg font-bold text-mist-200 transition hover:text-accent-300">
                                                             {{ $player['nickname'] ?: __('ui.player_hash', ['id' => $accountId]) }}
                                                         </a>
                                                     @else

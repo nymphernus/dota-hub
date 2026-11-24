@@ -16,7 +16,7 @@
             <div class="mx-auto w-full max-w-5xl px-4 pb-10 pt-10 sm:px-6 lg:px-8">
                 <section class="card overflow-hidden p-5 sm:p-4">
                     <div class="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-                        <a href="{{ route('dota.player', ['accountId' => $dashboard['account_id']]) }}" class="group flex min-w-0 items-center gap-4">
+                        <a href="{{ route('player', ['accountId' => $dashboard['account_id']]) }}" class="group flex min-w-0 items-center gap-4">
                             <span class="h-16 w-16 shrink-0 overflow-hidden rounded-none bg-ink-800 transition">
                                 @if (! empty($dashboard['avatar']))
                                     <img src="{{ $dashboard['avatar'] }}" alt="{{ $dashboard['nickname'] }}" class="h-full w-full object-cover">
@@ -43,7 +43,7 @@
                                     {{ $dashboard['mmr_is_estimated'] ? __('ui.estimate') : __('ui.open') }}
                                 </p>
                             </div>
-                            <a href="{{ route('dota.player', ['accountId' => $dashboard['account_id']]) }}" class="group grid place-items-center rounded-none bg-accent-500/10 px-4 py-3 text-center transition hover:bg-accent-500/[0.16]">
+                            <a href="{{ route('player', ['accountId' => $dashboard['account_id']]) }}" class="group grid place-items-center rounded-none bg-accent-500/10 px-4 py-3 text-center transition hover:bg-accent-500/[0.16]">
                                 <span class="text-xs font-bold text-accent-300">{{ __('ui.my_profile') }}</span>
                                 <span class="mt-1 text-[10px] text-mist-400 transition group-hover:text-accent-300">{{ __('ui.open_action') }}</span>
                             </a>
@@ -53,7 +53,7 @@
                     <div class="mt-6">
                         <div class="flex flex-wrap items-center justify-between gap-2">
                             <h2 class="section-heading">{{ __('ui.recent_matches') }}</h2>
-                            <a href="{{ route('dota.player', ['accountId' => $dashboard['account_id']]) }}" class="text-[11px] font-semibold text-mist-400 transition hover:text-accent-300">
+                            <a href="{{ route('player', ['accountId' => $dashboard['account_id']]) }}" class="text-[11px] font-semibold text-mist-400 transition hover:text-accent-300">
                                 {{ __('ui.view_all') }}
                             </a>
                         </div>
@@ -71,8 +71,8 @@
                                 @foreach ($dashboard['recent_matches'] as $match)
                                     @php
                                         $matchUrl = ! empty($match['match_id'])
-                                            ? route('dota.match', ['matchId' => $match['match_id'], 'player_id' => $dashboard['account_id']])
-                                            : route('dota.player', ['accountId' => $dashboard['account_id']]);
+                                            ? route('match', ['matchId' => $match['match_id'], 'player_id' => $dashboard['account_id']])
+                                            : route('player', ['accountId' => $dashboard['account_id']]);
                                     @endphp
                                     <a href="{{ $matchUrl }}" @class([
                                         'group rounded-none p-3 transition',

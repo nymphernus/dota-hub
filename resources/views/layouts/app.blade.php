@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="description" content="@yield('description', '{{ __('ui.site_description') }}')">
+    <meta name="description" content="@yield('description', __('ui.site_description'))">
     <meta name="theme-color" content="#111318">
 
     <title>{{ $pageTitle ?? 'DOTAHUB' }} - DOTAHUB</title>
@@ -146,7 +146,7 @@
                 @endphp
                 @if ($steamAccountId)
                     <div class="flex items-center gap-2.5">
-                        <a href="{{ route('dota.player', ['accountId' => $steamAccountId]) }}" class="group flex items-center gap-2.5 rounded-none px-1 py-1 transition hover:bg-ink-700" aria-label="{{ __('ui.my_profile') }}">
+                        <a href="{{ route('player', ['accountId' => $steamAccountId]) }}" class="group flex items-center gap-2.5 rounded-none px-1 py-1 transition hover:bg-ink-700" aria-label="{{ __('ui.my_profile') }}">
                             @if (session('steam_avatar'))
                                 <img src="{{ session('steam_avatar') }}" alt="Steam" class="h-8 w-8 rounded-none object-cover transition">
                             @endif
@@ -181,11 +181,11 @@
             <nav class="border-t border-[#2d313e] bg-[#1c1e26] nav-shell" aria-label="Navigation">
                 <div class="mx-auto flex w-full max-w-7xl items-center gap-1 overflow-x-auto px-4 sm:px-6 lg:px-8">
                     @foreach ([
-                        'dota.player' => __('ui.overview'),
-                        'dota.player.matches' => __('ui.matches'),
-                        'dota.player.heroes' => __('ui.heroes'),
-                        'dota.player.records' => __('ui.records'),
-                        'dota.player.peers' => __('ui.allies'),
+                        'player' => __('ui.overview'),
+                        'player.matches' => __('ui.matches'),
+                        'player.heroes' => __('ui.heroes'),
+                        'player.records' => __('ui.records'),
+                        'player.peers' => __('ui.allies'),
                     ] as $routeName => $label)
                         <a
                             href="{{ route($routeName, ['accountId' => $navAccountId]) }}"
@@ -198,9 +198,9 @@
                         >{{ $label }}</a>
                     @endforeach
 
-                    @if (in_array($navRoute, ['dota.match', 'dota.player.hero'], true))
+                    @if (in_array($navRoute, ['match', 'player.hero'], true))
                         <span class="shrink-0 bg-[#2d313e] px-3 py-2 text-xs font-semibold text-white" aria-current="page">
-                            {{ $navRoute === 'dota.match' ? 'Match #'.request()->route('matchId') : ($navHero['name'] ?? 'Hero') }}
+                            {{ $navRoute === 'match' ? 'Match #'.request()->route('matchId') : ($navHero['name'] ?? 'Hero') }}
                         </span>
                     @endif
                 </div>

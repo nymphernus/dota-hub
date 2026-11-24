@@ -25,7 +25,7 @@
                 @foreach ($favorites as $favorite)
                     @php
                         $accountId = (int) ($favorite['account_id'] ?? 0);
-                        $profileUrl = route('dota.player', ['accountId' => $accountId]);
+                        $profileUrl = route('player', ['accountId' => $accountId]);
                     @endphp
                     <div class="card flex items-center gap-3 p-3">
                         <a href="{{ $profileUrl }}" class="h-12 w-12 shrink-0 overflow-hidden rounded-none bg-ink-800">

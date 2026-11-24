@@ -45,6 +45,6 @@ class SearchController extends Controller
         // Prefetch the profile in the background via Redis queues.
         WarmDotaProfile::dispatch((int) $target['account_id'])->afterResponse();
 
-        return redirect()->route('dota.player', ['accountId' => $target['account_id']]);
+        return redirect()->route('player', ['accountId' => $target['account_id']]);
     }
 }

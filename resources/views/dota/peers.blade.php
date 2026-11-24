@@ -22,7 +22,7 @@
                         $losses = max(0, $games - $wins);
                         $wrClass = $winrate !== null && $winrate >= 50 ? 'text-green-500' : 'text-red-500';
                     @endphp
-                    <a href="{{ route('dota.player', ['accountId' => $peer['account_id']]) }}" class="flex items-center gap-4 px-4 py-3 transition hover:bg-ink-900/30">
+                    <a href="{{ route('player', ['accountId' => $peer['account_id']]) }}" class="flex items-center gap-4 px-4 py-3 transition hover:bg-ink-900/30">
                         <span class="h-10 w-10 shrink-0 overflow-hidden bg-ink-800">
                             @if (!empty($peer['avatar']))
                                 <img src="{{ $peer['avatar'] }}" alt="{{ $peer['nickname'] ?? __('ui.teammate') }}" class="h-full w-full object-cover" loading="lazy">

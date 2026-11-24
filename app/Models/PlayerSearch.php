@@ -52,6 +52,6 @@ class PlayerSearch extends Model
 
     public function profileUrl(): string
     {
-        return route('dota.player', ['accountId' => $this->identifier]);
+        return route('player', ['accountId' => $this->identifier]);
     }
 }

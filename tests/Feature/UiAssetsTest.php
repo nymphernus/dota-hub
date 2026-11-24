@@ -358,7 +358,7 @@ class UiAssetsTest extends TestCase
         $this->assertStringContainsString('data-favorite-star', $source);
         $this->assertStringContainsString('aria-label="Обновить"', $source);
         $this->assertStringContainsString('class="grid h-8 w-8 shrink-0 place-items-center', $source);
-        $this->assertStringContainsString('dota.player.refresh', $source);
+        $this->assertStringContainsString('player.refresh', $source);
         $this->assertStringNotContainsString("x-text=\"loading ? 'Обновляем…' : 'Обновить'\"", $source);
     }
 }

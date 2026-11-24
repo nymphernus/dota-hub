@@ -18,7 +18,7 @@ class SearchTest extends TestCase
 
         $response = $this->post('/search', ['query' => '70388657']);
 
-        $response->assertRedirect(route('dota.player', ['accountId' => 70388657]));
+        $response->assertRedirect(route('player', ['accountId' => 70388657]));
         Queue::assertPushed(WarmDotaProfile::class, fn (WarmDotaProfile $job) => $job->accountId === 70388657);
     }
 
@@ -30,7 +30,7 @@ class SearchTest extends TestCase
             'query' => 'https://steamcommunity.com/profiles/76561198030654385',
         ]);
 
-        $response->assertRedirect(route('dota.player', ['accountId' => 70388657]));
+        $response->assertRedirect(route('player', ['accountId' => 70388657]));
     }
 
     public function test_dota_nickname_is_resolved_through_opendota_search(): void
@@ -45,7 +45,7 @@ class SearchTest extends TestCase
 
         $response = $this->post('/search', ['query' => 'Dendi']);
 
-        $response->assertRedirect(route('dota.player', ['accountId' => 70388657]));
+        $response->assertRedirect(route('player', ['accountId' => 70388657]));
         Http::assertSent(fn ($request) => str_contains($request->url(), '/search')
             && $request['q'] === 'Dendi');
     }
@@ -87,7 +87,7 @@ class SearchTest extends TestCase
             'query' => 'https://steamcommunity.com/id/nymphernus',
         ]);
 
-        $response->assertRedirect(route('dota.player', ['accountId' => 179749744]));
+        $response->assertRedirect(route('player', ['accountId' => 179749744]));
         Queue::assertPushed(WarmDotaProfile::class, fn (WarmDotaProfile $job) => $job->accountId === 179749744);
         Http::assertSent(fn ($request) => str_contains($request->url(), 'ResolveVanityURL')
             && $request['vanityurl'] === 'nymphernus'
@@ -153,7 +153,7 @@ class SearchTest extends TestCase
 
         $response = $this->post('/search', ['query' => '76561198030654385']);
 
-        $response->assertRedirect(route('dota.player', ['accountId' => 70388657]));
+        $response->assertRedirect(route('player', ['accountId' => 70388657]));
 
         $this->get($response->headers->get('Location'))
             ->assertOk()

@@ -168,7 +168,7 @@ class SteamAuthTest extends TestCase
         $response->assertOk();
         $response->assertSee('Dendi');
         $response->assertSee('Выйти');
-        $response->assertSee(route('dota.player', ['accountId' => $accountId]), false);
+        $response->assertSee(route('player', ['accountId' => $accountId]), false);
         $response->assertSee(route('favorites.index'), false);
         $response->assertSee('Избранное');
         $response->assertDontSee('Войти через Steam');

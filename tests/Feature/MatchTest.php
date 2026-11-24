@@ -32,7 +32,7 @@ class MatchTest extends TestCase
     {
         $this->fakeMatch();
 
-        $response = $this->get(route('dota.match', [
+        $response = $this->get(route('match', [
             'matchId' => self::MATCH_ID,
             'player_id' => self::ACCOUNT_ID,
         ]));
@@ -75,8 +75,8 @@ class MatchTest extends TestCase
         $response->assertDontSee('31 200');
         $response->assertSee('3 400');
         $response->assertSee('1 250');
-        $response->assertSee(route('dota.player', ['accountId' => 123456789]), false);
-        $response->assertSee(route('dota.player', ['accountId' => 987654321]), false);
+        $response->assertSee(route('player', ['accountId' => 123456789]), false);
+        $response->assertSee(route('player', ['accountId' => 987654321]), false);
         $response->assertDontSee('Данные о нетворсе появятся после парсинга матча');
         $response->assertDontSee('Вернуться к профилю');
         $response->assertDontSee('На главную');
@@ -127,7 +127,7 @@ class MatchTest extends TestCase
     {
         $this->fakeMatch(parsed: false);
 
-        $response = $this->get(route('dota.match', [
+        $response = $this->get(route('match', [
             'matchId' => self::MATCH_ID,
             'player_id' => self::ACCOUNT_ID,
         ]));
@@ -142,7 +142,7 @@ class MatchTest extends TestCase
     {
         $this->fakeMatch();
 
-        $response = $this->get(route('dota.match', [
+        $response = $this->get(route('match', [
             'matchId' => self::MATCH_ID,
             'player_id' => self::ACCOUNT_ID,
         ]));
@@ -156,7 +156,7 @@ class MatchTest extends TestCase
     {
         $this->fakeMatch(withParties: false);
 
-        $response = $this->get(route('dota.match', ['matchId' => self::MATCH_ID]));
+        $response = $this->get(route('match', ['matchId' => self::MATCH_ID]));
 
         $response->assertOk();
         $response->assertSee('Команда Radiant', false);
@@ -164,8 +164,8 @@ class MatchTest extends TestCase
         $response->assertDontSee('Party #', false);
         $response->assertDontSee('P7');
         $response->assertDontSee('bg-blue-600', false);
-        $response->assertSee(route('dota.player', ['accountId' => 123456789]), false);
-        $response->assertSee(route('dota.player', ['accountId' => 987654321]), false);
+        $response->assertSee(route('player', ['accountId' => 123456789]), false);
+        $response->assertSee(route('player', ['accountId' => 987654321]), false);
     }
 
     public function test_match_page_never_renders_a_net_worth_chart(): void
@@ -174,7 +174,7 @@ class MatchTest extends TestCase
             Cache::flush();
             $this->fakeMatch(parsed: $parsed);
 
-            $response = $this->get(route('dota.match', ['matchId' => self::MATCH_ID]));
+            $response = $this->get(route('match', ['matchId' => self::MATCH_ID]));
 
             $response->assertOk();
             $response->assertDontSee('Нетворс по минутам');
@@ -189,7 +189,7 @@ class MatchTest extends TestCase
     {
         $this->fakeMatch(withStratz: true);
 
-        $response = $this->get(route('dota.match', [
+        $response = $this->get(route('match', [
             'matchId' => self::MATCH_ID,
             'player_id' => self::ACCOUNT_ID,
         ]));
@@ -233,7 +233,7 @@ class MatchTest extends TestCase
 
         $response = $this
             ->from(route('home'))
-            ->get(route('dota.match', ['matchId' => 999999999]));
+            ->get(route('match', ['matchId' => 999999999]));
 
         $response->assertRedirect(route('home'));
         $response->assertSessionHas('error', 'Матч не найден.');
@@ -247,7 +247,7 @@ class MatchTest extends TestCase
 
         $response = $this
             ->from(route('home'))
-            ->get(route('dota.match', ['matchId' => self::MATCH_ID]));
+            ->get(route('match', ['matchId' => self::MATCH_ID]));
 
         $response->assertRedirect(route('home'));
         $response->assertSessionHas('error', 'Матч не найден.');
@@ -271,7 +271,7 @@ class MatchTest extends TestCase
     {
         $this->assertSame(
             url('/dota/match/'.self::MATCH_ID),
-            route('dota.match', ['matchId' => self::MATCH_ID])
+            route('match', ['matchId' => self::MATCH_ID])
         );
     }
 

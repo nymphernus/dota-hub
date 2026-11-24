@@ -30,7 +30,7 @@ class LifetimeStatsTest extends TestCase
     {
         $this->fakeOpenDota();
 
-        $response = $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]));
+        $response = $this->get(route('player', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertOk();
         $response->assertSee('Статистика за всё время');
@@ -54,10 +54,10 @@ class LifetimeStatsTest extends TestCase
     {
         $this->fakeOpenDota();
 
-        $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]))->assertOk();
+        $this->get(route('player', ['accountId' => self::ACCOUNT_ID]))->assertOk();
         $sentAfterFirstVisit = count(Http::recorded());
 
-        $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]))->assertOk();
+        $this->get(route('player', ['accountId' => self::ACCOUNT_ID]))->assertOk();
 
         $this->assertSame($sentAfterFirstVisit, count(Http::recorded()));
     }
@@ -66,7 +66,7 @@ class LifetimeStatsTest extends TestCase
     {
         $this->fakeOpenDota();
 
-        $response = $this->get(route('dota.player.records', ['accountId' => self::ACCOUNT_ID]));
+        $response = $this->get(route('player.records', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertOk();
         $response->assertViewIs('dota.records');
@@ -109,7 +109,7 @@ class LifetimeStatsTest extends TestCase
     {
         $this->fakeOpenDota([]);
 
-        $response = $this->get(route('dota.player.records', ['accountId' => self::ACCOUNT_ID]));
+        $response = $this->get(route('player.records', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertOk();
         $response->assertSee('Самый длинный матч');
@@ -129,7 +129,7 @@ class LifetimeStatsTest extends TestCase
     {
         $this->fakeOpenDota([]);
 
-        $response = $this->get(route('dota.player.records', ['accountId' => self::ACCOUNT_ID]));
+        $response = $this->get(route('player.records', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertOk();
         $response->assertSee('Максимум лечения');
@@ -191,7 +191,7 @@ class LifetimeStatsTest extends TestCase
     {
         $this->fakeOpenDota([]);
 
-        $response = $this->get(route('dota.player.records', ['accountId' => self::ACCOUNT_ID]));
+        $response = $this->get(route('player.records', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertOk();
         $response->assertSee('Все матчи');
@@ -224,10 +224,10 @@ class LifetimeStatsTest extends TestCase
     {
         $this->fakeOpenDota();
 
-        $response = $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]));
+        $response = $this->get(route('player', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertOk();
-        $response->assertSee(route('dota.player.records', ['accountId' => self::ACCOUNT_ID]), false);
+        $response->assertSee(route('player.records', ['accountId' => self::ACCOUNT_ID]), false);
         $response->assertSee('Рекорды');
     }
 
@@ -235,10 +235,10 @@ class LifetimeStatsTest extends TestCase
     {
         $this->fakeOpenDota();
 
-        $this->get(route('dota.player.records', ['accountId' => self::ACCOUNT_ID]))->assertOk();
+        $this->get(route('player.records', ['accountId' => self::ACCOUNT_ID]))->assertOk();
 
         Http::fake();
-        $response = $this->get(route('dota.player.records', ['accountId' => self::ACCOUNT_ID]));
+        $response = $this->get(route('player.records', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertOk();
         $response->assertViewHas('records', fn (array $records) => $records !== []);

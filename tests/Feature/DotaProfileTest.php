@@ -33,7 +33,7 @@ class DotaProfileTest extends TestCase
     {
         $this->fakeOpenDota();
 
-        $response = $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]));
+        $response = $this->get(route('player', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertOk();
         $response->assertSee('Dendi');
@@ -62,22 +62,22 @@ class DotaProfileTest extends TestCase
         Http::assertSentCount(11);
         $this->assertDatabaseHas('player_profiles', ['account_id' => self::ACCOUNT_ID]);
         $response->assertSee(
-            route('dota.match', ['matchId' => 9000000001, 'player_id' => self::ACCOUNT_ID]),
+            route('match', ['matchId' => 9000000001, 'player_id' => self::ACCOUNT_ID]),
             false
         );
         $response->assertSee(
-            route('dota.player.matches', ['accountId' => self::ACCOUNT_ID]),
+            route('player.matches', ['accountId' => self::ACCOUNT_ID]),
             false
         );
         $response->assertSee('id="tab-matches"', false);
         $response->assertDontSee('id="tab-account"', false);
         $response->assertSee('id="tab-peers"', false);
         $response->assertSee('Союзники');
-        $response->assertSee(route('dota.player.heroes', ['accountId' => self::ACCOUNT_ID]), false);
-        $response->assertSee(route('dota.player.peers', ['accountId' => self::ACCOUNT_ID]), false);
+        $response->assertSee(route('player.heroes', ['accountId' => self::ACCOUNT_ID]), false);
+        $response->assertSee(route('player.peers', ['accountId' => self::ACCOUNT_ID]), false);
         $response->assertSee('images/dota/ranks/rank_icon_8.png', false);
         $response->assertSee(
-            route('dota.player.hero', ['accountId' => self::ACCOUNT_ID, 'heroId' => 1]),
+            route('player.hero', ['accountId' => self::ACCOUNT_ID, 'heroId' => 1]),
             false
         );
         $response->assertSee('id="hero-wheel"', false);
@@ -204,7 +204,7 @@ class DotaProfileTest extends TestCase
     {
         $this->fakeOpenDota();
 
-        $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]))->assertOk();
+        $this->get(route('player', ['accountId' => self::ACCOUNT_ID]))->assertOk();
 
         Http::assertSent(fn ($request) => str_contains($request->url(), 'api.opendota.com')
             && ! str_contains($request->url(), 'api_key='));
@@ -215,7 +215,7 @@ class DotaProfileTest extends TestCase
         config(['services.opendota.api_key' => 'opendota-key']);
         $this->fakeOpenDota();
 
-        $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]))->assertOk();
+        $this->get(route('player', ['accountId' => self::ACCOUNT_ID]))->assertOk();
 
         Http::assertSent(fn ($request) => str_contains($request->url(), 'api.opendota.com')
             && str_contains($request->url(), 'api_key=opendota-key'));
@@ -225,7 +225,7 @@ class DotaProfileTest extends TestCase
     {
         $this->fakeOpenDota();
 
-        $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]))->assertOk();
+        $this->get(route('player', ['accountId' => self::ACCOUNT_ID]))->assertOk();
 
         $this->assertDatabaseHas('player_profiles', [
             'account_id' => self::ACCOUNT_ID,
@@ -242,10 +242,10 @@ class DotaProfileTest extends TestCase
     {
         $this->fakeOpenDota();
 
-        $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]))->assertOk();
+        $this->get(route('player', ['accountId' => self::ACCOUNT_ID]))->assertOk();
         $sentAfterFirstVisit = count(Http::recorded());
 
-        $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]))->assertOk();
+        $this->get(route('player', ['accountId' => self::ACCOUNT_ID]))->assertOk();
 
         $this->assertSame($sentAfterFirstVisit, count(Http::recorded()));
     }
@@ -253,14 +253,14 @@ class DotaProfileTest extends TestCase
     public function test_fresh_database_profile_makes_no_external_requests_with_cold_cache(): void
     {
         $this->fakeOpenDota();
-        $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]))->assertOk();
+        $this->get(route('player', ['accountId' => self::ACCOUNT_ID]))->assertOk();
 
         // Keep the database row fresh but drop every Redis entry so the second
         // visit cannot lean on cached hero/item/match metadata.
         Cache::flush();
         Http::fake();
 
-        $response = $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]));
+        $response = $this->get(route('player', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertOk();
         $response->assertViewHas('player', fn (array $player) => ($player['served_from_fresh_db'] ?? false) === true);
@@ -270,12 +270,12 @@ class DotaProfileTest extends TestCase
     public function test_fresh_database_match_list_makes_no_external_requests_with_cold_cache(): void
     {
         $this->fakeOpenDota();
-        $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]))->assertOk();
+        $this->get(route('player', ['accountId' => self::ACCOUNT_ID]))->assertOk();
 
         Cache::flush();
         Http::fake();
 
-        $response = $this->get(route('dota.player.matches', ['accountId' => self::ACCOUNT_ID]));
+        $response = $this->get(route('player.matches', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertOk();
         Http::assertNothingSent();
@@ -284,7 +284,7 @@ class DotaProfileTest extends TestCase
     public function test_stale_database_profile_is_shown_when_opendota_is_unavailable(): void
     {
         $this->fakeOpenDota();
-        $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]))->assertOk();
+        $this->get(route('player', ['accountId' => self::ACCOUNT_ID]))->assertOk();
 
         PlayerProfile::whereKey(self::ACCOUNT_ID)->update([
             'updated_at' => CarbonImmutable::now()->subHours(2),
@@ -294,7 +294,7 @@ class DotaProfileTest extends TestCase
             'api.opendota.com/api/*' => Http::failedConnection('Connection timed out'),
         ]);
 
-        $response = $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]));
+        $response = $this->get(route('player', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertOk();
         $response->assertSee('Dendi');
@@ -328,7 +328,7 @@ class DotaProfileTest extends TestCase
             ->push($page(9100001500, 1500))
             ->push($page(9100000000, 2)));
 
-        $response = $this->get(route('dota.player.matches', ['accountId' => self::ACCOUNT_ID]));
+        $response = $this->get(route('player.matches', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertOk();
         $response->assertViewHas('matches', fn (LengthAwarePaginator $matches): bool => $matches->total() === 3002);
@@ -352,17 +352,17 @@ class DotaProfileTest extends TestCase
     {
         $this->fakeOpenDota();
 
-        $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]))->assertOk();
+        $this->get(route('player', ['accountId' => self::ACCOUNT_ID]))->assertOk();
         $sentAfterFirstVisit = count(Http::recorded());
 
-        $this->post(route('dota.player.refresh', ['accountId' => self::ACCOUNT_ID]))
-            ->assertRedirect(route('dota.player', ['accountId' => self::ACCOUNT_ID]))
+        $this->post(route('player.refresh', ['accountId' => self::ACCOUNT_ID]))
+            ->assertRedirect(route('player', ['accountId' => self::ACCOUNT_ID]))
             ->assertSessionHas('status');
 
         $this->assertFalse(Cache::has('opendota:player:v3:'.self::ACCOUNT_ID));
         $this->assertDatabaseMissing('player_profiles', ['account_id' => self::ACCOUNT_ID]);
 
-        $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]))->assertOk();
+        $this->get(route('player', ['accountId' => self::ACCOUNT_ID]))->assertOk();
 
         // Hero/item metadata and match details stay cached; seven player endpoints are re-fetched.
         $this->assertSame($sentAfterFirstVisit + 7, count(Http::recorded()));
@@ -374,7 +374,7 @@ class DotaProfileTest extends TestCase
             'api.opendota.com/api/*' => Http::response(['error' => 'Not Found'], 404),
         ]);
 
-        $response = $this->get(route('dota.player', ['accountId' => 999999999]));
+        $response = $this->get(route('player', ['accountId' => 999999999]));
 
         $response->assertNotFound();
         $response->assertSee('Игрок не найден');
@@ -386,7 +386,7 @@ class DotaProfileTest extends TestCase
             'api.opendota.com/api/*' => Http::response(['error' => 'boom'], 500),
         ]);
 
-        $response = $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]));
+        $response = $this->get(route('player', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertStatus(502);
         $response->assertSee('OpenDota недоступна');
@@ -398,7 +398,7 @@ class DotaProfileTest extends TestCase
             'api.opendota.com/api/*' => Http::failedConnection('Connection timed out'),
         ]);
 
-        $response = $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]));
+        $response = $this->get(route('player', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertStatus(502);
         $response->assertViewIs('errors.api');
@@ -421,7 +421,7 @@ class DotaProfileTest extends TestCase
             'api.opendota.com/api/heroStats*' => Http::response([]),
         ]);
 
-        $response = $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]));
+        $response = $this->get(route('player', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertStatus(502);
         $response->assertViewIs('errors.api');
@@ -451,7 +451,7 @@ class DotaProfileTest extends TestCase
             ]),
         ]);
 
-        $response = $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]));
+        $response = $this->get(route('player', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertOk();
         $response->assertDontSee('Профиль игрока скрыт. Данные недоступны.');
@@ -481,7 +481,7 @@ class DotaProfileTest extends TestCase
             'lastlogoff' => now()->subHours(2)->timestamp,
         ]);
 
-        $response = $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]));
+        $response = $this->get(route('player', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertOk();
         $response->assertSee('Публичный');
@@ -505,7 +505,7 @@ class DotaProfileTest extends TestCase
             'personastate' => 0,
         ]);
 
-        $response = $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]));
+        $response = $this->get(route('player', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertOk();
         $response->assertSee('Приватный');
@@ -530,7 +530,7 @@ class DotaProfileTest extends TestCase
                 'api.opendota.com/api/heroStats*' => Http::response([]),
             ]);
 
-            $response = $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]));
+            $response = $this->get(route('player', ['accountId' => self::ACCOUNT_ID]));
 
             $response->assertOk();
             $response->assertSee('Анонимный игрок');
@@ -557,7 +557,7 @@ class DotaProfileTest extends TestCase
             'api.opendota.com/api/heroStats*' => Http::response([]),
         ]);
 
-        $response = $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]));
+        $response = $this->get(route('player', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertOk();
         $response->assertSee('Анонимный игрок');
@@ -579,7 +579,7 @@ class DotaProfileTest extends TestCase
             'lastlogoff' => 1700000000,
         ]);
 
-        $response = $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]));
+        $response = $this->get(route('player', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertOk();
         $response->assertDontSee('id="tab-account"', false);
@@ -594,7 +594,7 @@ class DotaProfileTest extends TestCase
     {
         $this->fakeOpenDota();
 
-        $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]))->assertOk();
+        $this->get(route('player', ['accountId' => self::ACCOUNT_ID]))->assertOk();
 
         $record = PlayerProfile::findOrFail(self::ACCOUNT_ID);
         $data = $record->data;
@@ -605,7 +605,7 @@ class DotaProfileTest extends TestCase
         $record->save();
         Cache::flush();
 
-        $response = $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]));
+        $response = $this->get(route('player', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertOk();
         $response->assertSee('Dendi Prime');
@@ -626,7 +626,7 @@ class DotaProfileTest extends TestCase
             'mmr_estimate' => null,
         ]);
 
-        $response = $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]));
+        $response = $this->get(route('player', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertOk();
         $response->assertSee('3 199');
@@ -698,7 +698,7 @@ class DotaProfileTest extends TestCase
             ],
         );
 
-        $response = $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]));
+        $response = $this->get(route('player', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertOk();
         $response->assertSee('Anti-Mage');
@@ -717,7 +717,7 @@ class DotaProfileTest extends TestCase
 
         $this->fakeOpenDota(heroesResponse: []);
 
-        $response = $this->get(route('dota.player', ['accountId' => self::ACCOUNT_ID]));
+        $response = $this->get(route('player', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertOk();
         $response->assertSee('Самые играемые герои');
@@ -738,7 +738,7 @@ class DotaProfileTest extends TestCase
     {
         $this->fakeOpenDota();
 
-        $response = $this->get(route('dota.player.heroes', ['accountId' => self::ACCOUNT_ID]));
+        $response = $this->get(route('player.heroes', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertOk();
         $response->assertViewIs('dota.heroes');
@@ -766,7 +766,7 @@ class DotaProfileTest extends TestCase
     {
         $this->fakeOpenDota();
 
-        $response = $this->get(route('dota.player.peers', ['accountId' => self::ACCOUNT_ID]));
+        $response = $this->get(route('player.peers', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertOk();
         $response->assertViewIs('dota.peers');

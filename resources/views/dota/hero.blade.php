@@ -4,7 +4,7 @@
 @section('description', '$player['nickname'].' - '.$hero['name']')
 
 @php
-    $backUrl = route('dota.player', ['accountId' => $player['account_id']]);
+    $backUrl = route('player', ['accountId' => $player['account_id']]);
     $toneClasses = [
         'emerald' => [
             'badge' => 'border-green-500/25 bg-green-500/10 text-green-500',
@@ -229,7 +229,7 @@
                             @foreach ($matches as $match)
                                 @php
                                     $matchUrl = $match['match_id']
-                                        ? route('dota.match', ['matchId' => $match['match_id'], 'player_id' => $player['account_id']])
+                                        ? route('match', ['matchId' => $match['match_id'], 'player_id' => $player['account_id']])
                                         : null;
                                 @endphp
                                 <tr

@@ -48,7 +48,7 @@ class FavoriteTest extends TestCase
         $index = $this->withSession(['steam_id' => $steamId])->get(route('favorites.index'));
         $index->assertOk();
         $index->assertSee('Dendi');
-        $index->assertSee(route('dota.player', ['accountId' => 70388657]), false);
+        $index->assertSee(route('player', ['accountId' => 70388657]), false);
         $index->assertSee('Удалить');
 
         $this->withSession(['steam_id' => $steamId])
@@ -86,7 +86,7 @@ class FavoriteTest extends TestCase
         });
 
         $response = $this->withSession(['steam_id' => $steamId])
-            ->get(route('dota.player', ['accountId' => $accountId]));
+            ->get(route('player', ['accountId' => $accountId]));
 
         $response->assertOk();
         $response->assertSee('data-favorite-star', false);
@@ -102,7 +102,7 @@ class FavoriteTest extends TestCase
             ]);
 
         $response = $this->withSession(['steam_id' => $steamId])
-            ->get(route('dota.player', ['accountId' => $accountId]));
+            ->get(route('player', ['accountId' => $accountId]));
 
         $response->assertOk();
         $response->assertSee('active: true', false);

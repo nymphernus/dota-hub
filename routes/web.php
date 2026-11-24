@@ -32,36 +32,36 @@ Route::delete('/favorites/{accountId}', [FavoriteController::class, 'destroy'])
     ->whereNumber('accountId')
     ->name('favorites.destroy');
 
-Route::get('/dota/player/{accountId}', [DotaPlayerController::class, 'show'])
+Route::get('/player/{accountId}', [DotaPlayerController::class, 'show'])
     ->whereNumber('accountId')
-    ->name('dota.player');
+    ->name('player');
 
-Route::get('/dota/player/{accountId}/matches', [DotaPlayerController::class, 'matches'])
+Route::get('/player/{accountId}/matches', [DotaPlayerController::class, 'matches'])
     ->whereNumber('accountId')
-    ->name('dota.player.matches');
+    ->name('player.matches');
 
-Route::get('/dota/player/{accountId}/heroes', [DotaPlayerController::class, 'heroes'])
+Route::get('/player/{accountId}/heroes', [DotaPlayerController::class, 'heroes'])
     ->whereNumber('accountId')
-    ->name('dota.player.heroes');
+    ->name('player.heroes');
 
-Route::get('/dota/player/{accountId}/peers', [DotaPlayerController::class, 'peers'])
+Route::get('/player/{accountId}/peers', [DotaPlayerController::class, 'peers'])
     ->whereNumber('accountId')
-    ->name('dota.player.peers');
+    ->name('player.peers');
 
-Route::get('/dota/player/{accountId}/records', [DotaPlayerController::class, 'records'])
+Route::get('/player/{accountId}/records', [DotaPlayerController::class, 'records'])
     ->whereNumber('accountId')
-    ->name('dota.player.records');
+    ->name('player.records');
 
-Route::get('/dota/player/{accountId}/hero/{heroId}', [HeroPlayerController::class, 'show'])
+Route::get('/player/{accountId}/hero/{heroId}', [HeroPlayerController::class, 'show'])
     ->whereNumber('accountId')
     ->whereNumber('heroId')
-    ->name('dota.player.hero');
+    ->name('player.hero');
 
-Route::get('/dota/match/{matchId}', [MatchController::class, 'show'])
+Route::get('/match/{matchId}', [MatchController::class, 'show'])
     ->whereNumber('matchId')
-    ->name('dota.match');
+    ->name('match');
 
-Route::post('/dota/player/{accountId}/refresh', [DotaPlayerController::class, 'refresh'])
+Route::post('/player/{accountId}/refresh', [DotaPlayerController::class, 'refresh'])
     ->whereNumber('accountId')
     ->middleware('throttle:5,1')
-    ->name('dota.player.refresh');
+    ->name('player.refresh');

@@ -30,7 +30,7 @@ class DotaHeroTest extends TestCase
     {
         $this->fakeOpenDota();
 
-        $response = $this->get(route('dota.player.hero', [
+        $response = $this->get(route('player.hero', [
             'accountId' => self::ACCOUNT_ID,
             'heroId' => self::HERO_ID,
         ]));
@@ -47,8 +47,8 @@ class DotaHeroTest extends TestCase
         $response->assertSee('21 500');
         $response->assertSee('KDA');
         $response->assertSee('Топ 10%');
-        $response->assertSee(route('dota.player', ['accountId' => self::ACCOUNT_ID]), false);
-        $response->assertSee(route('dota.match', ['matchId' => 9100000001, 'player_id' => self::ACCOUNT_ID]), false);
+        $response->assertSee(route('player', ['accountId' => self::ACCOUNT_ID]), false);
+        $response->assertSee(route('match', ['matchId' => 9100000001, 'player_id' => self::ACCOUNT_ID]), false);
 
         $response->assertViewHas('player', fn (array $player) => $player['account_id'] === self::ACCOUNT_ID
             && $player['nickname'] === 'Dendi');
@@ -100,14 +100,14 @@ class DotaHeroTest extends TestCase
     {
         $this->fakeOpenDota();
 
-        $this->get(route('dota.player.hero', [
+        $this->get(route('player.hero', [
             'accountId' => self::ACCOUNT_ID,
             'heroId' => self::HERO_ID,
         ]))->assertOk();
 
         $sentAfterFirstVisit = count(Http::recorded());
 
-        $this->get(route('dota.player.hero', [
+        $this->get(route('player.hero', [
             'accountId' => self::ACCOUNT_ID,
             'heroId' => self::HERO_ID,
         ]))->assertOk();
@@ -121,7 +121,7 @@ class DotaHeroTest extends TestCase
             'api.opendota.com/api/*' => Http::response(['error' => 'Not Found'], 404),
         ]);
 
-        $response = $this->get(route('dota.player.hero', [
+        $response = $this->get(route('player.hero', [
             'accountId' => 999999999,
             'heroId' => self::HERO_ID,
         ]));
@@ -136,7 +136,7 @@ class DotaHeroTest extends TestCase
             'api.opendota.com/api/benchmarks*' => Http::response(['error' => 'boom'], 500),
         ]);
 
-        $response = $this->get(route('dota.player.hero', [
+        $response = $this->get(route('player.hero', [
             'accountId' => self::ACCOUNT_ID,
             'heroId' => self::HERO_ID,
         ]));

@@ -30,7 +30,7 @@ class DotaMatchesTest extends TestCase
     {
         $this->fakeOpenDota();
 
-        $response = $this->get(route('dota.player.matches', ['accountId' => self::ACCOUNT_ID]));
+        $response = $this->get(route('player.matches', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertOk();
         $response->assertDontSee('Все матчи');
@@ -101,7 +101,7 @@ class DotaMatchesTest extends TestCase
     {
         $this->fakeOpenDota();
 
-        $heroResponse = $this->get(route('dota.player.matches', [
+        $heroResponse = $this->get(route('player.matches', [
             'accountId' => self::ACCOUNT_ID,
             'hero_id' => 1,
         ]));
@@ -109,7 +109,7 @@ class DotaMatchesTest extends TestCase
         $heroResponse->assertViewHas('matches', fn (LengthAwarePaginator $matches) => $matches->total() === 1
             && $matches->first()['hero_id'] === 1);
 
-        $lossResponse = $this->get(route('dota.player.matches', [
+        $lossResponse = $this->get(route('player.matches', [
             'accountId' => self::ACCOUNT_ID,
             'result' => 'loss',
         ]));
@@ -119,7 +119,7 @@ class DotaMatchesTest extends TestCase
                 && $matches->every(fn (array $match) => $match['win'] === false);
         });
 
-        $rankedResponse = $this->get(route('dota.player.matches', [
+        $rankedResponse = $this->get(route('player.matches', [
             'accountId' => self::ACCOUNT_ID,
             'mode' => 'ranked',
         ]));
@@ -128,7 +128,7 @@ class DotaMatchesTest extends TestCase
 
         // A normal All Pick match must survive even when OpenDota reports a
         // ranked lobby_type. Mode filtering is driven by game_mode only.
-        $normalResponse = $this->get(route('dota.player.matches', [
+        $normalResponse = $this->get(route('player.matches', [
             'accountId' => self::ACCOUNT_ID,
             'mode' => 'normal',
         ]));
@@ -139,7 +139,7 @@ class DotaMatchesTest extends TestCase
                     && $match['game_mode'] === 1);
         });
 
-        $roleResponse = $this->get(route('dota.player.matches', [
+        $roleResponse = $this->get(route('player.matches', [
             'accountId' => self::ACCOUNT_ID,
             'role' => 'mid',
         ]));
@@ -155,7 +155,7 @@ class DotaMatchesTest extends TestCase
         $this->fakeOpenDota();
 
         $date = CarbonImmutable::now('UTC')->subDays(4)->toDateString();
-        $response = $this->get(route('dota.player.matches', [
+        $response = $this->get(route('player.matches', [
             'accountId' => self::ACCOUNT_ID,
             'date' => $date,
         ]));
@@ -164,7 +164,7 @@ class DotaMatchesTest extends TestCase
         $response->assertViewHas('filters', fn (array $filters): bool => $filters['date'] === $date);
         $response->assertViewHas('matches', fn (LengthAwarePaginator $matches): bool => $matches->total() === 2);
 
-        $invalid = $this->get(route('dota.player.matches', [
+        $invalid = $this->get(route('player.matches', [
             'accountId' => self::ACCOUNT_ID,
             'date' => '2026-99-99',
         ]));
@@ -178,7 +178,7 @@ class DotaMatchesTest extends TestCase
     {
         $this->fakeOpenDota();
 
-        $response = $this->get(route('dota.player.matches', [
+        $response = $this->get(route('player.matches', [
             'accountId' => self::ACCOUNT_ID,
             'per_page' => 5,
             'page' => 2,

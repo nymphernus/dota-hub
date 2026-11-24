@@ -18,7 +18,7 @@
         <span class="badge border-line bg-ink-900/50 text-mist-400">{{ $matches->total() }} {{ __('ui.matches_word') }}</span>
     </div>
 
-    <form id="matches-filter-form" method="GET" action="{{ route('dota.player.matches', ['accountId' => $player['account_id']]) }}" class="flex flex-row flex-wrap items-end gap-2">
+    <form id="matches-filter-form" method="GET" action="{{ route('player.matches', ['accountId' => $player['account_id']]) }}" class="flex flex-row flex-wrap items-end gap-2">
         <div class="min-w-[160px] flex-1">
             <span class="label mb-1 block">{{ __('ui.hero') }}</span>
             <input type="hidden" name="hero_id" id="hero_id_input" value="{{ $selectedHeroId }}">
@@ -66,7 +66,7 @@
         </label>
 
         @if ($selectedHeroId > 0 || ($filters['result'] ?? '') !== '' || ($filters['mode'] ?? '') !== '' || ($filters['role'] ?? '') !== '' || ($filters['date'] ?? '') !== '')
-            <a href="{{ route('dota.player.matches', ['accountId' => $player['account_id']]) }}" class="button-ghost h-10 px-4">{{ __('ui.reset') }}</a>
+            <a href="{{ route('player.matches', ['accountId' => $player['account_id']]) }}" class="button-ghost h-10 px-4">{{ __('ui.reset') }}</a>
         @endif
     </form>
 
@@ -115,10 +115,10 @@
                     @foreach ($matches as $match)
                         @php
                             $matchUrl = ! empty($match['match_id'])
-                                ? route('dota.match', ['matchId' => $match['match_id'], 'player_id' => $player['account_id']])
+                                ? route('match', ['matchId' => $match['match_id'], 'player_id' => $player['account_id']])
                                 : null;
                             $heroUrl = ! empty($match['hero_id'])
-                                ? route('dota.player.hero', ['accountId' => $player['account_id'], 'heroId' => $match['hero_id']])
+                                ? route('player.hero', ['accountId' => $player['account_id'], 'heroId' => $match['hero_id']])
                                 : null;
                             $items = $match['items'] ?? [];
                         @endphp

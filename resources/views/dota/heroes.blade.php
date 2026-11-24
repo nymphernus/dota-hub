@@ -12,7 +12,7 @@
         <span class="badge border-line bg-ink-900/50 text-mist-400">{{ $heroes->total() }} {{ __('ui.heroes_count') }}</span>
     </div>
 
-    <form method="GET" action="{{ route('dota.player.heroes', ['accountId' => $player['account_id']]) }}" class="flex flex-row flex-wrap items-end gap-2">
+    <form method="GET" action="{{ route('player.heroes', ['accountId' => $player['account_id']]) }}" class="flex flex-row flex-wrap items-end gap-2">
         <label class="min-w-[180px] flex-1">
             <span class="label mb-1 block">{{ __('ui.hero') }}</span>
             <select name="hero_id" onchange="this.form.submit()" class="h-10 w-full rounded border border-[#2d313e] bg-white text-gray-900 dark:bg-[#1c1e26] px-3 text-sm dark:text-mist-200 focus:border-accent-400/50 focus:outline-none">
@@ -33,7 +33,7 @@
         </label>
 
         @if (($filters['hero_id'] ?? 0) > 0 || ($filters['sort'] ?? 'games') !== 'games')
-            <a href="{{ route('dota.player.heroes', ['accountId' => $player['account_id']]) }}" class="button-ghost h-10 px-4">{{ __('ui.reset') }}</a>
+            <a href="{{ route('player.heroes', ['accountId' => $player['account_id']]) }}" class="button-ghost h-10 px-4">{{ __('ui.reset') }}</a>
         @endif
     </form>
 
@@ -54,7 +54,7 @@
                     @foreach ($heroes as $hero)
                         @php
                             $heroId = (int) ($hero['hero_id'] ?? 0);
-                            $heroUrl = $heroId > 0 ? route('dota.player.hero', ['accountId' => $player['account_id'], 'heroId' => $heroId]) : null;
+                            $heroUrl = $heroId > 0 ? route('player.hero', ['accountId' => $player['account_id'], 'heroId' => $heroId]) : null;
                             $name = $hero['localized_name'] ?? $hero['name'] ?? __('ui.hero');
                             $img = $hero['image'] ?? $hero['icon'] ?? null;
                             $games = (int) ($hero['games'] ?? 0);

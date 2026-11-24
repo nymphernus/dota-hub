@@ -1,11 +1,11 @@
 @php
     $accountId = (int) ($player['account_id'] ?? 0);
     $tabs = [
-        ['key' => 'overview', 'label' => __('ui.overview'), 'url' => route('dota.player', ['accountId' => $accountId])],
-        ['key' => 'matches', 'label' => __('ui.matches'), 'url' => route('dota.player.matches', ['accountId' => $accountId])],
-        ['key' => 'heroes', 'label' => __('ui.heroes'), 'url' => route('dota.player.heroes', ['accountId' => $accountId]), 'count' => count($player['heroes'] ?? [])],
-        ['key' => 'peers', 'label' => __('ui.peers'), 'url' => route('dota.player.peers', ['accountId' => $accountId])],
-        ['key' => 'records', 'label' => __('ui.records'), 'url' => route('dota.player.records', ['accountId' => $accountId])],
+        ['key' => 'overview', 'label' => __('ui.overview'), 'url' => route('player', ['accountId' => $accountId])],
+        ['key' => 'matches', 'label' => __('ui.matches'), 'url' => route('player.matches', ['accountId' => $accountId])],
+        ['key' => 'heroes', 'label' => __('ui.heroes'), 'url' => route('player.heroes', ['accountId' => $accountId]), 'count' => count($player['heroes'] ?? [])],
+        ['key' => 'peers', 'label' => __('ui.peers'), 'url' => route('player.peers', ['accountId' => $accountId])],
+        ['key' => 'records', 'label' => __('ui.records'), 'url' => route('player.records', ['accountId' => $accountId])],
     ];
 @endphp
 

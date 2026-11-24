@@ -1,12 +1,12 @@
 ﻿@php
     $matchUrl = ! empty($match['match_id'])
-        ? route('dota.match', ['matchId' => $match['match_id'], 'player_id' => $accountId])
+        ? route('match', ['matchId' => $match['match_id'], 'player_id' => $accountId])
         : null;
     $startedAt = ! empty($match['started_at'])
         ? \Carbon\CarbonImmutable::parse($match['started_at'])
         : null;
     $heroUrl = ! empty($match['hero_id'])
-        ? route('dota.player.hero', ['accountId' => $accountId, 'heroId' => $match['hero_id']])
+        ? route('player.hero', ['accountId' => $accountId, 'heroId' => $match['hero_id']])
         : null;
 
     $laneRole = (int) ($match['lane_role'] ?? 0);

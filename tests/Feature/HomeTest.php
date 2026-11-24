@@ -136,7 +136,7 @@ class HomeTest extends TestCase
         $response->assertSee('Axe');
         $response->assertSee('Bane');
         $response->assertDontSee('Pudge');
-        $response->assertSee(route('dota.player', ['accountId' => $accountId]), false);
+        $response->assertSee(route('player', ['accountId' => $accountId]), false);
         $response->assertViewHas('dashboard', fn (?array $dashboard) => $dashboard !== null
             && $dashboard['available'] === true
             && count($dashboard['recent_matches']) === 3);

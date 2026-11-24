@@ -89,7 +89,7 @@
                     @else
                         <div class="grid gap-2 p-3 sm:grid-cols-2">
                             @foreach ($topHeroes as $index => $hero)
-                                @php $heroUrl = route('dota.player.hero', ['accountId' => $player['account_id'], 'heroId' => $hero['hero_id']]); @endphp
+                                @php $heroUrl = route('player.hero', ['accountId' => $player['account_id'], 'heroId' => $hero['hero_id']]); @endphp
                                 <a href="{{ $heroUrl }}" class="group flex items-center gap-2 border border-line bg-ink-900/30 p-1.5 transition hover:border-accent-500/30 hover:bg-accent-500/[0.06]">
                                     <span class="w-4 text-center font-mono text-[10px] text-mist-500">{{ $index + 1 }}</span>
                                     <span class="h-8 w-14 shrink-0 overflow-hidden bg-ink-800">
@@ -141,7 +141,7 @@
                                 class="grid w-full gap-[3px]"
                                 role="grid"
                                 aria-hidden="true"
-                                data-match-url-template="{{ route('dota.player.matches', ['accountId' => $player['account_id'], 'date' => '__DATE__']) }}"
+                                data-match-url-template="{{ route('player.matches', ['accountId' => $player['account_id'], 'date' => '__DATE__']) }}"
                             ></div>
                         </div>
                     </div>
@@ -232,7 +232,7 @@
                     @else
                         <div class="mt-2 space-y-1.5">
                             @foreach ($topPeers as $peer)
-                                <a href="{{ route('dota.player', ['accountId' => $peer['account_id']]) }}" class="group flex items-center gap-2 border border-line bg-ink-900/30 p-1.5 transition hover:border-accent-500/30 hover:bg-accent-500/[0.06]">
+                                <a href="{{ route('player', ['accountId' => $peer['account_id']]) }}" class="group flex items-center gap-2 border border-line bg-ink-900/30 p-1.5 transition hover:border-accent-500/30 hover:bg-accent-500/[0.06]">
                                     <span class="h-7 w-7 shrink-0 overflow-hidden bg-ink-800">
                                         @if ($peer['avatar'])
                                             <img src="{{ $peer['avatar'] }}" alt="{{ $peer['nickname'] }}" class="h-full w-full object-cover" loading="lazy">

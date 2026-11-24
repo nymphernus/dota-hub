@@ -96,7 +96,7 @@
                         @endif
                         <form
                             method="POST"
-                            action="{{ route('dota.player.refresh', ['accountId' => $player['account_id']]) }}"
+                            action="{{ route('player.refresh', ['accountId' => $player['account_id']]) }}"
                             x-data="{ loading: false }"
                             @submit="loading = true"
                             @pageshow.window="loading = false"
