@@ -12,7 +12,7 @@ class ExternalApiException extends RuntimeException
         public readonly int $status = 502,
         ?string $customMessage = null,
     ) {
-        $message = $customMessage ?? "Сервис {$service} временно недоступен.";
+        $message = $customMessage ?? __('ui.service_unavailable', ['service' => $service]);
 
         if ($details !== '') {
             $message .= " {$details}";

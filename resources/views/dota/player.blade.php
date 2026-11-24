@@ -26,8 +26,14 @@
 
         <div class="mt-4 flex flex-wrap items-center gap-2 rounded-none bg-ink-900/60 px-4 py-3 text-[11px]">
             <span class="uppercase tracking-[0.16em] text-mist-500">{{ __('ui.privacy') }}</span>
-            <span @class(['badge', $steamTone])>Steam: {{ $steamProfile['visibility'] ?? __('ui.steam_unknown') }}</span>
-            <span @class(['badge', $dotaTone])>{{ $dotaPublic ? __('ui.dota_public') : __('ui.dota_no_matches') }}</span>
+            <span @class(['badge', $steamTone])>
+                @if ($steamPublic === true)
+                    {{ __('ui.steam_public') }}
+                @else
+                    Steam: {{ $steamProfile['visibility'] ?? __('ui.steam_unknown') }}
+                @endif
+            </span>
+            <span @class(['badge', $dotaTone])>{{ $dotaPublic ? __('ui.public_match_history') : __('ui.dota_no_matches') }}</span>
             @if (! $steamAvailable)
                 <span class="text-accent-300/80">{{ $steamProfile['error'] ?? __('ui.steam_unavailable') }}</span>
             @endif
@@ -91,28 +97,25 @@
                             @foreach ($topHeroes as $hero)
                                 @php $heroUrl = route('player.hero', ['accountId' => $player['account_id'], 'heroId' => $hero['hero_id']]); @endphp
                                 <a href="{{ $heroUrl }}" class="block">
-                                    <div class="flex items-center gap-3 py-2 border-b border-ink-700/50 last:border-b-0">
-                                        <img src="{{ $hero['image'] }}" class="w-16 h-9 object-cover shrink-0">
+                                    <div class="flex items-center gap-4 py-2 border-b border-ink-700/50 hover:bg-ink-800/50 px-2 transition">
+                                        <!-- Hero image -->
+                                        <img src="{{ $hero['image'] }}" class="w-16 h-9 object-cover shrink-0 rounded-sm">
 
+                                        <!-- Hero name -->
                                         <div class="w-40 shrink-0">
                                             <div class="text-sm font-bold text-mist-200 truncate">{{ $hero['name'] }}</div>
                                         </div>
 
-                                        <div class="flex items-center gap-2 w-32 shrink-0">
-                                            <span class="text-xs text-mist-400">{{ $hero['games'] }} {{ __('ui.games_word') }}</span>
-                                            <div class="w-full bg-ink-900 h-1.5 rounded overflow-hidden">
-                                                <div class="bg-blue-500 h-full" style="width: {{ ($hero['games'] / $maxHeroGames) * 100 }}%"></div>
+                                        <!-- Winrate (value + bar) -->
+                                        <div class="flex items-center gap-2 w-28 shrink-0">
+                                            <span class="text-xs font-bold {{ $hero['winrate'] >= 50 ? 'text-green-500' : 'text-red-500' }}">{{ $hero['winrate'] }}%</span>
+                                            <div class="w-full bg-ink-900 h-1 rounded overflow-hidden">
+                                                <div class="{{ $hero['winrate'] >= 50 ? 'bg-green-500' : 'bg-red-500' }} h-full" style="width: {{ $hero['winrate'] }}%"></div>
                                             </div>
                                         </div>
 
-                                        <div class="flex items-center gap-2 w-32 shrink-0">
-                                            <span class="text-xs {{ ($hero['winrate'] ?? 0) >= 50 ? 'text-green-500' : 'text-red-500' }}">{{ $hero['winrate'] ?? 0 }}%</span>
-                                            <div class="w-full bg-ink-900 h-1.5 rounded overflow-hidden">
-                                                <div class="{{ ($hero['winrate'] ?? 0) >= 50 ? 'bg-green-500' : 'bg-red-500' }} h-full" style="width: {{ ($hero['winrate'] ?? 0) }}%"></div>
-                                            </div>
-                                        </div>
-
-                                        <div class="flex-1 bg-ink-900 h-3 rounded overflow-hidden">
+                                        <!-- Games bar (thin, like the original) -->
+                                        <div class="flex-1 bg-ink-900 h-1.5 rounded overflow-hidden ml-auto">
                                             <div class="bg-yellow-500 h-full" style="width: {{ ($hero['games'] / $maxHeroGames) * 100 }}%"></div>
                                         </div>
                                     </div>
@@ -211,7 +214,7 @@
 
                             @if (!empty($lifetimeStats['averages']))
                                 <div class="min-w-0">
-                                    <p class="section-heading mb-1">{{ __('ui.averages') }}</p>
+                                    <p class="section-heading mb-1">{{ __('ui.avg_stats') }}</p>
                                     <div class="grid grid-cols-3 gap-2">
                                         <div class="border border-line bg-ink-900/30 px-2 py-2 text-center">
                                             <div class="text-[10px] text-mist-500 uppercase">{{ __('ui.avg_kda') }}</div>

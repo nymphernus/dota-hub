@@ -35,7 +35,7 @@ class HomeController extends Controller
         $dashboard = [
             'account_id' => $accountId,
             'steam_id' => $steamId,
-            'nickname' => $player['nickname'] ?? ($request->session()->get('steam_nickname') ?: 'Steam аккаунт'),
+            'nickname' => $player['nickname'] ?? ($request->session()->get('steam_nickname') ?: __('ui.steam_account')),
             'avatar' => $player['avatar'] ?? $request->session()->get('steam_avatar'),
             'mmr_estimate' => $player['mmr_estimate'] ?? null,
             'mmr_is_estimated' => $player['mmr_is_estimated'] ?? false,

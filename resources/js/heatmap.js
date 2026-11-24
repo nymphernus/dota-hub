@@ -192,7 +192,7 @@ if (wheelTooltip) {
         const name = document.createElement('div');
         name.className = 'text-sm text-white';
         const bold = document.createElement('b');
-        bold.textContent = slice.dataset.heroName || 'Герой';
+        bold.textContent = slice.dataset.heroName || (window.dotahubI18n && window.dotahubI18n.hero) || 'Hero';
         name.appendChild(bold);
 
         const games = document.createElement('div');

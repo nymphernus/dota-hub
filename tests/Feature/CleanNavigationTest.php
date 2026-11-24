@@ -6,17 +6,23 @@ use Tests\TestCase;
 
 class CleanNavigationTest extends TestCase
 {
-    public function test_profile_navigation_is_rendered_in_layout(): void
+    public function test_profile_tabs_are_rendered_only_by_the_profile_layout(): void
     {
         $layout = (string) file_get_contents(resource_path('views/layouts/app.blade.php'));
-        $javascript = (string) file_get_contents(resource_path('js/app.js'));
+        $profileLayout = (string) file_get_contents(resource_path('views/dota/layouts/profile.blade.php'));
+        $tabs = (string) file_get_contents(resource_path('views/components/player-tabs.blade.php'));
 
-        $this->assertStringContainsString('aria-label="Navigation"', $layout);
-        $this->assertStringContainsString("'player.matches' =>", $layout);
-        $this->assertStringContainsString("'player.heroes' =>", $layout);
-        $this->assertStringContainsString("'player.records' =>", $layout);
-        $this->assertStringContainsString("'player.peers' =>", $layout);
-        $this->assertStringContainsString('bg-[#2d313e] text-white', $layout);
+        $this->assertStringNotContainsString('aria-label="Navigation"', $layout);
+        $this->assertStringNotContainsString('nav-shell', $layout);
+        $this->assertStringNotContainsString("'player.matches' =>", $layout);
+        $this->assertStringNotContainsString("'player.heroes' =>", $layout);
+        $this->assertStringNotContainsString("'player.records' =>", $layout);
+        $this->assertStringNotContainsString("'player.peers' =>", $layout);
+        $this->assertStringNotContainsString('bg-[#2d313e] text-white', $layout);
+
+        $this->assertStringContainsString("@include('components.player-tabs'", $profileLayout);
+        $this->assertStringContainsString('role="tablist"', $tabs);
+        $this->assertSame(1, substr_count($profileLayout, "@include('components.player-tabs'"));
 
         $this->assertStringNotContainsString('aria-label="Хлебные крошки"', $layout);
         $this->assertStringNotContainsString('dotahub-recent-data', $layout);

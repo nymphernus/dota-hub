@@ -20,9 +20,9 @@ class SearchController extends Controller
                 'query' => ['required', 'string', 'min:2', 'max:120'],
             ],
             [
-                'query.required' => 'Введите ссылку на Steam-профиль, SteamID64 или никнейм.',
-                'query.min' => 'Поисковый запрос слишком короткий.',
-                'query.max' => 'Поисковый запрос слишком длинный.',
+                'query.required' => __('ui.query_required'),
+                'query.min' => __('ui.query_min'),
+                'query.max' => __('ui.query_max'),
             ]
         );
 

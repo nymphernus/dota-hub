@@ -33,7 +33,7 @@ class LifetimeStatsTest extends TestCase
         $response = $this->get(route('player', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertOk();
-        $response->assertSee('Статистика за всё время');
+        $response->assertSee(__('ui.lifetime_stats'));
         $response->assertSee(__('ui.by_game_mode'));
         $response->assertSee(__('ui.by_faction'));
         $response->assertSee(__('ui.mode_22'));

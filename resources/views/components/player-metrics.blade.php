@@ -27,7 +27,7 @@
 
 <div class="mt-4 flex flex-wrap gap-3" role="list" aria-label="{{ __('ui.lifetime_stats') }}">
     <div class="card min-w-[150px] flex-1 p-3" role="listitem">
-        <p class="text-sm text-mist-400 font-bold uppercase">{{ __('ui.matches') }}</p>
+        <p class="text-sm text-mist-400 font-bold uppercase">{{ __('ui.matches_word') }}</p>
         <p class="mt-1 text-4xl font-black text-mist-200">{{ number_format($games, 0, '.', ' ') }}</p>
         <div class="mt-1 text-[10px] text-mist-500">
             <div>{{ __('ui.first_match') }} {{ $fmt($firstMatch) }}</div>
@@ -49,7 +49,7 @@
     </div>
 
     <div class="card min-w-[150px] flex-1 p-3" role="listitem">
-        <p class="text-sm text-mist-400 font-bold uppercase">{{ __('ui.winrate') }}</p>
+        <p class="text-sm text-mist-400 font-bold uppercase">{{ __('ui.winrate_word') }}</p>
         <p class="mt-1 text-4xl font-black">
             @if ($winrate !== null)
                 <span class="{{ $winrateValue >= 50 ? 'text-green-500' : 'text-red-500' }}">{{ number_format($winrateValue, 1, '.', '') }}%</span>

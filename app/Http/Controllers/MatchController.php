@@ -16,7 +16,7 @@ class MatchController extends Controller
         try {
             $match = $openDota->getMatch($matchId);
         } catch (MatchNotFoundException) {
-            return back()->with('error', 'Матч не найден.');
+            return back()->with('error', __('ui.match_not_found'));
         } catch (ApiRateLimitException|ExternalApiException $exception) {
             return back()->with('error', $exception->getMessage());
         }

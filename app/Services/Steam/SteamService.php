@@ -87,11 +87,11 @@ class SteamService
         $steamId64 = is_string($steamId64) ? trim($steamId64) : '';
 
         if (! SteamId::isSteamId64($steamId64)) {
-            return $this->unavailable($steamId64 ?: null, 'Некорректный SteamID64.');
+            return $this->unavailable($steamId64 ?: null, __('ui.invalid_steam_id'));
         }
 
         if (! $this->hasApiKey()) {
-            return $this->unavailable($steamId64, 'STEAM_API_KEY не настроен.');
+            return $this->unavailable($steamId64, __('ui.steam_key_missing'));
         }
 
         $cacheKey = 'steam:summary:v1:'.$steamId64;
@@ -112,7 +112,7 @@ class SteamService
             $player = is_array($players) ? ($players[0] ?? null) : null;
 
             if (! is_array($player) || empty($player['steamid'])) {
-                throw new ExternalApiException('Steam', 'Steam не вернул профиль игрока.');
+                throw new ExternalApiException('Steam', __('ui.steam_profile_missing'));
             }
 
             $summary = $this->transformSummary($player, $steamId64);
@@ -136,11 +136,11 @@ class SteamService
         $steamId64 = is_string($steamId64) ? trim($steamId64) : '';
 
         if (! SteamId::isSteamId64($steamId64)) {
-            return $this->unavailableBans($steamId64 ?: null, 'Некорректный SteamID64.');
+            return $this->unavailableBans($steamId64 ?: null, __('ui.invalid_steam_id'));
         }
 
         if (! $this->hasApiKey()) {
-            return $this->unavailableBans($steamId64, 'STEAM_API_KEY не настроен.');
+            return $this->unavailableBans($steamId64, __('ui.steam_key_missing'));
         }
 
         $cacheKey = 'steam:bans:v1:'.$steamId64;
@@ -158,7 +158,7 @@ class SteamService
             $player = is_array($players) ? ($players[0] ?? null) : null;
 
             if (! is_array($player) || empty($player['SteamId'])) {
-                throw new ExternalApiException('Steam', 'Steam не вернул данные о банах.');
+                throw new ExternalApiException('Steam', __('ui.steam_bans_missing'));
             }
 
             $daysSinceLastBan = isset($player['DaysSinceLastBan'])
@@ -290,20 +290,20 @@ class SteamService
             : null;
 
         $visibility = match ($visibilityState) {
-            1 => 'Приватный',
-            2 => 'Только для друзей',
-            3 => 'Публичный',
-            default => 'Неизвестно',
+            1 => __('ui.steam_visibility_private'),
+            2 => __('ui.steam_visibility_friends'),
+            3 => __('ui.steam_visibility_public'),
+            default => __('ui.unknown'),
         };
 
         $status = match ((int) ($player['personastate'] ?? 0)) {
-            1 => 'В сети',
-            2 => 'Занят',
-            3 => 'Отошёл',
-            4 => 'Спит',
-            5 => 'Хочет обменяться',
-            6 => 'Хочет играть',
-            default => 'Не в сети',
+            1 => __('ui.steam_status_online'),
+            2 => __('ui.steam_status_busy'),
+            3 => __('ui.steam_status_away'),
+            4 => __('ui.steam_status_snooze'),
+            5 => __('ui.steam_status_trade'),
+            6 => __('ui.steam_status_play'),
+            default => __('ui.steam_status_offline'),
         };
 
         return [
@@ -339,7 +339,7 @@ class SteamService
             'country_code' => null,
             'status' => null,
             'is_public' => null,
-            'visibility' => 'Неизвестно',
+            'visibility' => __('ui.unknown'),
             'visibility_state' => null,
             'account_created_at' => null,
             'last_logoff_at' => null,
@@ -378,17 +378,17 @@ class SteamService
         } catch (ConnectionException $exception) {
             Log::warning('Steam connection failed', ['path' => $path, 'error' => $exception->getMessage()]);
 
-            throw new ExternalApiException('Steam', 'Попробуйте ещё раз через минуту.');
+            throw new ExternalApiException('Steam', __('ui.steam_try_later'));
         }
 
         if (in_array($response->status(), [401, 403], true)) {
-            throw new ExternalApiException('Steam', 'Проверьте STEAM_API_KEY в настройках.');
+            throw new ExternalApiException('Steam', __('ui.steam_check_key'));
         }
 
         if ($response->failed()) {
             Log::warning('Steam request failed', ['path' => $path, 'status' => $response->status()]);
 
-            throw new ExternalApiException('Steam', 'Код ответа: '.$response->status().'.');
+            throw new ExternalApiException('Steam', __('ui.response_code', ['code' => $response->status()]));
         }
 
         $payload = $response->json();

@@ -59,7 +59,7 @@ class FavoriteService
         $favorites[] = [
             'account_id' => $accountId,
             'steam_id' => SteamId::steamId64FromAccountId($accountId),
-            'nickname' => $nickname !== '' ? $nickname : 'Игрок #'.$accountId,
+            'nickname' => $nickname !== '' ? $nickname : __('ui.player_hash', ['id' => $accountId]),
             'avatar' => $avatar,
             'added_at' => now()->toIso8601String(),
         ];

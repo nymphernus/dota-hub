@@ -8,6 +8,6 @@ class MatchNotFoundException extends RuntimeException
 {
     public function __construct(public readonly ?int $matchId = null)
     {
-        parent::__construct('Матч не найден.');
+        parent::__construct(__('ui.match_not_found'));
     }
 }

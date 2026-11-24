@@ -12,23 +12,29 @@ use Illuminate\Http\Response;
 
 class HeroPlayerController extends Controller
 {
-    private const BENCHMARK_METRICS = [
-        'gpm' => [
-            'label' => 'GPM',
-            'hint' => 'Золото в минуту',
-            'format' => 'integer',
-        ],
-        'xpm' => [
-            'label' => 'XPM',
-            'hint' => 'Опыт в минуту',
-            'format' => 'integer',
-        ],
-        'kda' => [
-            'label' => 'KDA',
-            'hint' => 'K + A / D за матчи',
-            'format' => 'decimal',
-        ],
-    ];
+    /**
+     * @return array<string, array{label: string, hint: string, format: string}>
+     */
+    private function benchmarkMetrics(): array
+    {
+        return [
+            'gpm' => [
+                'label' => 'GPM',
+                'hint' => __('ui.benchmark_gpm_hint'),
+                'format' => 'integer',
+            ],
+            'xpm' => [
+                'label' => 'XPM',
+                'hint' => __('ui.benchmark_xpm_hint'),
+                'format' => 'integer',
+            ],
+            'kda' => [
+                'label' => 'KDA',
+                'hint' => __('ui.benchmark_kda_hint'),
+                'format' => 'decimal',
+            ],
+        ];
+    }
 
     public function show(int $accountId, int $heroId, OpenDotaService $openDota): View|Response
     {
@@ -38,13 +44,13 @@ class HeroPlayerController extends Controller
             $distributions = $openDota->getHeroBenchmarks($heroId);
         } catch (PlayerNotFoundException $exception) {
             return response()->view('errors.player', [
-                'title' => 'Игрок не найден',
+                'title' => __('ui.player_not_found'),
                 'message' => $exception->getMessage(),
                 'backUrl' => route('home'),
             ], 404);
         } catch (ApiRateLimitException $exception) {
             return response()->view('errors.player', [
-                'title' => 'Лимит API исчерпан',
+                'title' => __('ui.api_limit_title'),
                 'message' => $exception->getMessage(),
                 'backUrl' => route('home'),
             ], 429);
@@ -55,7 +61,7 @@ class HeroPlayerController extends Controller
             ], 502);
         } catch (ExternalApiException $exception) {
             return response()->view('errors.player', [
-                'title' => 'OpenDota недоступна',
+                'title' => __('ui.opendota_unavailable'),
                 'message' => $exception->getMessage(),
                 'backUrl' => route('home'),
             ], 502);
@@ -81,7 +87,7 @@ class HeroPlayerController extends Controller
     {
         $rows = [];
 
-        foreach (self::BENCHMARK_METRICS as $key => $metric) {
+        foreach ($this->benchmarkMetrics() as $key => $metric) {
             $distribution = $distributions[$key] ?? [];
             $value = isset($summary[$key]) && is_numeric($summary[$key]) ? (float) $summary[$key] : null;
 
@@ -107,8 +113,8 @@ class HeroPlayerController extends Controller
                 'percentile' => $percentile,
                 'percentile_label' => number_format($percentile * 100, 1, '.', ''),
                 'rank_label' => $percentile >= 0.5
-                    ? 'Топ '.($topPercent < 1 ? '<1' : number_format($topPercent, $topPercent < 10 ? 1 : 0, '.', '')).'%'
-                    : ($percentile >= 0.25 ? 'Средний уровень' : 'Ниже среднего'),
+                    ? __('ui.benchmark_top', ['pct' => $topPercent < 1 ? '<1' : number_format($topPercent, $topPercent < 10 ? 1 : 0, '.', '')])
+                    : ($percentile >= 0.25 ? __('ui.benchmark_average') : __('ui.benchmark_below_average')),
                 'tone' => match (true) {
                     $percentile >= 0.9 => 'emerald',
                     $percentile >= 0.7 => 'sky',

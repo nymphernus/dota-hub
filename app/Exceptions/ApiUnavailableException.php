@@ -9,7 +9,7 @@ class ApiUnavailableException extends ExternalApiException
         parent::__construct(
             $service,
             status: 502,
-            customMessage: "Сервера {$service} временно недоступны. Попробуйте обновить страницу позже.",
+            customMessage: __('ui.api_unavailable_message', ['service' => $service]),
         );
     }
 }

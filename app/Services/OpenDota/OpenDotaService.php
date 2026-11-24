@@ -426,7 +426,7 @@ class OpenDotaService
         }
 
         // If STRATZ is blocked (403 Cloudflare) or returns no rows, aggregate the
-        // cached match history instead of leaving "Самые играемые герои" empty.
+        // cached match history instead of leaving "Most Played Heroes" empty.
         if ($heroStats === []) {
             $heroStats = $this->heroesFromHistory($matchHistory);
         }
@@ -488,7 +488,7 @@ class OpenDotaService
         return [
             'account_id' => (int) ($profile['account_id'] ?? $accountId),
             'steam_id' => (string) ($profile['steamid'] ?? ''),
-            'nickname' => $nickname ?: 'Анонимный игрок',
+            'nickname' => $nickname ?: __('ui.anonymous_player'),
             'avatar' => $profile['avatarfull'] ?? $profile['avatarmedium'] ?? $profile['avatar'] ?? null,
             'profile_url' => $profile['profileurl'] ?? null,
             'country_code' => $profile['loccountrycode'] ?? null,
@@ -546,7 +546,7 @@ class OpenDotaService
 
             $rows[] = [
                 'account_id' => $accountId,
-                'nickname' => ($peer['personaname'] ?? null) ?: 'Анонимный игрок',
+                'nickname' => ($peer['personaname'] ?? null) ?: __('ui.anonymous_player'),
                 'avatar' => $peer['avatarfull'] ?? $peer['avatar'] ?? null,
                 'profile_url' => is_array($profile) ? ($profile['profileurl'] ?? null) : null,
                 'is_private' => $profileHidden,
@@ -606,7 +606,7 @@ class OpenDotaService
 
             $favorites[$peerId] = [
                 'hero_id' => $heroId,
-                'name' => $meta['name'] ?? ('Герой #'.$heroId),
+                'name' => $meta['name'] ?? __('ui.hero_hash', ['id' => $heroId]),
                 'image' => $meta['image'] ?? null,
                 'games' => (int) reset($heroCounts),
             ];
@@ -771,7 +771,7 @@ class OpenDotaService
 
             $hero = $heroes[$heroId] ?? [
                 'id' => $heroId,
-                'name' => 'Герой #'.$heroId,
+                'name' => __('ui.hero_hash', ['id' => $heroId]),
                 'image' => null,
                 'icon' => null,
             ];
@@ -965,7 +965,7 @@ class OpenDotaService
             fn (array $match) => (string) ($match['match_id'] ?? '').':'.(string) ($match['win'] ?? ''),
             $history,
         )));
-        $cacheKey = "opendota:lifetime-stats:v1:{$accountId}:{$fingerprint}";
+        $cacheKey = 'opendota:lifetime-stats:v2:'.app()->getLocale().":{$accountId}:{$fingerprint}";
 
         return Cache::remember($cacheKey, $ttl, fn (): array => $this->aggregateLifetimeStats($history));
     }
@@ -1037,7 +1037,7 @@ class OpenDotaService
             }
 
             $mode = $this->gameModeLabel((int) ($match['game_mode'] ?? 0))
-                ?? (string) ($match['game_mode_label'] ?? 'Неизвестно');
+                ?? (string) ($match['game_mode_label'] ?? __('ui.unknown'));
             $side = ($match['is_radiant'] ?? ((int) ($match['player_slot'] ?? 0) < 128)) ? 'Radiant' : 'Dire';
             $win = (bool) ($match['win'] ?? false);
 
@@ -1272,7 +1272,7 @@ class OpenDotaService
     {
         return match ($name) {
             'DURATION', 'SHORTEST_DURATION' => $this->durationLabel($value),
-            'LONGEST_WIN_STREAK' => $this->streakLabel($value, 'победа', 'победы', 'побед'),
+            'LONGEST_WIN_STREAK' => $this->streakLabel($value, __('ui.win_streak_one', ['count' => $value]), __('ui.win_streak_few', ['count' => $value]), __('ui.win_streak_many', ['count' => $value])),
             default => number_format($value, 0, '.', ' '),
         };
     }
@@ -1331,7 +1331,7 @@ class OpenDotaService
         return [
             'account_id' => (int) ($profile['account_id'] ?? $accountId),
             'steam_id' => (string) ($profile['steamid'] ?? ''),
-            'nickname' => $nickname ?: 'Анонимный игрок',
+            'nickname' => $nickname ?: __('ui.anonymous_player'),
             'avatar' => $profile['avatarfull'] ?? $profile['avatarmedium'] ?? $profile['avatar'] ?? null,
             'profile_url' => $profile['profileurl'] ?? null,
             'is_private' => $profile === [],
@@ -1411,7 +1411,7 @@ class OpenDotaService
             try {
                 $batch = $this->optionalGet("players/{$accountId}/matches", $query);
             } catch (ApiUnavailableException $e) {
-                Log::error('Ошибка API OpenDota при загрузке матчей: '.$e->getMessage());
+                Log::error('OpenDota API error while loading matches: '.$e->getMessage());
                 break;
             }
 
@@ -1421,7 +1421,7 @@ class OpenDotaService
             }
 
             $allMatches = array_merge($allMatches, $batch);
-            Log::info('Загружено матчей: '.count($allMatches).'. Текущая пачка: '.count($batch));
+            Log::info('Matches loaded: '.count($allMatches).'. Current batch: '.count($batch));
 
             if (count($batch) < 500) {
                 $hasMore = false;
@@ -1463,7 +1463,7 @@ class OpenDotaService
             }
         }
 
-        Log::info('ИТОГО загружено матчей: '.count($result), [
+        Log::info('Total matches loaded: '.count($result), [
             'account_id' => $accountId,
             'turbo_game_mode_23' => count(array_filter($result, fn ($m) => is_array($m) && (int) ($m['game_mode'] ?? -1) === 23)),
             'oldest_start_time' => $oldest,
@@ -1912,7 +1912,7 @@ class OpenDotaService
     private function matchTimeLabel(int $seconds): string
     {
         if ($seconds <= 0) {
-            return 'старт';
+            return __('ui.start');
         }
 
         $hours = intdiv($seconds, 3600);

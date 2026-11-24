@@ -115,7 +115,7 @@ class DotaProfileTest extends TestCase
 
         $wheelPosition = strpos($content, 'id="hero-wheel"');
         $activityPosition = strpos($content, '90 дней назад');
-        $lifetimePosition = strpos($content, '>Статистика за всё время</h2>');
+        $lifetimePosition = strpos($content, '>'.__('ui.lifetime_stats').'</h2>');
         $alliesPosition = strpos($content, '>Союзники</h2>');
 
         $this->assertNotFalse($wheelPosition);
@@ -143,7 +143,7 @@ class DotaProfileTest extends TestCase
         $response->assertDontSee('<details', false);
         $response->assertDontSee('<summary', false);
         $response->assertSee('blur-md', false);
-        $response->assertSee('Статистика за всё время');
+        $response->assertSee(__('ui.lifetime_stats'));
         $response->assertDontSee('id="recentMatchesChart"', false);
         $response->assertDontSee('panel-matches', false);
         $response->assertDontSee('Окружение');
@@ -183,7 +183,10 @@ class DotaProfileTest extends TestCase
                 && $peers[1]['is_private'] === true;
         });
         $response->assertSee('OtherPeer');
-        $response->assertSee('aria-label="Navigation"', false);
+        $response->assertSee('role="tablist"', false);
+        $response->assertSee('id="tab-overview"', false);
+        $response->assertDontSee('nav-shell', false);
+        $this->assertSame(1, substr_count((string) $response->getContent(), 'role="tablist"'));
         $response->assertDontSee('aria-label="Хлебные крошки"', false);
         $response->assertViewHas(
             'recentMatches',

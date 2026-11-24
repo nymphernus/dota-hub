@@ -60,13 +60,13 @@ class OpenDotaClient
         }
 
         if ($response->status() === 429) {
-            throw new ApiRateLimitException('OpenDota', 'Дневной лимит запросов исчерпан. Данные обновятся позже.');
+            throw new ApiRateLimitException('OpenDota', __('ui.daily_limit_reached'));
         }
 
         if ($response->failed()) {
             Log::warning('OpenDota request failed', ['path' => $path, 'status' => $response->status()]);
 
-            throw new ExternalApiException('OpenDota', 'Код ответа: '.$response->status().'.');
+            throw new ExternalApiException('OpenDota', __('ui.response_code', ['code' => $response->status()]));
         }
 
         $payload = $response->json();
@@ -89,7 +89,7 @@ class OpenDotaClient
         if ((int) Cache::get($key, 0) >= $limit) {
             throw new ApiRateLimitException(
                 'OpenDota',
-                "Локальный лимит в {$limit} запросов в сутки исчерпан. Кэшированные данные продолжают работать."
+                __('ui.local_limit_reached', ['limit' => $limit])
             );
         }
 

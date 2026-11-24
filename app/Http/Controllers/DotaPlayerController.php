@@ -21,11 +21,6 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 class DotaPlayerController extends Controller
 {
-    private const MONTH_LABELS = [
-        1 => 'Янв', 2 => 'Фев', 3 => 'Мар', 4 => 'Апр', 5 => 'Май', 6 => 'Июн',
-        7 => 'Июл', 8 => 'Авг', 9 => 'Сент', 10 => 'Окт', 11 => 'Ноя', 12 => 'Дек',
-    ];
-
     public function show(int $accountId, OpenDotaService $openDota, SteamService $steam, FavoriteService $favorites): View|Response
     {
         $player = $this->playerOrError($accountId, $openDota);
@@ -482,7 +477,7 @@ class DotaPlayerController extends Controller
             if ($monthKey !== $previousMonth) {
                 $months[] = [
                     'column' => $weekIndex,
-                    'label' => self::MONTH_LABELS[(int) $columnStart->format('n')],
+                    'label' => __('ui.mo_'.$columnStart->format('n')),
                 ];
                 $previousMonth = $monthKey;
             }
@@ -492,12 +487,15 @@ class DotaPlayerController extends Controller
             'days' => $days,
             'weeks' => $weeks,
             'months' => $months,
-            'weekdays' => ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
+            'weekdays' => [
+                __('ui.wd_mon'), __('ui.wd_tue'), __('ui.wd_wed'),
+                __('ui.wd_thu'), __('ui.wd_fri'), __('ui.wd_sat'), __('ui.wd_sun'),
+            ],
         ];
     }
 
     /**
-     * Every hero played in the last 25 matches — no "Другие" bucket.
+     * Every hero played in the last 25 matches — no "Other" bucket.
      *
      * @param  array<int, array<string, mixed>>  $matches
      * @return array<int, array<string, mixed>>

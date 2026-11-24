@@ -52,8 +52,11 @@ class UiAssetsTest extends TestCase
         $profile = (string) file_get_contents(resource_path('views/dota/player.blade.php'));
         $peers = (string) file_get_contents(resource_path('views/dota/peers.blade.php'));
         $layout = (string) file_get_contents(resource_path('views/dota/layouts/profile.blade.php'));
+        $appLayout = (string) file_get_contents(resource_path('views/layouts/app.blade.php'));
         $controller = (string) file_get_contents(app_path('Http/Controllers/DotaPlayerController.php'));
 
+        $this->assertStringNotContainsString('nav-shell', $appLayout);
+        $this->assertStringNotContainsString('aria-label="Navigation"', $appLayout);
         $this->assertStringContainsString('blur-md opacity-45', $header);
         $this->assertStringNotContainsString("__('ui.cached_offline')", $header);
         $this->assertStringContainsString("@include('components.player-tabs'", $layout);
@@ -62,12 +65,16 @@ class UiAssetsTest extends TestCase
         $this->assertStringNotContainsString('role="tablist"', $profile);
         $this->assertStringNotContainsString('bg-ink-900/60 p-1.5', $profile);
         $this->assertStringContainsString('flex flex-col p-1', $profile);
-        $this->assertStringContainsString('class="w-16 h-9 object-cover shrink-0"', $profile);
+        $this->assertStringContainsString('class="w-16 h-9 object-cover shrink-0 rounded-sm"', $profile);
+        $this->assertStringContainsString('class="flex items-center gap-4 py-2 border-b border-ink-700/50 hover:bg-ink-800/50 px-2 transition"', $profile);
         $this->assertStringContainsString('w-40 shrink-0', $profile);
-        $this->assertStringContainsString('bg-blue-500 h-full', $profile);
-        $this->assertStringContainsString('flex-1 bg-ink-900 h-3 rounded overflow-hidden', $profile);
+        $this->assertStringContainsString('flex items-center gap-2 w-28 shrink-0', $profile);
+        $this->assertStringContainsString('class="w-full bg-ink-900 h-1 rounded overflow-hidden"', $profile);
+        $this->assertStringContainsString('flex-1 bg-ink-900 h-1.5 rounded overflow-hidden ml-auto', $profile);
         $this->assertStringContainsString('$maxHeroGames', $profile);
-        $this->assertStringContainsString("{{ \$hero['games'] }} {{ __('ui.games_word') }}", $profile);
+        $this->assertStringNotContainsString('bg-blue-500 h-full', $profile);
+        $this->assertStringNotContainsString('h-3 rounded overflow-hidden', $profile);
+        $this->assertStringNotContainsString("__('ui.games_word')", $profile);
         $this->assertStringContainsString('class="w-10 h-10 object-cover shrink-0"', $profile);
         $this->assertStringContainsString('class="w-10 h-10 object-cover shrink-0"', $peers);
         $this->assertStringContainsString('flex items-center gap-2 w-24 shrink-0', $profile);
@@ -259,5 +266,59 @@ class UiAssetsTest extends TestCase
             $this->assertStringNotContainsString('#e2b02b', $source, $file);
             $this->assertStringNotContainsString('gold-', $source, $file);
         }
+    }
+
+    public function test_all_localized_labels_have_strict_english_and_russian_values(): void
+    {
+        $ru = require lang_path('ru/ui.php');
+        $en = require lang_path('en/ui.php');
+
+        $expected = [
+            'by_game_mode' => ['ПО РЕЖИМАМ ИГРЫ', 'BY GAME MODE'],
+            'by_faction' => ['ПО ФРАКЦИЯМ', 'BY FACTION'],
+            'all_time' => ['За всё время', 'All time'],
+            'steam_public' => ['Steam: Публичный', 'Steam: Public'],
+            'public_match_history' => ['Публичная история матчей', 'Public match history'],
+            'lifetime_stats' => ['СТАТИСТИКА ЗА ВСЁ ВРЕМЯ', 'LIFETIME STATS'],
+            'avg_stats' => ['СРЕДНИЕ ПОКАЗАТЕЛИ', 'AVERAGE STATS'],
+            'faction' => ['ФРАКЦИЯ', 'FACTION'],
+            'mode' => ['РЕЖИМ', 'MODE'],
+            'matches_word' => ['МАТЧИ', 'MATCHES'],
+            'winrate_word' => ['ВИНРЕЙТ', 'WINRATE'],
+            'ranked' => ['Ranked', 'Ranked'],
+            'turbo' => ['Turbo', 'Turbo'],
+        ];
+
+        foreach ($expected as $key => [$russian, $english]) {
+            $this->assertSame($russian, $ru[$key], $key);
+            $this->assertSame($english, $en[$key], $key);
+        }
+
+        $this->assertSame('Russian', $en['russian']);
+        $this->assertDoesNotMatchRegularExpression('/[\x{0400}-\x{04FF}]/u', (string) file_get_contents(lang_path('en/ui.php')));
+
+        $files = array_merge(
+            glob(resource_path('views/dota/*.blade.php')) ?: [],
+            glob(resource_path('views/dota/partials/*.blade.php')) ?: [],
+            glob(resource_path('views/components/*.blade.php')) ?: [],
+            glob(resource_path('views/layouts/*.blade.php')) ?: [],
+            [resource_path('js/heatmap.js')],
+        );
+
+        foreach ($files as $file) {
+            $this->assertDoesNotMatchRegularExpression('/[\x{0400}-\x{04FF}]/u', (string) file_get_contents($file), $file);
+        }
+
+        $player = (string) file_get_contents(resource_path('views/dota/player.blade.php'));
+        $metrics = (string) file_get_contents(resource_path('views/components/player-metrics.blade.php'));
+        $matches = (string) file_get_contents(resource_path('views/dota/matches.blade.php'));
+
+        $this->assertStringContainsString("__('ui.steam_public')", $player);
+        $this->assertStringContainsString("__('ui.public_match_history')", $player);
+        $this->assertStringContainsString("__('ui.avg_stats')", $player);
+        $this->assertStringContainsString("__('ui.matches_word')", $metrics);
+        $this->assertStringContainsString("__('ui.winrate_word')", $metrics);
+        $this->assertStringContainsString("__('ui.ranked')", $matches);
+        $this->assertStringContainsString("__('ui.turbo')", $matches);
     }
 }
