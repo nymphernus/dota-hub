@@ -23,6 +23,22 @@ if (heatmapPayload && heatmapRoot) {
     };
     const DAY_MS = 86400000;
 
+    let heatmapTooltip = document.getElementById('heatmap-tooltip');
+    if (!heatmapTooltip) {
+        heatmapTooltip = document.createElement('div');
+        heatmapTooltip.id = 'heatmap-tooltip';
+        heatmapTooltip.className = 'fixed z-[9999] bg-[#1c1e26] border border-[#2d313e] p-2 rounded shadow-xl text-white text-xs pointer-events-none hidden';
+        document.body.appendChild(heatmapTooltip);
+    }
+
+    const tipI18n = window.dotahubI18n || {};
+    const tooltipDateWord = tipI18n.tooltip_date || 'Date:';
+    const tooltipGamesWord = tipI18n.games_tooltip || tipI18n.games || 'Games';
+    const tooltipWinsWord = tipI18n.wins_tooltip || tipI18n.wins || 'wins';
+    const tooltipLossesWord = tipI18n.losses_tooltip || tipI18n.losses || 'losses';
+    const tooltipNoGamesWord = tipI18n.no_games || 'No games';
+    const tooltipFutureWord = tipI18n.future_day || 'Future day';
+
     const parseDay = (value) => {
         const [year, month, day] = String(value).split('-').map(Number);
         return new Date(Date.UTC(year, month - 1, day));
@@ -98,7 +114,7 @@ if (heatmapPayload && heatmapRoot) {
                 const wins = Number(day.wins) || 0;
                 const losses = Number(day.losses) || 0;
                 const i18n = window.dotahubI18n || {};
-                const gamesWord = i18n.games || 'games';
+                const gamesWord = i18n.games_tooltip || i18n.games || 'Games';
                 const winsWord = i18n.wins_tooltip || i18n.wins || 'wins';
                 const lossesWord = i18n.losses_tooltip || i18n.losses || 'losses';
                 const noGamesWord = i18n.no_games || 'No games';
@@ -120,6 +136,10 @@ if (heatmapPayload && heatmapRoot) {
                 cell.dataset.date = day.date;
                 cell.dataset.count = String(count);
                 cell.dataset.tip = title;
+                cell.dataset.label = day.label;
+                cell.dataset.wins = String(wins);
+                cell.dataset.losses = String(losses);
+                cell.dataset.level = day.level || '';
                 cell.setAttribute('aria-label', title);
                 cell.textContent = count > 0 ? String(count) : '';
                 cells.push(cell);
@@ -131,29 +151,45 @@ if (heatmapPayload && heatmapRoot) {
         heatmapRoot.style.gridTemplateRows = 'repeat(7, minmax(0, 1fr))';
         heatmapRoot.replaceChildren(...cells);
 
-        const heatmapTooltip = document.getElementById('heatmap-tooltip');
-        if (heatmapTooltip) {
-            const showHeatmapTip = (event) => {
-                const cell = event.target.closest('[data-tip]');
-                if (!cell) {
-                    heatmapTooltip.classList.add('hidden');
-                    return;
-                }
-                heatmapTooltip.textContent = cell.dataset.tip || '';
-                heatmapTooltip.classList.remove('hidden');
-                const offset = 12;
-                const r = heatmapTooltip.getBoundingClientRect();
-                let left = event.clientX + offset;
-                let top = event.clientY + offset;
-                if (left + r.width > window.innerWidth - 8) left = event.clientX - r.width - offset;
-                if (top + r.height > window.innerHeight - 8) top = event.clientY - r.height - offset;
-                heatmapTooltip.style.left = `${Math.max(8, left)}px`;
-                heatmapTooltip.style.top = `${Math.max(8, top)}px`;
-            };
-            heatmapRoot.addEventListener('mouseover', showHeatmapTip);
-            heatmapRoot.addEventListener('mousemove', showHeatmapTip);
-            heatmapRoot.addEventListener('mouseleave', () => heatmapTooltip.classList.add('hidden'));
-        }
+        const positionHeatmapTip = (event) => {
+            const offset = 12;
+            const bounds = heatmapTooltip.getBoundingClientRect();
+            let left = event.clientX + offset;
+            let top = event.clientY + offset;
+
+            if (left + bounds.width > window.innerWidth - 8) left = event.clientX - bounds.width - offset;
+            if (top + bounds.height > window.innerHeight - 8) top = event.clientY - bounds.height - offset;
+
+            heatmapTooltip.style.left = `${Math.max(8, left)}px`;
+            heatmapTooltip.style.top = `${Math.max(8, top)}px`;
+        };
+
+        const showHeatmapTip = (event) => {
+            const cell = event.currentTarget;
+            const count = Number(cell.dataset.count) || 0;
+            const label = cell.dataset.label || '';
+
+            if (count > 0) {
+                const wins = Number(cell.dataset.wins) || 0;
+                const losses = Number(cell.dataset.losses) || 0;
+                heatmapTooltip.innerHTML = `<strong>${tooltipDateWord}</strong> ${label}<br><strong>${tooltipGamesWord}</strong> ${count} (${wins} ${tooltipWinsWord}, ${losses} ${tooltipLossesWord})`;
+            } else {
+                const emptyWord = cell.dataset.level === 'future' ? tooltipFutureWord : tooltipNoGamesWord;
+                heatmapTooltip.innerHTML = `<strong>${tooltipDateWord}</strong> ${label}<br>${emptyWord}`;
+            }
+
+            heatmapTooltip.classList.remove('hidden');
+            positionHeatmapTip(event);
+        };
+
+        const hideHeatmapTip = () => heatmapTooltip.classList.add('hidden');
+
+        cells.forEach((cell) => {
+            if (! cell.dataset || ! cell.dataset.tip) return;
+            cell.addEventListener('mouseenter', showHeatmapTip);
+            cell.addEventListener('mousemove', positionHeatmapTip);
+            cell.addEventListener('mouseleave', hideHeatmapTip);
+        });
     }
 }
 

@@ -7,7 +7,7 @@
     <meta name="description" content="@yield('description', __('ui.site_description'))">
     <meta name="theme-color" content="#111318">
 
-    <title>@yield('title', 'DOTAHUB')</title>
+    <title>@yield('title', ($pageTitle ?? 'DOTAHUB').' - DOTAHUB')</title>
 
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -27,6 +27,8 @@
             'losses' => __('ui.losses_short'),
             'wins_tooltip' => __('ui.wins_tooltip'),
             'losses_tooltip' => __('ui.losses_tooltip'),
+            'tooltip_date' => __('ui.tooltip_date'),
+            'games_tooltip' => __('ui.games_tooltip'),
             'no_games' => __('ui.no_games'),
             'future_day' => __('ui.future_day'),
         ];

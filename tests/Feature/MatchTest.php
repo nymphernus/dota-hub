@@ -82,7 +82,9 @@ class MatchTest extends TestCase
         $response->assertDontSee('На главную');
         $response->assertSee('>IMP</th>', false);
         $response->assertDontSee('aria-label="Хлебные крошки"', false);
-        $response->assertDontSee('Профиль игрока');
+        $response->assertSee(__('ui.player_profile'));
+        $response->assertSee(route('player', ['accountId' => self::ACCOUNT_ID]), false);
+        $response->assertDontSee('>Dota 2</span>', false);
         $response->assertDontSee('card relative overflow-hidden', false);
         $response->assertDontSee('mt-4 card p-4', false);
 

@@ -50,58 +50,73 @@
     @if ($heroes->isEmpty())
         <div class="mt-6 p-10 text-center text-sm text-mist-400">{{ __('ui.no_heroes_found') }}</div>
     @else
-        <div class="mt-4 overflow-hidden border border-line bg-[#1c1e26]">
-            <table class="w-full text-sm">
-                <thead class="table-head">
-                    <tr>
-                        <th class="px-2 py-1 text-left font-semibold">{{ __('ui.hero') }}</th>
-                        <th class="px-2 py-1 text-left font-semibold">{{ __('ui.games') }}</th>
-                        <th class="px-2 py-1 text-left font-semibold">{{ __('ui.winrate') }}</th>
-                        <th class="px-2 py-1 text-left font-semibold">KDA</th>
-                    </tr>
-                </thead>
-                <tbody class="table-rows">
-                    @foreach ($heroes as $hero)
-                        @php
-                            $heroId = (int) ($hero['hero_id'] ?? 0);
-                            $heroUrl = $heroId > 0 ? route('player.hero', ['accountId' => $player['account_id'], 'heroId' => $heroId]) : null;
-                            $name = $hero['localized_name'] ?? $hero['name'] ?? __('ui.hero');
-                            $img = $hero['image'] ?? $hero['icon'] ?? null;
-                            $games = (int) ($hero['games'] ?? 0);
-                            $winrate = $hero['win_rate'] ?? $hero['winrate'] ?? null;
-                            $kda = $hero['kda'] ?? null;
-                        @endphp
-                        <tr class="transition odd:bg-[#1c1e26] even:bg-[#111318] hover:bg-ink-700/60 text-mist-200">
-                            <td class="px-2 py-1">
-                                <div class="flex items-center gap-3">
-                                    @if ($heroUrl)
-                                        <a href="{{ $heroUrl }}" class="shrink-0 overflow-hidden rounded bg-ink-800" style="width:48px;height:27px;">
-                                            @if ($img)
-                                                <img src="{{ $img }}" alt="{{ $name }}" class="h-full w-full object-cover" loading="lazy">
-                                            @endif
-                                        </a>
-                                        <a href="{{ $heroUrl }}" class="truncate text-[13px] font-bold text-mist-200 transition hover:text-accent-300">{{ $name }}</a>
-                                    @else
-                                        <span class="shrink-0 overflow-hidden rounded bg-ink-800" style="width:48px;height:27px;">
-                                            @if ($img)
-                                                <img src="{{ $img }}" alt="{{ $name }}" class="h-full w-full object-cover" loading="lazy">
-                                            @endif
-                                        </span>
-                                        <span class="truncate text-[13px] font-bold text-mist-200">{{ $name }}</span>
-                                    @endif
-                                </div>
-                            </td>
-                            <td class="px-2 py-1 font-mono text-[12px] text-mist-200">{{ $games }}</td>
-                            <td class="px-2 py-1 font-mono text-[12px] font-semibold {{ ($winrate ?? 0) >= 50 ? 'text-green-500' : 'text-red-500' }}">
-                                {{ $winrate !== null ? number_format((float) $winrate, 1, '.', '').'%' : '-' }}
-                            </td>
-                            <td class="px-2 py-1 font-mono text-[12px] text-mist-300">
-                                {{ $kda !== null ? number_format((float) $kda, 2, '.', '') : '-' }}
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
+        <div class="mt-4 overflow-x-auto border border-line bg-[#1c1e26]">
+            <div class="table-head flex min-w-[1010px] items-center gap-4 px-2 py-1 text-[11px] font-semibold">
+                <span class="w-16 shrink-0">{{ __('ui.hero') }}</span>
+                <div class="min-w-0 flex flex-1 items-center justify-between">
+                    <span class="w-32 shrink-0">{{ __('ui.hero') }}</span>
+                    <span class="w-24 shrink-0">{{ __('ui.games') }}</span>
+                    <span class="w-32 shrink-0">{{ __('ui.winrate') }}</span>
+                </div>
+                <span class="w-32 shrink-0">{{ __('ui.games') }}</span>
+                <span class="w-16 shrink-0">KDA</span>
+                <span class="w-16 shrink-0">GPM</span>
+                <span class="w-16 shrink-0">XPM</span>
+                <span class="w-24 shrink-0 text-right">{{ __('ui.last_game') }}</span>
+            </div>
+
+            @foreach ($heroes as $hero)
+                @php
+                    $heroId = (int) ($hero['hero_id'] ?? 0);
+                    $heroUrl = $heroId > 0 ? route('player.hero', ['accountId' => $player['account_id'], 'heroId' => $heroId]) : null;
+                    $name = $hero['localized_name'] ?? $hero['name'] ?? __('ui.hero');
+                    $img = $hero['image'] ?? $hero['icon'] ?? null;
+                    $games = (int) ($hero['games'] ?? 0);
+                    $wins = (int) ($hero['wins'] ?? $hero['win'] ?? 0);
+                    $losses = (int) ($hero['losses'] ?? max(0, $games - $wins));
+                    $winrate = (float) ($hero['win_rate'] ?? $hero['winrate'] ?? 0);
+                    $kda = $hero['kda'] ?? null;
+                    $gpm = $hero['gpm'] ?? null;
+                    $xpm = $hero['xpm'] ?? null;
+                    $lastPlayed = (int) ($hero['last_played'] ?? 0);
+                @endphp
+                <a href="{{ $heroUrl }}" class="flex min-w-[1010px] items-center gap-4 py-2 border-b border-ink-700/50 hover:bg-ink-800/50 px-2 transition">
+                    <img src="{{ $img }}" class="w-16 h-9 object-cover shrink-0 rounded-sm" alt="{{ $name }}">
+
+                    <div class="flex-1 min-w-0 flex items-center justify-between">
+                        <div class="w-32 shrink-0 text-sm font-bold text-mist-200 truncate">{{ $name }}</div>
+
+                        <div class="w-24 shrink-0 text-xs text-mist-400">
+                            {{ $games }} {{ __('ui.hero_games_word') }}<br>
+                            <span class="text-green-500">{{ $wins }} {{ __('ui.hero_win_short') }}</span> / <span class="text-red-500">{{ $losses }} {{ __('ui.hero_loss_short') }}</span>
+                        </div>
+
+                        <div class="flex items-center gap-2 w-32 shrink-0">
+                            <span class="text-xs font-bold {{ $winrate >= 50 ? 'text-green-500' : 'text-red-500' }}">{{ number_format($winrate, 1, '.', '') }}%</span>
+                            <div class="w-full bg-ink-900 h-1.5 rounded overflow-hidden">
+                                <div class="{{ $winrate >= 50 ? 'bg-green-500' : 'bg-red-500' }} h-full" style="width: {{ $winrate }}%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="w-32 shrink-0 bg-ink-900 h-1.5 rounded overflow-hidden">
+                        <div class="bg-yellow-500 h-full" style="width: {{ $maxHeroGames > 0 ? ($games / $maxHeroGames) * 100 : 0 }}%"></div>
+                    </div>
+
+                    <div class="w-16 shrink-0 font-mono text-xs text-mist-300">{{ $kda !== null ? number_format((float) $kda, 2, '.', '') : '—' }}</div>
+                    <div class="w-16 shrink-0 font-mono text-xs text-mist-300">{{ $gpm ?? '—' }}</div>
+                    <div class="w-16 shrink-0 font-mono text-xs text-mist-300">{{ $xpm ?? '—' }}</div>
+                    <div class="w-24 shrink-0 text-right text-xs text-mist-400">
+                        @if ($lastPlayed > 0)
+                            <time datetime="{{ \Carbon\CarbonImmutable::createFromTimestampUTC($lastPlayed)->toIso8601String() }}" title="{{ \Carbon\CarbonImmutable::createFromTimestampUTC($lastPlayed)->format('d.m.Y') }}">
+                                {{ \Carbon\CarbonImmutable::createFromTimestampUTC($lastPlayed)->format('d.m.y') }}
+                            </time>
+                        @else
+                            —
+                        @endif
+                    </div>
+                </a>
+            @endforeach
         </div>
 
         @if ($heroes->hasPages())

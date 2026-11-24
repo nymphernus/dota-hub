@@ -138,6 +138,8 @@ class DotaPlayerController extends Controller
         $paginator = new LengthAwarePaginator($rows, $total, $perPage, $page, ['path' => $request->url()]);
         $paginator->withQueryString();
 
+        $maxHeroGames = max(1, (int) ($heroes->max('games') ?? 0));
+
         $heroOptions = collect($player['heroes'] ?? [])
             ->map(fn (array $hero) => [
                 'hero_id' => (int) ($hero['hero_id'] ?? 0),
@@ -162,6 +164,7 @@ class DotaPlayerController extends Controller
             'isFavorite' => $this->favoriteState($accountId, $favorites),
             'heroes' => $paginator,
             'heroOptions' => $heroOptions,
+            'maxHeroGames' => $maxHeroGames,
             'filters' => $filters,
         ]);
     }

@@ -369,4 +369,9 @@ return [
     'query_required' => 'Введите ссылку на Steam-профиль, SteamID64 или никнейм.',
     'query_min' => 'Поисковый запрос слишком короткий.',
     'query_max' => 'Поисковый запрос слишком длинный.',
+    'game_mode' => 'Режим игры',
+    'player_profile' => 'Профиль игрока',
+    'last_game' => 'Последняя игра',
+    'tooltip_date' => 'Дата:',
+    'games_tooltip' => 'Игр',
 ];

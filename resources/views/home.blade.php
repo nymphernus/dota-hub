@@ -1,6 +1,5 @@
 @extends('layouts.app')
 
-@section('title', $pageTitle ?? 'DOTAHUB - '.__('ui.home_subtitle'))
 @section('description', __('ui.home_subtitle'))
 
 @php

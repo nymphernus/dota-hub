@@ -6,7 +6,7 @@
 
 <div x-show="heroModal" x-cloak class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4"
      role="dialog" aria-modal="true" aria-label="{{ __('ui.pick_hero') }}" @click.self="heroModal = false">
-    <div class="flex max-h-[85vh] w-full max-w-5xl flex-col border border-line bg-[#1c1e26]">
+    <div class="flex max-h-[85vh] w-full max-w-6xl flex-col border border-line bg-[#1c1e26]">
         <div class="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
             <div>
                 <h3 class="text-sm font-semibold text-mist-200">{{ __('ui.pick_hero') }}</h3>
@@ -27,7 +27,7 @@
         </div>
 
         <div class="max-h-[65vh] overflow-y-auto px-4 py-3">
-            <div class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2">
+            <div class="grid grid-cols-8 sm:grid-cols-10 lg:grid-cols-12 gap-1">
                 @foreach ($heroes as $hero)
                     @php
                         $heroId = (int) ($hero['hero_id'] ?? 0);
@@ -38,7 +38,7 @@
                                 class="overflow-hidden border {{ (int) ($selectedHeroId ?? 0) === $heroId ? 'border-accent-400' : 'border-line' }} bg-ink-800 hover:border-accent-400"
                                 @click="document.getElementById('{{ $inputId }}').value='{{ $heroId }}'; document.getElementById('{{ $formId }}').submit()">
                             <img src="{{ $hero['image'] }}" alt="{{ $heroName }}"
-                                 class="w-full h-auto object-cover rounded hover:opacity-80 transition cursor-pointer" loading="lazy">
+                                 class="w-8 h-8 sm:w-10 sm:h-10 object-cover" loading="lazy">
                         </button>
                     @endif
                 @endforeach

@@ -1057,12 +1057,17 @@ class OpenDotaService
                 continue;
             }
 
-            $mode = $this->gameModeLabel((int) ($match['game_mode'] ?? 0))
-                ?? (string) ($match['game_mode_label'] ?? __('ui.unknown'));
+            $gameMode = (int) ($match['game_mode'] ?? 0);
+            $mode = $gameMode > 0 ? $this->gameModeLabel($gameMode) : null;
             $side = ($match['is_radiant'] ?? ((int) ($match['player_slot'] ?? 0) < 128)) ? 'Radiant' : 'Dire';
             $win = (bool) ($match['win'] ?? false);
 
-            foreach ([['mode', $mode], ['side', $side]] as [$group, $label]) {
+            $groups = [['side', $side]];
+            if ($mode !== null) {
+                $groups[] = ['mode', $mode];
+            }
+
+            foreach ($groups as [$group, $label]) {
                 $buckets[$group][$label] ??= ['label' => $label, 'games' => 0, 'wins' => 0, 'losses' => 0];
                 $buckets[$group][$label]['games']++;
                 if ($win) {
@@ -2228,6 +2233,99 @@ class OpenDotaService
         return $rows;
     }
 
+    private function laneRole(array $match): ?int
+    {
+        $lane = isset($match['lane_role']) && is_numeric($match['lane_role'])
+            ? (int) $match['lane_role']
+            : 0;
+
+        if (in_array($lane, [1, 2, 3, 4], true)) {
+            return $lane;
+        }
+
+        $position = isset($match['position_est']) && is_numeric($match['position_est'])
+            ? (int) $match['position_est']
+            : 0;
+
+        if ($position < 1 && isset($match['position']) && is_numeric($match['position'])) {
+            $position = (int) $match['position'];
+        }
+
+        return match ($position) {
+            1 => 1,
+            2 => 2,
+            3 => 3,
+            default => null,
+        };
+    }
+
+    /**
+     * @return array<int, array{id: int, key: string, name: string, image: string}>
+     */
+    private function historyItemsById(): array
+    {
+        try {
+            $stats = $this->itemStats();
+        } catch (ApiUnavailableException|ExternalApiException) {
+            return [];
+        }
+
+        $map = [];
+
+        foreach ($stats as $key => $item) {
+            $id = (int) ($item['id'] ?? 0);
+
+            if ($id <= 0) {
+                continue;
+            }
+
+            $itemKey = (string) $key;
+            $map[$id] = [
+                'id' => $id,
+                'key' => $itemKey,
+                'name' => (string) ($item['name'] ?? $this->itemName($itemKey)),
+                'image' => (string) ($item['image'] ?? $this->itemImage($itemKey)),
+            ];
+        }
+
+        return $map;
+    }
+
+    /**
+     * @param  array<string, mixed>  $match
+     * @param  array<int, array{id: int, key: string, name: string, image: string}>  $itemsById
+     * @return array{raw: array<int, int|null>, slots: array<int, array<string, mixed>|null>}
+     */
+    private function itemSlots(array $match, array $itemsById): array
+    {
+        $raw = [];
+        $slots = [];
+        $hasAny = false;
+
+        for ($slot = 0; $slot < 6; $slot++) {
+            $itemId = isset($match['item_'.$slot]) && is_numeric($match['item_'.$slot])
+                ? (int) $match['item_'.$slot]
+                : 0;
+            $raw[$slot] = $itemId > 0 ? $itemId : null;
+
+            if ($itemId <= 0) {
+                $slots[] = null;
+                continue;
+            }
+
+            $hasAny = true;
+            $meta = $itemsById[$itemId] ?? null;
+            $slots[] = [
+                'id' => $itemId,
+                'key' => $meta['key'] ?? (string) $itemId,
+                'name' => $meta['name'] ?? 'Item #'.$itemId,
+                'image' => $meta['image'] ?? $this->itemImage((string) $itemId),
+            ];
+        }
+
+        return ['raw' => $raw, 'slots' => $hasAny ? $slots : []];
+    }
+
     /**
      * @param  array<string, mixed>  $match
      */
@@ -2254,9 +2352,7 @@ class OpenDotaService
             return $role;
         }
 
-        $lane = isset($match['lane_role']) && is_numeric($match['lane_role'])
-            ? (int) $match['lane_role']
-            : 0;
+        $lane = $this->laneRole($match) ?? 0;
 
         return match ($lane) {
             1 => 'carry',
@@ -2275,6 +2371,22 @@ class OpenDotaService
     private function transformMatches(array $matches, array $heroes): array
     {
         $transformed = [];
+        $hasRawItems = false;
+
+        foreach ($matches as $match) {
+            if (! is_array($match)) {
+                continue;
+            }
+
+            for ($slot = 0; $slot < 6; $slot++) {
+                if ((int) ($match['item_'.$slot] ?? 0) > 0) {
+                    $hasRawItems = true;
+                    break 2;
+                }
+            }
+        }
+
+        $itemsById = $hasRawItems ? $this->historyItemsById() : [];
 
         foreach ($matches as $match) {
             if (! is_array($match) || ! isset($match['hero_id'], $match['player_slot'])) {
@@ -2296,6 +2408,7 @@ class OpenDotaService
             $assists = (int) ($match['assists'] ?? 0);
             $duration = (int) ($match['duration'] ?? 0);
             $startTime = (int) ($match['start_time'] ?? 0);
+            $itemSlots = $this->itemSlots($match, $itemsById);
 
             $transformed[] = [
                 'match_id' => isset($match['match_id']) ? (int) $match['match_id'] : null,
@@ -2327,16 +2440,16 @@ class OpenDotaService
                 'party_id' => isset($match['party_id']) && is_numeric($match['party_id']) ? (int) $match['party_id'] : null,
                 'party_size' => isset($match['party_size']) && is_numeric($match['party_size']) ? (int) $match['party_size'] : null,
                 'role_key' => $this->roleKey($match),
-                'lane_role' => isset($match['lane_role']) ? (int) $match['lane_role'] : null,
+                'lane_role' => $this->laneRole($match),
                 'level' => null,
                 'net_worth' => null,
-                'item_0' => null,
-                'item_1' => null,
-                'item_2' => null,
-                'item_3' => null,
-                'item_4' => null,
-                'item_5' => null,
-                'items' => array_fill(0, 6, null),
+                'item_0' => $itemSlots['raw'][0],
+                'item_1' => $itemSlots['raw'][1],
+                'item_2' => $itemSlots['raw'][2],
+                'item_3' => $itemSlots['raw'][3],
+                'item_4' => $itemSlots['raw'][4],
+                'item_5' => $itemSlots['raw'][5],
+                'items' => $itemSlots['slots'],
             ];
         }
 
@@ -2604,6 +2717,22 @@ class OpenDotaService
     private function transformHistory(array $matches, array $heroes): array
     {
         $rows = [];
+        $hasRawItems = false;
+
+        foreach ($matches as $match) {
+            if (! is_array($match)) {
+                continue;
+            }
+
+            for ($slot = 0; $slot < 6; $slot++) {
+                if ((int) ($match['item_'.$slot] ?? 0) > 0) {
+                    $hasRawItems = true;
+                    break 2;
+                }
+            }
+        }
+
+        $itemsById = $hasRawItems ? $this->historyItemsById() : [];
 
         foreach ($matches as $match) {
             if (! is_array($match) || ! isset($match['hero_id'], $match['player_slot'])) {
@@ -2624,6 +2753,11 @@ class OpenDotaService
 
             $radiantWin = (bool) ($match['radiant_win'] ?? false);
             $isRadiant = (int) $match['player_slot'] < 128;
+            $itemSlots = $this->itemSlots($match, $itemsById);
+            $kills = (int) ($match['kills'] ?? 0);
+            $deaths = (int) ($match['deaths'] ?? 0);
+            $assists = (int) ($match['assists'] ?? 0);
+            $duration = (int) ($match['duration'] ?? 0);
 
             $rows[] = [
                 'match_id' => isset($match['match_id']) ? (int) $match['match_id'] : null,
@@ -2635,10 +2769,12 @@ class OpenDotaService
                 'is_radiant' => $isRadiant,
                 'start_time' => $startTime,
                 'started_at' => CarbonImmutable::createFromTimestampUTC($startTime)->toIso8601String(),
-                'duration' => (int) ($match['duration'] ?? 0),
-                'kills' => (int) ($match['kills'] ?? 0),
-                'deaths' => (int) ($match['deaths'] ?? 0),
-                'assists' => (int) ($match['assists'] ?? 0),
+                'duration' => $duration,
+                'duration_label' => $this->durationLabel($duration),
+                'kills' => $kills,
+                'deaths' => $deaths,
+                'assists' => $assists,
+                'kda' => round(($kills + $assists) / max($deaths, 1), 2),
                 'gpm' => (int) ($match['gold_per_min'] ?? 0),
                 'xpm' => (int) ($match['xp_per_min'] ?? 0),
                 'last_hits' => (int) ($match['last_hits'] ?? 0),
@@ -2662,7 +2798,14 @@ class OpenDotaService
                 'party_id' => isset($match['party_id']) && is_numeric($match['party_id']) ? (int) $match['party_id'] : null,
                 'party_size' => isset($match['party_size']) && is_numeric($match['party_size']) ? (int) $match['party_size'] : null,
                 'role_key' => $this->roleKey($match),
-                'lane_role' => isset($match['lane_role']) ? (int) $match['lane_role'] : null,
+                'lane_role' => $this->laneRole($match),
+                'item_0' => $itemSlots['raw'][0],
+                'item_1' => $itemSlots['raw'][1],
+                'item_2' => $itemSlots['raw'][2],
+                'item_3' => $itemSlots['raw'][3],
+                'item_4' => $itemSlots['raw'][4],
+                'item_5' => $itemSlots['raw'][5],
+                'items' => $itemSlots['slots'],
             ];
         }
 
@@ -2745,15 +2888,36 @@ class OpenDotaService
     {
         $kdaByHero = $this->heroKda($recentMatches);
         $rankedByHero = [];
+        $economyByHero = [];
+        $lastPlayedByHero = [];
 
         foreach ($history as $match) {
-            if (! is_array($match) || (int) ($match['lobby_type'] ?? 0) !== 7) {
+            if (! is_array($match)) {
                 continue;
             }
 
             $heroId = (int) ($match['hero_id'] ?? 0);
 
             if ($heroId <= 0) {
+                continue;
+            }
+
+            $gpm = (int) ($match['gpm'] ?? $match['gold_per_min'] ?? 0);
+            $xpm = (int) ($match['xpm'] ?? $match['xp_per_min'] ?? 0);
+            $playedAt = (int) ($match['start_time'] ?? 0);
+
+            if ($playedAt > 0) {
+                $lastPlayedByHero[$heroId] = max($lastPlayedByHero[$heroId] ?? 0, $playedAt);
+            }
+
+            if ($gpm > 0 || $xpm > 0) {
+                $economyByHero[$heroId] ??= ['gpm' => 0, 'xpm' => 0, 'games' => 0];
+                $economyByHero[$heroId]['gpm'] += $gpm;
+                $economyByHero[$heroId]['xpm'] += $xpm;
+                $economyByHero[$heroId]['games']++;
+            }
+
+            if ((int) ($match['lobby_type'] ?? 0) !== 7) {
                 continue;
             }
 
@@ -2768,7 +2932,7 @@ class OpenDotaService
         $rows = collect($heroStats)
             ->filter(fn ($hero) => is_array($hero) && isset($hero['hero_id']) && (int) ($hero['games'] ?? 0) > 0)
             ->sortByDesc(fn (array $hero) => (int) ($hero['games'] ?? 0))
-            ->map(function (array $hero) use ($heroes, $kdaByHero, $rankedByHero) {
+            ->map(function (array $hero) use ($heroes, $kdaByHero, $rankedByHero, $economyByHero, $lastPlayedByHero) {
                 $meta = $heroes[(int) $hero['hero_id']] ?? [
                     'id' => (int) $hero['hero_id'],
                     'name' => 'Hero #'.$hero['hero_id'],
@@ -2780,6 +2944,9 @@ class OpenDotaService
                 $winRate = $games > 0 ? round($wins / $games * 100, 1) : null;
                 $ranked = $rankedByHero[$meta['id']] ?? ['games' => 0, 'wins' => 0];
                 $rankedLosses = max(0, $ranked['games'] - $ranked['wins']);
+                $economy = $economyByHero[$meta['id']] ?? ['gpm' => 0, 'xpm' => 0, 'games' => 0];
+                $lastPlayed = (int) ($hero['last_played'] ?? 0)
+                    ?: ($lastPlayedByHero[$meta['id']] ?? 0);
 
                 return [
                     'hero_id' => $meta['id'],
@@ -2800,8 +2967,11 @@ class OpenDotaService
                     'ranked_wins' => $ranked['wins'],
                     'ranked_losses' => $rankedLosses,
                     'kda' => $kdaByHero[$meta['id']] ?? null,
-                    'last_played_at' => isset($hero['last_played'])
-                        ? CarbonImmutable::createFromTimestampUTC((int) $hero['last_played'])->toIso8601String()
+                    'gpm' => $economy['games'] > 0 ? (int) round($economy['gpm'] / $economy['games']) : null,
+                    'xpm' => $economy['games'] > 0 ? (int) round($economy['xpm'] / $economy['games']) : null,
+                    'last_played' => $lastPlayed,
+                    'last_played_at' => $lastPlayed > 0
+                        ? CarbonImmutable::createFromTimestampUTC($lastPlayed)->toIso8601String()
                         : null,
                 ];
             })

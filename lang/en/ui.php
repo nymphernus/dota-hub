@@ -369,4 +369,9 @@ return [
     'query_required' => 'Enter a Steam profile link, SteamID64, or nickname.',
     'query_min' => 'Search query is too short.',
     'query_max' => 'Search query is too long.',
+    'game_mode' => 'Game Mode',
+    'player_profile' => 'Player profile',
+    'last_game' => 'Last game',
+    'tooltip_date' => 'Date:',
+    'games_tooltip' => 'Games',
 ];

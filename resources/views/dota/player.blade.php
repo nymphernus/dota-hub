@@ -290,7 +290,6 @@
 @endsection
 
 @push('scripts')
-    <div id="heatmap-tooltip" class="hidden fixed z-[9999] bg-[#1c1e26] border border-[#2d313e] p-2 rounded shadow-xl text-white text-sm pointer-events-none"></div>
     <script type="application/json" id="dotahub-heatmap-data">@json($activityHeatmap)</script>
     @vite('resources/js/heatmap.js')
 @endpush

@@ -116,6 +116,13 @@ class UiAssetsTest extends TestCase
         $this->assertStringContainsString('i18n.wins_tooltip', $source);
         $this->assertStringContainsString('i18n.losses_tooltip', $source);
         $this->assertStringContainsString("document.getElementById('heatmap-tooltip')", $source);
+        $this->assertStringContainsString("heatmapTooltip.id = 'heatmap-tooltip'", $source);
+        $this->assertStringContainsString('fixed z-[9999] bg-[#1c1e26] border border-[#2d313e] p-2 rounded shadow-xl text-white text-xs pointer-events-none hidden', $source);
+        $this->assertStringContainsString('innerHTML', $source);
+        $this->assertStringContainsString('<strong>', $source);
+        $this->assertStringContainsString("addEventListener('mouseenter'", $source);
+        $this->assertStringNotContainsString("setAttribute('title'", $source);
+        $this->assertStringNotContainsString('id="heatmap-tooltip"', $player);
         $this->assertStringContainsString('data-match-url-template=', $player);
         $this->assertStringContainsString("'date' => '__DATE__'", $player);
         $this->assertStringContainsString("matchUrlTemplate.replace('__DATE__', day.date)", $source);
@@ -156,12 +163,22 @@ class UiAssetsTest extends TestCase
         $this->assertStringContainsString("'losses_tooltip' => 'Поражений'", $ru);
         $this->assertStringContainsString("'wins_tooltip' => __('ui.wins_tooltip')", $layout);
         $this->assertStringContainsString("'losses_tooltip' => __('ui.losses_tooltip')", $layout);
+        $this->assertStringContainsString("'game_mode' => 'Режим игры'", $ru);
+        $this->assertStringContainsString("'game_mode' => 'Game Mode'", $en);
+        $this->assertStringContainsString("'tooltip_date' => 'Дата:'", $ru);
+        $this->assertStringContainsString("'tooltip_date' => 'Date:'", $en);
+        $this->assertStringContainsString("'games_tooltip' => 'Игр'", $ru);
+        $this->assertStringContainsString("'games_tooltip' => 'Games'", $en);
+        $this->assertStringContainsString("'tooltip_date' => __('ui.tooltip_date')", $layout);
+        $this->assertStringContainsString("'games_tooltip' => __('ui.games_tooltip')", $layout);
         $this->assertStringContainsString("__('ui.mode_'.\$mode)", $service);
         $this->assertStringContainsString("__('ui.mode_'.\$gameMode)", $row);
-        $this->assertStringContainsString("__('ui.mode_'.\$rowMode)", $matches);
+        $this->assertStringContainsString("__('ui.game_mode')", $matches);
+        $this->assertStringContainsString("@include('dota.partials.match-row', ['matches' => \$matches])", $matches);
         $this->assertStringContainsString("__('ui.mode_'.\$gameMode)", $matchPage);
         $this->assertStringNotContainsString("{{ \$match['game_mode_label'] }}", $matchPage);
-        $this->assertStringContainsString("\$this->gameModeLabel((int) (\$match['game_mode'] ?? 0))", $service);
+        $this->assertStringContainsString("\$this->gameModeLabel(\$gameMode)", $service);
+        $this->assertStringContainsString("\$gameMode > 0", $service);
     }
 
     public function test_assets_use_dark_only_flat_palette(): void
@@ -345,9 +362,10 @@ class UiAssetsTest extends TestCase
         $this->assertStringNotContainsString("__('ui.attr_agility')", $partial);
         $this->assertStringNotContainsString("__('ui.attr_intelligence')", $partial);
         $this->assertStringNotContainsString("__('ui.attr_universal')", $partial);
-        $this->assertStringContainsString('grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-2', $partial);
+        $this->assertStringContainsString('max-w-6xl', $partial);
+        $this->assertStringContainsString('grid grid-cols-8 sm:grid-cols-10 lg:grid-cols-12 gap-1', $partial);
         $this->assertStringContainsString("\$hero['image']", $partial);
-        $this->assertStringContainsString('class="w-full h-auto object-cover rounded hover:opacity-80 transition cursor-pointer"', $partial);
+        $this->assertStringContainsString('class="w-8 h-8 sm:w-10 sm:h-10 object-cover"', $partial);
         $this->assertStringNotContainsString("\$hero['icon']", $partial);
         $this->assertStringContainsString("@include('dota.partials.filter-hero'", $matches);
         $this->assertStringContainsString("@include('dota.partials.filter-hero'", $heroes);

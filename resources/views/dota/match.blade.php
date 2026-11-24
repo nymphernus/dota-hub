@@ -55,7 +55,6 @@
                 <div class="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
                     <div class="min-w-0">
                         <div class="flex flex-wrap items-center gap-2">
-                            <span class="badge border-dota-500/25 bg-dota-500/10 text-dota-300">Dota 2</span>
                             <span @class([
                                 'badge',
                                 'border-green-500/25 bg-green-500/10 text-green-500' => $radiantWin,
@@ -79,6 +78,15 @@
                         <h1 class="mt-3 text-3xl font-semibold tracking-tight text-mist-200 sm:text-4xl">
                             {{ __('ui.match') }} <span class="font-mono text-2xl text-mist-300 sm:text-3xl">#{{ $match['match_id'] }}</span>
                         </h1>
+
+                        @if ($profilePlayerId !== null && $profilePlayer !== null)
+                            <a href="{{ route('player', ['accountId' => $profilePlayerId]) }}" class="mt-2 inline-flex items-center gap-1 text-xs text-accent-300 hover:text-accent-200">
+                                {{ __('ui.player_profile') }}
+                                @if ($profileNickname)
+                                    <span class="text-mist-400">{{ $profileNickname }}</span>
+                                @endif
+                            </a>
+                        @endif
 
                         <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-mist-400">
                             <span class="inline-flex items-center gap-1.5">
