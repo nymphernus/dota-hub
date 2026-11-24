@@ -59,19 +59,29 @@ class UiAssetsTest extends TestCase
         $this->assertStringContainsString("@include('components.player-tabs'", $layout);
         $this->assertStringNotContainsString('player-tabs', $profile);
 
+        $this->assertStringNotContainsString('role="tablist"', $profile);
+        $this->assertStringNotContainsString('bg-ink-900/60 p-1.5', $profile);
         $this->assertStringContainsString('flex flex-col p-1', $profile);
-        $this->assertStringContainsString('h-9 w-16', $profile);
-        $this->assertStringContainsString('class="w-16 h-9 object-cover rounded"', $profile);
-        $this->assertStringContainsString('w-20 flex flex-col items-end gap-1', $profile);
-        $this->assertStringContainsString('w-20 flex flex-col items-end gap-1', $peers);
-        $this->assertStringContainsString('flex h-1 w-full mt-1 rounded overflow-hidden', $peers);
-        $this->assertStringContainsString('w-10 h-10 object-cover rounded-sm shrink-0', $peers);
-        $this->assertStringContainsString('bg-yellow-500', $peers);
+        $this->assertStringContainsString('class="w-16 h-9 object-cover shrink-0"', $profile);
+        $this->assertStringContainsString('w-40 shrink-0', $profile);
+        $this->assertStringContainsString('bg-blue-500 h-full', $profile);
+        $this->assertStringContainsString('flex-1 bg-ink-900 h-3 rounded overflow-hidden', $profile);
+        $this->assertStringContainsString('$maxHeroGames', $profile);
+        $this->assertStringContainsString("{{ \$hero['games'] }} {{ __('ui.games_word') }}", $profile);
+        $this->assertStringContainsString('class="w-10 h-10 object-cover shrink-0"', $profile);
+        $this->assertStringContainsString('class="w-10 h-10 object-cover shrink-0"', $peers);
+        $this->assertStringContainsString('flex items-center gap-2 w-24 shrink-0', $profile);
+        $this->assertStringContainsString('flex items-center gap-2 w-24 shrink-0', $peers);
+        $this->assertStringContainsString('flex items-center gap-2 w-20 shrink-0 justify-end', $profile);
+        $this->assertStringContainsString('flex items-center gap-2 w-20 shrink-0 justify-end', $peers);
+        $this->assertStringContainsString('w-full bg-ink-900 h-1.5 flex rounded overflow-hidden', $profile);
+        $this->assertStringContainsString('w-full bg-ink-900 h-1.5 flex rounded overflow-hidden', $peers);
+        $this->assertStringContainsString('bg-yellow-500 h-full', $profile);
+        $this->assertStringContainsString('bg-yellow-500 h-full', $peers);
         $this->assertStringContainsString('maxPeerGames', $controller);
+        $this->assertStringContainsString('maxHeroGames', $controller);
         $this->assertStringContainsString('$peerGamesScale', $profile);
         $this->assertStringContainsString('$maxPeerGames', $peers);
-        $this->assertStringNotContainsString("__('ui.games_together')", $peers);
-        $this->assertStringNotContainsString("__('ui.games_together')", $profile);
 
         $this->assertStringContainsString("'pageTitle' => \$player['nickname'].' - '.__('ui.overview').' - DOTAHUB'", $controller);
         $this->assertStringContainsString('loadMatchDetails(', $controller);
@@ -107,12 +117,24 @@ class UiAssetsTest extends TestCase
 
         $this->assertStringContainsString("'peers' => 'Союзники'", $ru);
         $this->assertStringContainsString("'peers' => 'Allies'", $en);
-        $this->assertStringContainsString("'mode_1' => 'All Pick'", $ru);
-        $this->assertStringContainsString("'mode_22' => 'Ranked'", $ru);
-        $this->assertStringContainsString("'mode_23' => 'Turbo'", $ru);
-        $this->assertStringContainsString("'mode_1' => 'All Pick'", $en);
-        $this->assertStringContainsString("'mode_22' => 'Ranked'", $en);
-        $this->assertStringContainsString("'mode_23' => 'Turbo'", $en);
+        $expectedModeLabels = [
+            'mode_1' => 'All Pick',
+            'mode_2' => 'Captains Draft',
+            'mode_4' => 'Single Draft',
+            'mode_5' => 'All Random',
+            'mode_16' => 'Captains Mode',
+            'mode_18' => 'Ability Draft',
+            'mode_22' => 'Ranked',
+            'mode_23' => 'Turbo',
+        ];
+        foreach ($expectedModeLabels as $key => $label) {
+            $this->assertStringContainsString("'{$key}' => '{$label}'", $ru);
+            $this->assertStringContainsString("'{$key}' => '{$label}'", $en);
+        }
+        $this->assertStringContainsString("'ranked' => 'Ranked'", $ru);
+        $this->assertStringContainsString("'turbo' => 'Turbo'", $ru);
+        $this->assertStringContainsString("'normal' => 'Normal'", $ru);
+        $this->assertStringNotContainsString('game_mode_label', $row);
         $this->assertStringContainsString("'wins_tooltip' => 'Побед'", $ru);
         $this->assertStringContainsString("'losses_tooltip' => 'Поражений'", $ru);
         $this->assertStringContainsString("'wins_tooltip' => __('ui.wins_tooltip')", $layout);

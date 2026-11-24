@@ -79,6 +79,9 @@ class DotaPlayerController extends Controller
         $heroUsageUnavailable = $heroUsage === [];
         $activityHeatmap = $this->activityHeatmap($heatmapMatches);
 
+        $topHeroes = $player['top_heroes'] ?? array_slice($player['heroes'] ?? [], 0, 5);
+        $maxHeroGames = max(array_merge([1], array_column($topHeroes, 'games')));
+
         return view('dota.player', [
             'player' => $player,
             'pageTitle' => $player['nickname'].' - '.__('ui.overview').' - DOTAHUB',
@@ -95,6 +98,7 @@ class DotaPlayerController extends Controller
             'steamProfile' => $steam->summary($steamId),
             'isFavorite' => $this->favoriteState($accountId, $favorites),
             'maxPeerGames' => max(array_merge([1], array_column($player['peers'] ?? [], 'games'))),
+            'maxHeroGames' => $maxHeroGames,
         ]);
     }
 

@@ -83,6 +83,8 @@ return [
     'avg_gpm' => 'Avg GPM',
     'avg_xpm' => 'Avg XPM',
     'ranked' => 'Ranked',
+    'turbo' => 'Turbo',
+    'normal' => 'Normal',
     'all_time_tab' => 'All games',
     'records_count' => 'records',
     'best_player_records' => 'Best personal records in ranked matches',

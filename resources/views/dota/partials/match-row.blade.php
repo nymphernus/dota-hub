@@ -32,12 +32,9 @@
     };
 
     $gameMode = (int) ($match['game_mode'] ?? 0);
-    $modeLabel = $match['game_mode_label'] ?? $match['match_type_label'] ?? null;
-    if ($modeLabel === null || $modeLabel === '') {
-        $modeLabel = in_array($gameMode, [1, 2, 4, 5, 16, 18, 22, 23], true)
-            ? __('ui.mode_'.$gameMode)
-            : null;
-    }
+    $modeLabel = in_array($gameMode, [1, 2, 4, 5, 16, 18, 22, 23], true)
+        ? __('ui.mode_'.$gameMode)
+        : null;
     $modeClass = match ($gameMode) {
         22 => 'bg-yellow-500/20 text-yellow-500',
         23 => 'bg-blue-500/20 text-blue-500',
