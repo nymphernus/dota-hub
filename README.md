@@ -3,8 +3,7 @@
 Статистика игроков **Dota 2**: поиск по Steam-профилю,
 SteamID64, `account_id` или никнейму.
 
-Проект собран на Laravel 11, Blade, Tailwind CSS 4 и Alpine.js, разворачивается
-одной командой через Docker Compose (PHP-FPM + Nginx + PostgreSQL + Redis).
+<img width="1239" height="907" alt="dotahub" src="https://github.com/user-attachments/assets/a0ac98e4-32cf-4253-9a64-b11721dd9e86" />
 
 ---
 
