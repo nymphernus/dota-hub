@@ -55,11 +55,13 @@ class UiAssetsTest extends TestCase
         $appLayout = (string) file_get_contents(resource_path('views/layouts/app.blade.php'));
         $controller = (string) file_get_contents(app_path('Http/Controllers/DotaPlayerController.php'));
 
-        $this->assertStringNotContainsString('nav-shell', $appLayout);
-        $this->assertStringNotContainsString('aria-label="Navigation"', $appLayout);
+        $this->assertStringContainsString('nav-shell', $appLayout);
+        $this->assertStringContainsString('aria-label="Navigation"', $appLayout);
+        $this->assertSame(1, substr_count($appLayout, 'nav-shell'));
         $this->assertStringContainsString('blur-md opacity-45', $header);
         $this->assertStringNotContainsString("__('ui.cached_offline')", $header);
-        $this->assertStringContainsString("@include('components.player-tabs'", $layout);
+        $this->assertStringNotContainsString("@include('components.player-tabs'", $layout);
+        $this->assertStringNotContainsString('role="tablist"', $layout);
         $this->assertStringNotContainsString('player-tabs', $profile);
 
         $this->assertStringNotContainsString('role="tablist"', $profile);

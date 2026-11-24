@@ -34,10 +34,12 @@ class DotaMatchesTest extends TestCase
 
         $response->assertOk();
         $response->assertDontSee('Р’СЃРµ РјР°С‚С‡Рё');
-        $response->assertSee('id="tab-overview"', false);
-        $response->assertSee('id="tab-matches"', false);
-        $response->assertSee('id="tab-heroes"', false);
-        $response->assertSee('id="tab-records"', false);
+        $response->assertSee('aria-label="Navigation"', false);
+        $response->assertSee('nav-shell', false);
+        $response->assertDontSee('id="tab-overview"', false);
+        $response->assertDontSee('id="tab-matches"', false);
+        $response->assertDontSee('id="tab-heroes"', false);
+        $response->assertDontSee('id="tab-records"', false);
         $response->assertSee('aria-current="page"', false);
         $response->assertSee('Anti-Mage');
         $response->assertSee('Blink Dagger');

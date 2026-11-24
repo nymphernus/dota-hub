@@ -74,9 +74,11 @@ class DotaProfileTest extends TestCase
             route('player.matches', ['accountId' => self::ACCOUNT_ID]),
             false
         );
-        $response->assertSee('id="tab-matches"', false);
-        $response->assertDontSee('id="tab-account"', false);
-        $response->assertSee('id="tab-peers"', false);
+        $response->assertSee('aria-label="Navigation"', false);
+        $response->assertSee('nav-shell', false);
+        $response->assertDontSee('id="tab-overview"', false);
+        $response->assertDontSee('id="tab-matches"', false);
+        $response->assertDontSee('id="tab-peers"', false);
         $response->assertSee('Союзники');
         $response->assertSee(route('player.heroes', ['accountId' => self::ACCOUNT_ID]), false);
         $response->assertSee(route('player.peers', ['accountId' => self::ACCOUNT_ID]), false);
@@ -183,10 +185,10 @@ class DotaProfileTest extends TestCase
                 && $peers[1]['is_private'] === true;
         });
         $response->assertSee('OtherPeer');
-        $response->assertSee('role="tablist"', false);
-        $response->assertSee('id="tab-overview"', false);
-        $response->assertDontSee('nav-shell', false);
-        $this->assertSame(1, substr_count((string) $response->getContent(), 'role="tablist"'));
+        $response->assertSee('aria-label="Navigation"', false);
+        $response->assertSee('nav-shell', false);
+        $response->assertDontSee('id="tab-overview"', false);
+        $this->assertSame(1, substr_count((string) $response->getContent(), 'nav-shell'));
         $response->assertDontSee('aria-label="Хлебные крошки"', false);
         $response->assertViewHas(
             'recentMatches',
@@ -751,7 +753,8 @@ class DotaProfileTest extends TestCase
 
         $response->assertOk();
         $response->assertViewIs('dota.heroes');
-        $response->assertSee('id="tab-heroes"', false);
+        $response->assertSee('aria-label="Navigation"', false);
+        $response->assertDontSee('id="tab-heroes"', false);
         $response->assertSee('Anti-Mage');
         $response->assertSee('Союзники');
         $response->assertSee('По количеству игр');
@@ -774,7 +777,8 @@ class DotaProfileTest extends TestCase
 
         $response->assertOk();
         $response->assertViewIs('dota.peers');
-        $response->assertSee('id="tab-peers"', false);
+        $response->assertSee('aria-label="Navigation"', false);
+        $response->assertDontSee('id="tab-peers"', false);
         $response->assertSee('Teammate');
         $response->assertSee(__('ui.private_profile'));
         $response->assertSee('>12<', false);

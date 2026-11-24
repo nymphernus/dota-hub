@@ -69,8 +69,9 @@ class LifetimeStatsTest extends TestCase
 
         $response->assertOk();
         $response->assertViewIs('dota.records');
-        $response->assertSee('id="tab-overview"', false);
-        $response->assertSee('id="tab-records"', false);
+        $response->assertSee('aria-label="Navigation"', false);
+        $response->assertDontSee('id="tab-overview"', false);
+        $response->assertDontSee('id="tab-records"', false);
         $response->assertSee('Рекорды');
         $response->assertSee(__('ui.all_time_tab'));
         $response->assertSee(__('ui.ranked'));

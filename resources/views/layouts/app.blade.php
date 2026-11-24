@@ -37,16 +37,19 @@
 </head>
 <body class="flex min-h-screen flex-col">
     @php
+        $navRoute = request()->route()?->getName();
         $navPlayer = $player ?? null;
+        $navHero = $hero ?? null;
         $navNickname = $navPlayer['nickname'] ?? null;
-        $hasProfileHeader = (int) ($navPlayer['account_id'] ?? request()->route('accountId') ?? 0) > 0 && $navNickname;
+        $navAccountId = (int) ($navPlayer['account_id'] ?? request()->route('accountId') ?? 0);
+        $showProfileNav = $navAccountId > 0 && $navNickname;
         $currentLocale = app()->getLocale();
     @endphp
     <header class="sticky top-0 z-50 border-b border-[#2d313e] bg-[#111318]/90 backdrop-blur-md header-shell">
         <div class="mx-auto flex h-16 w-full max-w-7xl items-center px-4 sm:px-6 lg:px-8">
             <div class="flex min-w-0 items-center gap-3">
                 <a href="/" class="bg-[#d32f2f] px-2 py-1 text-2xl leading-none tracking-tighter text-white">DOTAHUB</a>
-                @if ($hasProfileHeader && $navNickname)
+                @if ($showProfileNav && $navNickname)
                     <span class="min-w-0 truncate text-sm font-semibold text-white">{{ $navNickname }}</span>
                 @endif
             </div>
@@ -155,6 +158,36 @@
                 @endif
             </div>
         </div>
+
+        @if ($showProfileNav)
+            <nav class="border-t border-[#2d313e] bg-[#1c1e26] nav-shell" aria-label="Navigation">
+                <div class="mx-auto flex w-full max-w-7xl items-center gap-1 overflow-x-auto px-4 sm:px-6 lg:px-8">
+                    @foreach ([
+                        'player' => __('ui.overview'),
+                        'player.matches' => __('ui.matches'),
+                        'player.heroes' => __('ui.heroes'),
+                        'player.peers' => __('ui.allies'),
+                        'player.records' => __('ui.records'),
+                    ] as $routeName => $label)
+                        <a
+                            href="{{ route($routeName, ['accountId' => $navAccountId]) }}"
+                            @class([
+                                'shrink-0 px-3 py-2 text-xs font-semibold transition',
+                                'bg-[#2d313e] text-white' => $navRoute === $routeName,
+                                'text-mist-400 hover:text-mist-200' => $navRoute !== $routeName,
+                            ])
+                            @if ($navRoute === $routeName) aria-current="page" @endif
+                        >{{ $label }}</a>
+                    @endforeach
+
+                    @if (in_array($navRoute, ['match', 'player.hero'], true))
+                        <span class="shrink-0 bg-[#2d313e] px-3 py-2 text-xs font-semibold text-white" aria-current="page">
+                            {{ $navRoute === 'match' ? 'Match #'.request()->route('matchId') : ($navHero['name'] ?? 'Hero') }}
+                        </span>
+                    @endif
+                </div>
+            </nav>
+        @endif
     </header>
 
     <main id="main-content" class="flex-1" tabindex="-1">
