@@ -54,6 +54,7 @@ class MatchTest extends TestCase
         $response->assertDontSee('Party #', false);
         $response->assertSee('Safe');
         $response->assertSee('Mid');
+        $response->assertSee('Offlane');
         $response->assertSee('Hard');
         $response->assertSee('Blink Dagger');
         $response->assertSee('Black King Bar');
@@ -82,7 +83,11 @@ class MatchTest extends TestCase
         $response->assertDontSee('На главную');
         $response->assertSee('>IMP</th>', false);
         $response->assertDontSee('aria-label="Хлебные крошки"', false);
-        $response->assertSee(__('ui.player_profile'));
+        $response->assertDontSee('Профиль:', false);
+        $response->assertViewHas('profilePlayer', fn ($profilePlayer): bool => is_array($profilePlayer)
+            && (int) ($profilePlayer['account_id'] ?? 0) === self::ACCOUNT_ID
+            && ($profilePlayer['nickname'] ?? null) === 'Dendi');
+        $response->assertSee('<span class="min-w-0 truncate text-sm font-semibold text-white">Dendi</span>', false);
         $response->assertSee(route('player', ['accountId' => self::ACCOUNT_ID]), false);
         $response->assertDontSee('>Dota 2</span>', false);
         $response->assertDontSee('card relative overflow-hidden', false);
@@ -203,6 +208,7 @@ class MatchTest extends TestCase
 
             return $player['role']['label'] === 'Hard'
                 && $player['role']['source'] === 'STRATZ'
+                && $player['imp'] === 7.5
                 && $player['impact'] === 7.5
                 && $player['rank_tier'] === 80
                 && $player['rank_label'] === 'Immortal';
@@ -221,7 +227,7 @@ class MatchTest extends TestCase
 
         // One match request + hero metadata + item metadata.
         Http::assertSentCount(3);
-        $this->assertTrue(Cache::has('opendota:match:v4:'.self::MATCH_ID));
+        $this->assertTrue(Cache::has('opendota:match:v5:'.self::MATCH_ID));
     }
 
     public function test_unknown_match_redirects_back_with_an_error(): void

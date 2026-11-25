@@ -60,11 +60,10 @@
                     <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[#2d313e] px-3 py-2">
                         <h2 class="section-heading">{{ __('ui.recent_games') }}</h2>
                     </div>
-
-                    @if ($recentMatches === [])
+@if ($recentMatches === [])
                         <div class="p-4 text-center text-xs text-mist-400">{{ __('ui.no_matches_found_hint') }}</div>
-                    @else
-                        <table class="w-full text-sm">
+@else
+<table class="w-full text-sm">
                                 <thead class="table-head">
                                     <tr>
                                         <th class="px-2 py-1 text-left font-semibold">{{ __('ui.hero_mode') }}</th>
@@ -96,8 +95,8 @@
                         <div class="flex flex-col p-1">
                             @foreach ($topHeroes as $hero)
                                 @php $heroUrl = route('player.hero', ['accountId' => $player['account_id'], 'heroId' => $hero['hero_id']]); @endphp
-                                <a href="{{ $heroUrl }}" class="block">
-                                    <div class="flex items-center gap-4 py-2 border-b border-ink-700/50 hover:bg-ink-800/50 px-2 transition">
+                                <a href="{{ $heroUrl }}" class="group block border-b border-ink-700/50 px-2 py-1 transition odd:bg-[#1c1e26] even:bg-[#111318] hover:bg-ink-700/60 match-row">
+                                    <div class="flex items-center gap-4">
                                         <img src="{{ $hero['image'] }}" class="w-16 h-9 object-cover shrink-0 rounded-sm">
 
                                         <!-- Name and statistics -->
@@ -252,10 +251,10 @@
                     @if ($topPeers === [])
                         <div class="mt-2 border border-dashed border-line px-3 py-4 text-center text-[11px] text-mist-500">{{ __('ui.no_peers_data') }}</div>
                     @else
-                        <div class="mt-2 space-y-2">
+                        <div class="mt-2 divide-y divide-ink-700/50">
                             @foreach ($topPeers as $peer)
                                 <a href="{{ route('player', ['accountId' => $peer['account_id']]) }}" class="block">
-                                    <div class="flex items-center gap-3 py-2 border-b border-ink-700/50 last:border-b-0">
+                                    <div class="flex items-center gap-3 py-2 hover:bg-ink-800/50 px-2 transition">
                                         <img src="{{ $peer['avatar'] }}" class="w-10 h-10 object-cover shrink-0">
 
                                         <div class="flex-1 min-w-0 truncate text-sm text-mist-200">

@@ -21,9 +21,25 @@ class MatchController extends Controller
             return back()->with('error', $exception->getMessage());
         }
 
+        $playerId = request()->integer('player_id') ?: null;
+        $players = array_merge($match['players']['radiant'] ?? [], $match['players']['dire'] ?? []);
+        $matchedPlayer = $playerId !== null
+            ? collect($players)->first(fn (array $player): bool => (int) ($player['account_id'] ?? 0) === $playerId)
+            : null;
+
+        // Only the account from ?player_id becomes the profile context in the
+        // layout. Never fall back to the first or last player in the match.
+        $profilePlayer = is_array($matchedPlayer) ? [
+            'account_id' => $playerId,
+            'nickname' => $matchedPlayer['nickname'] ?? null,
+            'avatar' => $matchedPlayer['avatar'] ?? null,
+        ] : null;
+
         return view('dota.match', [
             'match' => $match,
             'pageTitle' => __('ui.match').' #'.$match['match_id'].' - DOTAHUB',
+            'playerId' => $playerId,
+            'profilePlayer' => $profilePlayer,
         ]);
     }
 }

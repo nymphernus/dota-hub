@@ -287,15 +287,7 @@ class StratzService
             }
 
             $accountId = (int) $player['steamAccountId'];
-            $positionValue = $player['position'] ?? null;
-            $position = null;
-
-            if (is_numeric($positionValue)) {
-                $position = (int) $positionValue;
-            } elseif (is_string($positionValue) && preg_match('/POSITION_([1-5])/', $positionValue, $matches) === 1) {
-                $position = (int) $matches[1];
-            }
-
+            $position = $this->normalizePosition($player['position'] ?? null);
             $imp = isset($player['imp']) && is_numeric($player['imp'])
                 ? round((float) $player['imp'], 2)
                 : null;
@@ -324,9 +316,23 @@ class StratzService
         return $positions;
     }
 
+    private function normalizePosition(mixed $value): ?int
+    {
+        if (is_numeric($value)) {
+            return (int) $value;
+        }
+
+        if (is_string($value) && preg_match('/POSITION_([1-5])/', $value, $matches) === 1) {
+            return (int) $matches[1];
+        }
+
+        return null;
+    }
+
     /**
      * Full match history from STRATZ (bypasses OpenDota daily limits).
-     * Returns rows normalized to OpenDota /players/{id}/matches shape.
+     * Pages in batches of 100 until every match is loaded; maxMatches = 0 means
+     * no cap. Returns rows normalized to OpenDota /players/{id}/matches shape.
      *
      * @return array<int, array<string, mixed>>
      */
@@ -336,7 +342,7 @@ class StratzService
             return [];
         }
 
-        $cacheKey = "stratz:player:{$accountId}:matches:v1";
+        $cacheKey = "stratz:player:{$accountId}:matches:v2";
         $cached = $fresh ? null : Cache::get($cacheKey);
         if (is_array($cached)) {
             return $cached;
@@ -362,6 +368,8 @@ class StratzService
                 experiencePerMinute
                 networth
                 level
+                position
+                imp
               }
             }
           }
@@ -369,6 +377,7 @@ class StratzService
         GRAPHQL;
 
         $all = [];
+        $seen = [];
         $skip = 0;
         $take = max(1, min(100, $take));
 
@@ -406,18 +415,33 @@ class StratzService
                 break;
             }
 
+            $newInBatch = 0;
+
             foreach ($matches as $match) {
                 $row = $this->normalizeStratzMatch($match);
-                if ($row !== null) {
-                    $all[] = $row;
+                if ($row === null) {
+                    continue;
                 }
+
+                $matchId = (int) ($row['match_id'] ?? 0);
+
+                if ($matchId > 0 && isset($seen[$matchId])) {
+                    continue;
+                }
+
+                if ($matchId > 0) {
+                    $seen[$matchId] = true;
+                }
+
+                $all[] = $row;
+                $newInBatch++;
             }
 
             $count = count($matches);
             $skip += $count;
             Log::info('STRATZ matches loaded', ['account_id' => $accountId, 'batch' => $count, 'total' => count($all)]);
 
-            if ($count < $take) {
+            if ($newInBatch === 0 || $count < $take) {
                 break;
             }
             if ($maxMatches > 0 && count($all) >= $maxMatches) {
@@ -468,6 +492,10 @@ class StratzService
             'xp_per_min' => (int) ($p['experiencePerMinute'] ?? 0),
             'net_worth' => (int) ($p['networth'] ?? 0),
             'level' => (int) ($p['level'] ?? 0),
+            'position' => $this->normalizePosition($p['position'] ?? null),
+            'imp' => isset($p['imp']) && is_numeric($p['imp'])
+                ? round((float) $p['imp'], 2)
+                : null,
         ];
     }
 

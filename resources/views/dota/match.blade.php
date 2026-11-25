@@ -8,19 +8,14 @@
     $gameModeLabel = in_array($gameMode, [1, 2, 4, 5, 16, 18, 22, 23], true)
         ? __('ui.mode_'.$gameMode)
         : null;
-    $profilePlayerId = request()->integer('player_id') ?: null;
+    $isRankedMatch = (int) ($match['lobby_type'] ?? 0) === 7 || $gameMode === 22;
     $radiantWin = $match['radiant_win'];
     $winner = $radiantWin ? 'Radiant' : 'Dire';
     $startedAt = $match['started_at'] ? \Carbon\CarbonImmutable::parse($match['started_at']) : null;
     $allPlayers = collect($match['players']['radiant'] ?? [])->merge($match['players']['dire'] ?? []);
-    $profilePlayer = $profilePlayerId !== null
-        ? $allPlayers->first(fn (array $player): bool => (int) ($player['account_id'] ?? 0) === $profilePlayerId)
-        : null;
-    $profileNickname = $profilePlayer['nickname'] ?? null;
-    $showTowerDamage = $allPlayers->contains(fn (array $player) => (int) ($player['tower_damage'] ?? 0) > 0);
-    $showHealing = $allPlayers->contains(fn (array $player) => (int) ($player['hero_healing'] ?? 0) > 0);
-    $showPurchases = $allPlayers->contains(fn (array $player) => ! empty($player['purchases']));
-    $showImpact = $allPlayers->contains(fn (array $player) => ($player['impact'] ?? null) !== null);
+    $showTowerDamage = $allPlayers->contains(fn (array $matchPlayer) => (int) ($matchPlayer['tower_damage'] ?? 0) > 0);
+    $showHealing = $allPlayers->contains(fn (array $matchPlayer) => (int) ($matchPlayer['hero_healing'] ?? 0) > 0);
+    $showPurchases = $allPlayers->contains(fn (array $matchPlayer) => ! empty($matchPlayer['purchases']));
     $columnCount = 7 + ($showTowerDamage ? 1 : 0) + ($showHealing ? 1 : 0) + ($showPurchases ? 1 : 0);
     $teams = [
         'radiant' => [
@@ -42,7 +37,7 @@
     $viewIndex = 0;
 
     foreach ($teams as $teamKey => $team) {
-        foreach ($team['players'] as $index => $player) {
+        foreach ($team['players'] as $index => $matchPlayer) {
             $teams[$teamKey]['players'][$index]['view_index'] = $viewIndex++;
         }
     }
@@ -78,15 +73,6 @@
                         <h1 class="mt-3 text-3xl font-semibold tracking-tight text-mist-200 sm:text-4xl">
                             {{ __('ui.match') }} <span class="font-mono text-2xl text-mist-300 sm:text-3xl">#{{ $match['match_id'] }}</span>
                         </h1>
-
-                        @if ($profilePlayerId !== null && $profilePlayer !== null)
-                            <a href="{{ route('player', ['accountId' => $profilePlayerId]) }}" class="mt-2 inline-flex items-center gap-1 text-xs text-accent-300 hover:text-accent-200">
-                                {{ __('ui.player_profile') }}
-                                @if ($profileNickname)
-                                    <span class="text-mist-400">{{ $profileNickname }}</span>
-                                @endif
-                            </a>
-                        @endif
 
                         <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-mist-400">
                             <span class="inline-flex items-center gap-1.5">
@@ -165,23 +151,26 @@
                                     </div>
                                 </td>
                             </tr>
-                            @forelse ($team['players'] as $player)
+                            @forelse ($team['players'] as $matchPlayer)
                                     @php
-                                        $roleLabel = $player['role']['label'] ?? null;
-                                        $roleName = $player['role']['name'] ?? null;
-                                        $roleSource = $player['role']['source'] ?? null;
+                                        $rawRoleLabel = $matchPlayer['role']['label'] ?? null;
+                                        $roleLabel = $isRankedMatch
+                                            ? ($rawRoleLabel === 'Off' ? 'Offlane' : $rawRoleLabel)
+                                            : null;
+                                        $roleName = $matchPlayer['role']['name'] ?? null;
+                                        $roleSource = $matchPlayer['role']['source'] ?? null;
                                         $roleClasses = match ($roleLabel) {
                                             'Safe' => 'border-green-500/25 bg-green-500/10 text-green-500',
                                             'Mid' => 'border-blue-500/25 bg-blue-500/10 text-blue-500',
-                                            'Off' => 'border-red-500/25 bg-red-500/10 text-red-500',
+                                            'Offlane' => 'border-red-500/25 bg-red-500/10 text-red-500',
                                             'Soft' => 'border-purple-500/25 bg-purple-500/10 text-purple-500',
                                             'Hard' => 'border-orange-500/25 bg-orange-500/10 text-orange-500',
                                             default => 'border-line bg-ink-900/50 text-mist-400',
                                         };
-                                        $isCurrentPlayer = $profilePlayerId !== null
-                                            && (int) ($player['account_id'] ?? 0) === $profilePlayerId;
-                                        $playerIndex = $player['view_index'];
-                                        $accountId = (int) ($player['account_id'] ?? 0);
+                                        $isCurrentPlayer = $playerId !== null
+                                            && (int) ($matchPlayer['account_id'] ?? 0) === $playerId;
+                                        $playerIndex = $matchPlayer['view_index'];
+                                        $accountId = (int) ($matchPlayer['account_id'] ?? 0);
                                     @endphp
                                     <tr @class([
                                         'transition hover:bg-ink-900/30',
@@ -191,60 +180,60 @@
                                         <td class="px-2 py-1">
                                             <div class="flex items-center gap-3">
                                                 <div class="h-9 w-16 shrink-0 overflow-hidden rounded-none bg-ink-800  ">
-                                                    @if ($player['hero_image'])
-                                                        <img src="{{ $player['hero_image'] }}" alt="{{ $player['hero_name'] }}" class="h-full w-full object-cover" loading="lazy">
+                                                    @if ($matchPlayer['hero_image'])
+                                                        <img src="{{ $matchPlayer['hero_image'] }}" alt="{{ $matchPlayer['hero_name'] }}" class="h-full w-full object-cover" loading="lazy">
                                                     @else
                                                         <span class="grid h-full w-full place-items-center text-xs font-bold text-mist-500">
-                                                            {{ mb_strtoupper(mb_substr($player['hero_name'], 0, 1)) }}
+                                                            {{ mb_strtoupper(mb_substr($matchPlayer['hero_name'], 0, 1)) }}
                                                         </span>
                                                     @endif
                                                 </div>
                                                 <div class="min-w-0">
                                                     @if ($accountId > 0)
                                                         <a href="{{ route('player', ['accountId' => $accountId]) }}" class="block truncate text-lg font-bold text-mist-200 transition hover:text-accent-300">
-                                                            {{ $player['nickname'] ?: __('ui.player_hash', ['id' => $accountId]) }}
+                                                            {{ $matchPlayer['nickname'] ?: __('ui.player_hash', ['id' => $accountId]) }}
                                                         </a>
                                                     @else
-                                                        <p class="block truncate text-lg font-bold text-mist-200">{{ $player['nickname'] ?: __('ui.unknown_player') }}</p>
+                                                        <p class="block truncate text-lg font-bold text-mist-200">{{ $matchPlayer['nickname'] ?: __('ui.unknown_player') }}</p>
                                                     @endif
                                                     <p class="mt-0.5 flex flex-wrap items-center gap-1.5 truncate text-gray-400 text-sm">
-                                                        <span>{{ $player['hero_name'] }}</span>
-                                                        @if (! empty($player['rank_label']))
-                                                            <span class="rounded bg-accent-500/10 px-1 py-0.5 text-[8px] font-bold uppercase tracking-wide text-accent-300" title="{{ __('ui.rank') }}">{{ $player['rank_label'] }}</span>
+                                                        <span>{{ $matchPlayer['hero_name'] }}</span>
+                                                        @if (! empty($matchPlayer['rank_label']))
+                                                            <span class="rounded bg-accent-500/10 px-1 py-0.5 text-[8px] font-bold uppercase tracking-wide text-accent-300" title="{{ __('ui.rank') }}">{{ $matchPlayer['rank_label'] }}</span>
                                                         @endif
-                                                        @if ($player['level'] > 0)
-                                                            <span>{{ __('ui.lvl') }} {{ $player['level'] }}</span>
+                                                        @if ($matchPlayer['level'] > 0)
+                                                            <span>{{ __('ui.lvl') }} {{ $matchPlayer['level'] }}</span>
                                                         @endif
                                                         @if ($roleLabel)
                                                             <span class="badge !px-1.5 !py-0.5 !text-[9px] {{ $roleClasses }}" title="{{ $roleName }}{{ $roleSource ? ' · '.$roleSource : '' }}">{{ $roleLabel }}</span>
+                                                        @else
+                                                            <span class="text-[9px] text-mist-400">—</span>
                                                         @endif
                                                     </p>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td class="px-2 py-1 font-mono text-[13px] tabular-nums text-mist-300">
-                                            {{ $showImpact && ($player['impact'] ?? null) !== null ? number_format($player['impact'], 1, '.', '') : '—' }}
-                                        </td>
+                                        <td class="px-2 py-1 font-mono text-[13px] tabular-nums text-mist-300">{{ $matchPlayer['imp'] ?? '—' }}</td>
                                         <td class="px-2 py-1 font-mono text-[13px] tabular-nums">
-                                            <span class="text-green-500">{{ $player['kills'] }}</span>
+                                            <span class="text-green-500">{{ $matchPlayer['kills'] }}</span>
                                             <span class="text-mist-500/60">/</span>
-                                            <span class="text-red-500">{{ $player['deaths'] }}</span>
+                                            <span class="text-red-500">{{ $matchPlayer['deaths'] }}</span>
                                             <span class="text-mist-500/60">/</span>
-                                            <span class="text-mist-400">{{ $player['assists'] }}</span>
-                                            <span class="ml-1.5 text-[10px] text-mist-500">({{ number_format($player['kda'], 2, '.', '') }})</span>
+                                            <span class="text-mist-400">{{ $matchPlayer['assists'] }}</span>
+                                            <span class="ml-1.5 text-[10px] text-mist-500">({{ number_format($matchPlayer['kda'], 2, '.', '') }})</span>
                                         </td>
-                                        <td class="px-2 py-1 font-mono text-[13px] tabular-nums text-mist-300">{{ number_format((int) ($player['gpm'] ?? 0), 0, '.', ' ') }}</td>
-                                        <td class="px-2 py-1 font-mono text-[13px] tabular-nums text-mist-300">{{ number_format((int) ($player['xpm'] ?? 0), 0, '.', ' ') }}</td>
-                                        <td class="px-2 py-1 font-mono text-[13px] tabular-nums text-mist-300">{{ number_format((int) ($player['hero_damage'] ?? 0), 0, '.', ' ') }}</td>
+                                        <td class="px-2 py-1 font-mono text-[13px] tabular-nums text-mist-300">{{ number_format((int) ($matchPlayer['gpm'] ?? 0), 0, '.', ' ') }}</td>
+                                        <td class="px-2 py-1 font-mono text-[13px] tabular-nums text-mist-300">{{ number_format((int) ($matchPlayer['xpm'] ?? 0), 0, '.', ' ') }}</td>
+                                        <td class="px-2 py-1 font-mono text-[13px] tabular-nums text-mist-300">{{ number_format((int) ($matchPlayer['hero_damage'] ?? 0), 0, '.', ' ') }}</td>
                                         @if ($showTowerDamage)
-                                            <td class="px-2 py-1 font-mono text-[13px] tabular-nums text-mist-300">{{ isset($player['tower_damage']) ? number_format((int) $player['tower_damage'], 0, '.', ' ') : '—' }}</td>
+                                            <td class="px-2 py-1 font-mono text-[13px] tabular-nums text-mist-300">{{ isset($matchPlayer['tower_damage']) ? number_format((int) $matchPlayer['tower_damage'], 0, '.', ' ') : '—' }}</td>
                                         @endif
                                         @if ($showHealing)
-                                            <td class="px-2 py-1 font-mono text-[13px] tabular-nums text-mist-300">{{ isset($player['hero_healing']) ? number_format((int) $player['hero_healing'], 0, '.', ' ') : '—' }}</td>
+                                            <td class="px-2 py-1 font-mono text-[13px] tabular-nums text-mist-300">{{ isset($matchPlayer['hero_healing']) ? number_format((int) $matchPlayer['hero_healing'], 0, '.', ' ') : '—' }}</td>
                                         @endif
                                         @if ($showPurchases)
                                             <td class="px-2 py-1 text-right">
-                                                @if ($player['purchases'] !== [])
+                                                @if ($matchPlayer['purchases'] !== [])
                                                     <button
                                                         type="button"
                                                         class="inline-flex items-center gap-1.5 rounded-none border border-line bg-ink-900/40 px-2.5 py-1.5 text-[11px] font-semibold text-mist-300 transition hover:border-accent-400 hover:bg-accent-400/10 hover:text-white"
@@ -253,7 +242,7 @@
                                                         aria-controls="purchases-{{ $teamKey }}-{{ $playerIndex }}"
                                                     >
                                                         {{ __('ui.items') }}
-                                                        <span class="rounded bg-white/[0.06] px-1.5 py-0.5 text-[10px] text-mist-400">{{ count($player['purchases']) }}</span>
+                                                        <span class="rounded bg-white/[0.06] px-1.5 py-0.5 text-[10px] text-mist-400">{{ count($matchPlayer['purchases']) }}</span>
                                                         <svg class="h-3 w-3 transition" :class="openPlayer === {{ $playerIndex }} ? 'rotate-180' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round" /></svg>
                                                     </button>
                                                 @else
@@ -263,16 +252,16 @@
                                         @endif
                                     </tr>
 
-                                    @if ($showPurchases && $player['purchases'] !== [])
+                                    @if ($showPurchases && $matchPlayer['purchases'] !== [])
                                         <tr id="purchases-{{ $teamKey }}-{{ $playerIndex }}" x-show="openPlayer === {{ $playerIndex }}" x-cloak x-transition.opacity.duration.150ms class="bg-ink-950/60">
                                             <td colspan="{{ $columnCount }}" class="px-2 py-1">
                                                 <div class="rounded-none bg-ink-900/70 p-3">
                                                     <div class="flex flex-wrap items-center justify-between gap-2">
-                                                        <p class="label">{{ __('ui.items') }} · {{ $player['hero_name'] }}</p>
-                                                        <p class="text-[10px] text-mist-500">{{ $player['purchase_log_count'] }} {{ __('ui.purchases') }}</p>
+                                                        <p class="label">{{ __('ui.items') }} · {{ $matchPlayer['hero_name'] }}</p>
+                                                        <p class="text-[10px] text-mist-500">{{ $matchPlayer['purchase_log_count'] }} {{ __('ui.purchases') }}</p>
                                                     </div>
                                                     <div class="mt-3 flex flex-wrap gap-2">
-                                                        @foreach ($player['purchases'] as $item)
+                                                        @foreach ($matchPlayer['purchases'] as $item)
                                                             <div class="flex items-center gap-2 rounded-none bg-ink-900/30 p-2 pr-3" title="{{ $item['name'] }} · {{ $item['time_label'] }}">
                                                                 <div class="grid h-8 w-10 shrink-0 place-items-center overflow-hidden rounded-none bg-ink-800  ">
                                                                     <img src="{{ $item['image'] }}" alt="" class="h-full w-full object-contain" loading="lazy" referrerpolicy="no-referrer">

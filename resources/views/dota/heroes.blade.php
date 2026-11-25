@@ -28,7 +28,7 @@
 
         <label class="min-w-[180px] flex-1">
             <span class="label mb-1 block">{{ __('ui.sort') }}</span>
-            <select name="sort" onchange="this.form.submit()" class="h-10 w-full rounded border border-[#2d313e] bg-[#1c1e26] text-mist-200 px-3 text-sm text-mist-200 focus:border-accent-400/50 focus:outline-none">
+            <select name="sort" onchange="this.form.submit()" class="h-10 w-full rounded border border-[#2d313e] bg-[#1c1e26] px-3 text-sm text-mist-200 focus:border-accent-400/50 focus:outline-none">
                 <option value="games" @selected(($filters['sort'] ?? 'games') === 'games')>{{ __('ui.sort_by_games') }}</option>
                 <option value="winrate" @selected(($filters['sort'] ?? '') === 'winrate')>{{ __('ui.sort_by_winrate') }}</option>
                 <option value="kda" @selected(($filters['sort'] ?? '') === 'kda')>{{ __('ui.sort_by_kda') }}</option>
@@ -50,19 +50,16 @@
     @if ($heroes->isEmpty())
         <div class="mt-6 p-10 text-center text-sm text-mist-400">{{ __('ui.no_heroes_found') }}</div>
     @else
-        <div class="mt-4 overflow-x-auto border border-line bg-[#1c1e26]">
-            <div class="table-head flex min-w-[1010px] items-center gap-4 px-2 py-1 text-[11px] font-semibold">
-                <span class="w-16 shrink-0">{{ __('ui.hero') }}</span>
+        <div class="table-rows mt-4 overflow-x-auto border border-line bg-[#1c1e26]">
+            <div class="table-head flex min-w-[860px] items-center gap-4 px-2 py-1 text-[11px] font-semibold">
+                <span class="w-16 shrink-0"></span>
                 <div class="min-w-0 flex flex-1 items-center justify-between">
                     <span class="w-32 shrink-0">{{ __('ui.hero') }}</span>
                     <span class="w-24 shrink-0">{{ __('ui.games') }}</span>
                     <span class="w-32 shrink-0">{{ __('ui.winrate') }}</span>
                 </div>
                 <span class="w-32 shrink-0">{{ __('ui.games') }}</span>
-                <span class="w-16 shrink-0">KDA</span>
-                <span class="w-16 shrink-0">GPM</span>
-                <span class="w-16 shrink-0">XPM</span>
-                <span class="w-24 shrink-0 text-right">{{ __('ui.last_game') }}</span>
+                <span class="w-20 shrink-0">KDA</span>
             </div>
 
             @foreach ($heroes as $hero)
@@ -76,11 +73,8 @@
                     $losses = (int) ($hero['losses'] ?? max(0, $games - $wins));
                     $winrate = (float) ($hero['win_rate'] ?? $hero['winrate'] ?? 0);
                     $kda = $hero['kda'] ?? null;
-                    $gpm = $hero['gpm'] ?? null;
-                    $xpm = $hero['xpm'] ?? null;
-                    $lastPlayed = (int) ($hero['last_played'] ?? 0);
                 @endphp
-                <a href="{{ $heroUrl }}" class="flex min-w-[1010px] items-center gap-4 py-2 border-b border-ink-700/50 hover:bg-ink-800/50 px-2 transition">
+                <a href="{{ $heroUrl }}" class="group flex min-w-[860px] items-center gap-4 border-b border-ink-700/50 px-2 py-1 transition odd:bg-[#1c1e26] even:bg-[#111318] hover:bg-ink-700/60 match-row">
                     <img src="{{ $img }}" class="w-16 h-9 object-cover shrink-0 rounded-sm" alt="{{ $name }}">
 
                     <div class="flex-1 min-w-0 flex items-center justify-between">
@@ -103,18 +97,7 @@
                         <div class="bg-yellow-500 h-full" style="width: {{ $maxHeroGames > 0 ? ($games / $maxHeroGames) * 100 : 0 }}%"></div>
                     </div>
 
-                    <div class="w-16 shrink-0 font-mono text-xs text-mist-300">{{ $kda !== null ? number_format((float) $kda, 2, '.', '') : '—' }}</div>
-                    <div class="w-16 shrink-0 font-mono text-xs text-mist-300">{{ $gpm ?? '—' }}</div>
-                    <div class="w-16 shrink-0 font-mono text-xs text-mist-300">{{ $xpm ?? '—' }}</div>
-                    <div class="w-24 shrink-0 text-right text-xs text-mist-400">
-                        @if ($lastPlayed > 0)
-                            <time datetime="{{ \Carbon\CarbonImmutable::createFromTimestampUTC($lastPlayed)->toIso8601String() }}" title="{{ \Carbon\CarbonImmutable::createFromTimestampUTC($lastPlayed)->format('d.m.Y') }}">
-                                {{ \Carbon\CarbonImmutable::createFromTimestampUTC($lastPlayed)->format('d.m.y') }}
-                            </time>
-                        @else
-                            —
-                        @endif
-                    </div>
+                    <div class="w-20 shrink-0 font-mono text-xs text-mist-300">{{ $kda !== null ? number_format((float) $kda, 2, '.', '') : '—' }}</div>
                 </a>
             @endforeach
         </div>

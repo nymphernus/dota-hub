@@ -1,4 +1,4 @@
-﻿@php
+@php
     $rows = isset($matches) ? $matches : [$match];
     $rowAccountId = $accountId ?? ($player['account_id'] ?? 0);
 @endphp
@@ -16,13 +16,14 @@
             : null;
 
         $laneRole = (int) ($match['lane_role'] ?? 0);
-        $laneLabels = [1 => 'Safe', 2 => 'Mid', 3 => 'Off', 4 => 'Jungle'];
+        $laneLabels = [1 => 'Safe', 2 => 'Mid', 3 => 'Offlane', 4 => 'Jungle'];
         $roleKey = $match['role_key'] ?? null;
         $roleLabel = $laneLabels[$laneRole] ?? match ($roleKey) {
             'carry' => 'Safe',
             'mid' => 'Mid',
-            'offlane' => 'Off',
+            'offlane' => 'Offlane',
             'support' => 'Soft',
+            'soft_support' => 'Soft',
             'hard_support' => 'Hard',
             default => $roleKey ? ucfirst((string) $roleKey) : null,
         };
@@ -31,7 +32,8 @@
         $roleClass = match ($roleLabel) {
             'Safe' => 'text-green-500',
             'Mid' => 'text-blue-500',
-            'Off' => 'text-red-500',
+            'Offlane' => 'text-red-500',
+            'Jungle' => 'text-cyan-500',
             'Soft' => 'text-purple-500',
             'Hard' => 'text-orange-500',
             default => 'text-mist-300',
@@ -111,7 +113,7 @@
         </td>
 
         <td class="px-2 py-1">
-            @if ($roleLabel)
+            @if ($isRanked && $roleLabel)
                 <span class="inline-flex items-center text-[10px] font-semibold {{ $roleClass }}" title="{{ $roleTitle }}">{{ $roleLabel }}</span>
             @else
                 <span class="text-[10px] text-mist-400" title="{{ __('ui.role_undefined') }}">—</span>
@@ -132,8 +134,25 @@
             <div class="flex items-center gap-0.5">
                 @for ($slot = 0; $slot < 6; $slot++)
                     @php
-                        $item = $match['items'][$slot] ?? null;
-                        $itemImage = $item['image'] ?? (! empty($item['key']) ? '/images/items/'.$item['key'].'.png' : null);
+                        $item = $match['items'][$slot] ?? ($match['item_'.$slot] ?? null);
+
+                        if ($item !== null && ! is_array($item) && ! is_numeric($item)) {
+                            $item = null;
+                        }
+
+                        if (is_numeric($item)) {
+                            $item = [
+                                'id' => (int) $item,
+                                'key' => null,
+                                'name' => 'Item #'.(int) $item,
+                                'image' => null,
+                            ];
+                        }
+
+                        $itemImage = $item['image'] ?? null;
+                        if (! $itemImage && ! empty($item['key'])) {
+                            $itemImage = '/images/items/'.$item['key'].'.png';
+                        }
                     @endphp
                     @if ($item && $itemImage)
                         <span class="block h-6 w-6 overflow-hidden rounded bg-ink-800" title="{{ $item['name'] ?? '' }}">

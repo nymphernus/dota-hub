@@ -13,10 +13,10 @@
         @if (($player['peers'] ?? []) === [])
             <div class="p-10 text-center text-sm text-mist-400">{{ __('ui.no_allies_data') }}</div>
         @else
-            <div class="divide-y divide-[#2d313e]">
+            <div class="table-rows">
                 @foreach ($player['peers'] as $peer)
-                    <a href="{{ route('player', ['accountId' => $peer['account_id']]) }}" class="block">
-                        <div class="flex items-center gap-4 py-3 border-b border-ink-700/50 hover:bg-ink-800/50 px-4 transition">
+                    <a href="{{ route('player', ['accountId' => $peer['account_id']]) }}" class="group block border-b border-ink-700/50 px-4 py-1 transition odd:bg-[#1c1e26] even:bg-[#111318] hover:bg-ink-700/60 match-row">
+                        <div class="flex items-center gap-4">
                             <!-- Avatar + nickname -->
                             <div class="flex items-center gap-3 w-1/3 min-w-0">
                                 <img src="{{ $peer['avatar'] }}" class="w-10 h-10 object-cover shrink-0">

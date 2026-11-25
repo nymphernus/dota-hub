@@ -28,7 +28,10 @@ class OpenDotaService
 
     private const RECENT_MATCH_DETAILS = 25;
 
-    private const PROFILE_SCHEMA_VERSION = 7;
+    private const PROFILE_SCHEMA_VERSION = 11;
+
+    /** @var array<int, int> STRATZ positions keyed by match id for this request. */
+    private array $stratzPositionsByMatch = [];
 
     /**
      * Human-readable labels for OpenDota /players/{id}/records keys.
@@ -412,6 +415,7 @@ class OpenDotaService
      */
     private function fetchPlayer(int $accountId, int $ttl, array $existingHistory = []): array
     {
+        $this->stratzPositionsByMatch = [];
         $profileResponse = $this->client->get("players/{$accountId}");
 
         $profile = $profileResponse['profile'] ?? null;
@@ -429,6 +433,13 @@ class OpenDotaService
 
         $lastMatchId = $this->latestMatchId($existingHistory);
         $newMatches = $this->fetchMatchHistory($accountId, $lastMatchId, $recentMatches);
+
+        // STRATZ positions are collected by fetchMatchHistory. Apply them to the
+        // lightweight feed and to both stored and incoming history rows so old
+        // matches gain a role during the incremental refresh too.
+        $recentMatches = $this->applyStratzPositions($recentMatches);
+        $existingHistory = $this->applyStratzPositions($existingHistory);
+        $newMatches = $this->applyStratzPositions($newMatches);
 
         $peers = $recentMatches === []
             ? []
@@ -643,7 +654,7 @@ class OpenDotaService
     {
         $ttl = (int) config('stats.cache.dota_match', 3600);
 
-        return Cache::remember("opendota:match:v4:{$matchId}", $ttl, function () use ($matchId) {
+        return Cache::remember("opendota:match:v5:{$matchId}", $ttl, function () use ($matchId) {
             try {
                 $match = $this->client->get("matches/{$matchId}");
             } catch (PlayerNotFoundException) {
@@ -703,6 +714,7 @@ class OpenDotaService
         Cache::forget($this->cacheKey($accountId));
         Cache::forget($this->playerHeaderCacheKey($accountId));
         Cache::forget("stratz:player:{$accountId}:matches:v1");
+        Cache::forget("stratz:player:{$accountId}:matches:v2");
         Cache::forget("opendota:records:v1:{$accountId}");
         Cache::forget("opendota:records:v2:{$accountId}");
         Cache::forget("opendota:records:v4:{$accountId}:all");
@@ -986,7 +998,7 @@ class OpenDotaService
             fn (array $match) => (string) ($match['match_id'] ?? '').':'.(string) ($match['win'] ?? ''),
             $history,
         )));
-        $cacheKey = 'opendota:lifetime-stats:v2:'.app()->getLocale().":{$accountId}:{$fingerprint}";
+        $cacheKey = 'opendota:lifetime-stats:v3:'.app()->getLocale().":{$accountId}:{$fingerprint}";
 
         return Cache::remember($cacheKey, $ttl, fn (): array => $this->aggregateLifetimeStats($history));
     }
@@ -1058,7 +1070,11 @@ class OpenDotaService
             }
 
             $gameMode = (int) ($match['game_mode'] ?? 0);
-            $mode = $gameMode > 0 ? $this->gameModeLabel($gameMode) : null;
+            // All Pick (1) must stay a separate row instead of falling through
+            // to the unknown-mode fallback.
+            $mode = $gameMode === 1
+                ? __('ui.mode_1')
+                : ($gameMode > 0 ? $this->gameModeLabel($gameMode) : null);
             $side = ($match['is_radiant'] ?? ((int) ($match['player_slot'] ?? 0) < 128)) ? 'Radiant' : 'Dire';
             $win = (bool) ($match['win'] ?? false);
 
@@ -1446,6 +1462,53 @@ class OpenDotaService
     }
 
     /**
+     * Remember STRATZ positions from the request that fetchMatchHistory already
+     * makes. No extra GraphQL call is needed for the recent-games list.
+     *
+     * @param  array<int, array<string, mixed>>  $stratzMatches
+     */
+    private function rememberStratzPositions(array $stratzMatches): void
+    {
+        foreach ($stratzMatches as $stratzMatch) {
+            if (! is_array($stratzMatch)) {
+                continue;
+            }
+
+            $matchId = (int) ($stratzMatch['match_id'] ?? 0);
+
+            if ($matchId > 0 && isset($stratzMatch['position'])) {
+                $this->stratzPositionsByMatch[$matchId] = (int) $stratzMatch['position'];
+            }
+        }
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $matches
+     * @return array<int, array<string, mixed>>
+     */
+    private function applyStratzPositions(array $matches): array
+    {
+        if ($this->stratzPositionsByMatch === []) {
+            return $matches;
+        }
+
+        foreach ($matches as &$match) {
+            if (! is_array($match)) {
+                continue;
+            }
+
+            $matchId = (int) ($match['match_id'] ?? 0);
+
+            if ($matchId > 0 && isset($this->stratzPositionsByMatch[$matchId])) {
+                $match['position'] ??= $this->stratzPositionsByMatch[$matchId];
+            }
+        }
+        unset($match);
+
+        return $matches;
+    }
+
+    /**
      * Request the full match history on a cold profile, or only the games newer
      * than the stored cursor when the database already has history.
      *
@@ -1461,6 +1524,7 @@ class OpenDotaService
         try {
             $stratzMatches = $this->stratz->playerMatches($accountId);
             if (is_array($stratzMatches) && $stratzMatches !== []) {
+                $this->rememberStratzPositions($stratzMatches);
                 Log::info('Match history loaded from STRATZ', ['account_id' => $accountId, 'total' => count($stratzMatches)]);
                 return $stratzMatches;
             }
@@ -1472,9 +1536,10 @@ class OpenDotaService
     }
 
     /**
-     * Incremental update: keep the stored cursor and only return matches newer
-     * than it. STRATZ is queried fresh (no cached full history) and OpenDota
-     * receives the less_than_match_id cursor required by the incremental flow.
+     * Incremental update: keep the stored cursor for OpenDota, while backfilling
+     * the full fresh STRATZ history so older games gain roles, modes and any
+     * matches missed by earlier capped loads. STRATZ pages through every batch;
+     * OpenDota receives the less_than_match_id cursor.
      *
      * @param  array<int, array<string, mixed>>  $recentMatches
      * @return array<int, array<string, mixed>>
@@ -1483,8 +1548,21 @@ class OpenDotaService
     {
         $candidates = is_array($recentMatches) ? $recentMatches : [];
 
+        $stratzIds = [];
+
         try {
-            $candidates = array_merge($candidates, $this->stratz->playerMatches($accountId, 100, 100, true));
+            $stratzMatches = $this->stratz->playerMatches($accountId, 100, 0, true);
+            $this->rememberStratzPositions($stratzMatches);
+
+            foreach ($stratzMatches as $stratzMatch) {
+                $stratzId = (int) ($stratzMatch['match_id'] ?? 0);
+
+                if ($stratzId > 0) {
+                    $stratzIds[$stratzId] = true;
+                }
+            }
+
+            $candidates = array_merge($candidates, $stratzMatches);
         } catch (\Throwable $e) {
             Log::warning('STRATZ incremental match history failed', [
                 'account_id' => $accountId,
@@ -1513,7 +1591,9 @@ class OpenDotaService
 
             $id = (int) ($match['match_id'] ?? 0);
 
-            if ($id > $lastMatchId) {
+            // STRATZ rows are backfilled even when they predate the cursor so
+            // older games gain roles and modes such as All Pick on refresh.
+            if ($id > 0 && ($id > $lastMatchId || isset($stratzIds[$id]))) {
                 $newMatches[(string) $id] = $match;
             }
         }
@@ -1842,6 +1922,9 @@ class OpenDotaService
                 ? (int) $stratzPlayer['rank_tier']
                 : (isset($player['rank_tier']) && is_numeric($player['rank_tier']) ? (int) $player['rank_tier'] : null);
             $rank = $this->rank($rankTier);
+            $imp = isset($stratzPlayer['imp']) && is_numeric($stratzPlayer['imp'])
+                ? (float) $stratzPlayer['imp']
+                : null;
 
             $row = [
                 'account_id' => $accountId > 0 ? $accountId : null,
@@ -1856,6 +1939,7 @@ class OpenDotaService
                 'hero_name' => $hero['name'],
                 'hero_image' => $hero['image'],
                 'nickname' => $player['personaname'] ?? null,
+                'avatar' => $player['avatar'] ?? null,
                 'level' => (int) ($player['level'] ?? 0),
                 'kills' => $kills,
                 'deaths' => $deaths,
@@ -1873,9 +1957,8 @@ class OpenDotaService
                 'rank_label' => $rank['label'],
                 'rank_medal' => $rank['medal'],
                 'role' => $this->matchRole($player, $stratzPlayer),
-                'impact' => isset($stratzPlayer['imp'])
-                    ? (float) $stratzPlayer['imp']
-                    : null,
+                'imp' => $imp,
+                'impact' => $imp,
                 'purchases' => $this->transformPurchases($purchaseLog, $items),
                 'purchase_log_count' => count($purchaseLog),
                 'net_worth_history' => $this->numericSeries($player['networth_t'] ?? []),
@@ -2255,6 +2338,7 @@ class OpenDotaService
             1 => 1,
             2 => 2,
             3 => 3,
+            4 => 4,
             default => null,
         };
     }
@@ -2512,11 +2596,17 @@ class OpenDotaService
             }
         }
 
-        foreach ($itemStats as $item) {
+        foreach ($itemStats as $itemKey => $item) {
             $itemId = (int) ($item['id'] ?? 0);
 
             if ($itemId > 0) {
-                $itemsById[$itemId] = $item;
+                $key = (string) $itemKey;
+                $itemsById[$itemId] = [
+                    'id' => $itemId,
+                    'key' => $key,
+                    'name' => (string) ($item['name'] ?? $this->itemName($key)),
+                    'image' => (string) ($item['image'] ?? $this->itemImage($key)),
+                ];
             }
         }
 
@@ -2546,6 +2636,10 @@ class OpenDotaService
                 $matches[$index]['xpm'] = $details['xp_per_min'];
             }
 
+            if (($details['lane_role'] ?? null) !== null) {
+                $matches[$index]['lane_role'] = (int) $details['lane_role'];
+            }
+
             $slots = [];
 
             for ($slot = 0; $slot < 6; $slot++) {
@@ -2556,6 +2650,7 @@ class OpenDotaService
                     $meta = $itemsById[$itemId] ?? null;
                     $item = [
                         'id' => $itemId,
+                        'key' => $meta['key'] ?? null,
                         'name' => $meta['name'] ?? 'Item #'.$itemId,
                         'image' => $meta['image'] ?? null,
                     ];
@@ -2572,7 +2667,7 @@ class OpenDotaService
     }
 
     /**
-     * @return array{level: int, net_worth: int, gold_per_min: int, xp_per_min: int, item_0: int, item_1: int, item_2: int, item_3: int, item_4: int, item_5: int}|null
+     * @return array{level: int, net_worth: int, gold_per_min: int, xp_per_min: int, lane_role: int|null, item_0: int, item_1: int, item_2: int, item_3: int, item_4: int, item_5: int}|null
      */
     private function matchPlayerSummary(int $matchId, int $accountId, int $ttl, bool $allowExternalFetch = true): ?array
     {
@@ -2580,7 +2675,7 @@ class OpenDotaService
             return null;
         }
 
-        $cacheKey = "opendota:match-player:v3:{$matchId}:{$accountId}";
+        $cacheKey = "opendota:match-player:v4:{$matchId}:{$accountId}";
         $cached = Cache::get($cacheKey);
 
         if (is_array($cached)) {
@@ -2638,6 +2733,9 @@ class OpenDotaService
             'hero_damage' => (int) ($player['hero_damage'] ?? 0),
             'gold_per_min' => (int) ($player['gold_per_min'] ?? 0),
             'xp_per_min' => (int) ($player['xp_per_min'] ?? 0),
+            'lane_role' => $this->laneRole([
+                'lane_role' => $player['lane_role'] ?? null,
+            ]),
             'item_0' => (int) ($player['item_0'] ?? 0),
             'item_1' => (int) ($player['item_1'] ?? 0),
             'item_2' => (int) ($player['item_2'] ?? 0),

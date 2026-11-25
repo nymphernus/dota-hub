@@ -40,7 +40,7 @@
 <body class="flex min-h-screen flex-col">
     @php
         $navRoute = request()->route()?->getName();
-        $navPlayer = $player ?? null;
+        $navPlayer = $profilePlayer ?? $player ?? null;
         $navHero = $hero ?? null;
         $navNickname = $navPlayer['nickname'] ?? null;
         $navAccountId = (int) ($navPlayer['account_id'] ?? request()->route('accountId') ?? 0);

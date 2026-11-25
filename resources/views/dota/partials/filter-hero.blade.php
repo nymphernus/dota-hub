@@ -27,7 +27,7 @@
         </div>
 
         <div class="max-h-[65vh] overflow-y-auto px-4 py-3">
-            <div class="grid grid-cols-8 sm:grid-cols-10 lg:grid-cols-12 gap-1">
+            <div class="grid grid-cols-8 items-start gap-1">
                 @foreach ($heroes as $hero)
                     @php
                         $heroId = (int) ($hero['hero_id'] ?? 0);
@@ -35,10 +35,9 @@
                     @endphp
                     @if (! empty($hero['image']))
                         <button type="button" title="{{ $heroName }}" aria-label="{{ $heroName }}"
-                                class="overflow-hidden border {{ (int) ($selectedHeroId ?? 0) === $heroId ? 'border-accent-400' : 'border-line' }} bg-ink-800 hover:border-accent-400"
+                                class="block w-full overflow-hidden rounded border hover:opacity-80 transition {{ (int) ($selectedHeroId ?? 0) === $heroId ? 'border-accent-400' : 'border-line' }}"
                                 @click="document.getElementById('{{ $inputId }}').value='{{ $heroId }}'; document.getElementById('{{ $formId }}').submit()">
-                            <img src="{{ $hero['image'] }}" alt="{{ $heroName }}"
-                                 class="w-8 h-8 sm:w-10 sm:h-10 object-cover" loading="lazy">
+                            <img src="{{ $hero['image'] }}" alt="{{ $heroName }}" class="w-full h-auto object-cover" loading="lazy">
                         </button>
                     @endif
                 @endforeach

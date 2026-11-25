@@ -21,6 +21,38 @@ class StratzServiceTest extends TestCase
         Cache::flush();
     }
 
+    public function test_player_matches_pages_through_every_batch_without_a_cap(): void
+    {
+        config(['services.stratz.token' => 'test-token']);
+        Cache::flush();
+
+        $batch = static fn (int $firstId, int $count): array => array_map(
+            static fn (int $id): array => [
+                'id' => $id,
+                'startDateTime' => 1700000000 + $id,
+                'gameMode' => 'ALL_PICK',
+                'lobbyType' => 'RANKED',
+                'players' => [
+                    ['heroId' => 1, 'isRadiant' => true, 'isVictory' => true, 'position' => 2],
+                ],
+            ],
+            range($firstId, $firstId + $count - 1)
+        );
+
+        Http::fake([
+            'api.stratz.com/graphql' => Http::sequence()
+                ->push(['data' => ['player' => ['matches' => $batch(1, 100)]]])
+                ->push(['data' => ['player' => ['matches' => $batch(101, 25)]]]),
+        ]);
+
+        $rows = $this->app->make(StratzService::class)->playerMatches(70388657);
+
+        $this->assertCount(125, $rows);
+        $this->assertSame(1, $rows[0]['match_id']);
+        $this->assertSame(125, $rows[124]['match_id']);
+        Http::assertSentCount(2);
+    }
+
     public function test_player_heroes_sends_graphql_query_with_bearer_token(): void
     {
         config(['services.stratz.token' => 'test-token']);

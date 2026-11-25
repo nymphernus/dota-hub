@@ -25,6 +25,7 @@ class DotaProfileTest extends TestCase
         config([
             'services.opendota.api_key' => null,
             'services.steam.api_key' => null,
+            'services.stratz.token' => null,
         ]);
         Cache::flush();
     }
@@ -210,11 +211,13 @@ class DotaProfileTest extends TestCase
                 && $matches[0]['lane_role'] === 1
                 && $matches[1]['lane_role'] === 2
                 && $matches[0]['items'][0]['name'] === 'Blink Dagger'
+                && $matches[0]['items'][0]['key'] === 'blink'
                 && empty($matches[5]['items'])
         );
         $response->assertSee('Роль');
         $response->assertSee('Safe');
         $response->assertSee('Mid');
+        $response->assertSee('/images/items/blink.png', false);
 
         // Two of the six history rows are unranked; both must still feed the
         // activity heatmap (ranked filtering only applies to records).
@@ -259,7 +262,7 @@ class DotaProfileTest extends TestCase
         $this->assertNotNull($record);
         $this->assertSame('Dendi', $record->data['nickname']);
         $this->assertSame(120, $record->data['wins']);
-        $this->assertSame(7, $record->data['schema_version']);
+        $this->assertSame(11, $record->data['schema_version']);
     }
 
     public function test_second_visit_is_served_from_the_database(): void
@@ -736,6 +739,34 @@ class DotaProfileTest extends TestCase
             && $player['mmr_games_considered'] === 4);
     }
 
+    public function test_stratz_position_four_maps_to_jungle_lane_role(): void
+    {
+        $service = $this->app->make(OpenDotaService::class);
+        $method = new \ReflectionMethod($service, 'laneRole');
+
+        $this->assertSame(4, $method->invoke($service, ['position' => 4]));
+        $this->assertSame(1, $method->invoke($service, ['position' => 1]));
+        $this->assertSame(2, $method->invoke($service, ['position' => 2]));
+        $this->assertSame(3, $method->invoke($service, ['position' => 3]));
+    }
+
+    public function test_lifetime_stats_keep_all_pick_as_a_separate_row(): void
+    {
+        $service = $this->app->make(OpenDotaService::class);
+        $method = new \ReflectionMethod($service, 'aggregateLifetimeStats');
+
+        $stats = $method->invoke($service, [
+            ['match_id' => 1, 'game_mode' => 1, 'win' => true, 'player_slot' => 0, 'kills' => 2, 'deaths' => 1, 'assists' => 3],
+            ['match_id' => 2, 'game_mode' => 22, 'win' => false, 'player_slot' => 0, 'kills' => 1, 'deaths' => 2, 'assists' => 0],
+        ]);
+
+        $modeRows = collect($stats['groups'][0]['rows'])->keyBy('label');
+
+        $this->assertTrue($modeRows->has('All Pick'));
+        $this->assertSame(1, $modeRows['All Pick']['games']);
+        $this->assertSame(100.0, $modeRows['All Pick']['winrate']);
+    }
+
     public function test_mmr_uses_plus_25_per_win_and_minus_25_per_loss(): void
     {
         $service = $this->app->make(OpenDotaService::class);
@@ -872,20 +903,12 @@ class DotaProfileTest extends TestCase
         $response->assertSee('По винрейту');
         $response->assertSee('По KDA');
         $response->assertSee('class="w-16 h-9 object-cover shrink-0 rounded-sm"', false);
-        $response->assertSee('items-center gap-4 py-2 border-b border-ink-700/50 hover:bg-ink-800/50 px-2 transition', false);
+        $response->assertSee('border-b border-ink-700/50 px-2 py-1 transition odd:bg-[#1c1e26] even:bg-[#111318] hover:bg-ink-700/60 match-row', false);
         $response->assertSee('bg-yellow-500 h-full', false);
-        $response->assertSee(__('ui.last_game'));
-        $response->assertSee('GPM', false);
-        $response->assertSee('XPM', false);
+        $response->assertDontSee(__('ui.last_game'));
+        $response->assertDontSee('>GPM</span>', false);
+        $response->assertDontSee('>XPM</span>', false);
         $response->assertViewHas('maxHeroGames');
-        $response->assertViewHas('heroes', function ($paginator) {
-            $hero = $paginator->first();
-
-            return $hero !== null
-                && $hero['gpm'] > 0
-                && $hero['xpm'] > 0
-                && $hero['last_played'] > 0;
-        });
         $response->assertSee('name="hero_id"', false);
         $response->assertSee('name="sort"', false);
         $response->assertDontSee('heroPickerQuery', false);

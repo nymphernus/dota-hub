@@ -68,7 +68,7 @@ class UiAssetsTest extends TestCase
         $this->assertStringNotContainsString('bg-ink-900/60 p-1.5', $profile);
         $this->assertStringContainsString('flex flex-col p-1', $profile);
         $this->assertStringContainsString('class="w-16 h-9 object-cover shrink-0 rounded-sm"', $profile);
-        $this->assertStringContainsString('class="flex items-center gap-4 py-2 border-b border-ink-700/50 hover:bg-ink-800/50 px-2 transition"', $profile);
+        $this->assertStringContainsString('class="group block border-b border-ink-700/50 px-2 py-1 transition odd:bg-[#1c1e26] even:bg-[#111318] hover:bg-ink-700/60 match-row"', $profile);
         $this->assertStringContainsString('w-32 shrink-0 text-sm font-bold text-mist-200 truncate', $profile);
         $this->assertStringContainsString('flex items-center gap-2 w-32 shrink-0', $profile);
         $this->assertStringContainsString('class="w-full bg-ink-900 h-1.5 rounded overflow-hidden"', $profile);
@@ -84,8 +84,10 @@ class UiAssetsTest extends TestCase
         $this->assertStringNotContainsString("__('ui.games_word')", $profile);
         $this->assertStringContainsString('class="w-10 h-10 object-cover shrink-0"', $profile);
         $this->assertStringContainsString('class="w-10 h-10 object-cover shrink-0"', $peers);
+        $this->assertStringContainsString('mt-2 divide-y divide-ink-700/50', $profile);
         $this->assertStringContainsString('flex items-center gap-2 w-24 shrink-0', $profile);
-        $this->assertStringContainsString('flex items-center gap-4 py-3 border-b border-ink-700/50 hover:bg-ink-800/50 px-4 transition', $peers);
+        $this->assertStringContainsString('table-rows', $peers);
+        $this->assertStringContainsString('class="group block border-b border-ink-700/50 px-4 py-1 transition odd:bg-[#1c1e26] even:bg-[#111318] hover:bg-ink-700/60 match-row"', $peers);
         $this->assertStringContainsString('flex items-center gap-3 w-1/3 min-w-0', $peers);
         $this->assertStringContainsString('flex items-center gap-3 w-1/4 shrink-0', $peers);
         $this->assertStringContainsString('flex items-center gap-3 w-1/4 shrink-0 ml-auto', $peers);
@@ -363,14 +365,20 @@ class UiAssetsTest extends TestCase
         $this->assertStringNotContainsString("__('ui.attr_intelligence')", $partial);
         $this->assertStringNotContainsString("__('ui.attr_universal')", $partial);
         $this->assertStringContainsString('max-w-6xl', $partial);
-        $this->assertStringContainsString('grid grid-cols-8 sm:grid-cols-10 lg:grid-cols-12 gap-1', $partial);
+        $this->assertStringContainsString('grid grid-cols-8 items-start gap-1', $partial);
         $this->assertStringContainsString("\$hero['image']", $partial);
-        $this->assertStringContainsString('class="w-8 h-8 sm:w-10 sm:h-10 object-cover"', $partial);
+        $this->assertStringNotContainsString('aspect-square', $partial);
+        $this->assertStringNotContainsString('w-16 h-9', $partial);
+        $this->assertStringContainsString('class="block w-full overflow-hidden rounded border hover:opacity-80 transition', $partial);
+        $this->assertStringContainsString('class="w-full h-auto object-cover"', $partial);
         $this->assertStringNotContainsString("\$hero['icon']", $partial);
         $this->assertStringContainsString("@include('dota.partials.filter-hero'", $matches);
         $this->assertStringContainsString("@include('dota.partials.filter-hero'", $heroes);
         $this->assertStringNotContainsString('grid grid-cols-8 gap-1 max-h-[60vh]', $matches);
         $this->assertStringNotContainsString('<select name="hero_id"', $heroes);
+        $this->assertStringNotContainsString('GPM', $heroes);
+        $this->assertStringNotContainsString('XPM', $heroes);
+        $this->assertStringNotContainsString("__('ui.last_game')", $heroes);
 
         $this->assertStringContainsString('hasActiveFilters:', $matches);
         $this->assertStringContainsString(':disabled="!hasActiveFilters"', $matches);
