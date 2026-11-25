@@ -370,6 +370,12 @@ class StratzService
                 level
                 position
                 imp
+                item0Id
+                item1Id
+                item2Id
+                item3Id
+                item4Id
+                item5Id
               }
             }
           }
@@ -496,6 +502,12 @@ class StratzService
             'imp' => isset($p['imp']) && is_numeric($p['imp'])
                 ? round((float) $p['imp'], 2)
                 : null,
+            'item_0' => (int) ($p['item0Id'] ?? 0),
+            'item_1' => (int) ($p['item1Id'] ?? 0),
+            'item_2' => (int) ($p['item2Id'] ?? 0),
+            'item_3' => (int) ($p['item3Id'] ?? 0),
+            'item_4' => (int) ($p['item4Id'] ?? 0),
+            'item_5' => (int) ($p['item5Id'] ?? 0),
         ];
     }
 

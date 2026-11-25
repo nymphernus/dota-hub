@@ -28,7 +28,7 @@ class OpenDotaService
 
     private const RECENT_MATCH_DETAILS = 25;
 
-    private const PROFILE_SCHEMA_VERSION = 11;
+    private const PROFILE_SCHEMA_VERSION = 12;
 
     /** @var array<int, int> STRATZ positions keyed by match id for this request. */
     private array $stratzPositionsByMatch = [];
@@ -120,10 +120,11 @@ class OpenDotaService
     ];
 
     private const LANE_ROLES = [
-        1 => ['label' => 'Safe', 'name' => 'Safe Lane'],
-        2 => ['label' => 'Mid', 'name' => 'Mid Lane'],
-        3 => ['label' => 'Off', 'name' => 'Off Lane'],
-        4 => ['label' => 'Jungle', 'name' => 'Jungle'],
+        1 => ['label' => 'Safe', 'name' => 'Safelane'],
+        2 => ['label' => 'Mid', 'name' => 'Midlane'],
+        3 => ['label' => 'Off', 'name' => 'Offlane'],
+        4 => ['label' => 'Soft', 'name' => 'Support'],
+        5 => ['label' => 'Hard', 'name' => 'Hard Support'],
     ];
 
     private const LOBBY_TYPES = [
@@ -1562,7 +1563,6 @@ class OpenDotaService
                 }
             }
 
-            $candidates = array_merge($candidates, $stratzMatches);
         } catch (\Throwable $e) {
             Log::warning('STRATZ incremental match history failed', [
                 'account_id' => $accountId,
@@ -1581,6 +1581,11 @@ class OpenDotaService
         } catch (ApiUnavailableException $e) {
             Log::error('OpenDota incremental match request failed: '.$e->getMessage());
         }
+
+        // STRATZ rows are richer (GPM/XPM, items, position), so they must be
+        // merged last: OpenDota may echo already-known match ids and would
+        // otherwise overwrite those fields with sparse fallback data.
+        $candidates = array_merge($candidates, $stratzMatches ?? []);
 
         $newMatches = [];
 
@@ -2017,39 +2022,42 @@ class OpenDotaService
     /**
      * @param  array<string, mixed>  $player
      * @param  array{position: int|null, imp: float|null}|null  $stratz
-     * @return array{label: string|null, name: string|null, source: string|null}
+     * @return array{label: string|null, name: string|null, source: string|null, lane_role: int|null}
      */
     private function matchRole(array $player, ?array $stratz = null): array
     {
         $stratzPosition = isset($stratz['position']) && is_numeric($stratz['position'])
             ? (int) $stratz['position']
             : 0;
-
-        if (isset(self::POSITION_ROLES[$stratzPosition])) {
-            return self::POSITION_ROLES[$stratzPosition] + ['source' => 'STRATZ'];
-        }
-
         $position = isset($player['position_est']) && is_numeric($player['position_est'])
             ? (int) $player['position_est']
             : 0;
-
-        if (isset(self::POSITION_ROLES[$position])) {
-            return self::POSITION_ROLES[$position] + ['source' => 'OpenDota'];
-        }
-
-        $laneRole = isset($player['lane_role']) && is_numeric($player['lane_role'])
+        $lane = isset($player['lane_role']) && is_numeric($player['lane_role'])
             ? (int) $player['lane_role']
             : 0;
 
-        if (isset(self::LANE_ROLES[$laneRole])) {
-            return self::LANE_ROLES[$laneRole] + ['source' => 'OpenDota lane'];
+        $laneRole = $stratzPosition > 0 ? $stratzPosition : ($position > 0 ? $position : $lane);
+        if (! in_array($laneRole, [1, 2, 3, 4, 5], true)) {
+            $laneRole = null;
+        }
+
+        if (isset(self::POSITION_ROLES[$stratzPosition])) {
+            return self::POSITION_ROLES[$stratzPosition] + ['source' => 'STRATZ', 'lane_role' => $laneRole];
+        }
+
+        if (isset(self::POSITION_ROLES[$position])) {
+            return self::POSITION_ROLES[$position] + ['source' => 'OpenDota', 'lane_role' => $laneRole];
+        }
+
+        if (isset(self::LANE_ROLES[$lane])) {
+            return self::LANE_ROLES[$lane] + ['source' => 'OpenDota lane', 'lane_role' => $laneRole];
         }
 
         if (! empty($player['is_roaming'])) {
-            return ['label' => 'Roam', 'name' => 'Roaming', 'source' => 'OpenDota'];
+            return ['label' => 'Roam', 'name' => 'Roaming', 'source' => 'OpenDota', 'lane_role' => null];
         }
 
-        return ['label' => null, 'name' => null, 'source' => null];
+        return ['label' => null, 'name' => null, 'source' => null, 'lane_role' => null];
     }
 
     /**
@@ -2322,7 +2330,7 @@ class OpenDotaService
             ? (int) $match['lane_role']
             : 0;
 
-        if (in_array($lane, [1, 2, 3, 4], true)) {
+        if (in_array($lane, [1, 2, 3, 4, 5], true)) {
             return $lane;
         }
 
@@ -2339,6 +2347,7 @@ class OpenDotaService
             2 => 2,
             3 => 3,
             4 => 4,
+            5 => 5,
             default => null,
         };
     }
@@ -2442,7 +2451,8 @@ class OpenDotaService
             1 => 'carry',
             2 => 'mid',
             3 => 'offlane',
-            4 => 'jungle',
+            4 => 'support',
+            5 => 'hard_support',
             default => null,
         };
     }
@@ -2504,8 +2514,10 @@ class OpenDotaService
                 'deaths' => $deaths,
                 'assists' => $assists,
                 'kda' => round(($kills + $assists) / max($deaths, 1), 2),
-                'gpm' => (int) ($match['gold_per_min'] ?? 0),
-                'xpm' => (int) ($match['xp_per_min'] ?? 0),
+                'gpm' => (int) ($match['gold_per_min'] ?? $match['gpm'] ?? 0),
+                'xpm' => (int) ($match['xp_per_min'] ?? $match['xpm'] ?? 0),
+                'gold_per_min' => (int) ($match['gold_per_min'] ?? $match['gpm'] ?? 0),
+                'xp_per_min' => (int) ($match['xp_per_min'] ?? $match['xpm'] ?? 0),
                 'duration' => $duration,
                 'duration_label' => $this->durationLabel($duration),
                 'started_at' => $startTime > 0
@@ -2630,10 +2642,12 @@ class OpenDotaService
 
             if ($details['gold_per_min'] > 0) {
                 $matches[$index]['gpm'] = $details['gold_per_min'];
+                $matches[$index]['gold_per_min'] = $details['gold_per_min'];
             }
 
             if ($details['xp_per_min'] > 0) {
                 $matches[$index]['xpm'] = $details['xp_per_min'];
+                $matches[$index]['xp_per_min'] = $details['xp_per_min'];
             }
 
             if (($details['lane_role'] ?? null) !== null) {
@@ -2783,10 +2797,12 @@ class OpenDotaService
 
             if ($details['gold_per_min'] > 0) {
                 $matches[$index]['gpm'] = $details['gold_per_min'];
+                $matches[$index]['gold_per_min'] = $details['gold_per_min'];
             }
 
             if ($details['xp_per_min'] > 0) {
                 $matches[$index]['xpm'] = $details['xp_per_min'];
+                $matches[$index]['xp_per_min'] = $details['xp_per_min'];
             }
 
             if ($details['level'] > 0) {
@@ -2873,8 +2889,10 @@ class OpenDotaService
                 'deaths' => $deaths,
                 'assists' => $assists,
                 'kda' => round(($kills + $assists) / max($deaths, 1), 2),
-                'gpm' => (int) ($match['gold_per_min'] ?? 0),
-                'xpm' => (int) ($match['xp_per_min'] ?? 0),
+                'gpm' => (int) ($match['gold_per_min'] ?? $match['gpm'] ?? 0),
+                'xpm' => (int) ($match['xp_per_min'] ?? $match['xpm'] ?? 0),
+                'gold_per_min' => (int) ($match['gold_per_min'] ?? $match['gpm'] ?? 0),
+                'xp_per_min' => (int) ($match['xp_per_min'] ?? $match['xpm'] ?? 0),
                 'last_hits' => (int) ($match['last_hits'] ?? 0),
                 'denies' => (int) ($match['denies'] ?? 0),
                 'gold' => (int) ($match['gold'] ?? 0),

@@ -104,7 +104,6 @@
                                             <div class="w-32 shrink-0 text-sm font-bold text-mist-200 truncate">{{ $hero['name'] }}</div>
 
                                             <div class="w-24 shrink-0 text-xs text-mist-400">
-                                                {{ $hero['games'] }} {{ __('ui.hero_games_word') }}<br>
                                                 <span class="text-green-500">{{ $hero['wins'] }} {{ __('ui.hero_win_short') }}</span> / <span class="text-red-500">{{ $hero['losses'] ?? max(0, (int) $hero['games'] - (int) $hero['wins']) }} {{ __('ui.hero_loss_short') }}</span>
                                             </div>
 
@@ -117,7 +116,8 @@
                                             </div>
                                         </div>
 
-                                        <!-- Yellow games bar (thin, not full width) -->
+                                        <!-- Games count sits directly before the yellow bar -->
+                                        <span class="w-16 shrink-0 text-right text-xs text-mist-400">{{ $hero['games'] }} {{ __('ui.hero_games_word') }}</span>
                                         <div class="w-32 shrink-0 bg-ink-900 h-1.5 rounded overflow-hidden">
                                             <div class="bg-yellow-500 h-full" style="width: {{ ($hero['games'] / $maxHeroGames) * 100 }}%"></div>
                                         </div>
@@ -238,44 +238,45 @@
                     </section>
                 @endif
 
-                <section class="border border-[#2d313e] bg-[#1c1e26] p-3 rounded-none">
-                    <div class="flex items-start justify-between gap-2">
+                <section class="mt-4 border border-[#2d313e] bg-[#1c1e26]">
+                    <div class="flex items-center justify-between gap-2 border-b border-[#2d313e] px-4 py-3">
                         <h2 class="section-heading">{{ __('ui.allies') }}</h2>
                         <span class="text-[10px] text-mist-500">{{ min(5, count($player['peers'] ?? [])) }}</span>
                     </div>
 
                     @php
                         $topPeers = array_slice($player['peers'] ?? [], 0, 5);
-                        $peerGamesScale = max(1, (int) ($maxPeerGames ?? 1));
+                        $maxPeerGames = max(1, (int) ($maxPeerGames ?? 1));
                     @endphp
                     @if ($topPeers === [])
-                        <div class="mt-2 border border-dashed border-line px-3 py-4 text-center text-[11px] text-mist-500">{{ __('ui.no_peers_data') }}</div>
+                        <div class="p-10 text-center text-sm text-mist-400">{{ __('ui.no_allies_data') }}</div>
                     @else
-                        <div class="mt-2 divide-y divide-ink-700/50">
+                        <div class="table-rows">
                             @foreach ($topPeers as $peer)
-                                <a href="{{ route('player', ['accountId' => $peer['account_id']]) }}" class="block">
-                                    <div class="flex items-center gap-3 py-2 hover:bg-ink-800/50 px-2 transition">
-                                        <img src="{{ $peer['avatar'] }}" class="w-10 h-10 object-cover shrink-0">
-
-                                        <div class="flex-1 min-w-0 truncate text-sm text-mist-200">
-                                            {{ $peer['nickname'] }}
-                                            @if ($peer['is_private'] ?? false)
-                                                <span class="text-[10px] text-accent-300/80">{{ __('ui.private_profile') }}</span>
-                                            @endif
-                                        </div>
-
-                                        <div class="flex items-center gap-2 w-24 shrink-0">
-                                            <span class="text-xs {{ ($peer['winrate'] ?? 0) >= 50 ? 'text-green-500' : 'text-red-500' }}">{{ number_format((float) ($peer['winrate'] ?? 0), 1) }}%</span>
-                                            <div class="w-full bg-ink-900 h-1.5 flex rounded overflow-hidden">
-                                                <div class="bg-green-500" style="width: {{ (float) ($peer['winrate'] ?? 0) }}%"></div>
-                                                <div class="bg-red-500" style="width: {{ 100 - (float) ($peer['winrate'] ?? 0) }}%"></div>
+                                <a href="{{ route('player', ['accountId' => $peer['account_id']]) }}" class="group block border-b border-ink-700/50 px-4 py-1 transition odd:bg-[#1c1e26] even:bg-[#111318] hover:bg-ink-700/60 match-row">
+                                    <div class="flex items-center gap-4">
+                                        <div class="flex items-center gap-3 w-1/3 min-w-0">
+                                            <img src="{{ $peer['avatar'] }}" class="w-10 h-10 object-cover shrink-0">
+                                            <div class="min-w-0">
+                                                <div class="text-sm font-bold text-mist-200 truncate">{{ $peer['nickname'] ?? __('ui.teammate') }}</div>
+                                                @if ($peer['is_private'] ?? false)
+                                                    <div class="text-[10px] text-accent-300/80">{{ __('ui.private_profile') }}</div>
+                                                @endif
                                             </div>
                                         </div>
 
-                                        <div class="flex items-center gap-2 w-20 shrink-0 justify-end">
-                                            <span class="text-xs text-mist-400">{{ (int) ($peer['games'] ?? 0) }}</span>
-                                            <div class="w-full bg-ink-900 h-1.5 rounded overflow-hidden">
-                                                <div class="bg-yellow-500 h-full" style="width: {{ ((int) ($peer['games'] ?? 0) / $peerGamesScale) * 100 }}%"></div>
+                                        <div class="flex items-center gap-3 w-1/4 shrink-0">
+                                            <span class="text-xs w-12 text-right {{ (float) $peer['winrate'] >= 50 ? 'text-green-500' : 'text-red-500' }}">{{ number_format((float) $peer['winrate'], 1) }}%</span>
+                                            <div class="w-full bg-ink-900 h-2 flex rounded overflow-hidden">
+                                                <div class="bg-green-500 h-full" style="width: {{ (float) $peer['winrate'] }}%"></div>
+                                                <div class="bg-red-500 h-full" style="width: {{ 100 - (float) $peer['winrate'] }}%"></div>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex items-center gap-3 w-1/4 shrink-0 ml-auto">
+                                            <span class="text-xs w-12 text-right text-mist-400">{{ $peer['games'] }}</span>
+                                            <div class="w-full bg-ink-900 h-2 rounded overflow-hidden">
+                                                <div class="bg-yellow-500 h-full" style="width: {{ ($peer['games'] / $maxPeerGames) * 100 }}%"></div>
                                             </div>
                                         </div>
                                     </div>

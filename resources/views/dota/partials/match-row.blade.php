@@ -16,26 +16,16 @@
             : null;
 
         $laneRole = (int) ($match['lane_role'] ?? 0);
-        $laneLabels = [1 => 'Safe', 2 => 'Mid', 3 => 'Offlane', 4 => 'Jungle'];
-        $roleKey = $match['role_key'] ?? null;
-        $roleLabel = $laneLabels[$laneRole] ?? match ($roleKey) {
-            'carry' => 'Safe',
-            'mid' => 'Mid',
-            'offlane' => 'Offlane',
-            'support' => 'Soft',
-            'soft_support' => 'Soft',
-            'hard_support' => 'Hard',
-            default => $roleKey ? ucfirst((string) $roleKey) : null,
-        };
-        $roleTitle = $laneLabels[$laneRole] ?? ($roleLabel ?: __('ui.role_undefined'));
+        $hasRole = $laneRole >= 1 && $laneRole <= 5;
+        $roleLabel = $hasRole ? __('ui.role_'.$laneRole) : null;
+        $roleTitle = $roleLabel ?: __('ui.role_undefined');
 
-        $roleClass = match ($roleLabel) {
-            'Safe' => 'text-green-500',
-            'Mid' => 'text-blue-500',
-            'Offlane' => 'text-red-500',
-            'Jungle' => 'text-cyan-500',
-            'Soft' => 'text-purple-500',
-            'Hard' => 'text-orange-500',
+        $roleClass = match ($laneRole) {
+            1 => 'text-green-500',
+            2 => 'text-blue-500',
+            3 => 'text-red-500',
+            4 => 'text-purple-500',
+            5 => 'text-orange-500',
             default => 'text-mist-300',
         };
 
@@ -126,7 +116,7 @@
         </td>
 
         <td class="px-2 py-1 font-mono text-[12px] tabular-nums text-mist-300">
-            {{ $match['gpm'] ?: '—' }} <span class="text-mist-500/60">/</span> {{ $match['xpm'] ?: '—' }}
+            {{ $match['gold_per_min'] ?? $match['gpm'] ?? '—' }} <span class="text-mist-500/60">/</span> {{ $match['xp_per_min'] ?? $match['xpm'] ?? '—' }}
             <p class="mt-0.5 text-[9px] text-mist-500">GPM / XPM</p>
         </td>
 

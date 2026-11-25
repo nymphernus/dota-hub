@@ -55,7 +55,7 @@
                 <span class="w-16 shrink-0"></span>
                 <div class="min-w-0 flex flex-1 items-center justify-between">
                     <span class="w-32 shrink-0">{{ __('ui.hero') }}</span>
-                    <span class="w-24 shrink-0">{{ __('ui.games') }}</span>
+                    <span class="w-24 shrink-0">{{ __('ui.wins') }} / {{ __('ui.losses') }}</span>
                     <span class="w-32 shrink-0">{{ __('ui.winrate') }}</span>
                 </div>
                 <span class="w-32 shrink-0">{{ __('ui.games') }}</span>
@@ -81,7 +81,6 @@
                         <div class="w-32 shrink-0 text-sm font-bold text-mist-200 truncate">{{ $name }}</div>
 
                         <div class="w-24 shrink-0 text-xs text-mist-400">
-                            {{ $games }} {{ __('ui.hero_games_word') }}<br>
                             <span class="text-green-500">{{ $wins }} {{ __('ui.hero_win_short') }}</span> / <span class="text-red-500">{{ $losses }} {{ __('ui.hero_loss_short') }}</span>
                         </div>
 
@@ -93,6 +92,7 @@
                         </div>
                     </div>
 
+                    <span class="w-16 shrink-0 text-right text-xs text-mist-400">{{ $games }} {{ __('ui.hero_games_word') }}</span>
                     <div class="w-32 shrink-0 bg-ink-900 h-1.5 rounded overflow-hidden">
                         <div class="bg-yellow-500 h-full" style="width: {{ $maxHeroGames > 0 ? ($games / $maxHeroGames) * 100 : 0 }}%"></div>
                     </div>

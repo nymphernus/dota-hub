@@ -153,18 +153,17 @@
                             </tr>
                             @forelse ($team['players'] as $matchPlayer)
                                     @php
-                                        $rawRoleLabel = $matchPlayer['role']['label'] ?? null;
-                                        $roleLabel = $isRankedMatch
-                                            ? ($rawRoleLabel === 'Off' ? 'Offlane' : $rawRoleLabel)
+                                        $laneRole = (int) ($matchPlayer['role']['lane_role'] ?? 0);
+                                        $roleLabel = $isRankedMatch && $laneRole >= 1 && $laneRole <= 5
+                                            ? __('ui.role_'.$laneRole)
                                             : null;
-                                        $roleName = $matchPlayer['role']['name'] ?? null;
                                         $roleSource = $matchPlayer['role']['source'] ?? null;
-                                        $roleClasses = match ($roleLabel) {
-                                            'Safe' => 'border-green-500/25 bg-green-500/10 text-green-500',
-                                            'Mid' => 'border-blue-500/25 bg-blue-500/10 text-blue-500',
-                                            'Offlane' => 'border-red-500/25 bg-red-500/10 text-red-500',
-                                            'Soft' => 'border-purple-500/25 bg-purple-500/10 text-purple-500',
-                                            'Hard' => 'border-orange-500/25 bg-orange-500/10 text-orange-500',
+                                        $roleClasses = match ($laneRole) {
+                                            1 => 'border-green-500/25 bg-green-500/10 text-green-500',
+                                            2 => 'border-blue-500/25 bg-blue-500/10 text-blue-500',
+                                            3 => 'border-red-500/25 bg-red-500/10 text-red-500',
+                                            4 => 'border-purple-500/25 bg-purple-500/10 text-purple-500',
+                                            5 => 'border-orange-500/25 bg-orange-500/10 text-orange-500',
                                             default => 'border-line bg-ink-900/50 text-mist-400',
                                         };
                                         $isCurrentPlayer = $playerId !== null
@@ -205,7 +204,7 @@
                                                             <span>{{ __('ui.lvl') }} {{ $matchPlayer['level'] }}</span>
                                                         @endif
                                                         @if ($roleLabel)
-                                                            <span class="badge !px-1.5 !py-0.5 !text-[9px] {{ $roleClasses }}" title="{{ $roleName }}{{ $roleSource ? ' · '.$roleSource : '' }}">{{ $roleLabel }}</span>
+                                                            <span class="badge !px-1.5 !py-0.5 !text-[9px] {{ $roleClasses }}" title="{{ $roleLabel }}{{ $roleSource ? ' · '.$roleSource : '' }}">{{ $roleLabel }}</span>
                                                         @else
                                                             <span class="text-[9px] text-mist-400">—</span>
                                                         @endif

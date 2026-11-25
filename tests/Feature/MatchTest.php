@@ -52,10 +52,10 @@ class MatchTest extends TestCase
         $response->assertSee('odd:bg-[#1c1e26] even:bg-[#111318]', false);
         $response->assertDontSee('P1');
         $response->assertDontSee('Party #', false);
-        $response->assertSee('Safe');
-        $response->assertSee('Mid');
-        $response->assertSee('Offlane');
-        $response->assertSee('Hard');
+        $response->assertSee(__('ui.role_1'));
+        $response->assertSee(__('ui.role_2'));
+        $response->assertSee(__('ui.role_3'));
+        $response->assertSee(__('ui.role_5'));
         $response->assertSee('Blink Dagger');
         $response->assertSee('Black King Bar');
         $response->assertDontSee('Нетворс по минутам');
@@ -139,7 +139,7 @@ class MatchTest extends TestCase
         $response->assertOk();
         $response->assertDontSee('Закуп');
         $response->assertDontSee('Blink Dagger');
-        $response->assertSee('Safe');
+        $response->assertSee(__('ui.role_1'));
     }
 
     public function test_you_badge_is_never_shown_for_any_player(): void
@@ -199,7 +199,7 @@ class MatchTest extends TestCase
         ]));
 
         $response->assertOk();
-        $response->assertSee('Hard');
+        $response->assertSee(__('ui.role_5'));
         $response->assertSee('7.5');
         $response->assertSee('STRATZ');
         $response->assertSee('Immortal');

@@ -84,14 +84,17 @@ class UiAssetsTest extends TestCase
         $this->assertStringNotContainsString("__('ui.games_word')", $profile);
         $this->assertStringContainsString('class="w-10 h-10 object-cover shrink-0"', $profile);
         $this->assertStringContainsString('class="w-10 h-10 object-cover shrink-0"', $peers);
-        $this->assertStringContainsString('mt-2 divide-y divide-ink-700/50', $profile);
-        $this->assertStringContainsString('flex items-center gap-2 w-24 shrink-0', $profile);
+        $this->assertStringNotContainsString('mt-2 divide-y divide-ink-700/50', $profile);
+        $this->assertStringContainsString('table-rows', $profile);
+        $this->assertStringContainsString('class="group block border-b border-ink-700/50 px-4 py-1 transition odd:bg-[#1c1e26] even:bg-[#111318] hover:bg-ink-700/60 match-row"', $profile);
+        $this->assertStringContainsString('flex items-center gap-3 w-1/3 min-w-0', $profile);
+        $this->assertStringContainsString('flex items-center gap-3 w-1/4 shrink-0', $profile);
         $this->assertStringContainsString('table-rows', $peers);
         $this->assertStringContainsString('class="group block border-b border-ink-700/50 px-4 py-1 transition odd:bg-[#1c1e26] even:bg-[#111318] hover:bg-ink-700/60 match-row"', $peers);
         $this->assertStringContainsString('flex items-center gap-3 w-1/3 min-w-0', $peers);
         $this->assertStringContainsString('flex items-center gap-3 w-1/4 shrink-0', $peers);
         $this->assertStringContainsString('flex items-center gap-3 w-1/4 shrink-0 ml-auto', $peers);
-        $this->assertStringContainsString('w-full bg-ink-900 h-1.5 flex rounded overflow-hidden', $profile);
+        $this->assertStringContainsString('w-full bg-ink-900 h-2 flex rounded overflow-hidden', $profile);
         $this->assertStringContainsString('w-full bg-ink-900 h-2 flex rounded overflow-hidden', $peers);
         $this->assertStringContainsString('w-full bg-ink-900 h-1.5 rounded overflow-hidden', $profile);
         $this->assertStringContainsString('w-full bg-ink-900 h-2 rounded overflow-hidden', $peers);
@@ -99,7 +102,7 @@ class UiAssetsTest extends TestCase
         $this->assertStringContainsString('bg-yellow-500 h-full', $peers);
         $this->assertStringContainsString('maxPeerGames', $controller);
         $this->assertStringContainsString('maxHeroGames', $controller);
-        $this->assertStringContainsString('$peerGamesScale', $profile);
+        $this->assertStringContainsString('$maxPeerGames', $profile);
         $this->assertStringContainsString('$maxPeerGames', $peers);
 
         $this->assertStringContainsString("'pageTitle' => \$player['nickname'].' - '.__('ui.overview').' - DOTAHUB'", $controller);
@@ -369,8 +372,9 @@ class UiAssetsTest extends TestCase
         $this->assertStringContainsString("\$hero['image']", $partial);
         $this->assertStringNotContainsString('aspect-square', $partial);
         $this->assertStringNotContainsString('w-16 h-9', $partial);
-        $this->assertStringContainsString('class="block w-full overflow-hidden rounded border hover:opacity-80 transition', $partial);
-        $this->assertStringContainsString('class="w-full h-auto object-cover"', $partial);
+        $this->assertStringNotContainsString('overflow-hidden rounded border hover:opacity-80 transition', $partial);
+        $this->assertStringNotContainsString('border-accent-400', $partial);
+        $this->assertStringContainsString('class="w-full h-auto object-cover rounded hover:opacity-80 transition cursor-pointer"', $partial);
         $this->assertStringNotContainsString("\$hero['icon']", $partial);
         $this->assertStringContainsString("@include('dota.partials.filter-hero'", $matches);
         $this->assertStringContainsString("@include('dota.partials.filter-hero'", $heroes);
@@ -411,6 +415,30 @@ class UiAssetsTest extends TestCase
             $this->assertSame($english, $en[$key], $key);
             $this->assertStringContainsString("__('ui.{$key}')", $service, $key);
         }
+
+        $expectedRoles = [
+            'role_1' => ['Легкая', 'Safelane'],
+            'role_2' => ['Центр', 'Midlane'],
+            'role_3' => ['Сложная', 'Offlane'],
+            'role_4' => ['Поддержка', 'Support'],
+            'role_5' => ['Полная поддержка', 'Hard Support'],
+        ];
+
+        foreach ($expectedRoles as $key => [$russian, $english]) {
+            $this->assertSame($russian, $ru[$key], $key);
+            $this->assertSame($english, $en[$key], $key);
+        }
+
+        $matchRow = (string) file_get_contents(resource_path('views/dota/partials/match-row.blade.php'));
+        $matchView = (string) file_get_contents(resource_path('views/dota/match.blade.php'));
+        $stratzService = (string) file_get_contents(app_path('Services/Stratz/StratzService.php'));
+
+        $this->assertStringContainsString("__('ui.role_'.\$laneRole)", $matchRow);
+        $this->assertStringContainsString("__('ui.role_'.\$laneRole)", $matchView);
+        $this->assertStringContainsString('item0Id', $stratzService);
+        $this->assertStringContainsString('item5Id', $stratzService);
+        $this->assertStringContainsString("'gold_per_min' =>", $service);
+        $this->assertStringContainsString("'xp_per_min' =>", $service);
     }
 
     public function test_profile_storage_is_persistent_and_incremental(): void

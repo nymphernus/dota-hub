@@ -212,11 +212,14 @@ class DotaProfileTest extends TestCase
                 && $matches[1]['lane_role'] === 2
                 && $matches[0]['items'][0]['name'] === 'Blink Dagger'
                 && $matches[0]['items'][0]['key'] === 'blink'
+                && ($matches[0]['gold_per_min'] ?? null) === 640
+                && ($matches[0]['xp_per_min'] ?? null) === 720
+                && ($matches[0]['item_0'] ?? null) !== null
                 && empty($matches[5]['items'])
         );
         $response->assertSee('Роль');
-        $response->assertSee('Safe');
-        $response->assertSee('Mid');
+        $response->assertSee(__('ui.role_1'));
+        $response->assertSee(__('ui.role_2'));
         $response->assertSee('/images/items/blink.png', false);
 
         // Two of the six history rows are unranked; both must still feed the
@@ -262,7 +265,7 @@ class DotaProfileTest extends TestCase
         $this->assertNotNull($record);
         $this->assertSame('Dendi', $record->data['nickname']);
         $this->assertSame(120, $record->data['wins']);
-        $this->assertSame(11, $record->data['schema_version']);
+        $this->assertSame(12, $record->data['schema_version']);
     }
 
     public function test_second_visit_is_served_from_the_database(): void
@@ -373,6 +376,66 @@ class DotaProfileTest extends TestCase
         $this->assertArrayNotHasKey('date', $requests[0]->data());
         $this->assertSame('9100001501', (string) $requests[1]['less_than_match_id']);
         $this->assertSame('9100000001', (string) $requests[2]['less_than_match_id']);
+    }
+
+    public function test_stratz_rows_win_over_sparse_opendota_rows_during_incremental_refresh(): void
+    {
+        config(['services.stratz.token' => 'test-token']);
+
+        $matchId = 9100000999;
+        $startTime = now()->subDay()->timestamp;
+
+        Http::fake([
+            'api.stratz.com/graphql' => Http::response([
+                'data' => [
+                    'player' => [
+                        'matches' => [[
+                            'id' => $matchId,
+                            'startDateTime' => $startTime,
+                            'durationSeconds' => 2400,
+                            'gameMode' => 22,
+                            'lobbyType' => 7,
+                            'players' => [[
+                                'heroId' => 1,
+                                'isRadiant' => true,
+                                'isVictory' => true,
+                                'kills' => 10,
+                                'deaths' => 2,
+                                'assists' => 15,
+                                'goldPerMinute' => 900,
+                                'experiencePerMinute' => 950,
+                                'networth' => 30000,
+                                'level' => 25,
+                                'position' => 1,
+                                'item0Id' => 1,
+                            ]],
+                        ]],
+                    ],
+                ],
+            ]),
+            'api.opendota.com/api/players/'.self::ACCOUNT_ID.'/matches*' => Http::response([[
+                'match_id' => $matchId,
+                'hero_id' => 1,
+                'player_slot' => 0,
+                'radiant_win' => true,
+                'start_time' => $startTime,
+                'duration' => 2400,
+                'kills' => 10,
+                'deaths' => 2,
+                'assists' => 15,
+            ]]),
+        ]);
+
+        $service = app(OpenDotaService::class);
+        $reflection = new \ReflectionClass($service);
+        $method = $reflection->getMethod('fetchNewMatchesSince');
+        $method->setAccessible(true);
+        $rows = $method->invoke($service, self::ACCOUNT_ID, 0, []);
+
+        $this->assertCount(1, $rows);
+        $this->assertSame(900, $rows[0]['gold_per_min']);
+        $this->assertSame(950, $rows[0]['xp_per_min']);
+        $this->assertSame(1, $rows[0]['item_0']);
     }
 
     public function test_refresh_keeps_the_database_row_and_rebuilds_derived_caches(): void

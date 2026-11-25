@@ -35,9 +35,8 @@
                     @endphp
                     @if (! empty($hero['image']))
                         <button type="button" title="{{ $heroName }}" aria-label="{{ $heroName }}"
-                                class="block w-full overflow-hidden rounded border hover:opacity-80 transition {{ (int) ($selectedHeroId ?? 0) === $heroId ? 'border-accent-400' : 'border-line' }}"
                                 @click="document.getElementById('{{ $inputId }}').value='{{ $heroId }}'; document.getElementById('{{ $formId }}').submit()">
-                            <img src="{{ $hero['image'] }}" alt="{{ $heroName }}" class="w-full h-auto object-cover" loading="lazy">
+                            <img src="{{ $hero['image'] }}" alt="{{ $heroName }}" class="w-full h-auto object-cover rounded hover:opacity-80 transition cursor-pointer" loading="lazy">
                         </button>
                     @endif
                 @endforeach
