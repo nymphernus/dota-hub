@@ -96,15 +96,15 @@ class UiAssetsTest extends TestCase
         $this->assertStringContainsString('class="group block border-b border-ink-700/50 px-4 py-1 transition odd:bg-[#1c1e26] even:bg-[#111318] hover:bg-ink-700/60 match-row"', $peers);
         $this->assertStringContainsString('flex min-w-0 flex-1 items-center gap-2', $peers);
         $this->assertStringContainsString('flex-1 min-w-0 text-[11px] font-bold text-mist-200 truncate leading-tight', $peers);
-        $this->assertStringContainsString('flex w-40 shrink-0 items-center justify-end gap-2', $peers);
-        $this->assertStringContainsString('flex w-32 shrink-0 items-center justify-end gap-2', $peers);
+        $this->assertStringContainsString('flex w-64 shrink-0 items-center justify-end gap-2', $peers);
+        $this->assertStringContainsString('flex w-48 shrink-0 items-center justify-end gap-2', $peers);
         $this->assertStringNotContainsString('flex w-16 shrink-0 items-center justify-end gap-1', $peers);
         $this->assertStringNotContainsString('w-1/3 min-w-0', $peers);
         $this->assertStringNotContainsString('w-1/4 shrink-0 ml-auto', $peers);
         $this->assertStringContainsString('h-1.5 w-8 bg-ink-900 flex rounded overflow-hidden', $profile);
         $this->assertStringContainsString('h-1.5 w-8 bg-ink-900 rounded overflow-hidden', $profile);
-        $this->assertStringContainsString('h-2 w-24 bg-ink-900 flex rounded overflow-hidden', $peers);
-        $this->assertStringContainsString('h-2 w-20 bg-ink-900 rounded overflow-hidden', $peers);
+        $this->assertStringContainsString('flex h-2 flex-1 overflow-hidden rounded bg-ink-900', $peers);
+        $this->assertStringContainsString('h-2 flex-1 overflow-hidden rounded bg-ink-900', $peers);
         $this->assertStringContainsString('bg-yellow-500 h-full', $profile);
         $this->assertStringContainsString('bg-yellow-500 h-full', $peers);
         $this->assertStringContainsString('maxPeerGames', $controller);
@@ -238,7 +238,9 @@ class UiAssetsTest extends TestCase
             $shadowSource = str_ends_with($file, 'hero-wheel.blade.php')
                 || str_ends_with($file, 'player.blade.php')
                 ? str_replace('shadow-xl', '', $source)
-                : $source;
+                : (str_ends_with($file, 'match.blade.php')
+                    ? str_replace('shadow-lg', '', $source)
+                    : $source);
             $this->assertDoesNotMatchRegularExpression('/\b(?:[a-z-]+:)*shadow(?:-[^\s"\']+)?\b/', $shadowSource, $file);
         }
     }
@@ -292,6 +294,8 @@ class UiAssetsTest extends TestCase
         $this->assertStringNotContainsString('<span class="text-[9px] text-mist-400">—</span>', $source);
 
         $this->assertStringContainsString('id="netWorthChart"', $source);
+        $this->assertStringContainsString('id="chart-legend"', $source);
+        $this->assertStringContainsString('absolute top-2 left-2 bg-[#1c1e26]/90 border border-[#2d313e] p-2 rounded shadow-lg z-10 text-xs w-64 max-h-[250px] overflow-y-auto', $source);
         $this->assertStringContainsString('x-data="netWorthChart(@js(', $source);
         $this->assertStringContainsString("__('ui.net_worth_by_minute')", $source);
         $this->assertStringContainsString("__('ui.last_hits_short')", $source);
@@ -305,6 +309,9 @@ class UiAssetsTest extends TestCase
         $this->assertStringContainsString('>Buff<', $source);
         $this->assertStringContainsString('neutral_item', $source);
         $this->assertStringContainsString('aghanims_shard', $source);
+        $this->assertStringContainsString("'/images/items/aghanims_shard.png'", $source);
+        $this->assertStringContainsString("'/images/items/aghanims_blessing.png'", $source);
+        $this->assertStringContainsString("'/images/items/ultimate_scepter.png'", $source);
         $this->assertStringContainsString('aghanims_scepter', $source);
         $this->assertStringContainsString('obs_placed', $source);
         $this->assertStringContainsString('sen_placed', $source);
@@ -315,13 +322,21 @@ class UiAssetsTest extends TestCase
         $this->assertStringContainsString('const NET_WORTH_COLORS = [', $appJs);
         $this->assertStringContainsString('legend: {', $appJs);
         $this->assertStringContainsString('display: false,', $appJs);
-        $this->assertStringContainsString('itemSort:', $appJs);
-        $this->assertStringContainsString('usePointStyle: true', $appJs);
-        $this->assertStringContainsString('pointStyle: icon.src ? icon :', $appJs);
+        $this->assertStringContainsString('tooltip: {', $appJs);
+        $this->assertStringContainsString('enabled: false,', $appJs);
+        $this->assertStringNotContainsString('itemSort:', $appJs);
+        $this->assertStringNotContainsString('usePointStyle:', $appJs);
+        $this->assertStringContainsString("document.getElementById('chart-legend')", $appJs);
+        $this->assertStringContainsString('renderLegend(', $appJs);
+        $this->assertStringContainsString("'checked data-index'", $appJs);
+        $this->assertStringContainsString('toggle-dataset', $appJs);
+        $this->assertStringContainsString('setDatasetVisibility(', $appJs);
+        $this->assertStringContainsString('chart.update();', $appJs);
+        $this->assertStringContainsString('onHover:', $appJs);
+        $this->assertStringContainsString("canvas.addEventListener('mouseleave'", $appJs);
         $this->assertStringContainsString('config.minute_label', $appJs);
 
-        $this->assertStringContainsString("'odd:bg-[#1c1e26] even:bg-[#111318]' => ! \$isCurrentPlayer", $source);
-        $this->assertStringContainsString('bg-ink-700/80 border-l-4 border-yellow-500', $source);
+        $this->assertStringContainsString("\$isCurrentPlayer ? '!bg-[#2d313e] border-l-4 border-yellow-500' : 'odd:bg-[#1c1e26] even:bg-[#111318]'", $source);
         $this->assertStringContainsString("request()->integer('player_id')", $controller);
         $this->assertStringContainsString("'playerId' => \$playerId", $controller);
     }
@@ -340,7 +355,7 @@ class UiAssetsTest extends TestCase
         $this->assertStringContainsString('private const PROFILE_SCHEMA_VERSION = 13;', $service);
         $this->assertStringContainsString('private const RECENT_MATCH_DETAILS = 25;', $service);
         $this->assertStringContainsString('opendota:match-player:v5:', $service);
-        $this->assertStringContainsString('Cache::remember("opendota:match:v10:', $service);
+        $this->assertStringContainsString('Cache::remember("opendota:match:v11:', $service);
 
         foreach ([
             'last_hits',

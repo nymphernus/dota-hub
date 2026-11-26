@@ -18,6 +18,13 @@
     $showPurchases = $allPlayers->contains(fn (array $matchPlayer) => ! empty($matchPlayer['purchases']));
     $columnCount = 10;
 
+    $shardIcon = is_file(public_path('images/items/aghanims_shard.png'))
+        ? '/images/items/aghanims_shard.png'
+        : null;
+    $blessingIcon = is_file(public_path('images/items/aghanims_blessing.png'))
+        ? '/images/items/aghanims_blessing.png'
+        : '/images/items/ultimate_scepter.png';
+
     $teams = [
         'radiant' => [
             'label' => 'Radiant',
@@ -110,7 +117,10 @@
                     <h2 class="section-heading">{{ __('ui.net_worth_by_minute') }}</h2>
                     <span class="badge border-line bg-ink-900/50 text-mist-400">{{ $match['duration_label'] }}</span>
                 </div>
-                <div class="h-64 w-full">
+                <div class="relative h-64 w-full">
+                    <div id="chart-legend" class="absolute top-2 left-2 bg-[#1c1e26]/90 border border-[#2d313e] p-2 rounded shadow-lg z-10 text-xs w-64 max-h-[250px] overflow-y-auto">
+                        <!-- JS renders the sortable dataset list here -->
+                    </div>
                     <canvas id="netWorthChart" aria-label="{{ __('ui.net_worth_by_minute') }}"></canvas>
                 </div>
             </section>
@@ -168,11 +178,7 @@
                                     $accountId = (int) ($matchPlayer['account_id'] ?? 0);
                                     $inventory = $matchPlayer['inventory'] ?? [];
                                 @endphp
-                                <tr @class([
-                                    'transition hover:bg-ink-900/30',
-                                    'odd:bg-[#1c1e26] even:bg-[#111318]' => ! $isCurrentPlayer,
-                                    'bg-ink-700/80 border-l-4 border-yellow-500' => $isCurrentPlayer,
-                                ])>
+                                <tr class="transition hover:bg-ink-900/30 {{ $isCurrentPlayer ? '!bg-[#2d313e] border-l-4 border-yellow-500' : 'odd:bg-[#1c1e26] even:bg-[#111318]' }}">
                                     <td colspan="{{ $columnCount }}" class="px-3 py-2">
                                         <div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
                                             <div class="flex min-w-0 flex-[2_1_280px] items-center gap-3">
@@ -277,9 +283,9 @@
                                                 </div>
                                             @endif
 
-                                            @if (! empty($matchPlayer['aghanims_shard']['image']))
+                                            @if ($shardIcon || ! empty($matchPlayer['aghanims_shard']['image']))
                                                 <img
-                                                    src="{{ $matchPlayer['aghanims_shard']['image'] }}"
+                                                    src="{{ $shardIcon ?: $matchPlayer['aghanims_shard']['image'] }}"
                                                     alt="{{ __('ui.aghanims_shard') }}"
                                                     title="{{ __('ui.aghanims_shard') }}"
                                                     class="h-8 w-8 object-contain"
@@ -287,9 +293,9 @@
                                                 >
                                             @endif
 
-                                            @if (! empty($matchPlayer['aghanims_scepter_buff']) && ! empty($matchPlayer['aghanims_scepter']['image']))
-                                                <div class="relative h-8 w-8 shrink-0" title="{{ __('ui.aghanims_scepter') }}">
-                                                    <img src="{{ $matchPlayer['aghanims_scepter']['image'] }}" alt="{{ __('ui.aghanims_scepter') }}" class="h-full w-full object-contain" loading="lazy">
+                                            @if (! empty($matchPlayer['aghanims_scepter_buff']))
+                                                <div class="relative h-8 w-8 shrink-0" title="{{ __('ui.aghanims_scepter') }} · Buff">
+                                                    <img src="{{ $blessingIcon }}" alt="{{ __('ui.aghanims_scepter') }} · Buff" class="h-full w-full object-contain" loading="lazy">
                                                     <span class="absolute -bottom-1 left-0 text-[9px] font-bold uppercase tracking-wide text-yellow-500">Buff</span>
                                                 </div>
                                             @endif

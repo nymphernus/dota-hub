@@ -50,7 +50,7 @@ class MatchTest extends TestCase
         $response->assertSee('Ranked');
         $response->assertSee(__('ui.mode_22'));
         $response->assertSee('odd:bg-[#1c1e26] even:bg-[#111318]', false);
-        $response->assertSee('bg-ink-700/80 border-l-4 border-yellow-500', false);
+        $response->assertSee('!bg-[#2d313e] border-l-4 border-yellow-500', false);
         $response->assertDontSee('P1');
         $response->assertDontSee('Party #', false);
         $response->assertSee(__('ui.role_1'));
@@ -61,12 +61,14 @@ class MatchTest extends TestCase
         $response->assertSee('Black King Bar');
         $response->assertSee(__('ui.net_worth_by_minute'));
         $response->assertSee('id="netWorthChart"', false);
+        $response->assertSee('id="chart-legend"', false);
         $response->assertSee('LH / DN');
         $response->assertSee('O: 5');
         $response->assertSee('S: 3');
         $response->assertDontSee(__('ui.lane_efficiency'));
         $response->assertSee('minute_label', false);
         $response->assertSee('/images/items/ultimate_scepter.png', false);
+        $response->assertSee('/images/items/aghanims_blessing.png', false);
         $response->assertSee('/images/items/aghanims_shard.png', false);
         $response->assertSee('/images/items/serrated_shiv.png', false);
         $response->assertSee('>Buff<', false);
@@ -127,6 +129,7 @@ class MatchTest extends TestCase
                 && $match['lobby_type'] === 7
                 && $match['is_ranked'] === true
                 && $match['net_worth_chart']['has_data'] === true
+                && $match['net_worth_chart']['radiant']['datasets'][0]['hero_key'] === 'antimage'
                 && count($match['net_worth_chart']['radiant']['datasets']) === 2
                 && count($match['players']['radiant']) === 2
                 && count($match['players']['dire']) === 2
@@ -290,7 +293,7 @@ class MatchTest extends TestCase
 
         // One match request + hero metadata + item metadata.
         Http::assertSentCount(3);
-        $this->assertTrue(Cache::has('opendota:match:v10:'.self::MATCH_ID));
+        $this->assertTrue(Cache::has('opendota:match:v11:'.self::MATCH_ID));
     }
 
     public function test_unknown_match_redirects_back_with_an_error(): void

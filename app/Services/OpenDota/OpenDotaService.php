@@ -665,7 +665,7 @@ class OpenDotaService
     {
         $ttl = (int) config('stats.cache.dota_match', 3600);
 
-        return Cache::remember("opendota:match:v10:{$matchId}", $ttl, function () use ($matchId) {
+        return Cache::remember("opendota:match:v11:{$matchId}", $ttl, function () use ($matchId) {
             try {
                 $match = $this->client->get("matches/{$matchId}");
             } catch (PlayerNotFoundException) {
@@ -2015,6 +2015,7 @@ class OpenDotaService
                     ? (int) $player['party_size']
                     : null,
                 'hero_id' => $hero['id'],
+                'hero_key' => $hero['key'] ?? null,
                 'hero_name' => $hero['name'],
                 'hero_image' => $hero['image'],
                 'hero_icon' => $hero['icon_local'] ?? $hero['minimap_icon'] ?? $hero['icon'] ?? null,
@@ -2295,6 +2296,7 @@ class OpenDotaService
 
                 $result[] = [
                     'label' => $player['hero_name'],
+                    'hero_key' => $player['hero_key'] ?? null,
                     'icon' => $player['hero_icon'] ?? null,
                     'data' => array_pad($history, $maxLength, null),
                     'borderColor' => $color,

@@ -29,18 +29,18 @@
                             </div>
 
                             <!-- Winrate (bar + value) -->
-                            <div class="flex w-40 shrink-0 items-center justify-end gap-2">
+                            <div class="flex w-64 shrink-0 items-center justify-end gap-2">
                                 <span class="w-12 text-right text-xs {{ (float) $peer['winrate'] >= 50 ? 'text-green-500' : 'text-red-500' }}">{{ number_format((float) $peer['winrate'], 1) }}%</span>
-                                <div class="h-2 w-24 bg-ink-900 flex rounded overflow-hidden">
+                                <div class="flex h-2 flex-1 overflow-hidden rounded bg-ink-900">
                                     <div class="bg-green-500 h-full" style="width: {{ (float) $peer['winrate'] }}%"></div>
                                     <div class="bg-red-500 h-full" style="width: {{ 100 - (float) $peer['winrate'] }}%"></div>
                                 </div>
                             </div>
 
                             <!-- Games (bar + value) -->
-                            <div class="flex w-32 shrink-0 items-center justify-end gap-2">
+                            <div class="flex w-48 shrink-0 items-center justify-end gap-2">
                                 <span class="w-8 text-right text-xs text-mist-400">{{ $peer['games'] }}</span>
-                                <div class="h-2 w-20 bg-ink-900 rounded overflow-hidden">
+                                <div class="h-2 flex-1 overflow-hidden rounded bg-ink-900">
                                     <div class="bg-yellow-500 h-full" style="width: {{ ($peer['games'] / $maxPeerGames) * 100 }}%"></div>
                                 </div>
                             </div>
