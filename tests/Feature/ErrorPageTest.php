@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Support\Facades\Route;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
 
 class ErrorPageTest extends TestCase
@@ -23,5 +25,20 @@ class ErrorPageTest extends TestCase
         $this->view('errors.429')
             ->assertSee(__('ui.too_many_requests'))
             ->assertSee(__('ui.back_home'));
+    }
+
+    public function test_504_error_renders_custom_dark_page(): void
+    {
+        Route::middleware('web')->get('/__test-timeout', static function (): never {
+            throw new HttpException(504);
+        });
+
+        $response = $this->get('/__test-timeout');
+
+        $response->assertStatus(504);
+        $response->assertSee(__('ui.gateway_timeout'))
+            ->assertSee(__('ui.gateway_timeout_hint'))
+            ->assertSee('btn-ghost', false);
+        $response->assertViewIs('errors.504');
     }
 }

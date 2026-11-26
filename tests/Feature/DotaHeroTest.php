@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\PlayerProfile;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -28,6 +29,7 @@ class DotaHeroTest extends TestCase
 
     public function test_hero_page_renders_summary_benchmarks_and_recent_matches(): void
     {
+        $this->seedProfile();
         $this->fakeOpenDota();
 
         $response = $this->get(route('player.hero', [
@@ -38,6 +40,7 @@ class DotaHeroTest extends TestCase
         $response->assertOk();
         $response->assertSee('Anti-Mage');
         $response->assertSee('Dendi');
+        $response->assertSee('По сохранённой истории матчей');
         $response->assertSee('Бенчмарки');
         $response->assertSee('GPM');
         $response->assertSee('XPM');
@@ -90,14 +93,17 @@ class DotaHeroTest extends TestCase
             && $matches[2]['net_worth'] === 28000
             && $matches[2]['hero_damage'] === 21500);
 
-        $this->assertTrue(Cache::has('opendota:player-header:v1:'.self::ACCOUNT_ID));
-        $this->assertTrue(Cache::has('opendota:player-hero:v2:'.self::ACCOUNT_ID.':'.self::HERO_ID));
+        $response->assertViewHas('benchmarksUnavailable', false);
+
         $this->assertTrue(Cache::has('opendota:hero-benchmarks:v1:'.self::HERO_ID));
-        Http::assertSentCount(5);
+        $this->assertFalse(Cache::has('opendota:player-header:v1:'.self::ACCOUNT_ID));
+        $this->assertFalse(Cache::has('opendota:player-hero:v2:'.self::ACCOUNT_ID.':'.self::HERO_ID));
+        Http::assertSentCount(1);
     }
 
     public function test_second_visit_to_hero_page_is_served_from_cache(): void
     {
+        $this->seedProfile();
         $this->fakeOpenDota();
 
         $this->get(route('player.hero', [
@@ -117,10 +123,6 @@ class DotaHeroTest extends TestCase
 
     public function test_unknown_player_on_hero_page_returns_404(): void
     {
-        Http::fake([
-            'api.opendota.com/api/*' => Http::response(['error' => 'Not Found'], 404),
-        ]);
-
         $response = $this->get(route('player.hero', [
             'accountId' => 999999999,
             'heroId' => self::HERO_ID,
@@ -132,6 +134,7 @@ class DotaHeroTest extends TestCase
 
     public function test_hero_page_degrades_when_benchmarks_are_unavailable(): void
     {
+        $this->seedProfile();
         $this->fakeOpenDota([
             'api.opendota.com/api/benchmarks*' => Http::response(['error' => 'boom'], 500),
         ]);
@@ -142,10 +145,36 @@ class DotaHeroTest extends TestCase
         ]));
 
         $response->assertOk();
-        $response->assertSee('Бенчмарки для этого героя пока недоступны');
+        $response->assertSee('Бенчмарки временно недоступны');
+        $response->assertViewHas('benchmarksUnavailable', true);
         $response->assertViewHas('benchmarks', fn (array $rows) => collect($rows)->every(
             fn (array $row) => $row['available'] === false
         ));
+        $response->assertDontSee('style="left:');
+    }
+
+    public function test_hero_page_uses_local_stats_when_all_api_calls_time_out(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake(['*' => Http::response([], 504)]);
+        $this->seedProfile();
+
+        $response = $this->get(route('player.hero', [
+            'accountId' => self::ACCOUNT_ID,
+            'heroId' => self::HERO_ID,
+        ]));
+
+        $response->assertOk();
+        $response->assertSee('Anti-Mage');
+        $response->assertSee('66.7%');
+        $response->assertSee('4.64');
+        $response->assertSee('Бенчмарки временно недоступны');
+        $response->assertViewHas('benchmarksUnavailable', true);
+        $response->assertViewHas('summary', fn (array $summary) => $summary['games'] === 3
+            && $summary['wins'] === 2
+            && $summary['gpm'] === 583
+            && $summary['xpm'] === 667);
+        Http::assertSentCount(1);
     }
 
     /**
@@ -154,61 +183,6 @@ class DotaHeroTest extends TestCase
     private function fakeOpenDota(array $overrides = []): void
     {
         Http::fake($overrides + [
-            'api.opendota.com/api/players/'.self::ACCOUNT_ID.'/matches*' => Http::response([
-                [
-                    'match_id' => 9100000001,
-                    'hero_id' => self::HERO_ID,
-                    'player_slot' => 0,
-                    'radiant_win' => true,
-                    'kills' => 10,
-                    'deaths' => 2,
-                    'assists' => 15,
-                    'gold_per_min' => 650,
-                    'xp_per_min' => 700,
-                    'net_worth' => 31200,
-                    'hero_damage' => 24500,
-                    'duration' => 2400,
-                    'start_time' => now()->subDays(1)->timestamp,
-                ],
-                [
-                    'match_id' => 9100000002,
-                    'hero_id' => self::HERO_ID,
-                    'player_slot' => 128,
-                    'radiant_win' => true,
-                    'kills' => 3,
-                    'deaths' => 7,
-                    'assists' => 5,
-                    'gold_per_min' => 400,
-                    'xp_per_min' => 500,
-                    'duration' => 2100,
-                    'start_time' => now()->subDays(2)->timestamp,
-                ],
-                [
-                    'match_id' => 9100000003,
-                    'hero_id' => self::HERO_ID,
-                    'player_slot' => 0,
-                    'radiant_win' => true,
-                    'kills' => 8,
-                    'deaths' => 2,
-                    'assists' => 10,
-                    'duration' => 2700,
-                    'start_time' => now()->subDays(3)->timestamp,
-                ],
-            ]),
-            'api.opendota.com/api/matches/9100000003*' => Http::response([
-                'match_id' => 9100000003,
-                'players' => [
-                    [
-                        'account_id' => self::ACCOUNT_ID,
-                        'hero_id' => self::HERO_ID,
-                        'level' => 25,
-                        'net_worth' => 28000,
-                        'hero_damage' => 21500,
-                        'gold_per_min' => 700,
-                        'xp_per_min' => 800,
-                    ],
-                ],
-            ]),
             'api.opendota.com/api/benchmarks*' => Http::response([
                 'hero_id' => self::HERO_ID,
                 'result' => [
@@ -244,19 +218,128 @@ class DotaHeroTest extends TestCase
                     ],
                 ],
             ]),
-            'api.opendota.com/api/heroStats*' => Http::response([
-                ['id' => self::HERO_ID, 'localized_name' => 'Anti-Mage', 'img' => '/apps/dota2/images/heroes/antimage_full.png'],
-            ]),
-            'api.opendota.com/api/players/'.self::ACCOUNT_ID.'*' => Http::response([
-                'profile' => [
-                    'account_id' => self::ACCOUNT_ID,
-                    'personaname' => 'Dendi',
-                    'avatarfull' => 'https://example.com/dendi.jpg',
-                    'steamid' => '76561198030654385',
-                    'profileurl' => 'https://steamcommunity.com/profiles/76561198030654385',
-                ],
-                'rank_tier' => 80,
-            ]),
+        ]);
+    }
+
+    private function seedProfile(): void
+    {
+        $heroMeta = [
+            'hero_id' => self::HERO_ID,
+            'hero_name' => 'Anti-Mage',
+            'hero_image' => '/images/heroes/antimage.png',
+            'hero_icon' => '/images/heroes/icons/antimage.png',
+        ];
+
+        $history = [
+            $heroMeta + [
+                'match_id' => 9100000001,
+                'win' => true,
+                'kills' => 10,
+                'deaths' => 2,
+                'assists' => 15,
+                'gpm' => 650,
+                'xpm' => 700,
+                'net_worth' => 31200,
+                'hero_damage' => 24500,
+                'duration' => 2400,
+                'duration_label' => '40:00',
+                'start_time' => now()->subDays(1)->timestamp,
+            ],
+            $heroMeta + [
+                'match_id' => 9100000002,
+                'win' => false,
+                'kills' => 3,
+                'deaths' => 7,
+                'assists' => 5,
+                'gpm' => 400,
+                'xpm' => 500,
+                'net_worth' => 19800,
+                'hero_damage' => 15000,
+                'duration' => 2100,
+                'duration_label' => '35:00',
+                'start_time' => now()->subDays(2)->timestamp,
+            ],
+            $heroMeta + [
+                'match_id' => 9100000003,
+                'win' => true,
+                'kills' => 8,
+                'deaths' => 2,
+                'assists' => 10,
+                'gpm' => 0,
+                'xpm' => 0,
+                'net_worth' => 0,
+                'hero_damage' => 0,
+                'duration' => 2700,
+                'duration_label' => '45:00',
+                'start_time' => now()->subDays(3)->timestamp,
+            ],
+            [
+                'match_id' => 9100000004,
+                'hero_id' => 2,
+                'hero_name' => 'Axe',
+                'win' => true,
+                'kills' => 99,
+                'deaths' => 0,
+                'assists' => 99,
+                'gpm' => 9999,
+                'xpm' => 9999,
+                'duration' => 1200,
+                'duration_label' => '20:00',
+                'start_time' => now()->timestamp,
+            ],
+        ];
+
+        $recent = [
+            $heroMeta + [
+                'match_id' => 9100000001,
+                'win' => true,
+                'kills' => 10,
+                'deaths' => 2,
+                'assists' => 15,
+                'gpm' => 650,
+                'xpm' => 700,
+                'duration' => 2400,
+                'duration_label' => '40:00',
+            ],
+            $heroMeta + [
+                'match_id' => 9100000002,
+                'win' => false,
+                'kills' => 3,
+                'deaths' => 7,
+                'assists' => 5,
+                'gpm' => 400,
+                'xpm' => 500,
+                'duration' => 2100,
+                'duration_label' => '35:00',
+            ],
+            $heroMeta + [
+                'match_id' => 9100000003,
+                'win' => true,
+                'kills' => 8,
+                'deaths' => 2,
+                'assists' => 10,
+                'gpm' => 700,
+                'xpm' => 800,
+                'net_worth' => 28000,
+                'hero_damage' => 21500,
+                'duration' => 2700,
+                'duration_label' => '45:00',
+            ],
+        ];
+
+        PlayerProfile::create([
+            'account_id' => self::ACCOUNT_ID,
+            'nickname' => 'Dendi',
+            'avatar' => 'https://example.com/dendi.jpg',
+            'data' => [
+                'account_id' => self::ACCOUNT_ID,
+                'nickname' => 'Dendi',
+                'avatar' => 'https://example.com/dendi.jpg',
+                'cached_at' => now()->toIso8601String(),
+                'matches' => $recent,
+                'match_history' => $history,
+            ],
+            'updated_at' => now()->subMinutes(5),
         ]);
     }
 }

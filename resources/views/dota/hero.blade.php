@@ -89,7 +89,7 @@
             <x-stat
                 label="{{ __('ui.matches') }}"
                 :value="number_format($summary['games'], 0, '.', ' ')"
-                hint="{{ __('ui.last_100_games_hero') }}"
+                hint="{{ __('ui.local_history_hint') }}"
             />
             <x-stat
                 label="{{ __('ui.wins_losses') }}"
@@ -118,9 +118,12 @@
                 </div>
             </div>
 
-            @if (collect($benchmarks)->every(fn (array $benchmark) => ! $benchmark['available']))
+            @if (($benchmarksUnavailable ?? false) || collect($benchmarks)->every(fn (array $benchmark) => ! $benchmark['available']))
                 <div class="p-8 text-center">
-                    <p class="text-sm text-mist-400">{{ __('ui.benchmarks_unavailable') }}</p>
+                    @if ($benchmarksUnavailable ?? false)
+                        <p class="text-sm font-semibold text-mist-300">{{ __('ui.benchmarks_temporarily_unavailable') }}</p>
+                    @endif
+                    <p class="mt-2 text-sm text-mist-400">{{ __('ui.benchmarks_unavailable') }}</p>
                 </div>
             @else
                 <div class="grid gap-4 p-4 sm:p-5 lg:grid-cols-3">
