@@ -14,6 +14,8 @@ class MatchController extends Controller
     public function show(int $matchId, OpenDotaService $openDota): View|RedirectResponse
     {
         try {
+            // getMatch() uses Cache::remember: a missing or expired detail cache
+            // entry triggers the OpenDota match request on this page only.
             $match = $openDota->getMatch($matchId);
         } catch (MatchNotFoundException) {
             return back()->with('error', __('ui.match_not_found'));

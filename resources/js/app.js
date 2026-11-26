@@ -1,4 +1,5 @@
 import Alpine from 'alpinejs';
+import Chart from 'chart.js/auto';
 
 window.Alpine = Alpine;
 
@@ -154,6 +155,97 @@ Alpine.data('favoriteStar', (config) => ({
         } finally {
             this.loading = false;
         }
+    },
+}));
+
+/**
+ * Net worth chart on a match page. Chart data is injected by Blade; matches
+ * without parsed networth_t keep the section hidden and spend no chart work.
+ */
+Alpine.data('netWorthChart', (config) => ({
+    chart: null,
+
+    init() {
+        if (! config || ! config.has_data) {
+            return;
+        }
+
+        const canvas = document.getElementById('netWorthChart');
+
+        if (! canvas) {
+            return;
+        }
+
+        const datasets = [
+            ...(config.radiant?.datasets ?? []),
+            ...(config.dire?.datasets ?? []),
+        ];
+
+        if (datasets.length === 0) {
+            return;
+        }
+
+        Chart.defaults.color = '#8b94a5';
+        Chart.defaults.font.family = 'Inter, sans-serif';
+
+        this.chart = new Chart(canvas, {
+            type: 'line',
+            data: {
+                labels: config.labels ?? [],
+                datasets,
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 10,
+                            boxHeight: 10,
+                            color: '#d1d5db',
+                            font: { size: 10 },
+                        },
+                    },
+                    tooltip: {
+                        backgroundColor: '#1c1e26',
+                        borderColor: '#2d313e',
+                        borderWidth: 1,
+                        titleColor: '#f3f4f6',
+                        bodyColor: '#d1d5db',
+                        callbacks: {
+                            title: (items) => items.length ? `Min ${items[0].label}` : '',
+                            label: (item) => `${item.dataset.label}: ${Number(item.parsed.y).toLocaleString()}`,
+                        },
+                    },
+                },
+                scales: {
+                    x: {
+                        grid: { color: '#2d313e', drawBorder: false },
+                        ticks: { color: '#8b94a5', maxTicksLimit: 10 },
+                    },
+                    y: {
+                        grid: { color: '#2d313e', drawBorder: false },
+                        ticks: {
+                            color: '#8b94a5',
+                            callback: (value) => `${Math.round(value / 1000)}k`,
+                        },
+                    },
+                },
+                elements: {
+                    line: { borderWidth: 2, tension: 0.28 },
+                    point: { radius: 0, hoverRadius: 4 },
+                },
+            },
+        });
+    },
+
+    destroy() {
+        this.chart?.destroy();
     },
 }));
 

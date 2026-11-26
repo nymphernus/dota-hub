@@ -59,10 +59,15 @@ class MatchTest extends TestCase
         $response->assertSee(__('ui.role_5'));
         $response->assertSee('Blink Dagger');
         $response->assertSee('Black King Bar');
-        $response->assertDontSee('Нетворс по минутам');
+        $response->assertSee(__('ui.net_worth_by_minute'));
+        $response->assertSee('id="netWorthChart"', false);
+        $response->assertSee('LH / DN');
+        $response->assertSee('O: 5');
+        $response->assertSee('S: 3');
+        $response->assertSee(__('ui.lane_efficiency'));
+        $response->assertSee('67.5%');
         $response->assertDontSee('id="radiantNetWorthChart"', false);
         $response->assertDontSee('id="direNetWorthChart"', false);
-        $response->assertDontSee('>Нетворс<', false);
         $response->assertDontSee('bg-blue-600', false);
         $response->assertDontSee('>P1<', false);
         $response->assertSee('Игрок / герой');
@@ -125,6 +130,14 @@ class MatchTest extends TestCase
                 && $radiantCarry['net_worth'] === 31200
                 && $radiantCarry['tower_damage'] === 3400
                 && $radiantCarry['hero_healing'] === 1250
+                && $radiantCarry['last_hits'] === 180
+                && $radiantCarry['denies'] === 12
+                && $radiantCarry['neutral_item']['id'] === 4
+                && $radiantCarry['aghanims_shard']['id'] === 673
+                && $radiantCarry['aghanims_scepter']['id'] === 108
+                && $radiantCarry['obs_placed'] === 5
+                && $radiantCarry['sen_placed'] === 3
+                && $radiantCarry['lane_efficiency'] === 67.5
                 && $radiantSupport['role']['label'] === 'Mid';
         });
     }
@@ -168,27 +181,38 @@ class MatchTest extends TestCase
         $response->assertSee('Команда Radiant', false);
         $response->assertSee('Команда Dire', false);
         $response->assertDontSee('Party #', false);
-        $response->assertDontSee('P7');
+        $response->assertDontSee('>P7<', false);
         $response->assertDontSee('bg-blue-600', false);
         $response->assertSee(route('player', ['accountId' => 123456789]), false);
         $response->assertSee(route('player', ['accountId' => 987654321]), false);
     }
 
-    public function test_match_page_never_renders_a_net_worth_chart(): void
+    public function test_match_page_renders_net_worth_chart_when_data_is_parsed(): void
     {
-        foreach ([true, false] as $parsed) {
-            Cache::flush();
-            $this->fakeMatch(parsed: $parsed);
+        $this->fakeMatch();
 
-            $response = $this->get(route('match', ['matchId' => self::MATCH_ID]));
+        $response = $this->get(route('match', ['matchId' => self::MATCH_ID]));
 
-            $response->assertOk();
-            $response->assertDontSee('Нетворс по минутам');
-            $response->assertDontSee('Данные о нетворсе появятся после парсинга матча');
-            $response->assertDontSee('id="radiantNetWorthChart"', false);
-            $response->assertDontSee('id="direNetWorthChart"', false);
-            $response->assertDontSee('stats-radar-match-chart-data', false);
-        }
+        $response->assertOk();
+        $response->assertSee(__('ui.net_worth_by_minute'));
+        $response->assertSee('id="netWorthChart"', false);
+        $response->assertSee('x-data="netWorthChart(', false);
+        $response->assertDontSee('id="radiantNetWorthChart"', false);
+        $response->assertDontSee('id="direNetWorthChart"', false);
+    }
+
+    public function test_match_page_hides_net_worth_chart_without_parsed_history(): void
+    {
+        $this->fakeMatch(parsed: false);
+
+        $response = $this->get(route('match', ['matchId' => self::MATCH_ID]));
+
+        $response->assertOk();
+        $response->assertSee(__('ui.no_net_worth_data'));
+        $response->assertDontSee('id="netWorthChart"', false);
+        $response->assertDontSee('x-data="netWorthChart(', false);
+        $response->assertDontSee('id="radiantNetWorthChart"', false);
+        $response->assertDontSee('id="direNetWorthChart"', false);
     }
 
     public function test_stratz_positions_override_opendota_roles_when_token_is_set(): void
@@ -218,6 +242,33 @@ class MatchTest extends TestCase
         Http::assertSent(fn ($request) => str_contains($request->url(), 'api.stratz.com/graphql'));
     }
 
+    public function test_net_worth_chart_falls_back_to_stratz_history(): void
+    {
+        config(['services.stratz.token' => 'test-token']);
+
+        $history = [600, 1200, 2100, 3000];
+        $this->fakeMatch(
+            parsed: false,
+            withStratz: true,
+            stratzNetWorth: [self::ACCOUNT_ID => $history],
+            stratzLanes: [1 => [6, 4], 2 => [5, 5], 3 => [3, 7]]
+        );
+
+        $response = $this->get(route('match', ['matchId' => self::MATCH_ID]));
+
+        $response->assertOk();
+        $response->assertSee('id="netWorthChart"', false);
+        $response->assertSee(__('ui.lane_efficiency'));
+        $response->assertSee(__('ui.radiant_short').' 60.0%');
+        $response->assertSee(__('ui.dire_short').' 70.0%');
+        $response->assertViewHas('match', function (array $match) use ($history): bool {
+            return $match['players']['radiant'][0]['net_worth_history'] === $history
+                && $match['net_worth_chart']['has_data'] === true
+                && $match['lane_efficiency_by_team'][1]['radiant'] === 60.0
+                && $match['lane_efficiency_by_team'][3]['dire'] === 70.0;
+        });
+    }
+
     public function test_match_details_are_cached_for_repeat_views(): void
     {
         $this->fakeMatch();
@@ -229,7 +280,7 @@ class MatchTest extends TestCase
 
         // One match request + hero metadata + item metadata.
         Http::assertSentCount(3);
-        $this->assertTrue(Cache::has('opendota:match:v5:'.self::MATCH_ID));
+        $this->assertTrue(Cache::has('opendota:match:v8:'.self::MATCH_ID));
     }
 
     public function test_unknown_match_redirects_back_with_an_error(): void
@@ -282,7 +333,7 @@ class MatchTest extends TestCase
         );
     }
 
-    private function fakeMatch(bool $withStratz = false, bool $parsed = true, bool $withParties = true): void
+    private function fakeMatch(bool $withStratz = false, bool $parsed = true, bool $withParties = true, array $stratzNetWorth = [], array $stratzLanes = []): void
     {
         if ($withStratz) {
             config(['services.stratz.token' => 'test-token']);
@@ -322,6 +373,14 @@ class MatchTest extends TestCase
                         'hero_damage' => 25000,
                         'tower_damage' => 3400,
                         'hero_healing' => 1250,
+                        'last_hits' => 180,
+                        'denies' => 12,
+                        'item_neutral' => 4,
+                        'aghanims_shard' => true,
+                        'item_0' => 108,
+                        'obs_placed' => 5,
+                        'sen_placed' => 3,
+                        'lane_efficiency_pct' => 67.5,
                         'networth_t' => [600, 1200, 2100, 3000],
                         'xp_t' => [0, 400, 900, 1600],
                         'purchase_log' => [
@@ -409,6 +468,24 @@ class MatchTest extends TestCase
                     'cost' => 90,
                     'img' => '/apps/dota2/images/dota_react/items/tango.png',
                 ],
+                'trusted_root' => [
+                    'id' => 4,
+                    'dname' => 'Trusted Root',
+                    'cost' => 0,
+                    'img' => '/apps/dota2/images/dota_react/items/trusted_root.png',
+                ],
+                'aghanims_shard' => [
+                    'id' => 673,
+                    'dname' => "Aghanim's Shard",
+                    'cost' => 1400,
+                    'img' => '/apps/dota2/images/dota_react/items/aghanims_shard.png',
+                ],
+                'ultimate_scepter' => [
+                    'id' => 108,
+                    'dname' => "Aghanim's Scepter",
+                    'cost' => 4200,
+                    'img' => '/apps/dota2/images/dota_react/items/ultimate_scepter.png',
+                ],
             ]),
         ];
 
@@ -419,7 +496,19 @@ class MatchTest extends TestCase
 
             foreach ($payload['players'] as &$player) {
                 if (! $parsed) {
-                    unset($player['networth_t'], $player['xp_t'], $player['purchase_log']);
+                    unset(
+                        $player['networth_t'],
+                        $player['xp_t'],
+                        $player['purchase_log'],
+                        $player['last_hits'],
+                        $player['denies'],
+                        $player['item_neutral'],
+                        $player['aghanims_shard'],
+                        $player['item_0'],
+                        $player['obs_placed'],
+                        $player['sen_placed'],
+                        $player['lane_efficiency_pct']
+                    );
                 }
 
                 if (! $withParties) {
@@ -432,19 +521,54 @@ class MatchTest extends TestCase
         }
 
         if ($withStratz) {
+            $stratzPlayers = [
+                [
+                    'steamAccountId' => self::ACCOUNT_ID,
+                    'playerSlot' => 0,
+                    'position' => 5,
+                    'imp' => 7.5,
+                    'steamAccount' => ['seasonRank' => 80],
+                ],
+                ['steamAccountId' => 123456789, 'playerSlot' => 1, 'position' => 4, 'imp' => 3.25],
+                ['steamAccountId' => 987654321, 'playerSlot' => 128, 'position' => 1, 'imp' => 1.2],
+            ];
+
+            foreach ($stratzPlayers as &$stratzPlayer) {
+                $history = $stratzNetWorth[$stratzPlayer['steamAccountId']] ?? null;
+
+                if ($history === null) {
+                    continue;
+                }
+
+                $events = [];
+
+                foreach ($history as $minute => $worth) {
+                    $events[] = ['time' => ((int) $minute) * 60, 'networth' => $worth];
+                }
+
+                $stratzPlayer['playbackData'] = ['playerUpdateGoldEvents' => $events];
+            }
+            unset($stratzPlayer);
+
+            $laneReport = ['radiant' => [], 'dire' => []];
+            $laneKeys = [1 => 'safeLane', 2 => 'midLane', 3 => 'offLane'];
+
+            foreach ($laneKeys as $lane => $key) {
+                $counts = $stratzLanes[$lane] ?? null;
+
+                if ($counts === null) {
+                    continue;
+                }
+
+                $laneReport['radiant'][] = [$key => ['meleeCount' => (int) $counts[0], 'rangeCount' => 0, 'siegeCount' => 0, 'denyCount' => 0]];
+                $laneReport['dire'][] = [$key => ['meleeCount' => (int) $counts[1], 'rangeCount' => 0, 'siegeCount' => 0, 'denyCount' => 0]];
+            }
+
             $fakes['api.stratz.com/graphql*'] = Http::response([
                 'data' => [
                     'match' => [
-                        'players' => [
-                            [
-                                'steamAccountId' => self::ACCOUNT_ID,
-                                'position' => 5,
-                                'imp' => 7.5,
-                                'steamAccount' => ['seasonRank' => 80],
-                            ],
-                            ['steamAccountId' => 123456789, 'position' => 4, 'imp' => 3.25],
-                            ['steamAccountId' => 987654321, 'position' => 1, 'imp' => 1.2],
-                        ],
+                        'laneReport' => $laneReport,
+                        'players' => $stratzPlayers,
                     ],
                 ],
             ]);

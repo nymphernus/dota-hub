@@ -96,13 +96,15 @@ class UiAssetsTest extends TestCase
         $this->assertStringContainsString('class="group block border-b border-ink-700/50 px-4 py-1 transition odd:bg-[#1c1e26] even:bg-[#111318] hover:bg-ink-700/60 match-row"', $peers);
         $this->assertStringContainsString('flex min-w-0 flex-1 items-center gap-2', $peers);
         $this->assertStringContainsString('flex-1 min-w-0 text-[11px] font-bold text-mist-200 truncate leading-tight', $peers);
-        $this->assertStringContainsString('flex w-16 shrink-0 items-center justify-end gap-1', $peers);
+        $this->assertStringContainsString('flex w-40 shrink-0 items-center justify-end gap-2', $peers);
+        $this->assertStringContainsString('flex w-32 shrink-0 items-center justify-end gap-2', $peers);
+        $this->assertStringNotContainsString('flex w-16 shrink-0 items-center justify-end gap-1', $peers);
         $this->assertStringNotContainsString('w-1/3 min-w-0', $peers);
         $this->assertStringNotContainsString('w-1/4 shrink-0 ml-auto', $peers);
         $this->assertStringContainsString('h-1.5 w-8 bg-ink-900 flex rounded overflow-hidden', $profile);
-        $this->assertStringContainsString('h-1.5 w-8 bg-ink-900 flex rounded overflow-hidden', $peers);
         $this->assertStringContainsString('h-1.5 w-8 bg-ink-900 rounded overflow-hidden', $profile);
-        $this->assertStringContainsString('h-1.5 w-8 bg-ink-900 rounded overflow-hidden', $peers);
+        $this->assertStringContainsString('h-2 w-24 bg-ink-900 flex rounded overflow-hidden', $peers);
+        $this->assertStringContainsString('h-2 w-20 bg-ink-900 rounded overflow-hidden', $peers);
         $this->assertStringContainsString('bg-yellow-500 h-full', $profile);
         $this->assertStringContainsString('bg-yellow-500 h-full', $peers);
         $this->assertStringContainsString('maxPeerGames', $controller);
@@ -284,13 +286,63 @@ class UiAssetsTest extends TestCase
         $this->assertStringNotContainsString('match_cache_note', $en);
         $this->assertStringNotContainsString('HEAL', $source);
         $this->assertStringNotContainsString('showHealing', $source);
-        $this->assertStringContainsString('$columnCount = 6 + ', $source);
+        $this->assertStringContainsString('$columnCount = 7 + ', $source);
         $this->assertStringNotContainsString('<span class="text-[9px] text-mist-400">—</span>', $source);
+
+        $this->assertStringContainsString('id="netWorthChart"', $source);
+        $this->assertStringContainsString('x-data="netWorthChart(@js(', $source);
+        $this->assertStringContainsString("__('ui.net_worth_by_minute')", $source);
+        $this->assertStringContainsString("__('ui.last_hits_short')", $source);
+        $this->assertStringContainsString("__('ui.denies_short')", $source);
+        $this->assertStringContainsString("__('ui.wards')", $source);
+        $this->assertStringContainsString("__('ui.lane_efficiency')", $source);
+        $this->assertStringContainsString('neutral_item', $source);
+        $this->assertStringContainsString('aghanims_shard', $source);
+        $this->assertStringContainsString('aghanims_scepter', $source);
+        $this->assertStringContainsString('obs_placed', $source);
+        $this->assertStringContainsString('sen_placed', $source);
+
+        $appJs = (string) file_get_contents(resource_path('js/app.js'));
+        $this->assertStringContainsString("import Chart from 'chart.js/auto';", $appJs);
+        $this->assertStringContainsString("Alpine.data('netWorthChart'", $appJs);
 
         $this->assertStringContainsString("'odd:bg-[#1c1e26] even:bg-[#111318]' => ! \$isCurrentPlayer", $source);
         $this->assertStringContainsString('bg-[#2d313e] border-l-4 border-yellow-500', $source);
         $this->assertStringContainsString("request()->integer('player_id')", $controller);
         $this->assertStringContainsString("'playerId' => \$playerId", $controller);
+    }
+
+    public function test_new_match_fields_are_bounded_to_recent_details(): void
+    {
+        $service = (string) file_get_contents(app_path('Services/OpenDota/OpenDotaService.php'));
+        $stratz = (string) file_get_contents(app_path('Services/Stratz/StratzService.php'));
+        $playerController = (string) file_get_contents(app_path('Http/Controllers/DotaPlayerController.php'));
+
+        $this->assertStringContainsString('public function matchNetWorth(', $stratz);
+        $this->assertStringContainsString('playerUpdateGoldEvents', $stratz);
+        $this->assertStringContainsString('laneReport', $stratz);
+        $this->assertStringContainsString('$this->stratz->matchNetWorth(', $service);
+
+        $this->assertStringContainsString('private const PROFILE_SCHEMA_VERSION = 13;', $service);
+        $this->assertStringContainsString('private const RECENT_MATCH_DETAILS = 25;', $service);
+        $this->assertStringContainsString('opendota:match-player:v5:', $service);
+        $this->assertStringContainsString('Cache::remember("opendota:match:v8:', $service);
+
+        foreach ([
+            'last_hits',
+            'denies',
+            'neutral_item',
+            'aghanims_shard',
+            'aghanims_scepter',
+            'obs_placed',
+            'sen_placed',
+            'lane_efficiency',
+        ] as $field) {
+            $this->assertStringContainsString("'{$field}' =>", $service);
+        }
+
+        $this->assertStringContainsString('array_slice($history, 0, 25)', $playerController);
+        $this->assertStringContainsString('loadMatchDetails(', $playerController);
     }
 
     public function test_refresh_control_is_a_square_icon_beside_favorite_star(): void

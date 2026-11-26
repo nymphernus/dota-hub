@@ -51,6 +51,13 @@ class DotaProfileTest extends TestCase
                 && $player['matches'][0]['level'] === 27
                 && $player['matches'][0]['net_worth'] === 31200
                 && $player['matches'][0]['gpm'] === 640
+                && $player['matches'][0]['last_hits'] === 210
+                && $player['matches'][0]['denies'] === 14
+                && $player['matches'][0]['neutral_item']['id'] === 4
+                && $player['matches'][0]['aghanims_shard']['id'] === 673
+                && $player['matches'][0]['obs_placed'] === 5
+                && $player['matches'][0]['sen_placed'] === 2
+                && $player['matches'][0]['lane_efficiency'] === 64.5
                 && $player['matches'][0]['item_0']['name'] === 'Blink Dagger'
                 && count($player['matches'][0]['items']) === 6
                 && $player['matches'][0]['items'][5] === null
@@ -265,7 +272,7 @@ class DotaProfileTest extends TestCase
         $this->assertNotNull($record);
         $this->assertSame('Dendi', $record->data['nickname']);
         $this->assertSame(120, $record->data['wins']);
-        $this->assertSame(12, $record->data['schema_version']);
+        $this->assertSame(13, $record->data['schema_version']);
     }
 
     public function test_second_visit_is_served_from_the_database(): void
@@ -1092,6 +1099,8 @@ class DotaProfileTest extends TestCase
                 'blink' => ['id' => 1, 'dname' => 'Blink Dagger', 'img' => '/apps/dota2/images/dota_react/items/blink.png', 'cost' => 2250],
                 'black_king_bar' => ['id' => 2, 'dname' => 'Black King Bar', 'img' => '/apps/dota2/images/dota_react/items/black_king_bar.png', 'cost' => 4050],
                 'power_treads' => ['id' => 3, 'dname' => 'Power Treads', 'img' => '/apps/dota2/images/dota_react/items/power_treads.png', 'cost' => 1400],
+                'trusted_root' => ['id' => 4, 'dname' => 'Trusted Root', 'img' => '/apps/dota2/images/dota_react/items/trusted_root.png', 'cost' => 0],
+                'aghanims_shard' => ['id' => 673, 'dname' => "Aghanim's Shard", 'img' => '/apps/dota2/images/dota_react/items/aghanims_shard.png', 'cost' => 1400],
             ]),
             'api.opendota.com/api/matches/9000000001*' => Http::response([
                 'match_id' => 9000000001,
@@ -1104,6 +1113,13 @@ class DotaProfileTest extends TestCase
                         'net_worth' => 31200,
                         'gold_per_min' => 640,
                         'xp_per_min' => 720,
+                        'last_hits' => 210,
+                        'denies' => 14,
+                        'item_neutral' => 4,
+                        'aghanims_shard' => true,
+                        'obs_placed' => 5,
+                        'sen_placed' => 2,
+                        'lane_efficiency_pct' => 64.5,
                         'item_0' => 1,
                         'item_1' => 2,
                         'item_2' => 3,

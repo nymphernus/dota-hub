@@ -14,8 +14,55 @@
     $startedAt = $match['started_at'] ? \Carbon\CarbonImmutable::parse($match['started_at']) : null;
     $allPlayers = collect($match['players']['radiant'] ?? [])->merge($match['players']['dire'] ?? []);
     $showTowerDamage = $allPlayers->contains(fn (array $matchPlayer) => (int) ($matchPlayer['tower_damage'] ?? 0) > 0);
+    $showWards = $allPlayers->contains(fn (array $matchPlayer) => (int) ($matchPlayer['obs_placed'] ?? 0) > 0 || (int) ($matchPlayer['sen_placed'] ?? 0) > 0);
     $showPurchases = $allPlayers->contains(fn (array $matchPlayer) => ! empty($matchPlayer['purchases']));
-    $columnCount = 6 + ($showTowerDamage ? 1 : 0) + ($showPurchases ? 1 : 0);
+    $showItems = $allPlayers->contains(fn (array $matchPlayer) => ! empty($matchPlayer['neutral_item']) || ! empty($matchPlayer['aghanims_shard']) || ! empty($matchPlayer['aghanims_scepter'])) || $showPurchases;
+    $columnCount = 7 + ($showTowerDamage ? 1 : 0) + ($showWards ? 1 : 0) + ($showItems ? 1 : 0);
+
+    $laneBuckets = [1 => ['sum' => 0.0, 'count' => 0], 2 => ['sum' => 0.0, 'count' => 0], 3 => ['sum' => 0.0, 'count' => 0]];
+    foreach ($allPlayers as $matchPlayer) {
+        $lane = (int) ($matchPlayer['role']['lane_role'] ?? 0);
+        $efficiency = $matchPlayer['lane_efficiency'] ?? null;
+
+        if (! isset($laneBuckets[$lane]) || $efficiency === null) {
+            continue;
+        }
+
+        $laneBuckets[$lane]['sum'] += (float) $efficiency;
+        $laneBuckets[$lane]['count']++;
+    }
+    $laneStats = [];
+    foreach ($laneBuckets as $lane => $bucket) {
+        if ($bucket['count'] === 0) {
+            continue;
+        }
+
+        $laneStats[] = [
+            'label' => __('ui.role_'.$lane),
+            'value' => round($bucket['sum'] / $bucket['count'], 1),
+        ];
+    }
+
+    if ($laneStats === [] && ! empty($match['lane_efficiency_by_team'])) {
+        foreach ([1, 2, 3] as $lane) {
+            $share = $match['lane_efficiency_by_team'][$lane] ?? null;
+
+            if (! is_array($share)) {
+                continue;
+            }
+
+            $radiantShare = round((float) ($share['radiant'] ?? 0), 1);
+            $direShare = round((float) ($share['dire'] ?? 0), 1);
+            $leader = $radiantShare >= $direShare ? __('ui.radiant_short') : __('ui.dire_short');
+
+            $laneStats[] = [
+                'label' => __('ui.role_'.$lane),
+                'value' => max($radiantShare, $direShare),
+                'hint' => $leader.' '.number_format(max($radiantShare, $direShare), 1, '.', '').'% · '
+                    .number_format(min($radiantShare, $direShare), 1, '.', '').'%',
+            ];
+        }
+    }
     $teams = [
         'radiant' => [
             'label' => 'Radiant',
@@ -102,6 +149,20 @@
             </div>
         </section>
 
+        @if ($match['net_worth_chart']['has_data'] ?? false)
+            <section class="card mt-4 p-4" x-data="netWorthChart(@js($match['net_worth_chart']))">
+                <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <h2 class="section-heading">{{ __('ui.net_worth_by_minute') }}</h2>
+                    <span class="badge border-line bg-ink-900/50 text-mist-400">{{ $match['duration_label'] }}</span>
+                </div>
+                <div class="h-64 w-full">
+                    <canvas id="netWorthChart" aria-label="{{ __('ui.net_worth_by_minute') }}"></canvas>
+                </div>
+            </section>
+        @else
+            <section class="card mt-4 p-4 text-xs text-mist-500">{{ __('ui.no_net_worth_data') }}</section>
+        @endif
+
         <section class="card mt-4 overflow-hidden" aria-label="{{ __('ui.match_squads') }}">
             <div class="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-4">
                 <div>
@@ -122,13 +183,17 @@
                             <th class="px-2 py-1 font-semibold">{{ __('ui.player_hero_col') }}</th>
                             <th class="px-2 py-1 font-semibold">IMP</th>
                             <th class="px-2 py-1 font-semibold">K / D / A</th>
+                            <th class="px-2 py-1 font-semibold">{{ __('ui.last_hits_short') }} / {{ __('ui.denies_short') }}</th>
                             <th class="px-2 py-1 font-semibold">GPM</th>
                             <th class="px-2 py-1 font-semibold">XPM</th>
                             <th class="px-2 py-1 font-semibold">{{ __('ui.damage') }}</th>
                             @if ($showTowerDamage)
                                 <th class="px-2 py-1 font-semibold">{{ __('ui.towers') }}</th>
                             @endif
-                            @if ($showPurchases)
+                            @if ($showWards)
+                                <th class="px-2 py-1 font-semibold">{{ __('ui.wards') }}</th>
+                            @endif
+                            @if ($showItems)
                                 <th class="px-2 py-1 text-right font-semibold">{{ __('ui.items') }}</th>
                             @endif
                         </tr>
@@ -215,29 +280,56 @@
                                             <span class="text-mist-400">{{ $matchPlayer['assists'] }}</span>
                                             <span class="ml-1.5 text-[10px] text-mist-500">({{ number_format($matchPlayer['kda'], 2, '.', '') }})</span>
                                         </td>
+                                        <td class="px-2 py-1 font-mono text-[13px] tabular-nums text-mist-300">
+                                            <span class="text-mist-200">{{ (int) ($matchPlayer['last_hits'] ?? 0) }}</span>
+                                            <span class="text-mist-500/60">/</span>
+                                            <span class="text-mist-500">{{ (int) ($matchPlayer['denies'] ?? 0) }}</span>
+                                        </td>
                                         <td class="px-2 py-1 font-mono text-[13px] tabular-nums text-mist-300">{{ number_format((int) ($matchPlayer['gpm'] ?? 0), 0, '.', ' ') }}</td>
                                         <td class="px-2 py-1 font-mono text-[13px] tabular-nums text-mist-300">{{ number_format((int) ($matchPlayer['xpm'] ?? 0), 0, '.', ' ') }}</td>
                                         <td class="px-2 py-1 font-mono text-[13px] tabular-nums text-mist-300">{{ number_format((int) ($matchPlayer['hero_damage'] ?? 0), 0, '.', ' ') }}</td>
                                         @if ($showTowerDamage)
                                             <td class="px-2 py-1 font-mono text-[13px] tabular-nums text-mist-300">{{ isset($matchPlayer['tower_damage']) ? number_format((int) $matchPlayer['tower_damage'], 0, '.', ' ') : '—' }}</td>
                                         @endif
-                                        @if ($showPurchases)
+                                        @if ($showWards)
+                                            <td class="px-2 py-1 text-[11px] tabular-nums text-mist-300">
+                                                <span title="{{ __('ui.observer_ward') }}">O: {{ (int) ($matchPlayer['obs_placed'] ?? 0) }}</span>
+                                                <span class="ml-2 text-mist-500" title="{{ __('ui.sentry_ward') }}">S: {{ (int) ($matchPlayer['sen_placed'] ?? 0) }}</span>
+                                            </td>
+                                        @endif
+                                        @if ($showItems)
+                                            @php
+                                                $specialItems = [
+                                                    ['meta' => $matchPlayer['neutral_item'] ?? null, 'label' => __('ui.neutral_item')],
+                                                    ['meta' => $matchPlayer['aghanims_shard'] ?? null, 'label' => __('ui.aghanims_shard')],
+                                                    ['meta' => $matchPlayer['aghanims_scepter'] ?? null, 'label' => __('ui.aghanims_scepter')],
+                                                ];
+                                            @endphp
                                             <td class="px-2 py-1 text-right">
-                                                @if ($matchPlayer['purchases'] !== [])
-                                                    <button
-                                                        type="button"
-                                                        class="inline-flex items-center gap-1.5 rounded-none border border-line bg-ink-900/40 px-2.5 py-1.5 text-[11px] font-semibold text-mist-300 transition hover:border-accent-400 hover:bg-accent-400/10 hover:text-white"
-                                                        @click="openPlayer = openPlayer === {{ $playerIndex }} ? null : {{ $playerIndex }}"
-                                                        :aria-expanded="(openPlayer === {{ $playerIndex }}).toString()"
-                                                        aria-controls="purchases-{{ $teamKey }}-{{ $playerIndex }}"
-                                                    >
-                                                        {{ __('ui.items') }}
-                                                        <span class="rounded bg-white/[0.06] px-1.5 py-0.5 text-[10px] text-mist-400">{{ count($matchPlayer['purchases']) }}</span>
-                                                        <svg class="h-3 w-3 transition" :class="openPlayer === {{ $playerIndex }} ? 'rotate-180' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                                                    </button>
-                                                @else
-                                                    <span class="text-[11px] text-mist-500">—</span>
-                                                @endif
+                                                <div class="flex flex-wrap items-center justify-end gap-1.5">
+                                                    @foreach ($specialItems as $special)
+                                                        @if (is_array($special['meta']) && (int) ($special['meta']['id'] ?? 0) > 0)
+                                                            @if (! empty($special['meta']['image']))
+                                                                <img src="{{ $special['meta']['image'] }}" alt="{{ $special['label'] }}" title="{{ $special['label'] }}" class="h-8 w-8 object-contain" loading="lazy" referrerpolicy="no-referrer">
+                                                            @else
+                                                                <span class="badge border-line bg-ink-900/50 text-mist-400" title="{{ $special['label'] }}">{{ $special['label'] }}</span>
+                                                            @endif
+                                                        @endif
+                                                    @endforeach
+                                                    @if ($showPurchases && $matchPlayer['purchases'] !== [])
+                                                        <button
+                                                            type="button"
+                                                            class="inline-flex items-center gap-1.5 rounded-none border border-line bg-ink-900/40 px-2.5 py-1.5 text-[11px] font-semibold text-mist-300 transition hover:border-accent-400 hover:bg-accent-400/10 hover:text-white"
+                                                            @click="openPlayer = openPlayer === {{ $playerIndex }} ? null : {{ $playerIndex }}"
+                                                            :aria-expanded="(openPlayer === {{ $playerIndex }}).toString()"
+                                                            aria-controls="purchases-{{ $teamKey }}-{{ $playerIndex }}"
+                                                        >
+                                                            {{ __('ui.items') }}
+                                                            <span class="rounded bg-white/[0.06] px-1.5 py-0.5 text-[10px] text-mist-400">{{ count($matchPlayer['purchases']) }}</span>
+                                                            <svg class="h-3 w-3 transition" :class="openPlayer === {{ $playerIndex }} ? 'rotate-180' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                                                        </button>
+                                                    @endif
+                                                </div>
                                             </td>
                                         @endif
                                     </tr>
@@ -279,5 +371,32 @@
                 </table>
             </div>
         </section>
+
+        @if ($laneStats !== [])
+            <section class="card mt-4 p-4" aria-label="{{ __('ui.lane_efficiency') }}">
+                <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <h2 class="section-heading">{{ __('ui.lane_efficiency') }}</h2>
+                    <span class="badge border-line bg-ink-900/50 text-mist-400">{{ __('ui.match') }} #{{ $match['match_id'] }}</span>
+                </div>
+                <div class="grid gap-4 sm:grid-cols-3">
+                    @foreach ($laneStats as $lane)
+                        <div>
+                            <div class="flex items-center justify-between gap-2 text-xs">
+                                <div>
+                                    <span class="text-mist-300">{{ $lane['label'] }}</span>
+                                    @if (! empty($lane['hint']))
+                                        <span class="block text-[10px] text-mist-500">{{ $lane['hint'] }}</span>
+                                    @endif
+                                </div>
+                                <span class="font-mono tabular-nums text-mist-200">{{ number_format($lane['value'], 1, '.', '') }}%</span>
+                            </div>
+                            <div class="mt-1.5 h-2 w-full overflow-hidden bg-ink-900">
+                                <div class="h-full bg-accent-400" style="width: {{ min(100, max(0, $lane['value'])) }}%"></div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </section>
+        @endif
     </div>
 @endsection

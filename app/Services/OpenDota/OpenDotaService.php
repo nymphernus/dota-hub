@@ -28,7 +28,11 @@ class OpenDotaService
 
     private const RECENT_MATCH_DETAILS = 25;
 
-    private const PROFILE_SCHEMA_VERSION = 12;
+    private const PROFILE_SCHEMA_VERSION = 13;
+
+    private const AGHANIMS_SHARD_ITEM_ID = 673;
+
+    private const AGHANIMS_SCEPTER_ITEM_ID = 108;
 
     /** @var array<int, int> STRATZ positions keyed by match id for this request. */
     private array $stratzPositionsByMatch = [];
@@ -655,7 +659,7 @@ class OpenDotaService
     {
         $ttl = (int) config('stats.cache.dota_match', 3600);
 
-        return Cache::remember("opendota:match:v5:{$matchId}", $ttl, function () use ($matchId) {
+        return Cache::remember("opendota:match:v8:{$matchId}", $ttl, function () use ($matchId) {
             try {
                 $match = $this->client->get("matches/{$matchId}");
             } catch (PlayerNotFoundException) {
@@ -666,7 +670,11 @@ class OpenDotaService
                 throw new MatchNotFoundException($matchId);
             }
 
-            return $this->transformMatch($match);
+            // STRATZ net worth history is requested here, on a specific match
+            // page only, and cached with the finished match payload.
+            $netWorth = $this->stratz->matchNetWorth((int) $match['match_id']);
+
+            return $this->transformMatch($match, $netWorth);
         });
     }
 
@@ -1895,10 +1903,29 @@ class OpenDotaService
      * @param  array<string, mixed>  $match
      * @return array<string, mixed>
      */
-    private function transformMatch(array $match): array
+    /**
+     * @param  array{by_slot: array<int, array<int, int>>, by_account: array<int, array<int, int>>, lanes: array<int, array{radiant: float, dire: float}>}  $stratzNetWorth
+     */
+    private function transformMatch(array $match, array $stratzNetWorth = []): array
     {
         $heroes = $this->heroStats();
         $items = $this->itemStats();
+        $itemsById = [];
+
+        foreach ($items as $itemKey => $item) {
+            $itemId = (int) ($item['id'] ?? 0);
+
+            if ($itemId > 0) {
+                $key = (string) $itemKey;
+                $itemsById[$itemId] = [
+                    'id' => $itemId,
+                    'key' => $key,
+                    'name' => (string) ($item['name'] ?? $this->itemName($key)),
+                    'image' => (string) ($item['image'] ?? $this->itemImage($key)),
+                ];
+            }
+        }
+
         $stratzPositions = $this->stratz->matchPositions((int) ($match['match_id'] ?? 0));
 
         $radiant = [];
@@ -1930,6 +1957,25 @@ class OpenDotaService
             $imp = isset($stratzPlayer['imp']) && is_numeric($stratzPlayer['imp'])
                 ? (float) $stratzPlayer['imp']
                 : null;
+            $neutralItemId = isset($player['item_neutral']) && is_numeric($player['item_neutral'])
+                ? (int) $player['item_neutral']
+                : (int) ($player['neutral_item'] ?? 0);
+            $hasShard = ! empty($player['aghanims_shard'])
+                || $this->matchHasItem($player, self::AGHANIMS_SHARD_ITEM_ID);
+            $hasScepter = ! empty($player['ultimate_scepter'])
+                || ! empty($player['aghanims_scepter'])
+                || $this->matchHasItem($player, self::AGHANIMS_SCEPTER_ITEM_ID);
+            $laneEfficiency = $player['lane_efficiency_pct'] ?? $player['lane_efficiency'] ?? null;
+            $laneEfficiency = $laneEfficiency === null ? null : round((float) $laneEfficiency, 1);
+            $netWorthHistory = $this->numericSeries($player['networth_t'] ?? []);
+
+            if ($netWorthHistory === []) {
+                $playerSlot = (int) ($player['player_slot'] ?? -1);
+                $accountId = (int) ($player['account_id'] ?? 0);
+                $netWorthHistory = $stratzNetWorth['by_slot'][$playerSlot]
+                    ?? $stratzNetWorth['by_account'][$accountId]
+                    ?? [];
+            }
 
             $row = [
                 'account_id' => $accountId > 0 ? $accountId : null,
@@ -1958,6 +2004,16 @@ class OpenDotaService
                 'last_hits' => (int) ($player['last_hits'] ?? 0),
                 'denies' => (int) ($player['denies'] ?? 0),
                 'net_worth' => (int) ($player['net_worth'] ?? 0),
+                'neutral_item' => $this->matchItemMeta($neutralItemId, $itemsById),
+                'aghanims_shard' => $hasShard
+                    ? $this->matchItemMeta(self::AGHANIMS_SHARD_ITEM_ID, $itemsById)
+                    : null,
+                'aghanims_scepter' => $hasScepter
+                    ? $this->matchItemMeta(self::AGHANIMS_SCEPTER_ITEM_ID, $itemsById)
+                    : null,
+                'obs_placed' => (int) ($player['obs_placed'] ?? 0),
+                'sen_placed' => (int) ($player['sen_placed'] ?? 0),
+                'lane_efficiency' => $laneEfficiency,
                 'rank_tier' => $rankTier,
                 'rank_label' => $rank['label'],
                 'rank_medal' => $rank['medal'],
@@ -1966,7 +2022,7 @@ class OpenDotaService
                 'impact' => $imp,
                 'purchases' => $this->transformPurchases($purchaseLog, $items),
                 'purchase_log_count' => count($purchaseLog),
-                'net_worth_history' => $this->numericSeries($player['networth_t'] ?? []),
+                'net_worth_history' => $netWorthHistory,
                 'xp_history' => $this->numericSeries($player['xp_t'] ?? []),
             ];
 
@@ -2015,6 +2071,7 @@ class OpenDotaService
             ],
             'picks_bans' => $this->transformPicksBans($match['picks_bans'] ?? null, $heroes),
             'net_worth_chart' => $this->netWorthChart($radiant, $dire),
+            'lane_efficiency_by_team' => $stratzNetWorth['lanes'] ?? [],
             'cached_at' => CarbonImmutable::now()->toIso8601String(),
         ];
     }
@@ -2353,6 +2410,42 @@ class OpenDotaService
     }
 
     /**
+     * @param  array<string, mixed>  $player
+     */
+    private function matchHasItem(array $player, int $itemId): bool
+    {
+        if ($itemId <= 0) {
+            return false;
+        }
+
+        for ($slot = 0; $slot < 6; $slot++) {
+            if ((int) ($player['item_'.$slot] ?? 0) === $itemId) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param  array<int, array{id: int, key: string, name: string, image: string}>  $itemsById
+     * @return array{id: int, key: string|null, name: string, image: string}|null
+     */
+    private function matchItemMeta(int $itemId, array $itemsById): ?array
+    {
+        if ($itemId <= 0) {
+            return null;
+        }
+
+        return $itemsById[$itemId] ?? [
+            'id' => $itemId,
+            'key' => null,
+            'name' => 'Item #'.$itemId,
+            'image' => $this->itemImage((string) $itemId),
+        ];
+    }
+
+    /**
      * @return array<int, array{id: int, key: string, name: string, image: string}>
      */
     private function historyItemsById(): array
@@ -2654,6 +2747,18 @@ class OpenDotaService
                 $matches[$index]['lane_role'] = (int) $details['lane_role'];
             }
 
+            $matches[$index]['last_hits'] = (int) ($details['last_hits'] ?? 0);
+            $matches[$index]['denies'] = (int) ($details['denies'] ?? 0);
+            $matches[$index]['neutral_item'] = $this->matchItemMeta((int) ($details['neutral_item'] ?? 0), $itemsById);
+            $matches[$index]['aghanims_shard'] = $this->matchItemMeta((int) ($details['aghanims_shard'] ?? 0), $itemsById);
+            $matches[$index]['aghanims_scepter'] = $this->matchItemMeta((int) ($details['aghanims_scepter'] ?? 0), $itemsById);
+            $matches[$index]['obs_placed'] = (int) ($details['obs_placed'] ?? 0);
+            $matches[$index]['sen_placed'] = (int) ($details['sen_placed'] ?? 0);
+            $laneEfficiency = $details['lane_efficiency'] ?? null;
+            $matches[$index]['lane_efficiency'] = $laneEfficiency === null
+                ? null
+                : round((float) $laneEfficiency, 1);
+
             $slots = [];
 
             for ($slot = 0; $slot < 6; $slot++) {
@@ -2681,7 +2786,7 @@ class OpenDotaService
     }
 
     /**
-     * @return array{level: int, net_worth: int, gold_per_min: int, xp_per_min: int, lane_role: int|null, item_0: int, item_1: int, item_2: int, item_3: int, item_4: int, item_5: int}|null
+     * @return array{level: int, net_worth: int, hero_damage: int, gold_per_min: int, xp_per_min: int, lane_role: int|null, last_hits: int, denies: int, neutral_item: int, aghanims_shard: int, aghanims_scepter: int, obs_placed: int, sen_placed: int, lane_efficiency: float|null, item_0: int, item_1: int, item_2: int, item_3: int, item_4: int, item_5: int}|null
      */
     private function matchPlayerSummary(int $matchId, int $accountId, int $ttl, bool $allowExternalFetch = true): ?array
     {
@@ -2689,7 +2794,7 @@ class OpenDotaService
             return null;
         }
 
-        $cacheKey = "opendota:match-player:v4:{$matchId}:{$accountId}";
+        $cacheKey = "opendota:match-player:v5:{$matchId}:{$accountId}";
         $cached = Cache::get($cacheKey);
 
         if (is_array($cached)) {
@@ -2741,6 +2846,16 @@ class OpenDotaService
             return null;
         }
 
+        $neutralItemId = isset($player['item_neutral']) && is_numeric($player['item_neutral'])
+            ? (int) $player['item_neutral']
+            : (int) ($player['neutral_item'] ?? 0);
+        $hasShard = ! empty($player['aghanims_shard'])
+            || $this->matchHasItem($player, self::AGHANIMS_SHARD_ITEM_ID);
+        $hasScepter = ! empty($player['ultimate_scepter'])
+            || ! empty($player['aghanims_scepter'])
+            || $this->matchHasItem($player, self::AGHANIMS_SCEPTER_ITEM_ID);
+        $laneEfficiency = $player['lane_efficiency_pct'] ?? $player['lane_efficiency'] ?? null;
+
         $summary = [
             'level' => (int) ($player['level'] ?? 0),
             'net_worth' => (int) ($player['net_worth'] ?? 0),
@@ -2750,6 +2865,14 @@ class OpenDotaService
             'lane_role' => $this->laneRole([
                 'lane_role' => $player['lane_role'] ?? null,
             ]),
+            'last_hits' => (int) ($player['last_hits'] ?? 0),
+            'denies' => (int) ($player['denies'] ?? 0),
+            'neutral_item' => $neutralItemId,
+            'aghanims_shard' => $hasShard ? self::AGHANIMS_SHARD_ITEM_ID : 0,
+            'aghanims_scepter' => $hasScepter ? self::AGHANIMS_SCEPTER_ITEM_ID : 0,
+            'obs_placed' => (int) ($player['obs_placed'] ?? 0),
+            'sen_placed' => (int) ($player['sen_placed'] ?? 0),
+            'lane_efficiency' => $laneEfficiency === null ? null : round((float) $laneEfficiency, 1),
             'item_0' => (int) ($player['item_0'] ?? 0),
             'item_1' => (int) ($player['item_1'] ?? 0),
             'item_2' => (int) ($player['item_2'] ?? 0),

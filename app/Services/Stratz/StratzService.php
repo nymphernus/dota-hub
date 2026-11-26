@@ -316,6 +316,198 @@ class StratzService
         return $positions;
     }
 
+    /**
+     * Minute-by-minute net worth for one match, keyed by OpenDota player slot
+     * and Steam account. Used only on a specific match page as a fallback when
+     * OpenDota has no parsed networth_t history.
+     *
+     * @return array{by_slot: array<int, array<int, int>>, by_account: array<int, array<int, int>>, lanes: array<int, array{radiant: float, dire: float}>}
+     */
+    public function matchNetWorth(int $matchId): array
+    {
+        $empty = ['by_slot' => [], 'by_account' => [], 'lanes' => []];
+
+        if ($matchId <= 0 || ! $this->enabled()) {
+            return $empty;
+        }
+
+        $cacheKey = "stratz:match:{$matchId}:networth:v1";
+        $cached = Cache::get($cacheKey);
+
+        if (is_array($cached)) {
+            return $cached;
+        }
+
+        $query = <<<'GRAPHQL'
+            query MatchNetWorth($matchId: Long!) {
+                match(id: $matchId) {
+                    laneReport {
+                        radiant {
+                            safeLane { meleeCount rangeCount siegeCount denyCount }
+                            midLane { meleeCount rangeCount siegeCount denyCount }
+                            offLane { meleeCount rangeCount siegeCount denyCount }
+                        }
+                        dire {
+                            safeLane { meleeCount rangeCount siegeCount denyCount }
+                            midLane { meleeCount rangeCount siegeCount denyCount }
+                            offLane { meleeCount rangeCount siegeCount denyCount }
+                        }
+                    }
+                    players {
+                        steamAccountId
+                        playerSlot
+                        playbackData {
+                            playerUpdateGoldEvents {
+                                time
+                                networth
+                            }
+                        }
+                    }
+                }
+            }
+            GRAPHQL;
+
+        try {
+            $response = $this->http
+                ->withToken((string) config('services.stratz.token'))
+                ->withHeaders(['User-Agent' => 'DotaHub/1.0'])
+                ->acceptJson()
+                ->timeout(60)
+                ->post((string) config('services.stratz.endpoint', 'https://api.stratz.com/graphql'), [
+                    'query' => $query,
+                    'variables' => ['matchId' => $matchId],
+                ]);
+        } catch (ConnectionException $exception) {
+            Log::warning('STRATZ net worth request is unreachable', [
+                'match_id' => $matchId,
+                'message' => $exception->getMessage(),
+            ]);
+
+            return $empty;
+        }
+
+        if ($response->failed()) {
+            Log::warning('STRATZ net worth request failed', [
+                'match_id' => $matchId,
+                'status' => $response->status(),
+            ]);
+
+            return $empty;
+        }
+
+        $payload = $response->json();
+
+        if (! is_array($payload) || isset($payload['errors'])) {
+            Log::info('STRATZ net worth query failed', [
+                'match_id' => $matchId,
+                'errors' => is_array($payload['errors'] ?? null) ? $payload['errors'] : null,
+            ]);
+
+            return $empty;
+        }
+
+        $bySlot = [];
+        $byAccount = [];
+
+        foreach ($payload['data']['match']['players'] ?? [] as $player) {
+            if (! is_array($player)) {
+                continue;
+            }
+
+            $events = $player['playbackData']['playerUpdateGoldEvents'] ?? [];
+
+            if (! is_array($events) || $events === []) {
+                continue;
+            }
+
+            $byMinute = [];
+
+            foreach ($events as $event) {
+                if (! is_array($event)) {
+                    continue;
+                }
+
+                $minute = max(0, intdiv((int) ($event['time'] ?? 0), 60));
+                $byMinute[$minute] = (int) ($event['networth'] ?? 0);
+            }
+
+            if ($byMinute === []) {
+                continue;
+            }
+
+            ksort($byMinute);
+            $lastMinute = min(180, max(array_keys($byMinute)));
+            $series = [];
+            $previous = 0;
+
+            for ($minute = 0; $minute <= $lastMinute; $minute++) {
+                $previous = $byMinute[$minute] ?? $previous;
+                $series[] = $previous;
+            }
+
+            $slot = (int) ($player['playerSlot'] ?? -1);
+            $accountId = (int) ($player['steamAccountId'] ?? 0);
+
+            if ($slot >= 0) {
+                $bySlot[$slot] = $series;
+            }
+
+            if ($accountId > 0) {
+                $byAccount[$accountId] = $series;
+            }
+        }
+
+        $lanes = [];
+        $laneReport = $payload['data']['match']['laneReport'] ?? [];
+        $laneKeys = [1 => 'safeLane', 2 => 'midLane', 3 => 'offLane'];
+
+        foreach ($laneKeys as $lane => $key) {
+            $radiantCreeps = 0;
+            $direCreeps = 0;
+
+            foreach ($laneReport['radiant'] ?? [] as $report) {
+                $radiantCreeps += $this->laneCreepCount(is_array($report) ? ($report[$key] ?? []) : []);
+            }
+
+            foreach ($laneReport['dire'] ?? [] as $report) {
+                $direCreeps += $this->laneCreepCount(is_array($report) ? ($report[$key] ?? []) : []);
+            }
+
+            $total = $radiantCreeps + $direCreeps;
+
+            if ($total === 0) {
+                continue;
+            }
+
+            $radiant = round($radiantCreeps / $total * 100, 1);
+            $lanes[$lane] = [
+                'radiant' => $radiant,
+                'dire' => round(100 - $radiant, 1),
+            ];
+        }
+
+        $result = [
+            'by_slot' => $bySlot,
+            'by_account' => $byAccount,
+            'lanes' => $lanes,
+        ];
+
+        Cache::put($cacheKey, $result, (int) config('stats.cache.dota_match', 3600));
+
+        return $result;
+    }
+
+    /**
+     * @param  array<string, mixed>  $lane
+     */
+    private function laneCreepCount(array $lane): int
+    {
+        return (int) ($lane['meleeCount'] ?? 0)
+            + (int) ($lane['rangeCount'] ?? 0)
+            + (int) ($lane['siegeCount'] ?? 0)
+            + (int) ($lane['denyCount'] ?? 0);
+    }
+
     private function normalizePosition(mixed $value): ?int
     {
         if (is_numeric($value)) {
