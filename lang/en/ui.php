@@ -354,6 +354,8 @@ return [
     'rate_limit_hint' => 'OpenDota rate limit reached. Wait a minute and try again — cached profiles will open without delay.',
     'server_error_desc' => 'Failed to load DOTAHUB data.',
     'server_error_hint' => 'Failed to load data. Try refreshing the page in a minute — if the error persists, check application logs.',
+    'bad_gateway' => 'Error 502: Bad Gateway',
+    'bad_gateway_hint' => 'The upstream server returned an invalid response. Please try refreshing the page later.',
     'gateway_timeout' => 'Error 504: Gateway Timeout',
     'gateway_timeout_hint' => 'The server did not respond in time. Please try refreshing the page later.',
     'refresh_page' => 'Refresh page',

@@ -42,6 +42,21 @@ class ErrorPageTest extends TestCase
         $response->assertViewIs('errors.504');
     }
 
+    public function test_502_error_renders_custom_dark_page(): void
+    {
+        Route::middleware('web')->get('/__test-bad-gateway', static function (): never {
+            throw new HttpException(502);
+        });
+
+        $response = $this->get('/__test-bad-gateway');
+
+        $response->assertStatus(502);
+        $response->assertSee(__('ui.bad_gateway'))
+            ->assertSee(__('ui.bad_gateway_hint'))
+            ->assertSee('btn-ghost', false);
+        $response->assertViewIs('errors.502');
+    }
+
     public function test_nginx_serves_a_custom_static_504_page(): void
     {
         $page = (string) file_get_contents(public_path('504.html'));
@@ -55,5 +70,19 @@ class ErrorPageTest extends TestCase
         $this->assertStringContainsString('<svg', $page);
         $this->assertStringContainsString('error_page 504 /504.html;', $config);
         $this->assertStringContainsString('fastcgi_intercept_errors on;', $config);
+    }
+
+    public function test_nginx_serves_a_custom_static_502_page(): void
+    {
+        $page = (string) file_get_contents(public_path('502.html'));
+        $config = (string) file_get_contents(base_path('docker/nginx/default.conf'));
+
+        $this->assertStringContainsString('background: #0f111a', $page);
+        $this->assertStringContainsString('color: #ffffff', $page);
+        $this->assertStringContainsString('502 Плохой шлюз', $page);
+        $this->assertStringContainsString('Вернуться на главную', $page);
+        $this->assertStringContainsString('href="/"', $page);
+        $this->assertStringContainsString('<svg', $page);
+        $this->assertStringContainsString('error_page 502 /502.html;', $config);
     }
 }
