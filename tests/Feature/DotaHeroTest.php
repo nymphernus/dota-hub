@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\PlayerProfile;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -25,12 +26,12 @@ class DotaHeroTest extends TestCase
             'services.steam.api_key' => null,
         ]);
         Cache::flush();
+        Http::preventStrayRequests();
     }
 
-    public function test_hero_page_renders_summary_benchmarks_and_recent_matches(): void
+    public function test_hero_page_renders_local_summary_and_personal_records(): void
     {
         $this->seedProfile();
-        $this->fakeOpenDota();
 
         $response = $this->get(route('player.hero', [
             'accountId' => self::ACCOUNT_ID,
@@ -41,17 +42,21 @@ class DotaHeroTest extends TestCase
         $response->assertSee('Anti-Mage');
         $response->assertSee('Dendi');
         $response->assertSee('По сохранённой истории матчей');
-        $response->assertSee('Бенчмарки');
-        $response->assertSee('GPM');
-        $response->assertSee('XPM');
+        $response->assertSee('Ваша статистика на герое');
+        $response->assertSee('Ваш KDA на Anti-Mage (4.6) выше вашего среднего (3.6)');
+        $response->assertSee('Макс. GPM');
+        $response->assertSee('700');
+        $response->assertSee('Макс. Убийств');
+        $response->assertSee('Лучшая серия');
+        $response->assertSee('1 побед подряд');
         $response->assertSee('Нетворс');
         $response->assertSee('DMG');
         $response->assertSee('28 000');
         $response->assertSee('21 500');
-        $response->assertSee('KDA');
-        $response->assertSee('Топ 10%');
         $response->assertSee(route('player', ['accountId' => self::ACCOUNT_ID]), false);
         $response->assertSee(route('match', ['matchId' => 9100000001, 'player_id' => self::ACCOUNT_ID]), false);
+        $response->assertDontSee('Бенчмарки');
+        $response->assertDontSee('Top 1%');
 
         $response->assertViewHas('player', fn (array $player) => $player['account_id'] === self::ACCOUNT_ID
             && $player['nickname'] === 'Dendi');
@@ -68,57 +73,35 @@ class DotaHeroTest extends TestCase
             && $summary['assists'] === 10.0
             && $summary['kda'] === 4.64
             && $summary['gpm'] === 583
-            && $summary['xpm'] === 667
-            && $summary['gpm_games'] === 3
-            && $summary['xpm_games'] === 3);
+            && $summary['xpm'] === 667);
 
-        $response->assertViewHas('benchmarks', function (array $rows) {
-            $benchmarks = collect($rows)->keyBy('key');
+        $response->assertViewHas('personalStats', fn (array $stats) => $stats['hero_kda'] === 4.64
+            && $stats['average_kda'] === 3.63
+            && $stats['max_gpm'] === 700
+            && $stats['max_kills'] === 10
+            && $stats['best_streak'] === 1);
 
-            return count($rows) === 3
-                && $benchmarks['gpm']['available'] === true
-                && $benchmarks['gpm']['percentile'] > 0.54
-                && $benchmarks['gpm']['percentile'] < 0.55
-                && $benchmarks['gpm']['average_label'] === '550'
-                && $benchmarks['gpm']['elite_label'] === '850'
-                && $benchmarks['xpm']['available'] === true
-                && $benchmarks['kda']['available'] === true
-                && $benchmarks['kda']['value'] === 4.64;
-        });
+        $response->assertViewHas('allMatches', fn (array $matches) => count($matches) === 3);
+        $response->assertViewHas('matches', fn (LengthAwarePaginator $matches) => $matches->total() === 3
+            && $matches->perPage() === 20
+            && $matches->count() === 3);
 
-        $response->assertViewHas('matches', fn (array $matches) => count($matches) === 3
-            && $matches[0]['win'] === true
-            && $matches[1]['win'] === false
-            && $matches[0]['gpm'] === 650
-            && $matches[2]['net_worth'] === 28000
-            && $matches[2]['hero_damage'] === 21500);
-
-        $response->assertViewHas('benchmarksUnavailable', false);
-
-        $this->assertTrue(Cache::has('opendota:hero-benchmarks:v1:'.self::HERO_ID));
-        $this->assertFalse(Cache::has('opendota:player-header:v1:'.self::ACCOUNT_ID));
-        $this->assertFalse(Cache::has('opendota:player-hero:v2:'.self::ACCOUNT_ID.':'.self::HERO_ID));
-        Http::assertSentCount(1);
+        Http::assertSentCount(0);
     }
 
-    public function test_second_visit_to_hero_page_is_served_from_cache(): void
+    public function test_hero_page_does_not_call_external_apis(): void
     {
         $this->seedProfile();
-        $this->fakeOpenDota();
 
-        $this->get(route('player.hero', [
+        $url = route('player.hero', [
             'accountId' => self::ACCOUNT_ID,
             'heroId' => self::HERO_ID,
-        ]))->assertOk();
+        ]);
 
-        $sentAfterFirstVisit = count(Http::recorded());
+        $this->get($url)->assertOk();
+        $this->get($url)->assertOk();
 
-        $this->get(route('player.hero', [
-            'accountId' => self::ACCOUNT_ID,
-            'heroId' => self::HERO_ID,
-        ]))->assertOk();
-
-        $this->assertSame($sentAfterFirstVisit, count(Http::recorded()));
+        Http::assertSentCount(0);
     }
 
     public function test_unknown_player_on_hero_page_returns_404(): void
@@ -130,14 +113,12 @@ class DotaHeroTest extends TestCase
 
         $response->assertNotFound();
         $response->assertSee('Игрок не найден');
+        Http::assertSentCount(0);
     }
 
-    public function test_hero_page_degrades_when_benchmarks_are_unavailable(): void
+    public function test_hero_page_has_no_benchmark_block(): void
     {
         $this->seedProfile();
-        $this->fakeOpenDota([
-            'api.opendota.com/api/benchmarks*' => Http::response(['error' => 'boom'], 500),
-        ]);
 
         $response = $this->get(route('player.hero', [
             'accountId' => self::ACCOUNT_ID,
@@ -145,18 +126,14 @@ class DotaHeroTest extends TestCase
         ]));
 
         $response->assertOk();
-        $response->assertSee('Бенчмарки временно недоступны');
-        $response->assertViewHas('benchmarksUnavailable', true);
-        $response->assertViewHas('benchmarks', fn (array $rows) => collect($rows)->every(
-            fn (array $row) => $row['available'] === false
-        ));
+        $response->assertDontSee('Бенчмарки');
+        $response->assertDontSee('Топ 10%');
         $response->assertDontSee('style="left:');
+        $response->assertSee('Ваша статистика на герое');
     }
 
-    public function test_hero_page_uses_local_stats_when_all_api_calls_time_out(): void
+    public function test_hero_page_uses_local_stats_without_open_dota(): void
     {
-        Http::preventStrayRequests();
-        Http::fake(['*' => Http::response([], 504)]);
         $this->seedProfile();
 
         $response = $this->get(route('player.hero', [
@@ -165,60 +142,44 @@ class DotaHeroTest extends TestCase
         ]));
 
         $response->assertOk();
-        $response->assertSee('Anti-Mage');
         $response->assertSee('66.7%');
         $response->assertSee('4.64');
-        $response->assertSee('Бенчмарки временно недоступны');
-        $response->assertViewHas('benchmarksUnavailable', true);
         $response->assertViewHas('summary', fn (array $summary) => $summary['games'] === 3
             && $summary['wins'] === 2
             && $summary['gpm'] === 583
             && $summary['xpm'] === 667);
-        Http::assertSentCount(1);
+        Http::assertSentCount(0);
     }
 
-    /**
-     * @param  array<string, mixed>  $overrides
-     */
-    private function fakeOpenDota(array $overrides = []): void
+    public function test_hero_match_history_is_paginated(): void
     {
-        Http::fake($overrides + [
-            'api.opendota.com/api/benchmarks*' => Http::response([
-                'hero_id' => self::HERO_ID,
-                'result' => [
-                    'gold_per_min' => [
-                        ['percentile' => 0.1, 'value' => 400],
-                        ['percentile' => 0.5, 'value' => 550],
-                        ['percentile' => 0.9, 'value' => 850],
-                        ['percentile' => 0.99, 'value' => 1000],
-                    ],
-                    'xp_per_min' => [
-                        ['percentile' => 0.1, 'value' => 500],
-                        ['percentile' => 0.5, 'value' => 650],
-                        ['percentile' => 0.9, 'value' => 850],
-                        ['percentile' => 0.99, 'value' => 1000],
-                    ],
-                    'kills_per_min' => [
-                        ['percentile' => 0.1, 'value' => 0.15],
-                        ['percentile' => 0.5, 'value' => 0.30],
-                        ['percentile' => 0.9, 'value' => 0.45],
-                        ['percentile' => 0.99, 'value' => 0.65],
-                    ],
-                    'deaths_per_min' => [
-                        ['percentile' => 0.1, 'value' => 0.08],
-                        ['percentile' => 0.5, 'value' => 0.12],
-                        ['percentile' => 0.9, 'value' => 0.18],
-                        ['percentile' => 0.99, 'value' => 0.24],
-                    ],
-                    'assists_per_min' => [
-                        ['percentile' => 0.1, 'value' => 0.15],
-                        ['percentile' => 0.5, 'value' => 0.22],
-                        ['percentile' => 0.9, 'value' => 0.35],
-                        ['percentile' => 0.99, 'value' => 0.50],
-                    ],
-                ],
-            ]),
+        $this->seedProfileWithMatches(25);
+
+        $url = route('player.hero', [
+            'accountId' => self::ACCOUNT_ID,
+            'heroId' => self::HERO_ID,
         ]);
+
+        $first = $this->get($url);
+
+        $first->assertOk();
+        $first->assertViewHas('allMatches', fn (array $matches) => count($matches) === 25);
+        $first->assertViewHas('matches', fn (LengthAwarePaginator $matches) => $matches->total() === 25
+            && $matches->perPage() === 20
+            && $matches->currentPage() === 1
+            && $matches->count() === 20);
+        $first->assertSee(route('match', ['matchId' => 9200000024, 'player_id' => self::ACCOUNT_ID]), false);
+        $first->assertSee('?page=2', false);
+
+        $second = $this->get($url.'?page=2');
+
+        $second->assertOk();
+        $second->assertViewHas('matches', fn (LengthAwarePaginator $matches) => $matches->total() === 25
+            && $matches->currentPage() === 2
+            && $matches->count() === 5);
+        $second->assertSee(route('match', ['matchId' => 9200000004, 'player_id' => self::ACCOUNT_ID]), false);
+        $second->assertDontSee(route('match', ['matchId' => 9200000024, 'player_id' => self::ACCOUNT_ID]), false);
+        Http::assertSentCount(0);
     }
 
     private function seedProfile(): void
@@ -265,10 +226,10 @@ class DotaHeroTest extends TestCase
                 'kills' => 8,
                 'deaths' => 2,
                 'assists' => 10,
-                'gpm' => 0,
-                'xpm' => 0,
-                'net_worth' => 0,
-                'hero_damage' => 0,
+                'gpm' => 700,
+                'xpm' => 800,
+                'net_worth' => 28000,
+                'hero_damage' => 21500,
                 'duration' => 2700,
                 'duration_label' => '45:00',
                 'start_time' => now()->subDays(3)->timestamp,
@@ -278,55 +239,54 @@ class DotaHeroTest extends TestCase
                 'hero_id' => 2,
                 'hero_name' => 'Axe',
                 'win' => true,
-                'kills' => 99,
-                'deaths' => 0,
-                'assists' => 99,
-                'gpm' => 9999,
-                'xpm' => 9999,
+                'kills' => 3,
+                'deaths' => 5,
+                'assists' => 4,
+                'gpm' => 500,
+                'xpm' => 550,
                 'duration' => 1200,
                 'duration_label' => '20:00',
                 'start_time' => now()->timestamp,
             ],
         ];
 
-        $recent = [
-            $heroMeta + [
-                'match_id' => 9100000001,
-                'win' => true,
-                'kills' => 10,
-                'deaths' => 2,
-                'assists' => 15,
-                'gpm' => 650,
-                'xpm' => 700,
-                'duration' => 2400,
-                'duration_label' => '40:00',
-            ],
-            $heroMeta + [
-                'match_id' => 9100000002,
-                'win' => false,
-                'kills' => 3,
-                'deaths' => 7,
-                'assists' => 5,
-                'gpm' => 400,
-                'xpm' => 500,
-                'duration' => 2100,
-                'duration_label' => '35:00',
-            ],
-            $heroMeta + [
-                'match_id' => 9100000003,
-                'win' => true,
-                'kills' => 8,
-                'deaths' => 2,
-                'assists' => 10,
-                'gpm' => 700,
-                'xpm' => 800,
-                'net_worth' => 28000,
-                'hero_damage' => 21500,
-                'duration' => 2700,
-                'duration_label' => '45:00',
-            ],
-        ];
+        $recent = array_slice($history, 0, 3);
 
+        $this->storeProfile($history, $recent);
+    }
+
+    private function seedProfileWithMatches(int $count): void
+    {
+        $history = [];
+
+        for ($index = 0; $index < $count; $index++) {
+            $history[] = [
+                'match_id' => 9200000000 + $index,
+                'hero_id' => self::HERO_ID,
+                'hero_name' => 'Anti-Mage',
+                'hero_image' => '/images/heroes/antimage.png',
+                'hero_icon' => '/images/heroes/icons/antimage.png',
+                'win' => $index % 2 === 0,
+                'kills' => $index % 10,
+                'deaths' => 3,
+                'assists' => $index % 5,
+                'gpm' => 400 + $index,
+                'xpm' => 500,
+                'duration' => 1800 + $index,
+                'duration_label' => '30:00',
+                'start_time' => now()->subDays($count - $index)->timestamp,
+            ];
+        }
+
+        $this->storeProfile($history, array_slice($history, 0, 5));
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $history
+     * @param  array<int, array<string, mixed>>  $recent
+     */
+    private function storeProfile(array $history, array $recent): void
+    {
         PlayerProfile::create([
             'account_id' => self::ACCOUNT_ID,
             'nickname' => 'Dendi',

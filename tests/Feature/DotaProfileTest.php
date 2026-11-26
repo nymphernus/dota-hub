@@ -803,8 +803,8 @@ class DotaProfileTest extends TestCase
         $response = $this->get(route('player', ['accountId' => self::ACCOUNT_ID]));
 
         $response->assertOk();
-        $response->assertSee('3 184');
-        $response->assertViewHas('player', fn (array $player) => $player['mmr_estimate'] === 3184
+        $response->assertSee('3 189');
+        $response->assertViewHas('player', fn (array $player) => $player['mmr_estimate'] === 3189
             && $player['mmr_is_estimated'] === true
             && $player['mmr_games_considered'] === 4);
     }
@@ -837,27 +837,51 @@ class DotaProfileTest extends TestCase
         $this->assertSame(100.0, $modeRows['All Pick']['winrate']);
     }
 
-    public function test_mmr_uses_plus_25_per_win_and_minus_25_per_loss(): void
+    public function test_mmr_adds_performance_bonuses_and_penalties(): void
+    {
+        $service = $this->app->make(OpenDotaService::class);
+        $method = new \ReflectionMethod($service, 'estimateMmr');
+
+        $matches = [
+            ['start_time' => 1700000010, 'lobby_type' => 7, 'player_slot' => 0, 'radiant_win' => true, 'kills' => 10, 'deaths' => 2, 'assists' => 15, 'gold_per_min' => 100],
+            ['start_time' => 1700000009, 'lobby_type' => 7, 'player_slot' => 0, 'radiant_win' => true, 'kills' => 3, 'deaths' => 10, 'assists' => 4, 'gold_per_min' => 600],
+            ['start_time' => 1700000008, 'lobby_type' => 7, 'player_slot' => 0, 'radiant_win' => true, 'kills' => 10, 'deaths' => 10, 'assists' => 10, 'gold_per_min' => 400],
+            ['start_time' => 1700000007, 'lobby_type' => 7, 'player_slot' => 128, 'radiant_win' => true, 'kills' => 1, 'deaths' => 10, 'assists' => 0, 'gold_per_min' => 250],
+            ['start_time' => 1700000006, 'lobby_type' => 7, 'player_slot' => 128, 'radiant_win' => true, 'kills' => 10, 'deaths' => 2, 'assists' => 15, 'gold_per_min' => 600],
+            ['start_time' => 1700000005, 'lobby_type' => 7, 'player_slot' => 128, 'radiant_win' => true, 'kills' => 10, 'deaths' => 10, 'assists' => 10, 'gold_per_min' => 400],
+        ];
+
+        $result = $method->invoke($service, 52, $matches, null);
+
+        // 3234 + (30 + 30 + 25) - (30 + 25 + 25)
+        $this->assertSame(3239, $result['value']);
+        $this->assertSame(6, $result['games']);
+    }
+
+    public function test_mmr_uses_only_last_twenty_ranked_matches(): void
     {
         $service = $this->app->make(OpenDotaService::class);
         $method = new \ReflectionMethod($service, 'estimateMmr');
 
         $matches = [];
 
-        for ($index = 0; $index < 15; $index++) {
+        for ($index = 0; $index < 25; $index++) {
             $matches[] = [
                 'start_time' => 1700000000 - $index,
                 'lobby_type' => 7,
-                'game_mode' => 22,
+                'player_slot' => 0,
                 'radiant_win' => true,
-                'player_slot' => $index < 10 ? 0 : 128,
+                'kills' => 5,
+                'deaths' => 10,
+                'assists' => 5,
+                'gold_per_min' => 400,
             ];
         }
 
         $result = $method->invoke($service, 52, $matches, null);
 
-        $this->assertSame(3359, $result['value']); // 3234 + 10*25 - 5*25
-        $this->assertSame(15, $result['games']);
+        $this->assertSame(3734, $result['value']); // 3234 + 20*25
+        $this->assertSame(20, $result['games']);
     }
 
     public function test_mmr_table_uses_official_star_values(): void

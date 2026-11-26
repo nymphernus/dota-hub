@@ -3,39 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Models\PlayerProfile;
-use App\Services\OpenDota\OpenDotaService;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Cache;
-use Throwable;
 
 class HeroPlayerController extends Controller
 {
-    /**
-     * @return array<string, array{label: string, hint: string, format: string}>
-     */
-    private function benchmarkMetrics(): array
-    {
-        return [
-            'gpm' => [
-                'label' => 'GPM',
-                'hint' => __('ui.benchmark_gpm_hint'),
-                'format' => 'integer',
-            ],
-            'xpm' => [
-                'label' => 'XPM',
-                'hint' => __('ui.benchmark_xpm_hint'),
-                'format' => 'integer',
-            ],
-            'kda' => [
-                'label' => 'KDA',
-                'hint' => __('ui.benchmark_kda_hint'),
-                'format' => 'decimal',
-            ],
-        ];
-    }
+    private const MATCHES_PER_PAGE = 20;
 
-    public function show(int $accountId, int $heroId, OpenDotaService $openDota): View|Response
+    public function show(int $accountId, int $heroId, Request $request): View|Response
     {
         $record = PlayerProfile::find($accountId);
 
@@ -54,54 +32,55 @@ class HeroPlayerController extends Controller
             'avatar' => $record->avatar ?: ($profileData['avatar'] ?? null),
         ];
 
-        $heroMatches = $this->heroMatches($profileData, $heroId);
+        $matches = $this->profileMatches($profileData);
+        $heroMatches = array_values(array_filter(
+            $matches,
+            static fn (array $match): bool => (int) ($match['hero_id'] ?? 0) === $heroId,
+        ));
         $hero = $this->heroFromMatches($heroMatches, $heroId);
-        $summary = $this->summarizeHeroMatches($heroMatches);
+        $summary = $this->summarizeMatches($heroMatches);
 
-        $benchmarksUnavailable = false;
-
-        try {
-            $distributions = $openDota->getHeroBenchmarks($heroId);
-        } catch (Throwable $exception) {
-            report($exception);
-            $distributions = [];
-            $benchmarksUnavailable = true;
-        }
-
-        if ($distributions === []) {
-            $benchmarksUnavailable = true;
-        }
+        $page = max(1, (int) $request->query('page', 1));
+        $paginator = new LengthAwarePaginator(
+            array_slice($heroMatches, ($page - 1) * self::MATCHES_PER_PAGE, self::MATCHES_PER_PAGE),
+            count($heroMatches),
+            self::MATCHES_PER_PAGE,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()],
+        );
 
         return view('dota.hero', [
             'player' => $player,
             'pageTitle' => $hero['name'].' - '.$player['nickname'].' - DOTAHUB',
             'hero' => $hero,
             'summary' => $summary,
-            'matches' => array_slice($heroMatches, 0, 10),
-            'benchmarks' => $this->benchmarkComparisons($summary, $distributions),
-            'benchmarksUnavailable' => $benchmarksUnavailable,
+            'matches' => $paginator,
+            'allMatches' => $heroMatches,
+            'personalStats' => $this->personalStats($matches, $heroMatches, $summary, $hero['name']),
             'cachedAt' => $record->updated_at?->toIso8601String()
                 ?? ($profileData['cached_at'] ?? now()->toIso8601String()),
         ]);
     }
 
     /**
-     * Merge the persisted hero filter and the enriched recent-match feed.
+     * Normalize and merge the persisted history with the enriched recent feed.
      *
      * @param  array<string, mixed>  $profileData
      * @return array<int, array<string, mixed>>
      */
-    private function heroMatches(array $profileData, int $heroId): array
+    private function profileMatches(array $profileData): array
     {
+        $history = $profileData['match_history'] ?? ($profileData['matches'] ?? []);
+        $recent = $profileData['matches'] ?? [];
         $rows = [];
 
-        foreach ([$profileData['match_history'] ?? [], $profileData['matches'] ?? []] as $source) {
+        foreach (is_array($history) ? [$history, $recent] : [] as $source) {
             if (! is_array($source)) {
                 continue;
             }
 
             foreach ($source as $match) {
-                if (! is_array($match) || (int) ($match['hero_id'] ?? 0) !== $heroId) {
+                if (! is_array($match)) {
                     continue;
                 }
 
@@ -109,7 +88,7 @@ class HeroPlayerController extends Controller
                     ? (int) $match['match_id']
                     : null;
                 $key = $matchId !== null ? 'match:'.$matchId : 'row:'.count($rows);
-                $row = $this->normalizeHeroMatch($match);
+                $row = $this->normalizeMatch($match);
 
                 if (! isset($rows[$key])) {
                     $rows[$key] = $row;
@@ -141,7 +120,7 @@ class HeroPlayerController extends Controller
      * @param  array<string, mixed>  $match
      * @return array<string, mixed>
      */
-    private function normalizeHeroMatch(array $match): array
+    private function normalizeMatch(array $match): array
     {
         $kills = (int) ($match['kills'] ?? 0);
         $deaths = (int) ($match['deaths'] ?? 0);
@@ -228,7 +207,7 @@ class HeroPlayerController extends Controller
      * @param  array<int, array<string, mixed>>  $matches
      * @return array<string, mixed>
      */
-    private function summarizeHeroMatches(array $matches): array
+    private function summarizeMatches(array $matches): array
     {
         $games = count($matches);
         $wins = 0;
@@ -270,147 +249,54 @@ class HeroPlayerController extends Controller
     }
 
     /**
-     * @param  array<string, mixed>  $summary
-     * @param  array<string, array<int, array{percentile: float, value: float}>>  $distributions
-     * @return array<int, array<string, mixed>>
-     */
-    private function benchmarkComparisons(array $summary, array $distributions): array
-    {
-        $rows = [];
-
-        foreach ($this->benchmarkMetrics() as $key => $metric) {
-            $distribution = $distributions[$key] ?? [];
-            $value = isset($summary[$key]) && is_numeric($summary[$key]) ? (float) $summary[$key] : null;
-
-            if ($value === null || $distribution === []) {
-                $rows[] = $metric + [
-                    'key' => $key,
-                    'available' => false,
-                    'value' => $value,
-                    'value_label' => $value !== null ? $this->formatBenchmarkValue($value, $metric['format']) : '—',
-                ];
-
-                continue;
-            }
-
-            $percentile = $this->percentileFor($distribution, $value);
-            $topPercent = max(0.1, (1 - $percentile) * 100);
-
-            $rows[] = $metric + [
-                'key' => $key,
-                'available' => true,
-                'value' => $value,
-                'value_label' => $this->formatBenchmarkValue($value, $metric['format']),
-                'percentile' => $percentile,
-                'percentile_label' => number_format($percentile * 100, 1, '.', ''),
-                'rank_label' => $percentile >= 0.5
-                    ? __('ui.benchmark_top', ['pct' => $topPercent < 1 ? '<1' : number_format($topPercent, $topPercent < 10 ? 1 : 0, '.', '')])
-                    : ($percentile >= 0.25 ? __('ui.benchmark_average') : __('ui.benchmark_below_average')),
-                'tone' => match (true) {
-                    $percentile >= 0.9 => 'emerald',
-                    $percentile >= 0.7 => 'sky',
-                    $percentile >= 0.5 => 'amber',
-                    $percentile >= 0.25 => 'orange',
-                    default => 'rose',
-                },
-                'average_label' => $this->formatBenchmarkValue(
-                    $this->benchmarkValueAt($distribution, 0.5) ?? 0,
-                    $metric['format']
-                ),
-                'elite_label' => $this->formatBenchmarkValue(
-                    $this->benchmarkValueAt($distribution, 0.9) ?? 0,
-                    $metric['format']
-                ),
-            ];
-        }
-
-        return $rows;
-    }
-
-    /**
-     * Interpolate the player's percentile within a benchmark distribution.
+     * Local comparison and records built from the persisted match history.
      *
-     * @param  array<int, array{percentile: float, value: float}>  $distribution
+     * @param  array<int, array<string, mixed>>  $matches
+     * @param  array<int, array<string, mixed>>  $heroMatches
+     * @param  array<string, mixed>  $summary
+     * @return array<string, mixed>
      */
-    private function percentileFor(array $distribution, float $value): float
+    private function personalStats(array $matches, array $heroMatches, array $summary, string $heroName): array
     {
-        $first = $distribution[0];
-        $last = $distribution[array_key_last($distribution)];
+        $averageSummary = $this->summarizeMatches($matches);
+        $heroKda = (float) ($summary['kda'] ?? 0);
+        $averageKda = (float) ($averageSummary['kda'] ?? 0);
 
-        if ($value <= $first['value']) {
-            if ($first['value'] <= 0) {
-                return $first['percentile'];
+        $comparisonKey = match (true) {
+            $heroKda > $averageKda => 'above',
+            $heroKda < $averageKda => 'below',
+            default => 'equal',
+        };
+
+        $maxGpm = 0;
+        $maxKills = 0;
+        $bestStreak = 0;
+        $currentStreak = 0;
+
+        foreach ($heroMatches as $match) {
+            $maxGpm = max($maxGpm, (int) $match['gpm']);
+            $maxKills = max($maxKills, (int) $match['kills']);
+
+            if ($match['win']) {
+                $currentStreak++;
+                $bestStreak = max($bestStreak, $currentStreak);
+            } else {
+                $currentStreak = 0;
             }
-
-            return max(0.0, min(1.0, round($first['percentile'] * ($value / $first['value']), 4)));
         }
 
-        if ($value >= $last['value']) {
-            return 1.0;
-        }
-
-        $previous = $first;
-
-        foreach ($distribution as $point) {
-            if ($value <= $point['value']) {
-                $span = $point['value'] - $previous['value'];
-
-                if ($span <= 0) {
-                    return $point['percentile'];
-                }
-
-                $fraction = ($value - $previous['value']) / $span;
-                $percentile = $previous['percentile'] + $fraction * ($point['percentile'] - $previous['percentile']);
-
-                return round(max(0.0, min(1.0, $percentile)), 4);
-            }
-
-            $previous = $point;
-        }
-
-        return 1.0;
-    }
-
-    /**
-     * @param  array<int, array{percentile: float, value: float}>  $distribution
-     */
-    private function benchmarkValueAt(array $distribution, float $percentile): ?float
-    {
-        if ($distribution === []) {
-            return null;
-        }
-
-        $first = $distribution[0];
-
-        if ($percentile <= $first['percentile']) {
-            return $first['value'];
-        }
-
-        $previous = $first;
-
-        foreach ($distribution as $point) {
-            if ($percentile <= $point['percentile']) {
-                $span = $point['percentile'] - $previous['percentile'];
-
-                if ($span <= 0) {
-                    return $point['value'];
-                }
-
-                $fraction = ($percentile - $previous['percentile']) / $span;
-
-                return $previous['value'] + $fraction * ($point['value'] - $previous['value']);
-            }
-
-            $previous = $point;
-        }
-
-        return $previous['value'];
-    }
-
-    private function formatBenchmarkValue(float $value, string $format): string
-    {
-        return $format === 'integer'
-            ? number_format($value, 0, '.', ' ')
-            : number_format($value, 2, '.', '');
+        return [
+            'hero_kda' => $heroKda,
+            'average_kda' => $averageKda,
+            'kda_comparison' => __('ui.hero_kda_vs_average_'.$comparisonKey, [
+                'hero' => $heroName,
+                'hero_kda' => number_format($heroKda, 1, '.', ''),
+                'average_kda' => number_format($averageKda, 1, '.', ''),
+            ]),
+            'max_gpm' => $maxGpm,
+            'max_kills' => $maxKills,
+            'best_streak' => $bestStreak,
+            'best_streak_label' => __('ui.wins_streak', ['count' => $bestStreak]),
+        ];
     }
 }

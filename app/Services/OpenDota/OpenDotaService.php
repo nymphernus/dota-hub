@@ -64,6 +64,7 @@ class OpenDotaService
     private static function recordLabel(string $name): string
     {
         $labels = self::recordLabels();
+
         return $labels[$name] ?? ucwords(str_replace('_', ' ', strtolower($name)));
     }
 
@@ -85,11 +86,21 @@ class OpenDotaService
         'NET_WORTH' => 'net_worth',
     ];
 
-    private const MMR_SAMPLE_SIZE = 100;
+    private const MMR_SAMPLE_SIZE = 20;
 
     private const MMR_WIN = 25;
 
     private const MMR_LOSS = -25;
+
+    private const MMR_PERFORMANCE_BONUS = 5;
+
+    private const MMR_HIGH_KDA = 3.0;
+
+    private const MMR_LOW_KDA = 1.5;
+
+    private const MMR_HIGH_GPM = 500;
+
+    private const MMR_LOW_GPM = 300;
 
     /**
      * Official rank medal base values: five stars per medal, then Immortal.
@@ -323,7 +334,7 @@ class OpenDotaService
      * Estimate a player's MMR without spending extra requests on a normal
      * profile render. OpenDota's own estimate wins when it is available;
      * otherwise the current medal is the baseline and the last 20 ranked
-     * games move it by +25 for a win and -20 for a loss.
+     * games apply ±25 plus a performance adjustment of up to ±5.
      */
     public function calculateMmrEstimate(int $accountId): ?int
     {
@@ -369,14 +380,17 @@ class OpenDotaService
         $ranked = array_values(array_filter($matches, static function ($m): bool {
             return is_array($m)
                 && ! empty($m['start_time'])
-                && (int) ($m['lobby_type'] ?? -1) === 7;
+                && (
+                    (int) ($m['lobby_type'] ?? -1) === 7
+                    || (int) ($m['game_mode'] ?? 0) === 22
+                );
         }));
 
         usort($ranked, static fn (array $a, array $b): int => (int) ($b['start_time'] ?? 0) <=> (int) ($a['start_time'] ?? 0));
         $ranked = array_slice($ranked, 0, self::MMR_SAMPLE_SIZE);
 
-        $wins = 0;
-        $losses = 0;
+        $change = 0;
+
         foreach ($ranked as $match) {
             $isRadiant = array_key_exists('is_radiant', $match)
                 ? (bool) $match['is_radiant']
@@ -385,21 +399,35 @@ class OpenDotaService
                 ? (bool) $match['win']
                 : (bool) ($match['radiant_win'] ?? false) === $isRadiant;
 
+            $deaths = max((int) ($match['deaths'] ?? 0), 1);
+            $kda = ((int) ($match['kills'] ?? 0) + (int) ($match['assists'] ?? 0)) / $deaths;
+            $gpm = (int) ($match['gold_per_min'] ?? $match['gpm'] ?? 0);
+
             if ($won) {
-                $wins++;
-            } else {
-                $losses++;
+                $change += self::MMR_WIN;
+
+                if ($kda > self::MMR_HIGH_KDA || $gpm > self::MMR_HIGH_GPM) {
+                    $change += self::MMR_PERFORMANCE_BONUS;
+                }
+
+                continue;
+            }
+
+            $change += self::MMR_LOSS;
+
+            if ($kda < self::MMR_LOW_KDA && $gpm < self::MMR_LOW_GPM) {
+                $change -= self::MMR_PERFORMANCE_BONUS;
             }
         }
 
         $base = $this->baseMmr($rankTier);
-        $value = max(0, $base + ($wins * self::MMR_WIN) + ($losses * self::MMR_LOSS));
+        $value = max(0, $base + $change);
 
         return [
             'value' => $value,
             'is_estimated' => true,
             'source' => 'rank+recent',
-            'games' => $wins + $losses,
+            'games' => count($ranked),
         ];
     }
 
@@ -1541,6 +1569,7 @@ class OpenDotaService
             if (is_array($stratzMatches) && $stratzMatches !== []) {
                 $this->rememberStratzPositions($stratzMatches);
                 Log::info('Match history loaded from STRATZ', ['account_id' => $accountId, 'total' => count($stratzMatches)]);
+
                 return $stratzMatches;
             }
         } catch (\Throwable $e) {
@@ -2570,6 +2599,7 @@ class OpenDotaService
 
             if ($itemId <= 0) {
                 $slots[] = null;
+
                 continue;
             }
 

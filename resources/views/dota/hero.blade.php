@@ -5,33 +5,6 @@
 
 @php
     $backUrl = route('player', ['accountId' => $player['account_id']]);
-    $toneClasses = [
-        'emerald' => [
-            'badge' => 'border-green-500/25 bg-green-500/10 text-green-500',
-            'text' => 'text-green-500',
-            'marker' => 'bg-emerald-300 ',
-        ],
-        'sky' => [
-            'badge' => 'border-line bg-[#2d313e] text-mist-300',
-            'text' => 'text-mist-400',
-            'marker' => 'bg-mist-400 ',
-        ],
-        'amber' => [
-            'badge' => 'border-accent-500/25 bg-accent-500/10 text-accent-300',
-            'text' => 'text-accent-300',
-            'marker' => 'bg-accent-300 ',
-        ],
-        'orange' => [
-            'badge' => 'border-accent-500/25 bg-accent-500/10 text-accent-300',
-            'text' => 'text-accent-300',
-            'marker' => 'bg-accent-300 ',
-        ],
-        'rose' => [
-            'badge' => 'border-red-500/25 bg-red-500/10 text-red-500',
-            'text' => 'text-red-500',
-            'marker' => 'bg-rose-300 ',
-        ],
-    ];
 @endphp
 
 @section('content')
@@ -109,90 +82,35 @@
         </div>
 
         <section class="mt-4 card overflow-hidden">
-            <div class="flex flex-wrap items-start justify-between gap-3 border-b border-line px-4 py-3">
-                <div>
-                    <h2 class="section-heading">{{ __('ui.benchmarks') }}</h2>
-                    <p class="mt-1 text-[11px] leading-relaxed text-mist-500">
-                        {{ __('ui.benchmarks_hint') }}
-                    </p>
-                </div>
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3">
+                <h2 class="section-heading">{{ __('ui.hero_personal_stats') }}</h2>
+                <span class="badge border-dota-500/25 bg-dota-500/10 text-dota-300">{{ __('ui.local_data') }}</span>
             </div>
 
-            @if (($benchmarksUnavailable ?? false) || collect($benchmarks)->every(fn (array $benchmark) => ! $benchmark['available']))
-                <div class="p-8 text-center">
-                    @if ($benchmarksUnavailable ?? false)
-                        <p class="text-sm font-semibold text-mist-300">{{ __('ui.benchmarks_temporarily_unavailable') }}</p>
-                    @endif
-                    <p class="mt-2 text-sm text-mist-400">{{ __('ui.benchmarks_unavailable') }}</p>
+            <div class="p-4 sm:p-5">
+                <p class="text-sm leading-relaxed text-mist-300">{{ $personalStats['kda_comparison'] }}</p>
+
+                <div class="mt-4 grid gap-3 sm:grid-cols-3">
+                    <div class="rounded-none border border-line bg-ink-950/50 p-4">
+                        <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-mist-400">{{ __('ui.personal_record_max_gpm') }}</p>
+                        <p class="mt-2 text-2xl font-semibold tracking-tight text-mist-200">
+                            {{ number_format($personalStats['max_gpm'], 0, '.', ' ') }}
+                        </p>
+                    </div>
+                    <div class="rounded-none border border-line bg-ink-950/50 p-4">
+                        <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-mist-400">{{ __('ui.personal_record_max_kills') }}</p>
+                        <p class="mt-2 text-2xl font-semibold tracking-tight text-mist-200">
+                            {{ $personalStats['max_kills'] }}
+                        </p>
+                    </div>
+                    <div class="rounded-none border border-line bg-ink-950/50 p-4">
+                        <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-mist-400">{{ __('ui.personal_record_best_streak') }}</p>
+                        <p class="mt-2 text-2xl font-semibold tracking-tight text-green-500">
+                            {{ $personalStats['best_streak_label'] }}
+                        </p>
+                    </div>
                 </div>
-            @else
-                <div class="grid gap-4 p-4 sm:p-5 lg:grid-cols-3">
-                    @foreach ($benchmarks as $benchmark)
-                        @php
-                            $tone = $toneClasses[$benchmark['tone'] ?? 'rose'] ?? $toneClasses['rose'];
-                            $markerLeft = min(99, max(1, (float) ($benchmark['percentile'] ?? 0) * 100));
-                        @endphp
-
-                        <div class="rounded-none border border-line bg-ink-950/50 p-4 sm:p-5">
-                            <div class="flex items-start justify-between gap-3">
-                                <div>
-                                    <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-mist-400">{{ $benchmark['label'] }}</p>
-                                    <p class="mt-1 text-[10px] text-mist-500">
-                                        {{ $benchmark['hint'] }}
-                                        @if (in_array($benchmark['key'], ['gpm', 'xpm'], true) && ($summary[$benchmark['key'].'_games'] ?? 0) > 0)
-                                            <span class="text-mist-500/70">· {{ $summary[$benchmark['key'].'_games'] }} {{ __('ui.matches_word') }}</span>
-                                        @endif
-                                    </p>
-                                </div>
-                                @if ($benchmark['available'])
-                                    <span class="badge {{ $tone['badge'] }}">{{ $benchmark['rank_label'] }}</span>
-                                @else
-                                    <span class="badge border-line bg-ink-900/50 text-mist-400">{{ __('ui.no_data') }}</span>
-                                @endif
-                            </div>
-
-                            <div class="mt-4 flex items-end justify-between gap-3">
-                                <p class="text-3xl font-semibold tracking-tight {{ $benchmark['available'] ? $tone['text'] : 'text-mist-500' }}">
-                                    {{ $benchmark['value_label'] }}
-                                </p>
-                                @if ($benchmark['available'])
-                                    <p class="pb-1 text-right text-[10px] leading-tight text-mist-500">
-                                        {!! __('ui.stronger_than', ['pct' => $benchmark['percentile_label']]) !!}
-                                    </p>
-                                @endif
-                            </div>
-
-                            @if ($benchmark['available'])
-                                <div class="mt-5">
-                                    <div class="relative h-2 rounded-none bg-line">
-                                        <span
-                                            class="absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-none border-2 border-ink-950 {{ $tone['marker'] }}"
-                                            style="left: {{ number_format($markerLeft, 1, '.', '') }}%"
-                                            aria-hidden="true"
-                                        ></span>
-                                    </div>
-                                    <div class="mt-2 flex items-center justify-between text-[9px] uppercase tracking-wider text-mist-500">
-                                        <span>{{ __('ui.below') }}</span>
-                                        <span>{{ __('ui.average') }}</span>
-                                        <span>{{ __('ui.top') }}</span>
-                                    </div>
-                                </div>
-
-                                <div class="mt-4 grid grid-cols-2 gap-2 border-t border-line pt-3 text-[10px]">
-                                    <div>
-                                        <p class="text-mist-500">{{ __('ui.average') }}</p>
-                                        <p class="mt-0.5 font-mono font-semibold text-mist-300">{{ $benchmark['average_label'] }}</p>
-                                    </div>
-                                    <div class="text-right">
-                                        <p class="text-mist-500">{{ __('ui.top_10pct') }}</p>
-                                        <p class="mt-0.5 font-mono font-semibold text-mist-300">{{ $benchmark['elite_label'] }}</p>
-                                    </div>
-                                </div>
-                            @endif
-                        </div>
-                    @endforeach
-                </div>
-            @endif
+            </div>
         </section>
 
         <section class="mt-4 card overflow-hidden">
@@ -204,7 +122,7 @@
                 </div>
             </div>
 
-            @if ($matches === [])
+            @if ($matches->isEmpty())
                 <div class="p-10 text-center">
                     <p class="text-sm text-mist-400">{{ __('ui.no_public_matches_hero') }}</p>
                     <a href="{{ $backUrl }}" class="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-accent-300 transition hover:text-accent-300">
@@ -288,6 +206,8 @@
                         </tbody>
                     </table>
                 </div>
+
+                {{ $matches->onEachSide(1)->links('vendor.pagination.dotahub') }}
             @endif
         </section>
     </div>
