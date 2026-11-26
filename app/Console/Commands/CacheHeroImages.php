@@ -22,7 +22,9 @@ class CacheHeroImages extends Command
 
         $downloaded = 0;
         $minimapDir = public_path('images/heroes/minimap');
+        $iconDir = public_path('images/heroes/icons');
         if (! is_dir($minimapDir)) mkdir($minimapDir, 0777, true);
+        if (! is_dir($iconDir)) mkdir($iconDir, 0777, true);
         foreach ($heroes as $hero) {
             $short = '';
             $cdn = (string) ($hero['image_cdn'] ?? $hero['image'] ?? '');
@@ -45,6 +47,12 @@ class CacheHeroImages extends Command
                     $res = Http::timeout(20)->get($mmUrl);
                     if ($res->ok()) { file_put_contents($mmPath, $res->body()); $downloaded++; }
                 } catch (\Throwable $e) { $this->warn("skip minimap {$short}: {$e->getMessage()}"); }
+            }
+            // Tooltip icons use the same artwork as the cached minimap images.
+            $iconPath = $iconDir.DIRECTORY_SEPARATOR.$short.'.png';
+            if (is_file($mmPath) && ($this->option('force') || ! is_file($iconPath))) {
+                copy($mmPath, $iconPath);
+                $downloaded++;
             }
         }
 

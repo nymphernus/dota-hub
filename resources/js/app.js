@@ -162,6 +162,19 @@ Alpine.data('favoriteStar', (config) => ({
  * Net worth chart on a match page. Chart data is injected by Blade; matches
  * without parsed networth_t keep the section hidden and spend no chart work.
  */
+const NET_WORTH_COLORS = [
+    '#ef4444',
+    '#3b82f6',
+    '#22c55e',
+    '#eab308',
+    '#a855f7',
+    '#f97316',
+    '#14b8a6',
+    '#ec4899',
+    '#a16207',
+    '#94a3b8',
+];
+
 Alpine.data('netWorthChart', (config) => ({
     chart: null,
 
@@ -176,14 +189,31 @@ Alpine.data('netWorthChart', (config) => ({
             return;
         }
 
-        const datasets = [
+        const rawDatasets = [
             ...(config.radiant?.datasets ?? []),
             ...(config.dire?.datasets ?? []),
         ];
 
-        if (datasets.length === 0) {
+        if (rawDatasets.length === 0) {
             return;
         }
+
+        const datasets = rawDatasets.map((dataset, index) => {
+            const color = NET_WORTH_COLORS[index % NET_WORTH_COLORS.length];
+            const icon = new Image();
+
+            if (dataset.icon) {
+                icon.src = dataset.icon;
+                icon.addEventListener('load', () => this.chart?.draw());
+            }
+
+            return {
+                ...dataset,
+                borderColor: color,
+                backgroundColor: color,
+                pointStyle: icon.src ? icon : 'circle',
+            };
+        });
 
         Chart.defaults.color = '#8b94a5';
         Chart.defaults.font.family = 'Inter, sans-serif';
@@ -203,13 +233,7 @@ Alpine.data('netWorthChart', (config) => ({
                 },
                 plugins: {
                     legend: {
-                        position: 'bottom',
-                        labels: {
-                            boxWidth: 10,
-                            boxHeight: 10,
-                            color: '#d1d5db',
-                            font: { size: 10 },
-                        },
+                        display: false,
                     },
                     tooltip: {
                         backgroundColor: '#1c1e26',
@@ -217,8 +241,14 @@ Alpine.data('netWorthChart', (config) => ({
                         borderWidth: 1,
                         titleColor: '#f3f4f6',
                         bodyColor: '#d1d5db',
+                        usePointStyle: true,
+                        boxWidth: 16,
+                        boxHeight: 16,
+                        itemSort: (a, b) => (Number(b.parsed.y) || 0) - (Number(a.parsed.y) || 0),
                         callbacks: {
-                            title: (items) => items.length ? `Min ${items[0].label}` : '',
+                            title: (items) => items.length
+                                ? `${config.minute_label ?? 'Minute'} ${items[0].label}`
+                                : '',
                             label: (item) => `${item.dataset.label}: ${Number(item.parsed.y).toLocaleString()}`,
                         },
                     },

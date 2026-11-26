@@ -50,7 +50,7 @@ class MatchTest extends TestCase
         $response->assertSee('Ranked');
         $response->assertSee(__('ui.mode_22'));
         $response->assertSee('odd:bg-[#1c1e26] even:bg-[#111318]', false);
-        $response->assertSee('bg-[#2d313e] border-l-4 border-yellow-500', false);
+        $response->assertSee('bg-ink-700/80 border-l-4 border-yellow-500', false);
         $response->assertDontSee('P1');
         $response->assertDontSee('Party #', false);
         $response->assertSee(__('ui.role_1'));
@@ -64,13 +64,18 @@ class MatchTest extends TestCase
         $response->assertSee('LH / DN');
         $response->assertSee('O: 5');
         $response->assertSee('S: 3');
-        $response->assertSee(__('ui.lane_efficiency'));
-        $response->assertSee('67.5%');
+        $response->assertDontSee(__('ui.lane_efficiency'));
+        $response->assertSee('minute_label', false);
+        $response->assertSee('/images/items/ultimate_scepter.png', false);
+        $response->assertSee('/images/items/aghanims_shard.png', false);
+        $response->assertSee('/images/items/serrated_shiv.png', false);
+        $response->assertSee('>Buff<', false);
+        $response->assertSee(__('ui.players_in_match'));
         $response->assertDontSee('id="radiantNetWorthChart"', false);
         $response->assertDontSee('id="direNetWorthChart"', false);
         $response->assertDontSee('bg-blue-600', false);
         $response->assertDontSee('>P1<', false);
-        $response->assertSee('Игрок / герой');
+        $response->assertSee('K / D / A');
         $response->assertDontSee('>Роль</th>', false);
         $response->assertSee('text-lg font-bold text-mist-200', false);
         $response->assertSee('text-gray-400 text-sm', false);
@@ -88,7 +93,7 @@ class MatchTest extends TestCase
         $response->assertDontSee('Данные о нетворсе появятся после парсинга матча');
         $response->assertDontSee('Вернуться к профилю');
         $response->assertDontSee('На главную');
-        $response->assertSee('>IMP</th>', false);
+        $response->assertSee('>IMP<', false);
         $response->assertDontSee('aria-label="Хлебные крошки"', false);
         $response->assertDontSee('Профиль:', false);
         $response->assertViewHas('profilePlayer', fn ($profilePlayer): bool => is_array($profilePlayer)
@@ -102,6 +107,7 @@ class MatchTest extends TestCase
 
         $content = (string) $response->getContent();
         $this->assertSame(1, substr_count($content, '<table'));
+        $this->assertSame(24, substr_count($content, 'class="grid h-8 w-10 shrink-0 place-items-center border border-ink-700 bg-ink-900/60"'));
 
         $nicknamePosition = strpos($content, 'Dendi');
         $heroPosition = strpos($content, '<span>Anti-Mage</span>');
@@ -112,6 +118,7 @@ class MatchTest extends TestCase
         $response->assertViewHas('match', function (array $match) {
             $radiantCarry = $match['players']['radiant'][0];
             $radiantSupport = $match['players']['radiant'][1];
+            $direPlayer = $match['players']['dire'][0];
 
             return $match['match_id'] === self::MATCH_ID
                 && $match['radiant_win'] === true
@@ -132,13 +139,18 @@ class MatchTest extends TestCase
                 && $radiantCarry['hero_healing'] === 1250
                 && $radiantCarry['last_hits'] === 180
                 && $radiantCarry['denies'] === 12
-                && $radiantCarry['neutral_item']['id'] === 4
+                && $radiantCarry['neutral_item']['id'] === 1605
+                && $radiantCarry['neutral_item']['level'] === 3
+                && count($radiantCarry['inventory']) === 6
+                && $radiantCarry['inventory'][0]['id'] === 108
+                && $radiantCarry['aghanims_scepter_buff'] === false
                 && $radiantCarry['aghanims_shard']['id'] === 673
                 && $radiantCarry['aghanims_scepter']['id'] === 108
                 && $radiantCarry['obs_placed'] === 5
                 && $radiantCarry['sen_placed'] === 3
                 && $radiantCarry['lane_efficiency'] === 67.5
-                && $radiantSupport['role']['label'] === 'Mid';
+                && $radiantSupport['role']['label'] === 'Mid'
+                && $direPlayer['aghanims_scepter_buff'] === true;
         });
     }
 
@@ -258,14 +270,12 @@ class MatchTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('id="netWorthChart"', false);
-        $response->assertSee(__('ui.lane_efficiency'));
-        $response->assertSee(__('ui.radiant_short').' 60.0%');
-        $response->assertSee(__('ui.dire_short').' 70.0%');
+        $response->assertDontSee(__('ui.lane_efficiency'));
         $response->assertViewHas('match', function (array $match) use ($history): bool {
             return $match['players']['radiant'][0]['net_worth_history'] === $history
                 && $match['net_worth_chart']['has_data'] === true
-                && $match['lane_efficiency_by_team'][1]['radiant'] === 60.0
-                && $match['lane_efficiency_by_team'][3]['dire'] === 70.0;
+                && $match['net_worth_chart']['minute_label'] === __('ui.minute')
+                && $match['players']['radiant'][0]['hero_icon'] === '/images/heroes/icons/antimage.png';
         });
     }
 
@@ -280,7 +290,7 @@ class MatchTest extends TestCase
 
         // One match request + hero metadata + item metadata.
         Http::assertSentCount(3);
-        $this->assertTrue(Cache::has('opendota:match:v8:'.self::MATCH_ID));
+        $this->assertTrue(Cache::has('opendota:match:v10:'.self::MATCH_ID));
     }
 
     public function test_unknown_match_redirects_back_with_an_error(): void
@@ -375,7 +385,7 @@ class MatchTest extends TestCase
                         'hero_healing' => 1250,
                         'last_hits' => 180,
                         'denies' => 12,
-                        'item_neutral' => 4,
+                        'item_neutral' => 1605,
                         'aghanims_shard' => true,
                         'item_0' => 108,
                         'obs_placed' => 5,
@@ -428,6 +438,7 @@ class MatchTest extends TestCase
                         'hero_damage' => 16000,
                         'tower_damage' => 500,
                         'hero_healing' => 300,
+                        'ultimate_scepter' => 1,
                         'networth_t' => [600, 750, 1100, 1500],
                     ],
                     [
@@ -449,8 +460,20 @@ class MatchTest extends TestCase
                 ],
             ]),
             'api.opendota.com/api/heroStats*' => Http::response([
-                ['id' => 1, 'localized_name' => 'Anti-Mage', 'img' => '/apps/dota2/images/heroes/antimage_full.png'],
-                ['id' => 2, 'localized_name' => 'Axe', 'img' => '/apps/dota2/images/heroes/axe_full.png'],
+                [
+                    'id' => 1,
+                    'name' => 'npc_dota_hero_antimage',
+                    'localized_name' => 'Anti-Mage',
+                    'img' => '/apps/dota2/images/heroes/antimage_full.png',
+                    'icon' => '/apps/dota2/images/dota_react/heroes/icons/antimage.png',
+                ],
+                [
+                    'id' => 2,
+                    'name' => 'npc_dota_hero_axe',
+                    'localized_name' => 'Axe',
+                    'img' => '/apps/dota2/images/heroes/axe_full.png',
+                    'icon' => '/apps/dota2/images/dota_react/heroes/icons/axe.png',
+                ],
             ]),
             'api.opendota.com/api/constants/items*' => Http::response([
                 'blink' => [
@@ -468,11 +491,11 @@ class MatchTest extends TestCase
                     'cost' => 90,
                     'img' => '/apps/dota2/images/dota_react/items/tango.png',
                 ],
-                'trusted_root' => [
-                    'id' => 4,
-                    'dname' => 'Trusted Root',
+                'serrated_shiv' => [
+                    'id' => 1605,
+                    'dname' => 'Serrated Shiv',
                     'cost' => 0,
-                    'img' => '/apps/dota2/images/dota_react/items/trusted_root.png',
+                    'img' => '/apps/dota2/images/dota_react/items/serrated_shiv.png',
                 ],
                 'aghanims_shard' => [
                     'id' => 673,
@@ -504,6 +527,8 @@ class MatchTest extends TestCase
                         $player['denies'],
                         $player['item_neutral'],
                         $player['aghanims_shard'],
+                        $player['aghanims_scepter'],
+                        $player['ultimate_scepter'],
                         $player['item_0'],
                         $player['obs_placed'],
                         $player['sen_placed'],

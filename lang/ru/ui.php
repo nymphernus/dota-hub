@@ -392,4 +392,5 @@ return [
     'last_game' => 'Последняя игра',
     'tooltip_date' => 'Дата:',
     'games_tooltip' => 'Игр',
+    'minute' => 'Минута',
 ];

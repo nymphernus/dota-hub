@@ -181,6 +181,8 @@ class UiAssetsTest extends TestCase
         $this->assertStringContainsString("'tooltip_date' => 'Date:'", $en);
         $this->assertStringContainsString("'games_tooltip' => 'Игр'", $ru);
         $this->assertStringContainsString("'games_tooltip' => 'Games'", $en);
+        $this->assertStringContainsString("'minute' => 'Минута'", $ru);
+        $this->assertStringContainsString("'minute' => 'Minute'", $en);
         $this->assertStringContainsString("'tooltip_date' => __('ui.tooltip_date')", $layout);
         $this->assertStringContainsString("'games_tooltip' => __('ui.games_tooltip')", $layout);
         $this->assertStringContainsString("__('ui.mode_'.\$mode)", $service);
@@ -286,7 +288,7 @@ class UiAssetsTest extends TestCase
         $this->assertStringNotContainsString('match_cache_note', $en);
         $this->assertStringNotContainsString('HEAL', $source);
         $this->assertStringNotContainsString('showHealing', $source);
-        $this->assertStringContainsString('$columnCount = 7 + ', $source);
+        $this->assertStringContainsString('$columnCount = 10;', $source);
         $this->assertStringNotContainsString('<span class="text-[9px] text-mist-400">—</span>', $source);
 
         $this->assertStringContainsString('id="netWorthChart"', $source);
@@ -294,8 +296,13 @@ class UiAssetsTest extends TestCase
         $this->assertStringContainsString("__('ui.net_worth_by_minute')", $source);
         $this->assertStringContainsString("__('ui.last_hits_short')", $source);
         $this->assertStringContainsString("__('ui.denies_short')", $source);
-        $this->assertStringContainsString("__('ui.wards')", $source);
-        $this->assertStringContainsString("__('ui.lane_efficiency')", $source);
+        $this->assertStringContainsString("__('ui.observer_ward')", $source);
+        $this->assertStringContainsString("__('ui.sentry_ward')", $source);
+        $this->assertStringNotContainsString("__('ui.lane_efficiency')", $source);
+        $this->assertStringContainsString('colspan="{{ $columnCount }}"', $source);
+        $this->assertStringContainsString('$inventory as $slot => $inventoryItem', $source);
+        $this->assertStringContainsString('aghanims_scepter_buff', $source);
+        $this->assertStringContainsString('>Buff<', $source);
         $this->assertStringContainsString('neutral_item', $source);
         $this->assertStringContainsString('aghanims_shard', $source);
         $this->assertStringContainsString('aghanims_scepter', $source);
@@ -305,9 +312,16 @@ class UiAssetsTest extends TestCase
         $appJs = (string) file_get_contents(resource_path('js/app.js'));
         $this->assertStringContainsString("import Chart from 'chart.js/auto';", $appJs);
         $this->assertStringContainsString("Alpine.data('netWorthChart'", $appJs);
+        $this->assertStringContainsString('const NET_WORTH_COLORS = [', $appJs);
+        $this->assertStringContainsString('legend: {', $appJs);
+        $this->assertStringContainsString('display: false,', $appJs);
+        $this->assertStringContainsString('itemSort:', $appJs);
+        $this->assertStringContainsString('usePointStyle: true', $appJs);
+        $this->assertStringContainsString('pointStyle: icon.src ? icon :', $appJs);
+        $this->assertStringContainsString('config.minute_label', $appJs);
 
         $this->assertStringContainsString("'odd:bg-[#1c1e26] even:bg-[#111318]' => ! \$isCurrentPlayer", $source);
-        $this->assertStringContainsString('bg-[#2d313e] border-l-4 border-yellow-500', $source);
+        $this->assertStringContainsString('bg-ink-700/80 border-l-4 border-yellow-500', $source);
         $this->assertStringContainsString("request()->integer('player_id')", $controller);
         $this->assertStringContainsString("'playerId' => \$playerId", $controller);
     }
@@ -326,7 +340,7 @@ class UiAssetsTest extends TestCase
         $this->assertStringContainsString('private const PROFILE_SCHEMA_VERSION = 13;', $service);
         $this->assertStringContainsString('private const RECENT_MATCH_DETAILS = 25;', $service);
         $this->assertStringContainsString('opendota:match-player:v5:', $service);
-        $this->assertStringContainsString('Cache::remember("opendota:match:v8:', $service);
+        $this->assertStringContainsString('Cache::remember("opendota:match:v10:', $service);
 
         foreach ([
             'last_hits',

@@ -22,9 +22,9 @@ use Illuminate\Support\Facades\Log;
  */
 class OpenDotaService
 {
-    private const HERO_STATS_CACHE_KEY = 'opendota:hero-stats:v3';
+    private const HERO_STATS_CACHE_KEY = 'opendota:hero-stats:v4';
 
-    private const ITEM_STATS_CACHE_KEY = 'opendota:item-stats:v3';
+    private const ITEM_STATS_CACHE_KEY = 'opendota:item-stats:v4';
 
     private const RECENT_MATCH_DETAILS = 25;
 
@@ -107,12 +107,18 @@ class OpenDotaService
 
     private const IMMORTAL_BASE_MMR = 5420;
 
-    private const TEAM_CHART_COLORS = [
-        '#34d399',
-        '#22d3ee',
-        '#fb923c',
-        '#fbbf24',
-        '#fb7185',
+    /** Ten distinct line colours, assigned by global player index in the chart. */
+    private const CHART_LINE_COLORS = [
+        '#ef4444',
+        '#3b82f6',
+        '#22c55e',
+        '#eab308',
+        '#a855f7',
+        '#f97316',
+        '#14b8a6',
+        '#ec4899',
+        '#a16207',
+        '#94a3b8',
     ];
 
     private const POSITION_ROLES = [
@@ -659,7 +665,7 @@ class OpenDotaService
     {
         $ttl = (int) config('stats.cache.dota_match', 3600);
 
-        return Cache::remember("opendota:match:v8:{$matchId}", $ttl, function () use ($matchId) {
+        return Cache::remember("opendota:match:v10:{$matchId}", $ttl, function () use ($matchId) {
             try {
                 $match = $this->client->get("matches/{$matchId}");
             } catch (PlayerNotFoundException) {
@@ -1817,13 +1823,17 @@ class OpenDotaService
             $minimapCdn = $short !== '' ? 'https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/'.$short.'.png' : $iconCdn;
             $minimapRel = $short !== '' ? 'images/heroes/minimap/'.$short.'.png' : null;
             $minimapIcon = $minimapRel && is_file(public_path($minimapRel)) ? '/'.$minimapRel : ($minimapCdn ?: $iconCdn);
+            $iconRel = $short !== '' ? 'images/heroes/icons/'.$short.'.png' : null;
+            $localIcon = $iconRel && is_file(public_path($iconRel)) ? '/'.$iconRel : $minimapIcon;
 
             $map[(int) $hero['id']] = [
                 'id' => (int) $hero['id'],
+                'key' => $short,
                 'name' => $hero['localized_name'] ?? 'Hero #'.$hero['id'],
                 'image' => $localImage,
                 'image_cdn' => $reactImage,
                 'icon' => $iconCdn,
+                'icon_local' => $localIcon,
                 'minimap_icon' => $minimapIcon,
                 'primary_attr' => $hero['primary_attr'] ?? null,
                 'attack_type' => $hero['attack_type'] ?? null,
@@ -1977,6 +1987,24 @@ class OpenDotaService
                     ?? [];
             }
 
+            $inventory = [];
+            $inventoryIds = [];
+
+            for ($inventorySlot = 0; $inventorySlot < 6; $inventorySlot++) {
+                $slotId = (int) ($player['item_'.$inventorySlot] ?? 0);
+                $inventoryIds[] = $slotId;
+                $inventory[] = $this->matchItemMeta($slotId, $itemsById);
+            }
+
+            $neutralItemMeta = $this->matchItemMeta($neutralItemId, $itemsById);
+
+            if ($neutralItemMeta !== null) {
+                $neutralItemMeta['level'] = $this->neutralItemLevel(
+                    $neutralItemId,
+                    $neutralItemMeta['key'] ?? null,
+                );
+            }
+
             $row = [
                 'account_id' => $accountId > 0 ? $accountId : null,
                 'player_slot' => $slot,
@@ -1989,6 +2017,7 @@ class OpenDotaService
                 'hero_id' => $hero['id'],
                 'hero_name' => $hero['name'],
                 'hero_image' => $hero['image'],
+                'hero_icon' => $hero['icon_local'] ?? $hero['minimap_icon'] ?? $hero['icon'] ?? null,
                 'nickname' => $player['personaname'] ?? null,
                 'avatar' => $player['avatar'] ?? null,
                 'level' => (int) ($player['level'] ?? 0),
@@ -2004,13 +2033,15 @@ class OpenDotaService
                 'last_hits' => (int) ($player['last_hits'] ?? 0),
                 'denies' => (int) ($player['denies'] ?? 0),
                 'net_worth' => (int) ($player['net_worth'] ?? 0),
-                'neutral_item' => $this->matchItemMeta($neutralItemId, $itemsById),
+                'inventory' => $inventory,
+                'neutral_item' => $neutralItemMeta,
                 'aghanims_shard' => $hasShard
                     ? $this->matchItemMeta(self::AGHANIMS_SHARD_ITEM_ID, $itemsById)
                     : null,
                 'aghanims_scepter' => $hasScepter
                     ? $this->matchItemMeta(self::AGHANIMS_SCEPTER_ITEM_ID, $itemsById)
                     : null,
+                'aghanims_scepter_buff' => $hasScepter && ! in_array(self::AGHANIMS_SCEPTER_ITEM_ID, $inventoryIds, true),
                 'obs_placed' => (int) ($player['obs_placed'] ?? 0),
                 'sen_placed' => (int) ($player['sen_placed'] ?? 0),
                 'lane_efficiency' => $laneEfficiency,
@@ -2227,7 +2258,7 @@ class OpenDotaService
     /**
      * @param  array<int, array<string, mixed>>  $radiant
      * @param  array<int, array<string, mixed>>  $dire
-     * @return array{labels: array<int, int>, radiant: array{datasets: array<int, array<string, mixed>>}, dire: array{datasets: array<int, array<string, mixed>>}, has_data: bool}
+     * @return array{labels: array<int, int>, radiant: array{datasets: array<int, array<string, mixed>>}, dire: array{datasets: array<int, array<string, mixed>>}, has_data: bool, minute_label: string}
      */
     private function netWorthChart(array $radiant, array $dire): array
     {
@@ -2244,12 +2275,13 @@ class OpenDotaService
                 'radiant' => ['datasets' => []],
                 'dire' => ['datasets' => []],
                 'has_data' => false,
+                'minute_label' => __('ui.minute'),
             ];
         }
 
-        $datasets = function (array $players) use ($maxLength): array {
+        $colorIndex = 0;
+        $datasets = function (array $players) use ($maxLength, &$colorIndex): array {
             $result = [];
-            $index = 0;
 
             foreach ($players as $player) {
                 $history = $player['net_worth_history'];
@@ -2258,11 +2290,12 @@ class OpenDotaService
                     continue;
                 }
 
-                $color = self::TEAM_CHART_COLORS[$index % count(self::TEAM_CHART_COLORS)];
-                $index++;
+                $color = self::CHART_LINE_COLORS[$colorIndex % count(self::CHART_LINE_COLORS)];
+                $colorIndex++;
 
                 $result[] = [
                     'label' => $player['hero_name'],
+                    'icon' => $player['hero_icon'] ?? null,
                     'data' => array_pad($history, $maxLength, null),
                     'borderColor' => $color,
                     'backgroundColor' => $color,
@@ -2285,6 +2318,7 @@ class OpenDotaService
             'radiant' => ['datasets' => $radiantDatasets],
             'dire' => ['datasets' => $direDatasets],
             'has_data' => $radiantDatasets !== [] || $direDatasets !== [],
+            'minute_label' => __('ui.minute'),
         ];
     }
 
@@ -2425,6 +2459,44 @@ class OpenDotaService
         }
 
         return false;
+    }
+
+    /**
+     * Neutral tier overrides for items whose OpenDota metadata has no tier.
+     *
+     * @return int Tier from 1 to 5.
+     */
+    private function neutralItemLevel(int $itemId, ?string $itemKey = null): int
+    {
+        $overrides = [
+            'polliwog_charm' => 1,
+            'ash_legion_shield' => 1,
+            'mana_draught' => 2,
+            'pogo_stick' => 2,
+            'gunpowder_gauntlets' => 3,
+            'gale_guard' => 3,
+            'serrated_shiv' => 3,
+            'giants_maul' => 4,
+            'conjurers_catalyst' => 4,
+            'prophets_pendulum' => 4,
+            'divine_regalia' => 5,
+        ];
+
+        if ($itemKey !== null && isset($overrides[$itemKey])) {
+            return $overrides[$itemKey];
+        }
+
+        if ($itemKey !== null && preg_match('/tier([1-5])_token/', $itemKey, $matches) === 1) {
+            return (int) $matches[1];
+        }
+
+        return match (true) {
+            $itemId >= 1637 => 5,
+            $itemId >= 1598 => 4,
+            $itemId >= 1580 => 3,
+            $itemId >= 1570 => 2,
+            default => 1,
+        };
     }
 
     /**
