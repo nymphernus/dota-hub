@@ -63,10 +63,17 @@ class DotaHeroTest extends TestCase
         $response->assertSee('28 000');
         $response->assertSee('21 500');
         $response->assertSee(route('player', ['accountId' => self::ACCOUNT_ID]), false);
-        $response->assertSee(route('match', ['matchId' => 9100000001, 'player_id' => self::ACCOUNT_ID]), false);
+        $response->assertSee('data-href="'.route('match', 9100000001).'?player_id='.self::ACCOUNT_ID.'"', false);
+        $response->assertSee('onclick="window.location.href = this.dataset.href"', false);
+        $response->assertSee("onkeydown=\"if (event.key === 'Enter') { window.location.href = this.dataset.href }\"", false);
+        $response->assertSee('tabindex="0"', false);
+        $response->assertSee('hover:bg-ink-700/50', false);
+        $response->assertSee('cursor-pointer', false);
+        $response->assertSee('mt-4 flex justify-center', false);
         $response->assertDontSee('Бенчмарки');
         $response->assertDontSee('Top 1%');
 
+        $response->assertViewHas('accountId', self::ACCOUNT_ID);
         $response->assertViewHas('player', fn (array $player) => $player['account_id'] === self::ACCOUNT_ID
             && $player['nickname'] === 'Dendi');
 
@@ -184,6 +191,8 @@ class DotaHeroTest extends TestCase
             && $matches->currentPage() === 1
             && $matches->count() === 20);
         $first->assertSee(route('match', ['matchId' => 9200000024, 'player_id' => self::ACCOUNT_ID]), false);
+        $first->assertSee('data-href="'.route('match', 9200000024).'?player_id='.self::ACCOUNT_ID.'"', false);
+        $first->assertSee('mt-4 flex justify-center', false);
         $first->assertSee('?page=2', false);
 
         $second = $this->get($url.'?page=2');

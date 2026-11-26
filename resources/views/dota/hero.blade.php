@@ -147,18 +147,13 @@
                         </thead>
                         <tbody class="table-rows">
                             @foreach ($matches as $match)
-                                @php
-                                    $matchUrl = $match['match_id']
-                                        ? route('match', ['matchId' => $match['match_id'], 'player_id' => $player['account_id']])
-                                        : null;
-                                @endphp
                                 <tr
                                     @class([
-                                        'transition odd:bg-[#1c1e26] even:bg-[#111318] hover:bg-ink-700/60',
-                                        'cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent-400' => $matchUrl,
+                                        'transition odd:bg-[#1c1e26] even:bg-[#111318] hover:bg-ink-700/50 match-row',
+                                        'cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent-400' => ! empty($match['match_id']),
                                     ])
-                                    @if ($matchUrl)
-                                        data-href="{{ $matchUrl }}"
+                                    @if (! empty($match['match_id']))
+                                        data-href="{{ route('match', $match['match_id']) }}?player_id={{ $accountId }}"
                                         onclick="window.location.href = this.dataset.href"
                                         onkeydown="if (event.key === 'Enter') { window.location.href = this.dataset.href }"
                                         tabindex="0"
@@ -206,7 +201,9 @@
                     </table>
                 </div>
 
-                {{ $matches->onEachSide(1)->links('vendor.pagination.dotahub') }}
+                <div class="mt-4 flex justify-center">
+                    {{ $matches->onEachSide(1)->links('vendor.pagination.dotahub') }}
+                </div>
             @endif
         </section>
     </div>

@@ -50,6 +50,7 @@ class HeroPlayerController extends Controller
         );
 
         return view('dota.hero', [
+            'accountId' => $accountId,
             'player' => $player,
             'pageTitle' => $hero['name'].' - '.$player['nickname'].' - DOTAHUB',
             'hero' => $hero,
