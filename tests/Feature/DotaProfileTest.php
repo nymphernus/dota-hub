@@ -965,8 +965,10 @@ class DotaProfileTest extends TestCase
         $response->assertSee('По количеству игр');
         $response->assertSee('По винрейту');
         $response->assertSee('По KDA');
-        $response->assertSee('class="w-16 h-9 object-cover shrink-0 rounded-sm"', false);
-        $response->assertSee('border-b border-ink-700/50 px-2 py-1 transition odd:bg-[#1c1e26] even:bg-[#111318] hover:bg-ink-700/60 match-row', false);
+        $response->assertSee('<table class="w-full table-fixed text-sm">', false);
+        $response->assertSee('class="h-9 w-16 shrink-0 object-cover rounded-sm"', false);
+        $response->assertSee('class="transition odd:bg-[#1c1e26] even:bg-[#111318] hover:bg-ink-700/60 match-row"', false);
+        $response->assertSee('class="w-[35%] px-2 py-2 text-left"', false);
         $response->assertSee('bg-yellow-500 h-full', false);
         $response->assertDontSee(__('ui.last_game'));
         $response->assertDontSee('>GPM</span>', false);

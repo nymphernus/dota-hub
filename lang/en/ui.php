@@ -303,7 +303,6 @@ return [
     'lvl' => 'lvl',
     'purchases' => 'purchases · key items shown',
     'no_player_data' => 'No player data.',
-    'match_cache_note' => 'OpenDota data · match cache 1 hour',
     'pagination' => 'Pagination',
     'role_undefined' => 'Role undefined',
     'role_1' => 'Safelane',

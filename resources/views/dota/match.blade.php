@@ -14,9 +14,8 @@
     $startedAt = $match['started_at'] ? \Carbon\CarbonImmutable::parse($match['started_at']) : null;
     $allPlayers = collect($match['players']['radiant'] ?? [])->merge($match['players']['dire'] ?? []);
     $showTowerDamage = $allPlayers->contains(fn (array $matchPlayer) => (int) ($matchPlayer['tower_damage'] ?? 0) > 0);
-    $showHealing = $allPlayers->contains(fn (array $matchPlayer) => (int) ($matchPlayer['hero_healing'] ?? 0) > 0);
     $showPurchases = $allPlayers->contains(fn (array $matchPlayer) => ! empty($matchPlayer['purchases']));
-    $columnCount = 7 + ($showTowerDamage ? 1 : 0) + ($showHealing ? 1 : 0) + ($showPurchases ? 1 : 0);
+    $columnCount = 6 + ($showTowerDamage ? 1 : 0) + ($showPurchases ? 1 : 0);
     $teams = [
         'radiant' => [
             'label' => 'Radiant',
@@ -129,9 +128,6 @@
                             @if ($showTowerDamage)
                                 <th class="px-2 py-1 font-semibold">{{ __('ui.towers') }}</th>
                             @endif
-                            @if ($showHealing)
-                                <th class="px-2 py-1 font-semibold">HEAL</th>
-                            @endif
                             @if ($showPurchases)
                                 <th class="px-2 py-1 text-right font-semibold">{{ __('ui.items') }}</th>
                             @endif
@@ -173,8 +169,8 @@
                                     @endphp
                                     <tr @class([
                                         'transition hover:bg-ink-900/30',
-                                        'odd:bg-[#1c1e26] even:bg-[#111318]',
-                                        'bg-[#2d313e]' => $isCurrentPlayer,
+                                        'odd:bg-[#1c1e26] even:bg-[#111318]' => ! $isCurrentPlayer,
+                                        'bg-[#2d313e] border-l-4 border-yellow-500' => $isCurrentPlayer,
                                     ])>
                                         <td class="px-2 py-1">
                                             <div class="flex items-center gap-3">
@@ -205,8 +201,6 @@
                                                         @endif
                                                         @if ($roleLabel)
                                                             <span class="badge !px-1.5 !py-0.5 !text-[9px] {{ $roleClasses }}" title="{{ $roleLabel }}{{ $roleSource ? ' · '.$roleSource : '' }}">{{ $roleLabel }}</span>
-                                                        @else
-                                                            <span class="text-[9px] text-mist-400">—</span>
                                                         @endif
                                                     </p>
                                                 </div>
@@ -226,9 +220,6 @@
                                         <td class="px-2 py-1 font-mono text-[13px] tabular-nums text-mist-300">{{ number_format((int) ($matchPlayer['hero_damage'] ?? 0), 0, '.', ' ') }}</td>
                                         @if ($showTowerDamage)
                                             <td class="px-2 py-1 font-mono text-[13px] tabular-nums text-mist-300">{{ isset($matchPlayer['tower_damage']) ? number_format((int) $matchPlayer['tower_damage'], 0, '.', ' ') : '—' }}</td>
-                                        @endif
-                                        @if ($showHealing)
-                                            <td class="px-2 py-1 font-mono text-[13px] tabular-nums text-mist-300">{{ isset($matchPlayer['hero_healing']) ? number_format((int) $matchPlayer['hero_healing'], 0, '.', ' ') : '—' }}</td>
                                         @endif
                                         @if ($showPurchases)
                                             <td class="px-2 py-1 text-right">
@@ -288,7 +279,5 @@
                 </table>
             </div>
         </section>
-
-        <p class="mt-4 text-[11px] text-mist-500">{{ __('ui.match_cache_note') }}</p>
     </div>
 @endsection

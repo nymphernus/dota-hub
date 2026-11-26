@@ -50,6 +50,7 @@ class MatchTest extends TestCase
         $response->assertSee('Ranked');
         $response->assertSee(__('ui.mode_22'));
         $response->assertSee('odd:bg-[#1c1e26] even:bg-[#111318]', false);
+        $response->assertSee('bg-[#2d313e] border-l-4 border-yellow-500', false);
         $response->assertDontSee('P1');
         $response->assertDontSee('Party #', false);
         $response->assertSee(__('ui.role_1'));
@@ -72,10 +73,11 @@ class MatchTest extends TestCase
         $response->assertDontSee('Пики и баны');
         $response->assertDontSee('Баны');
         $response->assertSee('Башни');
-        $response->assertSee('HEAL');
+        $response->assertDontSee('HEAL');
+        $response->assertDontSee('Данные OpenDota');
         $response->assertDontSee('31 200');
         $response->assertSee('3 400');
-        $response->assertSee('1 250');
+        $response->assertDontSee('1 250');
         $response->assertSee(route('player', ['accountId' => 123456789]), false);
         $response->assertSee(route('player', ['accountId' => 987654321]), false);
         $response->assertDontSee('Данные о нетворсе появятся после парсинга матча');

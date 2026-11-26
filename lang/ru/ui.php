@@ -303,7 +303,6 @@ return [
     'lvl' => 'ур.',
     'purchases' => 'покупок · показаны ключевые предметы',
     'no_player_data' => 'Нет данных по игрокам.',
-    'match_cache_note' => 'Данные OpenDota · кэш матча 1 час',
     'pagination' => 'Пагинация',
     'role_undefined' => 'Роль не определена',
     'role_1' => 'Легкая',
