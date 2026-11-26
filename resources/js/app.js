@@ -159,8 +159,8 @@ Alpine.data('favoriteStar', (config) => ({
 }));
 
 /**
- * Net worth chart on a match page. The built-in tooltip is disabled: a static
- * legend beside the canvas shows the same values and lets players toggle lines.
+ * Net worth chart on a match page. The native tooltip owns minute labels while
+ * the side legend keeps per-hero values and lets players toggle lines.
  */
 const NET_WORTH_COLORS = [
     '#ef4444',
@@ -175,179 +175,233 @@ const NET_WORTH_COLORS = [
     '#94a3b8',
 ];
 
-Alpine.data('netWorthChart', (config) => ({
-    chart: null,
-    legend: null,
-    legendRows: [],
+const verticalHoverLine = {
+    id: 'verticalHoverLine',
+    afterDatasetsDraw(chart) {
+        const active = chart.tooltip?.getActiveElements?.() ?? [];
 
-    init() {
-        if (! config || ! config.has_data) {
+        if (active.length === 0) {
             return;
         }
 
-        const canvas = document.getElementById('netWorthChart');
+        const x = active[0].element.x;
+        const { ctx, chartArea } = chart;
 
-        if (! canvas) {
-            return;
-        }
-
-        const rawDatasets = [
-            ...(config.radiant?.datasets ?? []),
-            ...(config.dire?.datasets ?? []),
-        ];
-
-        if (rawDatasets.length === 0) {
-            return;
-        }
-
-        const datasets = rawDatasets.map((dataset, index) => {
-            const color = NET_WORTH_COLORS[index % NET_WORTH_COLORS.length];
-
-            return {
-                ...dataset,
-                borderColor: color,
-                backgroundColor: color,
-            };
-        });
-
-        this.legend = document.getElementById('chart-legend');
-        this.legendRows = datasets.map((dataset, index) => ({
-            index,
-            label: dataset.label ?? '',
-            heroKey: dataset.hero_key ?? this.heroKeyFromIcon(dataset.icon),
-            color: dataset.borderColor,
-            values: (Array.isArray(dataset.data) ? dataset.data : []).map((value) => Number(value) || 0),
-        }));
-
-        if (this.legend) {
-            this.legend.addEventListener('change', (event) => {
-                const input = event.target.closest('input.toggle-dataset');
-
-                if (! input || ! this.chart) {
-                    return;
-                }
-
-                this.chart.setDatasetVisibility(Number(input.dataset.index), input.checked);
-                this.chart.update();
-            });
-        }
-
-        Chart.defaults.color = '#8b94a5';
-        Chart.defaults.font.family = 'Inter, sans-serif';
-
-        this.chart = new Chart(canvas, {
-            type: 'line',
-            data: {
-                labels: config.labels ?? [],
-                datasets,
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: {
-                    mode: 'index',
-                    intersect: false,
-                },
-                onHover: (event, activeElements) => {
-                    this.renderLegend(activeElements.length > 0 ? activeElements[0].index : null);
-                },
-                plugins: {
-                    legend: {
-                        display: false,
-                    },
-                    tooltip: {
-                        enabled: false,
-                    },
-                },
-                scales: {
-                    x: {
-                        grid: { color: '#2d313e', drawBorder: false },
-                        ticks: { color: '#8b94a5', maxTicksLimit: 10 },
-                    },
-                    y: {
-                        grid: { color: '#2d313e', drawBorder: false },
-                        ticks: {
-                            color: '#8b94a5',
-                            callback: (value) => `${Math.round(value / 1000)}k`,
-                        },
-                    },
-                },
-                elements: {
-                    line: { borderWidth: 2, tension: 0.28 },
-                    point: { radius: 0, hoverRadius: 4 },
-                },
-            },
-        });
-
-        canvas.addEventListener('mouseleave', () => this.renderLegend(null));
-        this.renderLegend(null);
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(x, chartArea.top);
+        ctx.lineTo(x, chartArea.bottom);
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = 'rgba(234, 179, 8, 0.45)';
+        ctx.stroke();
+        ctx.restore();
     },
+};
 
-    heroKeyFromIcon(icon) {
+Alpine.data('netWorthChart', (config) => {
+    // Chart.js instances and DOM nodes must stay outside Alpine's reactive
+    // proxy, otherwise chart.update() recurses through the proxied plugin cache.
+    const state = {
+        chart: null,
+        legend: null,
+        legendRows: [],
+        hoveredMinute: null,
+    };
+
+    const heroKeyFromIcon = (icon) => {
         const match = String(icon ?? '').match(/\/([a-z0-9_]+)\.png(?:[?#]|$)/i);
         return match ? match[1] : '';
-    },
+    };
 
-    valueAt(row, minuteIndex) {
+    const valueAt = (row, minuteIndex) => {
         if (minuteIndex === null || minuteIndex === undefined) {
             return row.values.length > 0 ? Number(row.values[row.values.length - 1]) || 0 : 0;
         }
 
         return Number(row.values[minuteIndex]) || 0;
-    },
+    };
 
-    formatValue(value) {
-        return Math.round(value).toLocaleString();
-    },
+    const formatValue = (value) => Math.round(value).toLocaleString('ru-RU');
 
-    escapeHtml(value) {
-        return String(value ?? '').replace(/[&<>"']/g, (char) => ({
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#39;',
-        })[char]);
-    },
+    const updateLegendValues = (minuteIndex) => {
+        state.hoveredMinute = minuteIndex;
 
-    renderLegend(minuteIndex) {
-        if (! this.legend) {
+        const rows = state.legendRows.map((row) => {
+            const value = valueAt(row, minuteIndex);
+            row.currentValue = value;
+            row.value.textContent = formatValue(value);
+
+            return row;
+        });
+
+        rows.sort((a, b) => b.currentValue - a.currentValue)
+            .forEach((row) => state.legend.appendChild(row.row));
+    };
+
+    const buildLegend = (datasets) => {
+        if (! state.legend) {
             return;
         }
 
-        const rows = [...this.legendRows].sort(
-            (a, b) => this.valueAt(b, minuteIndex) - this.valueAt(a, minuteIndex),
-        );
-        const minute = minuteIndex === null || minuteIndex === undefined
-            ? Math.max(0, (this.legendRows[0]?.values.length ?? 1) - 1)
-            : minuteIndex;
-        const heading = `<div class="mb-1 font-semibold text-mist-300">${this.escapeHtml(config.minute_label ?? 'Minute')} ${minute}</div>`;
+        state.legend.innerHTML = '';
+        state.legendRows = datasets.map((dataset, index) => {
+            const row = document.createElement('div');
+            row.className = 'flex items-center gap-2 py-1 hover:bg-ink-700/50 rounded px-1';
 
-        const items = rows.map((row) => {
-            const icon = row.heroKey
-                ? `/images/heroes/icons/${encodeURIComponent(row.heroKey)}.png`
-                : '';
-            const checked = this.chart?.isDatasetVisible(row.index) !== false;
-            const checkedAttribute = checked ? 'checked data-index' : 'data-index';
-            const image = icon
-                ? `<img src="${icon}" class="w-5 h-5 object-cover rounded" alt="">`
-                : '';
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = true;
+            checkbox.dataset.index = String(index);
+            checkbox.className = 'toggle-dataset cursor-pointer';
+            checkbox.addEventListener('change', (event) => {
+                if (! state.chart) {
+                    return;
+                }
 
-            return `<div class="flex items-center gap-2 py-1 hover:bg-ink-700/50 rounded px-1">
-    <input type="checkbox" ${checkedAttribute}="${row.index}" class="toggle-dataset cursor-pointer">
-    <span class="w-2 h-2 rounded-full" style="background-color: ${row.color}"></span>
-    ${image}
-    <span class="flex-1 truncate">${this.escapeHtml(row.label)}</span>
-    <span class="font-bold text-white">${this.formatValue(this.valueAt(row, minuteIndex))}</span>
-</div>`;
-        }).join('');
+                state.chart.setDatasetVisibility(index, event.target.checked);
+                state.chart.update();
+                updateLegendValues(state.hoveredMinute);
+            });
 
-        this.legend.innerHTML = heading + items;
-    },
+            const dot = document.createElement('span');
+            dot.className = 'w-2 h-2 rounded-full';
+            dot.style.backgroundColor = dataset.borderColor;
 
-    destroy() {
-        this.chart?.destroy();
-    },
-}));
+            row.append(checkbox, dot);
+
+            const heroKey = dataset.hero_key ?? heroKeyFromIcon(dataset.icon);
+
+            if (heroKey) {
+                const image = document.createElement('img');
+                image.src = `/images/heroes/icons/${encodeURIComponent(heroKey)}.png`;
+                image.className = 'w-5 h-5 object-cover rounded';
+                image.alt = '';
+                row.append(image);
+            }
+
+            const name = document.createElement('span');
+            name.className = 'flex-1 truncate';
+            name.textContent = dataset.label ?? '';
+
+            const value = document.createElement('span');
+            value.className = 'hero-networth font-bold text-white';
+            value.dataset.index = String(index);
+
+            row.append(name, value);
+            state.legend.appendChild(row);
+
+            return {
+                index,
+                row,
+                value,
+                values: (Array.isArray(dataset.data) ? dataset.data : []).map((item) => Number(item) || 0),
+            };
+        });
+    };
+
+    return {
+        init() {
+            if (! config || ! config.has_data) {
+                return;
+            }
+
+            const canvas = document.getElementById('netWorthChart');
+
+            if (! canvas) {
+                return;
+            }
+
+            const rawDatasets = [
+                ...(config.radiant?.datasets ?? []),
+                ...(config.dire?.datasets ?? []),
+            ];
+
+            if (rawDatasets.length === 0) {
+                return;
+            }
+
+            const datasets = rawDatasets.map((dataset, index) => {
+                const color = NET_WORTH_COLORS[index % NET_WORTH_COLORS.length];
+
+                return {
+                    ...dataset,
+                    borderColor: color,
+                    backgroundColor: color,
+                };
+            });
+
+            state.legend = document.getElementById('chart-legend');
+            buildLegend(datasets);
+
+            Chart.defaults.color = '#8b94a5';
+            Chart.defaults.font.family = 'Inter, sans-serif';
+
+            state.chart = new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels: config.labels ?? [],
+                    datasets,
+                },
+                plugins: [verticalHoverLine],
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    hover: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    onHover: (event, activeElements) => {
+                        const elements = activeElements ?? [];
+                        updateLegendValues(elements.length > 0 ? elements[0].index : null);
+                    },
+                    plugins: {
+                        legend: {
+                            display: false,
+                        },
+                        tooltip: {
+                            enabled: true,
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                title: (context) => context.length > 0
+                                    ? `${config.minute_label ?? 'Minute'} ${context[0].parsed.x}`
+                                    : '',
+                                label: () => null,
+                            },
+                        },
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: '#2d313e', drawBorder: false },
+                            ticks: { color: '#8b94a5', maxTicksLimit: 10 },
+                        },
+                        y: {
+                            grid: { color: '#2d313e', drawBorder: false },
+                            ticks: {
+                                color: '#8b94a5',
+                                callback: (value) => `${Math.round(value / 1000)}k`,
+                            },
+                        },
+                    },
+                    elements: {
+                        line: { borderWidth: 2, tension: 0.28 },
+                        point: { radius: 0, hoverRadius: 4 },
+                    },
+                },
+            });
+
+            canvas.addEventListener('mouseleave', () => updateLegendValues(null));
+            updateLegendValues(null);
+        },
+
+        destroy() {
+            state.chart?.destroy();
+        },
+    };
+});
 
 Alpine.start();

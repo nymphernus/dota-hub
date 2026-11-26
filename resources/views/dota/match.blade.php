@@ -117,11 +117,11 @@
                     <h2 class="section-heading">{{ __('ui.net_worth_by_minute') }}</h2>
                     <span class="badge border-line bg-ink-900/50 text-mist-400">{{ $match['duration_label'] }}</span>
                 </div>
-                <div class="relative h-64 w-full">
-                    <div id="chart-legend" class="absolute top-2 left-2 bg-[#1c1e26]/90 border border-[#2d313e] p-2 rounded shadow-lg z-10 text-xs w-64 max-h-[250px] overflow-y-auto">
-                        <!-- JS renders the sortable dataset list here -->
+                <div class="flex gap-4 items-start">
+                    <div class="flex-1 h-[400px]">
+                        <canvas id="netWorthChart" aria-label="{{ __('ui.net_worth_by_minute') }}"></canvas>
                     </div>
-                    <canvas id="netWorthChart" aria-label="{{ __('ui.net_worth_by_minute') }}"></canvas>
+                    <div id="chart-legend" class="w-64 shrink-0 max-h-[400px] overflow-y-auto bg-[#1c1e26] border border-[#2d313e] p-2 rounded text-xs"></div>
                 </div>
             </section>
         @else

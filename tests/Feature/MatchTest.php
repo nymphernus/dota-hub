@@ -62,6 +62,10 @@ class MatchTest extends TestCase
         $response->assertSee(__('ui.net_worth_by_minute'));
         $response->assertSee('id="netWorthChart"', false);
         $response->assertSee('id="chart-legend"', false);
+        $response->assertSee('class="flex gap-4 items-start"', false);
+        $response->assertSee('class="flex-1 h-[400px]"', false);
+        $response->assertSee('class="w-64 shrink-0 max-h-[400px] overflow-y-auto bg-[#1c1e26] border border-[#2d313e] p-2 rounded text-xs"', false);
+        $response->assertDontSee('absolute top-2', false);
         $response->assertSee('LH / DN');
         $response->assertSee('O: 5');
         $response->assertSee('S: 3');
