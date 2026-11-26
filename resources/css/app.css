@@ -247,6 +247,24 @@
     }
 }
 
+/* Flatpickr: square dark calendar in site colours. */
+.flatpickr-calendar {
+    border-radius: 0 !important;
+    background: #1c1e26 !important;
+    border: 1px solid #2d313e !important;
+    color: #d1d5db !important;
+}
+.flatpickr-day {
+    border-radius: 0 !important;
+}
+.flatpickr-day.selected {
+    background: #3b82f6 !important;
+    border-color: #3b82f6 !important;
+}
+.flatpickr-months .flatpickr-month, .flatpickr-weekdays, .flatpickr-weekday {
+    background: #1c1e26 !important;
+    color: #8b94a5 !important;
+}
 
 /* Hero wheel theme vars */
 :root {

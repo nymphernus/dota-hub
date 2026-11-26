@@ -101,7 +101,7 @@
 
                                         <!-- Name and statistics -->
                                         <div class="flex-1 min-w-0 flex items-center justify-between">
-                                            <div class="w-32 shrink-0 text-sm font-bold text-mist-200 truncate">{{ $hero['name'] }}</div>
+                                            <div class="w-48 shrink-0 text-sm font-bold text-mist-200 truncate">{{ $hero['name'] }}</div>
 
                                             <div class="w-24 shrink-0 text-xs text-mist-400">
                                                 <span class="text-green-500">{{ $hero['wins'] }} {{ __('ui.hero_win_short') }}</span> / <span class="text-red-500">{{ $hero['losses'] ?? max(0, (int) $hero['games'] - (int) $hero['wins']) }} {{ __('ui.hero_loss_short') }}</span>
@@ -257,8 +257,8 @@
                                     <div class="flex items-center gap-4">
                                         <div class="flex items-center gap-3 w-1/3 min-w-0">
                                             <img src="{{ $peer['avatar'] }}" class="w-10 h-10 object-cover shrink-0">
-                                            <div class="min-w-0">
-                                                <div class="text-sm font-bold text-mist-200 truncate">{{ $peer['nickname'] ?? __('ui.teammate') }}</div>
+                                            <div class="min-w-0 flex-1">
+                                                <div class="text-[11px] font-bold text-mist-200 truncate leading-tight">{{ $peer['nickname'] ?? __('ui.teammate') }}</div>
                                                 @if ($peer['is_private'] ?? false)
                                                     <div class="text-[10px] text-accent-300/80">{{ __('ui.private_profile') }}</div>
                                                 @endif

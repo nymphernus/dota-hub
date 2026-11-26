@@ -118,10 +118,16 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+@if (app()->getLocale() === 'ru')
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ru.js"></script>
+@endif
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     if (window.flatpickr) {
         flatpickr('#date_filter', {
+            @if (app()->getLocale() === 'ru')
+            locale: "ru",
+            @endif
             dateFormat: 'Y-m-d',
             allowInput: true,
             onChange: function(_, dateStr) {

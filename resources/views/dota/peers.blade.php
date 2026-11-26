@@ -20,8 +20,8 @@
                             <!-- Avatar + nickname -->
                             <div class="flex items-center gap-3 w-1/3 min-w-0">
                                 <img src="{{ $peer['avatar'] }}" class="w-10 h-10 object-cover shrink-0">
-                                <div class="min-w-0">
-                                    <div class="text-sm font-bold text-mist-200 truncate">{{ $peer['nickname'] ?? __('ui.teammate') }}</div>
+                                <div class="min-w-0 flex-1">
+                                    <div class="text-[11px] font-bold text-mist-200 truncate leading-tight">{{ $peer['nickname'] ?? __('ui.teammate') }}</div>
                                     @if ($peer['is_private'] ?? false)
                                         <div class="text-[10px] text-accent-300/80">{{ __('ui.private_profile') }}</div>
                                     @endif

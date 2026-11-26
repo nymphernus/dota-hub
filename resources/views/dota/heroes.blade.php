@@ -54,7 +54,7 @@
             <div class="table-head flex min-w-[860px] items-center gap-4 px-2 py-1 text-[11px] font-semibold">
                 <span class="w-16 shrink-0"></span>
                 <div class="min-w-0 flex flex-1 items-center justify-between">
-                    <span class="w-32 shrink-0">{{ __('ui.hero') }}</span>
+                    <span class="w-48 shrink-0">{{ __('ui.hero') }}</span>
                     <span class="w-24 shrink-0">{{ __('ui.wins') }} / {{ __('ui.losses') }}</span>
                     <span class="w-32 shrink-0">{{ __('ui.winrate') }}</span>
                 </div>
@@ -78,7 +78,7 @@
                     <img src="{{ $img }}" class="w-16 h-9 object-cover shrink-0 rounded-sm" alt="{{ $name }}">
 
                     <div class="flex-1 min-w-0 flex items-center justify-between">
-                        <div class="w-32 shrink-0 text-sm font-bold text-mist-200 truncate">{{ $name }}</div>
+                        <div class="w-48 shrink-0 text-sm font-bold text-mist-200 truncate">{{ $name }}</div>
 
                         <div class="w-24 shrink-0 text-xs text-mist-400">
                             <span class="text-green-500">{{ $wins }} {{ __('ui.hero_win_short') }}</span> / <span class="text-red-500">{{ $losses }} {{ __('ui.hero_loss_short') }}</span>

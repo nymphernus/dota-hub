@@ -69,7 +69,7 @@ class UiAssetsTest extends TestCase
         $this->assertStringContainsString('flex flex-col p-1', $profile);
         $this->assertStringContainsString('class="w-16 h-9 object-cover shrink-0 rounded-sm"', $profile);
         $this->assertStringContainsString('class="group block border-b border-ink-700/50 px-2 py-1 transition odd:bg-[#1c1e26] even:bg-[#111318] hover:bg-ink-700/60 match-row"', $profile);
-        $this->assertStringContainsString('w-32 shrink-0 text-sm font-bold text-mist-200 truncate', $profile);
+        $this->assertStringContainsString('w-48 shrink-0 text-sm font-bold text-mist-200 truncate', $profile);
         $this->assertStringContainsString('flex items-center gap-2 w-32 shrink-0', $profile);
         $this->assertStringContainsString('class="w-full bg-ink-900 h-1.5 rounded overflow-hidden"', $profile);
         $this->assertStringContainsString('w-32 shrink-0 bg-ink-900 h-1.5 rounded overflow-hidden', $profile);
@@ -88,10 +88,14 @@ class UiAssetsTest extends TestCase
         $this->assertStringContainsString('table-rows', $profile);
         $this->assertStringContainsString('class="group block border-b border-ink-700/50 px-4 py-1 transition odd:bg-[#1c1e26] even:bg-[#111318] hover:bg-ink-700/60 match-row"', $profile);
         $this->assertStringContainsString('flex items-center gap-3 w-1/3 min-w-0', $profile);
+        $this->assertStringContainsString('min-w-0 flex-1', $profile);
+        $this->assertStringContainsString('text-[11px] font-bold text-mist-200 truncate leading-tight', $profile);
         $this->assertStringContainsString('flex items-center gap-3 w-1/4 shrink-0', $profile);
         $this->assertStringContainsString('table-rows', $peers);
         $this->assertStringContainsString('class="group block border-b border-ink-700/50 px-4 py-1 transition odd:bg-[#1c1e26] even:bg-[#111318] hover:bg-ink-700/60 match-row"', $peers);
         $this->assertStringContainsString('flex items-center gap-3 w-1/3 min-w-0', $peers);
+        $this->assertStringContainsString('min-w-0 flex-1', $peers);
+        $this->assertStringContainsString('text-[11px] font-bold text-mist-200 truncate leading-tight', $peers);
         $this->assertStringContainsString('flex items-center gap-3 w-1/4 shrink-0', $peers);
         $this->assertStringContainsString('flex items-center gap-3 w-1/4 shrink-0 ml-auto', $peers);
         $this->assertStringContainsString('w-full bg-ink-900 h-2 flex rounded overflow-hidden', $profile);
@@ -368,7 +372,7 @@ class UiAssetsTest extends TestCase
         $this->assertStringNotContainsString("__('ui.attr_intelligence')", $partial);
         $this->assertStringNotContainsString("__('ui.attr_universal')", $partial);
         $this->assertStringContainsString('max-w-6xl', $partial);
-        $this->assertStringContainsString('grid grid-cols-8 items-start gap-1', $partial);
+        $this->assertStringContainsString('grid grid-cols-6 sm:grid-cols-8 lg:grid-cols-12 gap-1', $partial);
         $this->assertStringContainsString("\$hero['image']", $partial);
         $this->assertStringNotContainsString('aspect-square', $partial);
         $this->assertStringNotContainsString('w-16 h-9', $partial);
@@ -380,6 +384,8 @@ class UiAssetsTest extends TestCase
         $this->assertStringContainsString("@include('dota.partials.filter-hero'", $heroes);
         $this->assertStringNotContainsString('grid grid-cols-8 gap-1 max-h-[60vh]', $matches);
         $this->assertStringNotContainsString('<select name="hero_id"', $heroes);
+        $this->assertStringContainsString('w-48 shrink-0', $heroes);
+        $this->assertStringNotContainsString('w-32 shrink-0 text-sm font-bold', $heroes);
         $this->assertStringNotContainsString('GPM', $heroes);
         $this->assertStringNotContainsString('XPM', $heroes);
         $this->assertStringNotContainsString("__('ui.last_game')", $heroes);
@@ -439,6 +445,29 @@ class UiAssetsTest extends TestCase
         $this->assertStringContainsString('item5Id', $stratzService);
         $this->assertStringContainsString("'gold_per_min' =>", $service);
         $this->assertStringContainsString("'xp_per_min' =>", $service);
+    }
+
+    public function test_date_filter_uses_russian_square_dark_flatpickr(): void
+    {
+        $matches = (string) file_get_contents(resource_path('views/dota/matches.blade.php'));
+        $css = (string) file_get_contents(resource_path('css/app.css'));
+
+        $this->assertStringContainsString('flatpickr(\'#date_filter\'', $matches);
+        $this->assertStringContainsString("app()->getLocale() === 'ru'", $matches);
+        $this->assertStringContainsString('flatpickr/dist/l10n/ru.js', $matches);
+        $this->assertStringContainsString('locale: "ru"', $matches);
+
+        $this->assertStringContainsString('.flatpickr-calendar {', $css);
+        $this->assertStringContainsString('border-radius: 0 !important;', $css);
+        $this->assertStringContainsString('background: #1c1e26 !important;', $css);
+        $this->assertStringContainsString('border: 1px solid #2d313e !important;', $css);
+        $this->assertStringContainsString('color: #d1d5db !important;', $css);
+        $this->assertStringContainsString('.flatpickr-day {', $css);
+        $this->assertStringContainsString('.flatpickr-day.selected {', $css);
+        $this->assertStringContainsString('background: #3b82f6 !important;', $css);
+        $this->assertStringContainsString('border-color: #3b82f6 !important;', $css);
+        $this->assertStringContainsString('.flatpickr-months .flatpickr-month, .flatpickr-weekdays, .flatpickr-weekday {', $css);
+        $this->assertStringContainsString('color: #8b94a5 !important;', $css);
     }
 
     public function test_profile_storage_is_persistent_and_incremental(): void

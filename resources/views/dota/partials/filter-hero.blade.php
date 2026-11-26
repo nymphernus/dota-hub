@@ -27,7 +27,7 @@
         </div>
 
         <div class="max-h-[65vh] overflow-y-auto px-4 py-3">
-            <div class="grid grid-cols-8 items-start gap-1">
+            <div class="grid grid-cols-6 sm:grid-cols-8 lg:grid-cols-12 gap-1">
                 @foreach ($heroes as $hero)
                     @php
                         $heroId = (int) ($hero['hero_id'] ?? 0);
