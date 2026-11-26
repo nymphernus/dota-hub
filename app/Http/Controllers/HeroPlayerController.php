@@ -56,7 +56,7 @@ class HeroPlayerController extends Controller
             'summary' => $summary,
             'matches' => $paginator,
             'allMatches' => $heroMatches,
-            'personalStats' => $this->personalStats($matches, $heroMatches, $summary, $hero['name']),
+            'personalStats' => $this->personalStats($heroMatches),
             'cachedAt' => $record->updated_at?->toIso8601String()
                 ?? ($profileData['cached_at'] ?? now()->toIso8601String()),
         ]);
@@ -249,32 +249,24 @@ class HeroPlayerController extends Controller
     }
 
     /**
-     * Local comparison and records built from the persisted match history.
+     * Personal records built from the persisted matches on this hero.
      *
-     * @param  array<int, array<string, mixed>>  $matches
      * @param  array<int, array<string, mixed>>  $heroMatches
-     * @param  array<string, mixed>  $summary
      * @return array<string, mixed>
      */
-    private function personalStats(array $matches, array $heroMatches, array $summary, string $heroName): array
+    private function personalStats(array $heroMatches): array
     {
-        $averageSummary = $this->summarizeMatches($matches);
-        $heroKda = (float) ($summary['kda'] ?? 0);
-        $averageKda = (float) ($averageSummary['kda'] ?? 0);
-
-        $comparisonKey = match (true) {
-            $heroKda > $averageKda => 'above',
-            $heroKda < $averageKda => 'below',
-            default => 'equal',
-        };
-
         $maxGpm = 0;
+        $maxXpm = 0;
+        $maxKda = 0.0;
         $maxKills = 0;
         $bestStreak = 0;
         $currentStreak = 0;
 
         foreach ($heroMatches as $match) {
-            $maxGpm = max($maxGpm, (int) $match['gpm']);
+            $maxGpm = max($maxGpm, (int) ($match['gpm'] ?? $match['gold_per_min'] ?? 0));
+            $maxXpm = max($maxXpm, (int) ($match['xpm'] ?? $match['xp_per_min'] ?? 0));
+            $maxKda = max($maxKda, (float) ($match['kda'] ?? 0));
             $maxKills = max($maxKills, (int) $match['kills']);
 
             if ($match['win']) {
@@ -286,14 +278,9 @@ class HeroPlayerController extends Controller
         }
 
         return [
-            'hero_kda' => $heroKda,
-            'average_kda' => $averageKda,
-            'kda_comparison' => __('ui.hero_kda_vs_average_'.$comparisonKey, [
-                'hero' => $heroName,
-                'hero_kda' => number_format($heroKda, 1, '.', ''),
-                'average_kda' => number_format($averageKda, 1, '.', ''),
-            ]),
             'max_gpm' => $maxGpm,
+            'max_xpm' => $maxXpm,
+            'max_kda' => round($maxKda, 2),
             'max_kills' => $maxKills,
             'best_streak' => $bestStreak,
             'best_streak_label' => __('ui.wins_streak', ['count' => $bestStreak]),

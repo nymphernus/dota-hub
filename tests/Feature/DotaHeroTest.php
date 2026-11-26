@@ -42,13 +42,22 @@ class DotaHeroTest extends TestCase
         $response->assertSee('Anti-Mage');
         $response->assertSee('Dendi');
         $response->assertSee('По сохранённой истории матчей');
-        $response->assertSee('Ваша статистика на герое');
-        $response->assertSee('Ваш KDA на Anti-Mage (4.6) выше вашего среднего (3.6)');
-        $response->assertSee('Макс. GPM');
+        $response->assertSee('Личные рекорды');
+        $response->assertDontSee('Ваш KDA на Anti-Mage');
+        $response->assertSee('Максимальный GPM');
         $response->assertSee('700');
-        $response->assertSee('Макс. Убийств');
-        $response->assertSee('Лучшая серия');
+        $response->assertSee('Максимальный XPM');
+        $response->assertSee('800');
+        $response->assertSee('Максимальный KDA');
+        $response->assertSee('12.50');
+        $response->assertSee('Лучшая серия побед');
         $response->assertSee('1 побед подряд');
+        $response->assertDontSee('heroWinrateChart', false);
+        $response->assertDontSee('card p-4 mb-4', false);
+        $response->assertDontSee(__('ui.to_profile'));
+        $response->assertSee('min-h-[150px]', false);
+        $response->assertSee('absolute inset-0 w-full h-full bg-cover bg-center', false);
+        $response->assertSee("style=\"background-image: url('/images/heroes/antimage.png');\"", false);
         $response->assertSee('Нетворс');
         $response->assertSee('DMG');
         $response->assertSee('28 000');
@@ -75,11 +84,17 @@ class DotaHeroTest extends TestCase
             && $summary['gpm'] === 583
             && $summary['xpm'] === 667);
 
-        $response->assertViewHas('personalStats', fn (array $stats) => $stats['hero_kda'] === 4.64
-            && $stats['average_kda'] === 3.63
-            && $stats['max_gpm'] === 700
+        $response->assertViewHas('personalStats', fn (array $stats) => $stats['max_gpm'] === 700
+            && $stats['max_xpm'] === 800
+            && $stats['max_kda'] === 12.5
             && $stats['max_kills'] === 10
-            && $stats['best_streak'] === 1);
+            && $stats['best_streak'] === 1
+            && ! array_key_exists('kda_comparison', $stats));
+
+        $response->assertViewMissing('winrateChart');
+        $response->assertViewMissing('matchups');
+        $response->assertDontSee(__('ui.easy_matchups'));
+        $response->assertDontSee(__('ui.hard_matchups'));
 
         $response->assertViewHas('allMatches', fn (array $matches) => count($matches) === 3);
         $response->assertViewHas('matches', fn (LengthAwarePaginator $matches) => $matches->total() === 3
@@ -129,7 +144,7 @@ class DotaHeroTest extends TestCase
         $response->assertDontSee('Бенчмарки');
         $response->assertDontSee('Топ 10%');
         $response->assertDontSee('style="left:');
-        $response->assertSee('Ваша статистика на герое');
+        $response->assertSee('Личные рекорды');
     }
 
     public function test_hero_page_uses_local_stats_without_open_dota(): void

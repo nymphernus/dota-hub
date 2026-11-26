@@ -9,9 +9,9 @@
 
 @section('content')
     <div class="mx-auto w-full max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">
-        <section class="card relative overflow-hidden">
+        <section class="card relative overflow-hidden min-h-[150px]">
             @if ($hero['image'])
-                <img src="{{ $hero['image'] }}" alt="" class="pointer-events-none absolute -right-10 -top-8 h-56 w-auto scale-110 object-cover opacity-20 blur-[1px]" aria-hidden="true">
+                <div class="pointer-events-none absolute inset-0 w-full h-full bg-cover bg-center bg-no-repeat opacity-20 blur-[1px]" style="background-image: url('{{ $hero['image'] }}');" aria-hidden="true"></div>
             @endif
             <div class="relative px-4 pb-5 pt-10 sm:px-6 lg:px-8">
                 <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
@@ -49,11 +49,6 @@
                             </div>
                         </div>
                     </div>
-
-                    <a href="{{ $backUrl }}" class="btn-ghost !py-2">
-                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M15 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                        {{ __('ui.to_profile') }}
-                    </a>
                 </div>
             </div>
         </section>
@@ -83,14 +78,12 @@
 
         <section class="mt-4 card overflow-hidden">
             <div class="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3">
-                <h2 class="section-heading">{{ __('ui.hero_personal_stats') }}</h2>
+                <h2 class="section-heading">{{ __('ui.personal_records') }}</h2>
                 <span class="badge border-dota-500/25 bg-dota-500/10 text-dota-300">{{ __('ui.local_data') }}</span>
             </div>
 
             <div class="p-4 sm:p-5">
-                <p class="text-sm leading-relaxed text-mist-300">{{ $personalStats['kda_comparison'] }}</p>
-
-                <div class="mt-4 grid gap-3 sm:grid-cols-3">
+                <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                     <div class="rounded-none border border-line bg-ink-950/50 p-4">
                         <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-mist-400">{{ __('ui.personal_record_max_gpm') }}</p>
                         <p class="mt-2 text-2xl font-semibold tracking-tight text-mist-200">
@@ -98,13 +91,19 @@
                         </p>
                     </div>
                     <div class="rounded-none border border-line bg-ink-950/50 p-4">
-                        <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-mist-400">{{ __('ui.personal_record_max_kills') }}</p>
+                        <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-mist-400">{{ __('ui.personal_record_max_xpm') }}</p>
                         <p class="mt-2 text-2xl font-semibold tracking-tight text-mist-200">
-                            {{ $personalStats['max_kills'] }}
+                            {{ number_format($personalStats['max_xpm'], 0, '.', ' ') }}
                         </p>
                     </div>
                     <div class="rounded-none border border-line bg-ink-950/50 p-4">
-                        <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-mist-400">{{ __('ui.personal_record_best_streak') }}</p>
+                        <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-mist-400">{{ __('ui.personal_record_max_kda') }}</p>
+                        <p class="mt-2 text-2xl font-semibold tracking-tight text-mist-200">
+                            {{ number_format($personalStats['max_kda'], 2, '.', '') }}
+                        </p>
+                    </div>
+                    <div class="rounded-none border border-line bg-ink-950/50 p-4">
+                        <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-mist-400">{{ __('ui.personal_record_best_win_streak') }}</p>
                         <p class="mt-2 text-2xl font-semibold tracking-tight text-green-500">
                             {{ $personalStats['best_streak_label'] }}
                         </p>
